@@ -7,20 +7,26 @@ description: Use when the test data, feature files, recorded API responses or pr
 
 ## Overview
 
-The offline tools of the test data are one Java single-file program, `scripts/TestDataTool.java`, run by hand. A plain `mvn test` (the pipeline) runs only the Cucumber suite `OreoTest`: it does not check the data. Run `check` before every commit that touches `src/test/resources/data/`, `src/test/resources/features/`, `ProductDatFiles`, `Capability`, or a step or snippet that names setup data.
+The offline tools of the test data are a normal Java class in `src/test/java/com/example/module/oreo/tools/TestDataTool.java`, run through the Maven `test-data` profile. A plain `mvn test` (the pipeline) runs only the Cucumber suite `OreoTest`: it does not check the data. Run `check` before every commit that touches `src/test/resources/data/`, `src/test/resources/features/`, `ProductDatFiles`, `Capability`, or a step or snippet that names setup data.
 
 Paths are relative to the oreo-e2e root. Run Maven and the tool only where the user says oreo-e2e builds (the company machine); elsewhere hand over the commands.
 
 ## Run
 
-Both lines, every time. The first compiles the project, copies the data to `target/test-classes` (where the tool reads the case data) and writes the paths of the Jackson jars to `target/tool.classpath`. PowerShell, from oreo-e2e:
+Run from the project root on the company machine, with the same commands in PowerShell, macOS and Linux:
 
-```powershell
-mvn -q test-compile dependency:build-classpath "-DincludeGroupIds=com.fasterxml.jackson.core" "-Dmdep.outputFile=target/tool.classpath"
-java -cp "target/classes;target/test-classes;$(Get-Content target/tool.classpath)" .claude/skills/maintaining-e2e-test-data/scripts/TestDataTool.java check
+```shell
+mvn -Ptest-data process-test-classes
+mvn -Ptest-data process-test-classes "-Dexec.args=sync-examples"
+mvn -Ptest-data process-test-classes "-Dexec.args=case TC-TRADE-CREATION-FX_TRF-API-001"
+mvn -Ptest-data process-test-classes "-Dexec.args=compact trade_creation"
 ```
 
-macOS / Linux: `:` instead of `;`, `$(cat target/tool.classpath)`. Below, `TestDataTool <command>` means the second line with that command.
+Each line is a complete command. The first defaults to `check`; choose one command for the task.
+Maven compiles the project, copies test resources and supplies the test classpath automatically.
+Stopping at `process-test-classes` does not execute the Cucumber suite or unit tests. Do not replace it
+with `test` or `verify` for a data-only operation. Below, `TestDataTool <command>` means this Maven invocation
+with `-Dexec.args=<command>`. The company Maven repository must supply `exec-maven-plugin:3.6.4`.
 
 | Command | What it does |
 |---|---|
@@ -58,9 +64,9 @@ One `[ok]` or `[FAIL]` line per check, its problems and `[warn]` lines below it:
 
 | Mistake | Instead |
 |---|---|
-| Only the `java` line after a change | Both lines. The tool stops with `target/test-classes/data is not the same as src/test/resources/data` |
-| That message after deleting a data file | `mvn clean` once, then both lines |
-| `NoClassDefFoundError: com/fasterxml/jackson/...` | Jackson comes from another jar here: drop the `-DincludeGroupIds` argument (the whole test classpath) |
+| Running the compiled class directly after a change | Use the full Maven command to refresh classes and resources |
+| Stale resource message after deleting a data file | Run `mvn -Ptest-data clean process-test-classes` with the desired `exec.args` |
+| Plugin cannot be resolved | Ensure the company Maven repository provides `org.codehaus.mojo:exec-maven-plugin:3.6.4` |
 | A `-D` argument unquoted in PowerShell | Quote each one whole |
 | Run from another folder | From oreo-e2e: the tool finds the project through `target/test-classes/data` |
 | `Examples` rows typed by hand | `sync-examples` |

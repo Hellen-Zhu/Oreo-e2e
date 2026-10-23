@@ -1,3 +1,5 @@
+package com.example.module.oreo.tools;
+
 import com.example.module.oreo.testdata.Capability;
 import com.example.module.oreo.testdata.CaseData;
 import com.example.module.oreo.testdata.CaseId;
@@ -33,17 +35,16 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * The offline tools of the oreo-e2e test data, a Java single-file program. Run it from the oreo-e2e folder after
- * the build line of {@code SKILL.md} (the folder above this one), which compiles the project, copies the data to
- * {@code target/test-classes} and writes the classpath:
+ * Offline test-data tools. Run {@code mvn -Ptest-data process-test-classes} from the project root.
+ * Maven compiles this class and refreshes test resources before running it. Select a command with
+ * {@code -Dexec.args="sync-examples"}, or one of:
  * <pre>
  * check                 the offline checks of the data against the feature files and the code
  * sync-examples         writes the Examples of the product Outlines from ProductDatFiles
  * compact &lt;event&gt;|all   turns the recorded responses of the variants into patches on their base
  * case &lt;case ID&gt;        prints the merged data of one case
  * </pre>
- * Exit code 1 on a problem. The first class of the file runs; the file is compiled apart from the project, so what
- * it uses from the project must be public.
+ * A problem throws an exception so Maven fails without terminating its JVM.
  */
 public class TestDataTool {
 
@@ -66,7 +67,9 @@ public class TestDataTool {
             System.out.println(e.getMessage());
             problems = 1;
         }
-        System.exit(problems == 0 ? 0 : 1);
+        if (problems != 0) {
+            throw new IllegalStateException("Test-data command failed; see the diagnostics above");
+        }
     }
 
     private static int usage() {
@@ -95,7 +98,7 @@ public class TestDataTool {
         }
         if (!stale.isEmpty()) {
             throw new IllegalStateException("target/test-classes/data is not the same as src/test/resources/data ("
-                    + stale.size() + " file(s), the first " + stale.get(0) + "): run the build line of SKILL.md"
+                    + stale.size() + " file(s), the first " + stale.get(0) + "): run mvn -Ptest-data process-test-classes"
                     + " again" + (removed ? "; a file removed from src stays in target until mvn clean" : ""));
         }
     }

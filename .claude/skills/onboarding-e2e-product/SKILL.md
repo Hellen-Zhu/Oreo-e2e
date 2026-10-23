@@ -43,7 +43,7 @@ Coverage QA asks for that no Outline has (a capability no Outline carries, an ev
 
 ## 3. Offline check
 
-The tool is `TestDataTool` of the skill `maintaining-e2e-test-data` (`.claude/skills/maintaining-e2e-test-data/SKILL.md`): its two lines, a build and then `java ... TestDataTool.java <command>`; below, `TestDataTool <command>`. Run them only where the user says oreo-e2e builds (the company machine); elsewhere give them the commands.
+The tool is `src/test/java/com/example/module/oreo/tools/TestDataTool.java`, documented in `.claude/skills/maintaining-e2e-test-data/SKILL.md`. Run `mvn -Ptest-data process-test-classes "-Dexec.args=<command>"`; without `exec.args` it defaults to `check`. Below, `TestDataTool <command>` means this Maven command. Run them only where the user says oreo-e2e builds (the company machine); elsewhere give them the commands.
 
 `TestDataTool check`. Expected before `sync-examples`: "the product Outlines' Examples match the registry" fails with one `add <P>` line per Outline of the product's capabilities. After it, until the recordings: only "every API case has its expected file" fails, one `no expected file` line per new API case. Any other problem (a product that is not in `ProductDatFiles`, a `byProduct` without a dat file, a `remove` line) is a mistake in section 2.
 

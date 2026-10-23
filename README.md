@@ -33,7 +33,7 @@ pom.xml, .gitignore
 .gitattributes, .mcp.json, azure-pipelines-maven.yml, .claude/, docs/   placeholders
 .claude/skills/onboarding-e2e-product/   skill: a new product
 .claude/skills/maintaining-e2e-test-data/   skill: the offline checks and tools of the test data
-                                  (scripts/TestDataTool.java, "Commands")
+                                  (Maven test-data profile, "Commands")
 src/main/java/com/example/module/oreo/
   OreoModule.java, OreoModuleConfiguration.java   transcribed from the E2E project
   glue/ScenarioContext.java       transcribed from the E2E project
@@ -278,16 +278,23 @@ record the case again with `OREO_EXPECTED=update` (update mode does not read the
 
 ### Commands
 
-The offline tools of the test data are one Java single-file program run by hand, `TestDataTool.java` of the skill
-`.claude/skills/maintaining-e2e-test-data` (its `SKILL.md` has the details). A plain `mvn test`, as the pipeline runs
-it, runs only the Cucumber suite `OreoTest`: it does not check the data. From oreo-e2e, in PowerShell, both lines every
-time (the first builds, copies the data to `target/test-classes`, where the tool reads the case data, and writes the
-Jackson jars' paths; macOS / Linux: `:` for `;`, `$(cat ...)`):
+The offline tool is a normal test-source class:
+`src/test/java/com/example/module/oreo/tools/TestDataTool.java`.
+The `test-data` Maven profile compiles it, refreshes test resources and supplies dependencies automatically.
+The Skill contains usage guidance only. From the project root on the company machine, use the same commands
+in PowerShell, macOS and Linux (each line is a separate operation):
 
-```powershell
-mvn -q test-compile dependency:build-classpath "-DincludeGroupIds=com.fasterxml.jackson.core" "-Dmdep.outputFile=target/tool.classpath"
-java -cp "target/classes;target/test-classes;$(Get-Content target/tool.classpath)" .claude/skills/maintaining-e2e-test-data/scripts/TestDataTool.java check
+```shell
+mvn -Ptest-data process-test-classes
+mvn -Ptest-data process-test-classes "-Dexec.args=sync-examples"
+mvn -Ptest-data process-test-classes "-Dexec.args=case TC-TRADE-CREATION-FX_TRF-API-001"
+mvn -Ptest-data process-test-classes "-Dexec.args=compact trade_creation"
 ```
+
+The first command defaults to `check`. These commands stop before test execution: they do not run Cucumber
+or unit tests. A failed check fails Maven. Plain `mvn test` retains its existing behavior and does not activate
+this profile. The company Maven repository needs `org.codehaus.mojo:exec-maven-plugin:3.6.4`.
+After deleting resource files, add `clean` before `process-test-classes` to remove stale copied files.
 
 - `check`: every data file loads, every case of every feature resolves, every row and event file has its feature,
   every API case has its expected file and every expected file its case, the rules agree with the expected files,
