@@ -1,0 +1,15 @@
+# ── Query ───────────────────────────────────────────────────────────
+
+@When "^maker retrieves the trade$"
+    When maker retrieves the trade for stored variable 'createdTradeId'
+
+@When "^checker retrieves the trade$"
+    When checker retrieves the trade for stored variable 'createdTradeId'
+
+@When "^maker retrieves the trade for stored variable '([^']*)'$"
+    When get '/trades/{id}' with path parameter 'id' from stored variable '$1' as user 'maker@example.com'
+    And attach the response body to the report
+
+@When "^checker retrieves the trade for stored variable '([^']*)'$"
+    When get '/trades/{id}' with path parameter 'id' from stored variable '$1' as user 'checker@example.com'
+    And attach the response body to the report

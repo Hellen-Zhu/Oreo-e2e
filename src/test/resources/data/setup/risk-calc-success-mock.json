@@ -1,0 +1,13 @@
+{
+  "_comment": "Answer given to the page for POST /trades/calculate-risk-for-new and /trades/<id>/calculate-risk (riskEngine=mock)",
+  "response": {
+    "code": 200,
+    "status": "SUCCESS",
+    "msg": "",
+    "data": {
+      "calculationTimestamp": "2000-01-01T00:00:00.000000000Z",
+      "pnl": -18726.25346898106,
+      "riskEngine": "EXAMPLE-RISK-ENGINE"
+    }
+  }
+}

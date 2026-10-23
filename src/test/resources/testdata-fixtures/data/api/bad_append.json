@@ -1,0 +1,1 @@
+{ "_comment": "Fixture: an _append inside a list is never applied", "defaults": { "request": { "data": [ { "_append": [ { "key": "x" } ] } ] } } }

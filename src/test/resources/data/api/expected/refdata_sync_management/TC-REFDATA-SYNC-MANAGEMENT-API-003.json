@@ -1,0 +1,11 @@
+{
+  "code": 200,
+  "status": "ACCEPTED",
+  "msg": "${json-unit.ignore}",
+  "data": {
+    "syncRunId": "${json-unit.any-string}",
+    "dataset": "CURRENCY",
+    "triggerType": "MANUAL",
+    "status": "RUNNING"
+  }
+}

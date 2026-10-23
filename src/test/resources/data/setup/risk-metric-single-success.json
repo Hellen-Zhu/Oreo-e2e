@@ -1,0 +1,12 @@
+{
+  "_comment": "Answer of a mocked per-metric risk metrics endpoint (200); RiskMetricSteps puts the metric type in data.metricType. From UI-SETUP-RISK-METRIC-SINGLE-SUCCESS (risk_metric_display.yml); kept under request, as there",
+  "request": {
+    "code": 200,
+    "status": "SUCCESS",
+    "msg": "",
+    "data": {
+      "value": 12500.00,
+      "metricType": "${metricType}"
+    }
+  }
+}

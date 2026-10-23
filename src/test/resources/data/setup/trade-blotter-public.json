@@ -1,0 +1,7 @@
+{
+  "_comment": "trade-blotter made public. From UI-SETUP-TRADE-BLOTTER-PUBLIC (trade_blotter.yml)",
+  "extends": "trade-blotter",
+  "request": {
+    "makeItPublic": true
+  }
+}

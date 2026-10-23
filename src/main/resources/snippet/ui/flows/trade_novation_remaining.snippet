@@ -1,0 +1,8 @@
+@When "^perform the Novation Remaining event on the '([^']*)' trade$"
+    When opens lifecycle action 'novation remaining' for current trade
+    And component dynamic action types novation remaining target amount from stored variable 'targetAmount' if it is set
+    And component dynamic action selects counterparty from stored variable 'newCptyName'
+    And submits lifecycle event and waits for page ready
+
+@Then "^the novation remaining is completed successfully$"
+    Then assert toast notification with type 'success' and title as '${json-unit.regex}Novation completed. Original trade .* terminated.'

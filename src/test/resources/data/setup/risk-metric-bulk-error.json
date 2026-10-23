@@ -1,0 +1,6 @@
+{
+  "_comment": "Answer of the mocked risk metrics endpoints that fail (500): the bulk one, and VAR95 / VAR99 in RiskMetricSteps' second step. From UI-SETUP-RISK-METRIC-BULK-ERROR (risk_metric_display.yml); kept under request, as there",
+  "request": {
+    "error": "Service Unavailable"
+  }
+}

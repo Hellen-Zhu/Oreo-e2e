@@ -1,0 +1,10 @@
+{
+  "_comment": "features/ui/trading/trade_novation_remaining.feature. targetAmount only for the products whose Novation Remaining form has the field (input profile WITH_TARGET_AMOUNT in the old feature); the step types it only when the case has one. newCptyFmId is not used by the steps.",
+  "defaults": {
+    "request": { "newCptyName": "EXAMPLE COUNTERPARTY B", "newCptyFmId": "900000001" }
+  },
+  "byProduct": {
+    "FX_TRF": { "request": { "targetAmount": "5,000" } },
+    "FX_PSCRIPT_TRF": { "request": { "targetAmount": "5,000" } }
+  }
+}

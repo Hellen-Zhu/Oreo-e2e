@@ -1,0 +1,29 @@
+# ── Build request ───────────────────────────────────────────────────
+
+@When "^maker has valid data for EarlyTermination event$"
+    Given build json request from current scenario with trade id from stored variable 'createdTradeId' as user 'maker@example.com'
+
+@When "^maker has malformed data for EarlyTermination event$"
+    Given build json request from current scenario with trade id from stored variable 'createdTradeId' as user 'maker@example.com'
+
+@When "^maker has duplicate EarlyTermination event data$"
+    Given build json request from current scenario with trade id from stored variable 'createdTradeId' as user 'maker@example.com'
+
+# ── Make api call ───────────────────────────────────────────────────
+
+@When "^performs the EarlyTermination event via api$"
+    When post to path '/trades/trigger-event'
+    And attach the response body to the report
+
+
+# ── Assertions ──────────────────────────────────────────────────────
+
+@Then "^the EarlyTermination event processed successfully$"
+    Then the 'EarlyTermination' should be 'processed' successfully
+    And response body contains an element in 'data.results' with key 'tradeId' with stored variable 'createdTradeId'
+
+@Then "^the EarlyTermination event is rejected with a validation error$"
+    Then failed to 'execute' 'EarlyTermination'
+
+@Then "^the EarlyTermination event is rejected with a business rule violation$"
+    Then failed to 'execute' 'EarlyTermination'

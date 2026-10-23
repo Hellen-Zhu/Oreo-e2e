@@ -1,0 +1,23 @@
+target/
+.idea/
+*.iml
+
+# Local metadata, credentials, and generated test artifacts
+.DS_Store
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.log
+*.trace.zip
+test-results/
+playwright-report/
+.vscode/
+.claude/settings.local.json
+settings.xml
+**/local.properties
+**/*.local.properties

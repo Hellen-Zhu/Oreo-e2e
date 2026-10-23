@@ -1,0 +1,269 @@
+package com.example.module.oreo.testdata;
+
+import com.example.module.oreo.utils.DateUtil;
+import org.junit.Test;
+
+import java.util.List;
+import java.util.Map;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
+public class TestDataRepositoryTest {
+
+    private final TestDataRepository repo = new TestDataRepository("testdata-fixtures/data/");
+
+    private static void assertJson(String expected, String actual) {
+        assertEquals(Json.parse(expected), Json.parse(actual));
+    }
+
+    /** Today plus {@code days}, as {@code ${date:T+days}} gives it. */
+    private static String day(int days) {
+        return DateUtil.today().plusDays(days).toString();
+    }
+
+    private static void assertFailsWith(Runnable load, String... parts) {
+        try {
+            load.run();
+            fail("expected an IllegalStateException");
+        } catch (IllegalStateException e) {
+            for (String part : parts) {
+                assertTrue(e.getMessage(), e.getMessage().contains(part));
+            }
+        }
+    }
+
+    @Test
+    public void caseWithoutRowRunsOnDefaults() {
+        CaseData data = repo.forCase("TC-SAMPLE-EVENT-FX_TRF-API-001");
+        assertJson("{\"basic\":{\"a\":\"1\",\"premium\":10}}", data.request());
+        assertEquals(Map.of("data.id", "type"), data.dynamicFields());
+        assertEquals(List.of("sample_event.json defaults (use base)"), data.layers());
+    }
+
+    @Test
+    public void allLayersInOrder() {
+        CaseData data = repo.forCase("TC-SAMPLE-EVENT-FX_PSCRIPT_TRF-API-002");
+        assertJson("{\"basic\":{\"a\":\"1\",\"udf\":[\"x\"],\"ccy\":\"\"}}", data.request());
+        assertEquals(List.of(
+                "sample_event.json defaults (use base)",
+                "sample_event.json byProduct FX_PSCRIPT_TRF",
+                "row TC-SAMPLE-EVENT-<product_type>-API-002 (use extra)",
+                "row TC-SAMPLE-EVENT-<product_type>-API-002 byProduct FX_PSCRIPT_TRF"), data.layers());
+        assertEquals(Map.of("data.id", "type", "msg", "type"), data.dynamicFields());
+    }
+
+    @Test
+    public void caseWithoutProductSkipsByProduct() {
+        CaseData data = repo.forCase("TC-SAMPLE-EVENT-API-004");
+        assertJson("{\"basic\":{\"a\":\"2\",\"premium\":10}}", data.request());
+        assertTrue(data.dynamicFields().isEmpty());
+    }
+
+    @Test
+    public void missingEventFileMeansNoData() {
+        CaseData data = repo.forCase("TC-NO-SUCH-EVENT-FX_TRF-UI-001");
+        assertFalse(data.hasRequest());
+        assertEquals("{}", data.request());
+        assertTrue(data.layers().isEmpty());
+    }
+
+    @Test
+    public void flattensLikeTheOldRecord() {
+        Map<String, String> fields = repo.forCase("TC-FLATTEN-EVENT-FX_TRF-UI-001").flattenRequest();
+        assertEquals(Map.of("basic.a", "1", "udf[0].k", "v"), fields);
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void unknownKeyIsAnError() {
+        repo.forCase("TC-BAD-KEY-FX_TRF-API-001");
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void twoMatchingRowsIsAnError() {
+        repo.forCase("TC-TWO-ROWS-FX_TRF-API-001");
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void unknownSharedBlockIsAnError() {
+        repo.forCase("TC-BAD-USE-API-009");
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void dynamicFieldsRejectedInUi() {
+        repo.forCase("TC-UI-EVENT-FX_TRF-UI-001");
+    }
+
+    @Test
+    public void expectedBaseFollowsTheProduct() {
+        assertEquals("TC-SAMPLE-EVENT-FX_TRF-API-001", repo.forCase("TC-SAMPLE-EVENT-FX_TRF-API-002").expectedBase());
+    }
+
+    @Test
+    public void baseCaseHasNoBase() {
+        assertNull(repo.forCase("TC-SAMPLE-EVENT-FX_TRF-API-001").expectedBase());
+    }
+
+    @Test
+    public void caseWithoutProductHasNoBase() {
+        assertNull(repo.forCase("TC-SAMPLE-EVENT-API-004").expectedBase());
+    }
+
+    @Test
+    public void nullRemovesTheBase() {
+        assertNull(repo.forCase("TC-SAMPLE-EVENT-FX_PSCRIPT_TRF-API-002").expectedBase());
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void baseInAnotherEventIsAnError() {
+        repo.forCase("TC-BAD-BASE-FX_TRF-API-002");
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void expectedBaseRejectedInUi() {
+        repo.forCase("TC-UI-BASE-FX_TRF-UI-002");
+    }
+
+    @Test
+    public void productThatUsesTheFilesBlockGetsTheAppendedField() {
+        CaseData data = repo.forCase("TC-BLOCK-EVENT-FX_TRF-API-001");
+        assertJson("{\"data\":[{\"key\":\"newCptyName\",\"value\":\"A\",\"type\":\"Text\"},"
+                + "{\"key\":\"novationDate\",\"value\":\"" + day(0) + "\",\"type\":\"Date\"},"
+                + "{\"key\":\"newTargetAmount\",\"value\":1000,\"type\":\"Numeric\"}],"
+                + "\"comments\":\"settles on " + day(2) + ", booked by ${userName}\"}", data.request());
+        assertEquals(List.of("block_event.json defaults", "block_event.json byProduct FX_TRF (use target-amount)"),
+                data.layers());
+    }
+
+    @Test
+    public void productWithoutTheBlockKeepsTheDefaultList() {
+        CaseData data = repo.forCase("TC-BLOCK-EVENT-FX_PSCRIPT_TRF-API-001");
+        assertEquals(2, Json.parse(data.request()).get("data").size());
+        assertEquals(day(0), data.flattenRequest().get("data[1].value"));
+    }
+
+    @Test
+    public void caseWithoutProductCanUseTheBlock() {
+        CaseData data = repo.forCase("TC-BLOCK-EVENT-API-003");
+        assertEquals("newTargetAmount", Json.parse(data.request()).at("/data/2/key").asText());
+    }
+
+    @Test
+    public void appendOfAKeyTheListHasNamesTheRow() {
+        assertFailsWith(() -> repo.forCase("TC-BLOCK-EVENT-FX_TRF-API-002"),
+                "block_event.json [row TC-BLOCK-EVENT-<product_type>-API-002 request]", "'newCptyName'");
+    }
+
+    @Test
+    public void appendWithoutAListUnderItIsAnError() {
+        assertFailsWith(() -> repo.forCase("TC-BLOCK-EVENT-API-004"), "[row TC-BLOCK-EVENT-API-004 request]", "udf");
+    }
+
+    @Test
+    public void unknownDateIsALoadErrorNamingTheField() {
+        assertFailsWith(() -> repo.forCase("TC-BAD-DATE-FX_TRF-API-001"),
+                "bad_date.json [defaults.request]", "trade.tradeDate", "${date:tomorrow}");
+    }
+
+    @Test
+    public void appendInsideAListIsALoadError() {
+        assertFailsWith(() -> repo.forCase("TC-BAD-APPEND-FX_TRF-API-001"), "[defaults.request]", "data[0]");
+    }
+
+    @Test
+    public void blockNamedLikeACommonBlockIsAnError() {
+        assertFailsWith(() -> repo.forCase("TC-CLASH-BLOCK-FX_TRF-API-001"), "[shared.base]", "common.json");
+    }
+
+    @Test
+    public void setupAppendsToTheListOfTheSetupItExtends() {
+        assertJson("{\"udf\":[{\"key\":\"a\",\"value\":\"1\"},{\"key\":\"b\",\"value\":\"2\"}],"
+                + "\"valueDate\":\"" + day(-1) + "\"}", repo.setup("list-child-setup").request());
+    }
+
+    @Test
+    public void setupAppendWithoutASetupToExtendIsAnError() {
+        assertFailsWith(() -> repo.setup("orphan-append-setup"), "orphan-append-setup.json [request]");
+    }
+
+    @Test
+    public void datFileIsTheProductsDefaultUnlessALayerNamesOne() {
+        assertNull(repo.forCase("TC-DAT-EVENT-FX_TRF-API-001").datFile());
+        assertEquals("variant.dat", repo.forCase("TC-DAT-EVENT-FX_PSCRIPT-API-001").datFile());
+        assertEquals("variant.dat", repo.forCase("TC-DAT-EVENT-FX_TRF-API-002").datFile());
+        assertNull(repo.forCase("TC-DAT-EVENT-FX_PSCRIPT-API-002").datFile());
+        assertEquals("variant.dat", repo.forCase("TC-DAT-EVENT-API-004").datFile());
+    }
+
+    @Test
+    public void missingVariantNamesTheLayerAndTheFile() {
+        assertFailsWith(() -> repo.forCase("TC-DAT-EVENT-FX_TRF-API-003"),
+                "[row TC-DAT-EVENT-FX_TRF-API-003 datFile]", "testdata-fixtures/data/dat/FX_TRF/missing.dat");
+    }
+
+    @Test
+    public void datFileWithAFolderIsALoadError() {
+        assertFailsWith(() -> repo.forCase("TC-BAD-DAT-FX_TRF-API-001"), "[defaults.datFile]", "'../FX_TRF.dat'");
+    }
+
+    @Test
+    public void datPathsAreInTheProductsFolder() {
+        assertEquals("data/dat/FX_TRF/FX_TRF.dat", ProductDatFiles.FX_TRF.path());
+        assertEquals("data/dat/FX_TRF/FX_TRF.dat", ProductDatFiles.FX_TRF.path(null));
+        assertEquals("data/dat/FX_TRF/variant.dat", ProductDatFiles.FX_TRF.path("variant.dat"));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void datPathRejectsAFolder() {
+        ProductDatFiles.FX_TRF.path("sub/variant.dat");
+    }
+
+    @Test
+    public void setupExtends() {
+        SetupData setup = repo.setup("child-setup");
+        assertJson("{\"basic\":{\"a\":\"1\",\"b\":\"2\"}}", setup.request());
+        assertFalse(setup.hasResponse());
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void setupCycleIsAnError() {
+        repo.setup("loop-a");
+    }
+
+    @Test
+    public void missingSetupRequestIsAnErrorNamingTheFile() {
+        SetupData setup = repo.setup("response-only-setup");
+        assertFalse(setup.hasRequest());
+        try {
+            setup.request();
+            fail("expected an IllegalStateException");
+        } catch (IllegalStateException e) {
+            assertTrue(e.getMessage(), e.getMessage().contains("'response-only-setup' has no request"));
+            assertTrue(e.getMessage(), e.getMessage().contains("data/setup/response-only-setup.json"));
+        }
+    }
+
+    @Test
+    public void missingSetupResponseIsAnError() {
+        try {
+            repo.setup("child-setup").response();
+            fail("expected an IllegalStateException");
+        } catch (IllegalStateException e) {
+            assertTrue(e.getMessage(), e.getMessage().contains("'child-setup' has no response"));
+            assertTrue(e.getMessage(), e.getMessage().contains("data/setup/child-setup.json"));
+        }
+    }
+
+    @Test
+    public void missingSetupNamesTheFolder() {
+        try {
+            repo.setup("nope");
+            fail("expected an IllegalStateException");
+        } catch (IllegalStateException e) {
+            assertTrue(e.getMessage(), e.getMessage().contains("data/setup/nope.json"));
+        }
+    }
+}

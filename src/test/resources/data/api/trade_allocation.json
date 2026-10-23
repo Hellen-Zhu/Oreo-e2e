@@ -1,0 +1,158 @@
+{
+  "_comment": "features/api/trading/trade_allocation.feature. Body of POST /trades/trigger-event; the step replaces tradeIds with the created trade. The defaults are the 2-way equal split of an FX_TRF trade (notional 70000), the trade of every case without a product. The amounts must sum to the trade's notional, which comes from the product's dat file: API-001 and API-002 give every product of the allocation capability its own split in their byProduct, and a new product needs one there too.",
+  "defaults": {
+    "expectedBase": "TC-TRADE-ALLOCATION-<product_type>-API-001",
+    "request": {
+      "eventType": "Allocation",
+      "data": [
+        { "key": "notionalAmounts", "value": "[35000, 35000]", "type": "Numeric Array" },
+        { "key": "counterpartyIds", "value": "[\"900000003\", \"900000004\"]", "type": "Numeric Array" },
+        { "key": "portfolioIds", "value": "[\"EXAMPLE_PORTFOLIO_B\", \"EXAMPLE_PORTFOLIO_C\"]", "type": "Numeric Array" }
+      ],
+      "reason": "NON_ECON_CHANGE",
+      "comments": "Allocation split into 2 equal parts with distinct counterparties and portfolios",
+      "tradeIds": ["PLACEHOLDER"]
+    },
+    "dynamicFields": {
+      "msg": "type",
+      "data.results[*].tradeId": "type",
+      "data.results[*].childTradeIds[*]": "type"
+    }
+  },
+  "cases": [
+    {
+      "id": "TC-TRADE-ALLOCATION-<product_type>-API-001",
+      "_comment": "2-way equal split: 200 ALL_EXECUTED, two child trades",
+      "byProduct": {
+        "FX_PSCRIPT": {
+          "_comment": "Notional 6937.5",
+          "request": {
+            "data": [
+              { "key": "notionalAmounts", "value": "[3468.75, 3468.75]", "type": "Numeric Array" },
+              { "key": "counterpartyIds", "value": "[\"900000003\", \"900000004\"]", "type": "Numeric Array" },
+              { "key": "portfolioIds", "value": "[\"EXAMPLE_PORTFOLIO_B\", \"EXAMPLE_PORTFOLIO_C\"]", "type": "Numeric Array" }
+            ]
+          }
+        },
+        "FX_PSCRIPT_FSKO": {
+          "_comment": "Notional 200000000",
+          "request": {
+            "data": [
+              { "key": "notionalAmounts", "value": "[100000000, 100000000]", "type": "Numeric Array" },
+              { "key": "counterpartyIds", "value": "[\"900000003\", \"900000004\"]", "type": "Numeric Array" },
+              { "key": "portfolioIds", "value": "[\"EXAMPLE_PORTFOLIO_B\", \"EXAMPLE_PORTFOLIO_C\"]", "type": "Numeric Array" }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "TC-TRADE-ALLOCATION-<product_type>-API-002",
+      "_comment": "3-way unequal split: 200 ALL_EXECUTED, three child trades",
+      "byProduct": {
+        "FX_TRF": {
+          "request": {
+            "data": [
+              { "key": "notionalAmounts", "value": "[42000, 21000, 7000]", "type": "Numeric Array" },
+              { "key": "counterpartyIds", "value": "[\"900000003\", \"900000004\", \"900000003\"]", "type": "Numeric Array" },
+              { "key": "portfolioIds", "value": "[\"EXAMPLE_PORTFOLIO_B\", \"EXAMPLE_PORTFOLIO_C\", \"EXAMPLE_PORTFOLIO_B\"]", "type": "Numeric Array" }
+            ],
+            "comments": "3-way unequal split: 60% / 30% / 10% of notional 70000"
+          }
+        },
+        "FX_PSCRIPT": {
+          "request": {
+            "data": [
+              { "key": "notionalAmounts", "value": "[3000, 2000, 1937.5]", "type": "Numeric Array" },
+              { "key": "counterpartyIds", "value": "[\"900000003\", \"900000004\", \"900000003\"]", "type": "Numeric Array" },
+              { "key": "portfolioIds", "value": "[\"EXAMPLE_PORTFOLIO_B\", \"EXAMPLE_PORTFOLIO_C\", \"EXAMPLE_PORTFOLIO_D\"]", "type": "Numeric Array" }
+            ],
+            "comments": "3-way unequal split: 3000 / 2000 / 1937.5 summing to FX_PSCRIPT parent notional 6937.5"
+          }
+        },
+        "FX_PSCRIPT_FSKO": {
+          "request": {
+            "data": [
+              { "key": "notionalAmounts", "value": "[120000000, 60000000, 20000000]", "type": "Numeric Array" },
+              { "key": "counterpartyIds", "value": "[\"900000003\", \"900000004\", \"900000003\"]", "type": "Numeric Array" },
+              { "key": "portfolioIds", "value": "[\"EXAMPLE_PORTFOLIO_B\", \"EXAMPLE_PORTFOLIO_C\", \"EXAMPLE_PORTFOLIO_B\"]", "type": "Numeric Array" }
+            ],
+            "comments": "3-way unequal split: 60% / 30% / 10% of notional 200000000"
+          }
+        }
+      }
+    },
+    {
+      "id": "TC-TRADE-ALLOCATION-API-003",
+      "_comment": "Amounts sum to 20000, not the notional 70000: 400",
+      "request": {
+        "data": [
+          { "key": "notionalAmounts", "value": "[10000, 10000]", "type": "Numeric Array" },
+          { "key": "counterpartyIds", "value": "[\"900000003\", \"900000004\"]", "type": "Numeric Array" },
+          { "key": "portfolioIds", "value": "[\"EXAMPLE_PORTFOLIO_B\", \"EXAMPLE_PORTFOLIO_C\"]", "type": "Numeric Array" }
+        ],
+        "comments": "Notionals only sum to 20000.0, original is 70000.0"
+      },
+      "dynamicFields": null
+    },
+    {
+      "id": "TC-TRADE-ALLOCATION-API-004",
+      "_comment": "Empty arrays: 400",
+      "request": {
+        "data": [
+          { "key": "notionalAmounts", "value": "[]", "type": "Numeric Array" },
+          { "key": "counterpartyIds", "value": "[]", "type": "Numeric Array" },
+          { "key": "portfolioIds", "value": "[]", "type": "Numeric Array" }
+        ],
+        "comments": "Empty sub-trades — should be rejected"
+      },
+      "dynamicFields": null
+    },
+    {
+      "id": "TC-TRADE-ALLOCATION-API-005",
+      "_comment": "No trade is created: the trade ID below is sent as it is and does not exist: 400",
+      "request": {
+        "data": [
+          { "key": "notionalAmounts", "value": "[35000]", "type": "Numeric Array" },
+          { "key": "counterpartyIds", "value": "[\"900000003\"]", "type": "Numeric Array" },
+          { "key": "portfolioIds", "value": "[\"EXAMPLE_PORTFOLIO_B\"]", "type": "Numeric Array" }
+        ],
+        "comments": "Attempting to allocate a non-existent trade",
+        "tradeIds": ["TRD-NOTEXIST-001"]
+      },
+      "dynamicFields": null
+    },
+    {
+      "id": "TC-TRADE-ALLOCATION-API-006",
+      "_comment": "The defaults again, on a trade that setup allocation-create allocated: 400",
+      "request": { "comments": "Attempting to re-allocate an already-Allocated trade" },
+      "dynamicFields": null
+    },
+    {
+      "id": "TC-TRADE-ALLOCATION-API-007",
+      "_comment": "Amounts sum to 80000, more than the notional 70000: 400",
+      "request": {
+        "data": [
+          { "key": "notionalAmounts", "value": "[40000, 40000]", "type": "Numeric Array" },
+          { "key": "counterpartyIds", "value": "[\"900000003\", \"900000004\"]", "type": "Numeric Array" },
+          { "key": "portfolioIds", "value": "[\"EXAMPLE_PORTFOLIO_B\", \"EXAMPLE_PORTFOLIO_C\"]", "type": "Numeric Array" }
+        ],
+        "comments": "Over-allocation: 40k+40k=80k exceeds parent notional of 70k"
+      },
+      "dynamicFields": null
+    },
+    {
+      "id": "TC-TRADE-ALLOCATION-API-008",
+      "_comment": "Two amounts, one counterparty: 400",
+      "request": {
+        "data": [
+          { "key": "notionalAmounts", "value": "[35000, 35000]", "type": "Numeric Array" },
+          { "key": "counterpartyIds", "value": "[\"900000003\"]", "type": "Numeric Array" },
+          { "key": "portfolioIds", "value": "[\"EXAMPLE_PORTFOLIO_B\", \"EXAMPLE_PORTFOLIO_C\"]", "type": "Numeric Array" }
+        ],
+        "comments": "Array length mismatch: 2 notionals but only 1 counterpartyId"
+      },
+      "dynamicFields": null
+    }
+  ]
+}

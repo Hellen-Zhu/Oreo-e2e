@@ -1,0 +1,24 @@
+{
+  "_comment": "features/api/refdata/refdata_sync_management.feature. An Outline numbered by its case column: one row per case, with the dataset of its Examples row. The rules keep the old placeholders.",
+  "defaults": {
+    "request": { "triggerType": "MANUAL" },
+    "dynamicFields": { "msg": "ignore", "data.syncRunId": "type" }
+  },
+  "cases": [
+    {
+      "id": "TC-REFDATA-SYNC-MANAGEMENT-API-001",
+      "_comment": "Counterparty manual sync request is accepted successfully",
+      "request": { "dataset": "COUNTERPARTY" }
+    },
+    {
+      "id": "TC-REFDATA-SYNC-MANAGEMENT-API-002",
+      "_comment": "Portfolio manual sync request is accepted successfully",
+      "request": { "dataset": "PORTFOLIO" }
+    },
+    {
+      "id": "TC-REFDATA-SYNC-MANAGEMENT-API-003",
+      "_comment": "Currency manual sync request is accepted successfully",
+      "request": { "dataset": "CURRENCY" }
+    }
+  ]
+}

@@ -1,0 +1,5 @@
+{
+  "code": 400,
+  "status": "ERROR",
+  "msg": "${json-unit.any-string}"
+}

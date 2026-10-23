@@ -1,0 +1,14 @@
+{
+  "code": 200,
+  "status": "SUCCESS",
+  "msg": "${json-unit.ignore}",
+  "data": {
+    "pnl": "${json-unit.any-number}",
+    "delta": "${json-unit.any-number}",
+    "gamma": "${json-unit.any-number}",
+    "vega": "${json-unit.any-number}",
+    "theta": "${json-unit.any-number}",
+    "calculationTimestamp": "${json-unit.ignore}",
+    "riskEngine": "${json-unit.ignore}"
+  }
+}

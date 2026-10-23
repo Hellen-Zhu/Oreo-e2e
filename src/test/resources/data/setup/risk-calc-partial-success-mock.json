@@ -1,0 +1,32 @@
+{
+  "_comment": "Answer given to the page for a risk calculation of a partial lifecycle event (riskEngine=mock): original, reduced original, new, combined and delta risk",
+  "response": {
+    "code": 200,
+    "status": "SUCCESS",
+    "msg": "",
+    "data": {
+      "originalTradeRisk": {
+        "calculationTimestamp": "2000-01-01T00:00:00.000000000Z",
+        "pnl": 5277.967807918399,
+        "riskEngine": "EXAMPLE-RISK-ENGINE"
+      },
+      "reducedOriginalTradeRisk": {
+        "calculationTimestamp": "2000-01-01T00:00:00.000000000Z",
+        "pnl": -3182.5550381959206,
+        "riskEngine": "EXAMPLE-RISK-ENGINE"
+      },
+      "newTradeRisk": {
+        "calculationTimestamp": "2000-01-01T00:00:00.000000000Z",
+        "pnl": 23333.396078571335,
+        "riskEngine": "EXAMPLE-RISK-ENGINE"
+      },
+      "combinedRisk": {
+        "pnl": 20150.8410403754144
+      },
+      "deltaVsOriginal": {
+        "pnl": 14872.8732324570154
+      },
+      "riskBreachFlag": false
+    }
+  }
+}

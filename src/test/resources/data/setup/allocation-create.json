@@ -1,0 +1,14 @@
+{
+  "_comment": "Allocation made before a case (API-006 of trade_allocation.feature: 'a trade is allocated with 2-way equal split via api'): body of POST /trades/trigger-event, the 2-way equal split of an FX_TRF trade; the step replaces tradeIds with the created trade",
+  "request": {
+    "eventType": "Allocation",
+    "data": [
+      { "key": "notionalAmounts", "value": "[35000, 35000]", "type": "Numeric Array" },
+      { "key": "counterpartyIds", "value": "[\"900000003\", \"900000004\"]", "type": "Numeric Array" },
+      { "key": "portfolioIds", "value": "[\"EXAMPLE_PORTFOLIO_B\", \"EXAMPLE_PORTFOLIO_C\"]", "type": "Numeric Array" }
+    ],
+    "reason": "NON_ECON_CHANGE",
+    "comments": "Allocation split into 2 equal parts with distinct counterparties and portfolios",
+    "tradeIds": ["PLACEHOLDER"]
+  }
+}

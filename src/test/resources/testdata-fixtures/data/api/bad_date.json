@@ -1,0 +1,1 @@
+{ "_comment": "Fixture: a date placeholder that is not T, T+N or T-N", "defaults": { "request": { "trade": { "tradeDate": "${date:tomorrow}" } } } }

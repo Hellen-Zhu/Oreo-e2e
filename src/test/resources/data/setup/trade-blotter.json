@@ -1,0 +1,12 @@
+{
+  "_comment": "Blotter of the blotter UI cases; the step puts a name in ${blotterName}. From UI-SETUP-TRADE-BLOTTER (trade_blotter.yml)",
+  "request": {
+    "name": "${blotterName}",
+    "description": "E2E Test Blotter",
+    "columns": ["Trade ID", "Status", "Event Status"],
+    "conditions": [
+      { "id": "c-1", "field": "Trade Status", "operator": "=", "value": "Live", "logicOperator": "AND" }
+    ],
+    "makeItPublic": false
+  }
+}

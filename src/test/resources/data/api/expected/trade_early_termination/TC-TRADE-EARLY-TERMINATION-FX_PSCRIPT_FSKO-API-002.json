@@ -1,0 +1,5 @@
+{
+  "code": 400,
+  "status": "ERROR",
+  "msg": "Event 'EarlyTermination' requires CI data (ciEnabled=true). Please supply a data entry with key 'ci'."
+}

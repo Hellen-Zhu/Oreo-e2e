@@ -1,0 +1,52 @@
+{
+  "_comment": "Shared blocks a feature uses, and setup data an API step loads with TestDataLoader.forKey(key). A request is the API body as it is.",
+  "shared": {
+    "trade-basic": {
+      "request": {
+        "basic": {
+          "portfolioId": "EXAMPLE_PORTFOLIO_A",
+          "counterpartyFmId": "900000001",
+          "counterpartyName": "EXAMPLE COUNTERPARTY A",
+          "direction": "Buy"
+        }
+      }
+    },
+    "step-in": {
+      "request": {
+        "stepIn": {
+          "oldCounterpartyName": "EXAMPLE COUNTERPARTY C"
+        }
+      }
+    }
+  },
+  "setup": {
+    "API-SETUP-TRADE-CREATE": {
+      "_comment": "Body of POST /trades/create?tradeAction=SUBMIT (part 'trade'), as copied; productId is set from the product",
+      "productPath": "basic.productId",
+      "request": {
+        "basic": {
+          "counterpartyFmId": "900000001",
+          "counterpartyName": "EXAMPLE COUNTERPARTY A",
+          "portfolioId": "EXAMPLE_PORTFOLIO_A",
+          "productId": "FX_TRF",
+          "direction": "Buy",
+          "premiumAmount": 10000,
+          "premiumCurrency": "USD"
+        }
+      }
+    },
+    "UI-SETUP-RISK-CALC-NEW-SUCCESS": {
+      "_comment": "Answer of a mocked risk calculation (riskEngine=mock): RESP-TPL-MOCK-DATA-UI-001 with this entry's data",
+      "response": {
+        "code": 200,
+        "status": "SUCCESS",
+        "msg": "",
+        "data": {
+          "calculationTimestamp": "2000-01-01T00:00:00.000000000Z",
+          "pnl": -18726.25346898106,
+          "riskEngine": "EXAMPLE-RISK-ENGINE"
+        }
+      }
+    }
+  }
+}

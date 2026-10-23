@@ -1,0 +1,70 @@
+{
+  "_comment": "features/api/risk_management/risk_metric_retrieval.feature. The metric type Outline is numbered by its case column: 003 DELTA, then 007 to 010, so that 004 to 006 keep their numbers. Its steps take the metric type from the Examples, so its rows have no request, as in the old YAML (only a responseRef to RESP-TPL-RISK-METRIC-RETRIEVAL-API-003, now in each expected file). The rules keep the old placeholders.",
+  "defaults": {
+    "dynamicFields": { "msg": "ignore", "data.value": "type", "data.tradeId": "type" }
+  },
+  "cases": [
+    {
+      "id": "TC-RISK-METRIC-RETRIEVAL-API-001",
+      "_comment": "All risk metrics are returned for a live trade in a single bulk request",
+      "dynamicFields": {
+        "data.pnl": "type",
+        "data.delta": "type",
+        "data.gamma": "type",
+        "data.vega": "type",
+        "data.theta": "type",
+        "data.calculationTimestamp": "ignore",
+        "data.riskEngine": "ignore",
+        "data.value": null,
+        "data.tradeId": null
+      }
+    },
+    {
+      "id": "TC-RISK-METRIC-RETRIEVAL-API-002",
+      "_comment": "Requested metric type and its value are returned when a single metric is fetched",
+      "request": { "metricType": "DELTA" }
+    },
+    {
+      "id": "TC-RISK-METRIC-RETRIEVAL-API-003",
+      "_comment": "Supported metric type DELTA is accepted and returns a valid per-metric response",
+      "dynamicFields": { "data.metricType": "type" }
+    },
+    {
+      "id": "TC-RISK-METRIC-RETRIEVAL-API-007",
+      "_comment": "Supported metric type GAMMA is accepted and returns a valid per-metric response",
+      "dynamicFields": { "data.metricType": "type" }
+    },
+    {
+      "id": "TC-RISK-METRIC-RETRIEVAL-API-008",
+      "_comment": "Supported metric type VEGA is accepted and returns a valid per-metric response",
+      "dynamicFields": { "data.metricType": "type" }
+    },
+    {
+      "id": "TC-RISK-METRIC-RETRIEVAL-API-009",
+      "_comment": "Supported metric type THETA is accepted and returns a valid per-metric response",
+      "dynamicFields": { "data.metricType": "type" }
+    },
+    {
+      "id": "TC-RISK-METRIC-RETRIEVAL-API-010",
+      "_comment": "Supported metric type PNL is accepted and returns a valid per-metric response",
+      "dynamicFields": { "data.metricType": "type" }
+    },
+    {
+      "id": "TC-RISK-METRIC-RETRIEVAL-API-004",
+      "_comment": "Bulk risk metrics request returns a structured error when the risk engine is unavailable",
+      "dynamicFields": { "msg": "type", "data.value": null, "data.tradeId": null }
+    },
+    {
+      "id": "TC-RISK-METRIC-RETRIEVAL-API-005",
+      "_comment": "Per-metric request returns a structured error when the risk engine is unavailable",
+      "request": { "metricType": "VAR95" },
+      "dynamicFields": { "msg": "type", "data.value": null, "data.tradeId": null }
+    },
+    {
+      "id": "TC-RISK-METRIC-RETRIEVAL-API-006",
+      "_comment": "Per-metric request is rejected when an unsupported metric type is provided",
+      "request": { "metricType": "INVALID_METRIC_XYZ" },
+      "dynamicFields": { "msg": "type", "data.value": null, "data.tradeId": null }
+    }
+  ]
+}

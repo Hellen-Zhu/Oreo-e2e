@@ -1,0 +1,27 @@
+{
+  "_comment": "Fixture: a block of the file's own, an _append, and dates filled in when the case runs",
+  "shared": {
+    "target-amount": {
+      "_comment": "only the field the products with a target amount add",
+      "request": { "data": { "_append": [ { "key": "newTargetAmount", "value": 1000, "type": "Numeric" } ] } }
+    }
+  },
+  "defaults": {
+    "request": {
+      "data": [
+        { "key": "newCptyName", "value": "A", "type": "Text" },
+        { "key": "novationDate", "value": "${date:T}", "type": "Date" }
+      ],
+      "comments": "settles on ${date:T+2}, booked by ${userName}"
+    }
+  },
+  "byProduct": { "FX_TRF": { "use": ["target-amount"] } },
+  "cases": [
+    { "id": "TC-BLOCK-EVENT-<product_type>-API-002", "_comment": "an _append of a key the list already has",
+      "request": { "data": { "_append": [ { "key": "newCptyName", "value": "B", "type": "Text" } ] } } },
+    { "id": "TC-BLOCK-EVENT-API-003", "_comment": "a case without a product names the block itself",
+      "use": ["target-amount"] },
+    { "id": "TC-BLOCK-EVENT-API-004", "_comment": "an _append with no list under it",
+      "request": { "udf": { "_append": [ { "key": "x", "value": "1", "type": "Text" } ] } } }
+  ]
+}
