@@ -191,6 +191,15 @@ commands: `"-Dexec.args=case <case ID>"` (what a case sends and is compared with
 
 ### 6.2 Against an environment
 
+The runner, `OreoTest`, is a Genie JUnit 4 runner (`@RunWith(Genie.class)`):
+
+| Setting | Value | Consequence |
+|---|---|---|
+| `@CucumberOptions` features / glue | `classpath:features`; `com.example.module.oreo.glue` and `classpath:snippet` | Java glue and snippets are one step vocabulary |
+| `@CucumberOptions` tags | `not @wip` and `@ADO#trade_creation` (all must match) | A plain `mvn test` runs trade creation only, **not the whole suite**; the default scope is changed in `OreoTest` |
+| `@GenieOptions` properties | `src/test/resources/qa.properties` | The environment (addresses, accounts, browser) comes from that file |
+| `@GenieOptions` forks | `forkMode = FEATURE`, `forkCount = 3`, `DISCRETE` working directories | Up to 3 features run at once in separate JVMs; scenarios of one feature run in order in one JVM |
+
 Select scenarios with the legacy Cucumber option property `-Dcucumber.options`:
 
 ```shell

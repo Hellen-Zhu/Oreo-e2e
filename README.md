@@ -12,7 +12,7 @@ the company environment before running tests; do not commit credentials or real 
 
 | Goal | Command |
 |---|---|
-| Run the E2E suite (what the pipeline runs) | `mvn test` |
+| Run what the runner selects (what the pipeline runs; its fixed tags are `not @wip` and `@ADO#trade_creation`, set in `OreoTest`) | `mvn test` |
 | Run a selection (`-Dcucumber.options`, not `cucumber.filter.*`) | `mvn -B test -Dtest=OreoTest "-Dcucumber.options=--tags @api --tags @ADO#smoke"`, or one case: `"-Dcucumber.options=--name ^\[TC-TRADE-CREATION-FX_TRF-API-001\].*$"` |
 | Check the test data before a commit (unit tests of the data code, then `check`) | `mvn -Ptest-data process-test-classes` |
 | See what one case sends and is compared with | `mvn -Ptest-data process-test-classes "-Dexec.args=case <case ID>"` |
@@ -75,7 +75,8 @@ The setup files `trade-cancellation` and `trade-amendment` do not exist yet (`KN
 Placeholders, to be replaced by the E2E project's file (a comment only; Java: an empty class): `.gitattributes`,
 `.mcp.json`, `azure-pipelines-maven.yml`, `META-INF/services/com.example.genie.module.GenieModule`,
 `glue/hooks/PlaywrightTraceHooks.java` and the dat files `data/dat/{FX_TRF,FX_PSCRIPT,FX_PSCRIPT_FSKO,FX_PSCRIPT_TRF}`.
-Not in this copy: the other environments' properties (enrich, pt, sit).
+Not in this copy: `qa.properties`, the environment file `OreoTest` loads, and the other environments' properties
+(enrich, pt, sit).
 
 ## Problem it solves
 
@@ -111,7 +112,8 @@ src/main/resources/
   snippet/api/*.snippet, snippet/ui/{flows,pages,components}/*.snippet
   cucumber.xml, META-INF/services/        (the services file is a placeholder)
 src/test/java/com/example/module/oreo/
-  OreoTest                                the Cucumber suite (features/, glue, report)
+  OreoTest                                the Genie runner: features, glue and snippets, fixed tags, environment
+                                          properties, 3 parallel feature forks
   testdata/*Test                          unit tests of the data code (section "Commands")
   tools/                                  the offline tool (section "Commands"), one class per file:
     TestDataTool                          the entry point: commands, data freshness

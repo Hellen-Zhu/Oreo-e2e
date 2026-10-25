@@ -36,7 +36,8 @@ These decide *how many* scenarios there are and *what each one proves*.
    `Examples` column. An Outline numbered by `<case>` (`| case | dataset |`) is for datasets that are each a distinct
    business case.
 6. **Every scenario stands alone.** Its `Given` provisions the state it needs; no scenario depends on another having run
-   or on data a previous run left behind.
+   or on data a previous run left behind. Features run in parallel (three at a time), so scenarios must not compete for
+   shared state either: no fixed trade, portfolio or user setting that another feature changes.
 7. **Assert only what is verified.** A `Then` may not claim more than the implementation checks: a successful response
    is not proof of persistence, an audit record or a downstream event unless that evidence is actually collected.
 8. **Smoke is the critical path.** `@ADO#smoke`: the minimal set that proves the capability works end to end (usually
