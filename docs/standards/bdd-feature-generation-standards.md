@@ -1,349 +1,211 @@
-# BDD Feature Generation Standards
+# BDD Feature Generation Standard
 
-Condensed, non-loss version of feature-generation contracts: source boundaries, naming/path rules, TC-ID formats, scenario grouping, language constraints, annotation contract, and final checks.
+How approved test points become executable Gherkin: which scenarios to write, where they go, what they are called and
+how they read. Upstream, [test layering](test-layering-standards.md) decides the test points and their layer;
+downstream, [implementation](bdd-feature-implementation-standards.md) makes the steps run.
 
-## 1. Source Boundaries
+**Output**: one `.feature` file per layer that has approved test points, plus a short *Generation Context* (below).
 
-| Purpose | Source of truth | Fallback | Forbidden |
-|---|---|---|---|
-| Test point existence/layer/tags | Confirmed Phase 1 report | None | Re-parsing story/ACs |
-| Coverage groups/scenario count | Approved Phase 1 TP fields + this doc | Split for readability/execution correctness | Assuming 1 TP = 1 scenario; inventing grouping intent from raw ACs |
-| AC coverage | Phase 1 AC mapping | Original AC text (wording only) | Changing coverage decisions |
-| Validation target/evidence | Phase 1 Validation Target + Observable Evidence | None | Dropping evidence because AC ID is covered |
-| Feature naming/path | Story title + TP names | Description/persona; approved API operation wording (weak fallback) | Story module, class names, endpoints, story IDs |
-| API details | Approved `solutionDesign.apiDesign` | Technical notes only if `solutionDesign` missing; existing feature patterns | UI assumptions; technical notes overriding solution design |
-| API response contract | current-case JSON data and recorded expected response | Existing JSON contract patterns, reviewed against approved behavior | Treating a recording as a requirement; duplicating status/body assertions in feature steps |
-| UI wording | TP names + persona + `solutionDesign.uiDesign` | Description | Endpoint names |
-| Extra API assertions/test data | Phase 1 validation target + approved `solutionDesign.testDesignImplications` | Technical notes as weak fallback | Inventing DB/audit/event assertions without design evidence |
+## 1. Inputs and Authority
 
-Rules:
+| Question | Decided by | Never from |
+|---|---|---|
+| Which behaviors get a scenario, on which layer, with which evidence | The confirmed Phase 1 test points (TP) | Re-reading the story; "it would be nice to also test" |
+| API paths, UI wording, extra assertions, test data intent | Approved `solutionDesign` (`technicalNotes` only when it is missing) | Guessing; `technicalNotes` that contradict `solutionDesign` |
+| What a response must contain | The requirement | A recorded response (a recording is evidence of what the system *did*, not of what it *should* do) |
 
-- If no approved TP exists for a behavior, do not generate a scenario.
-- When approved `solutionDesign` exists, do not treat `technicalNotes` as primary for API paths, UI wording, response contracts, extra assertions, or test data.
-- If `technicalNotes` conflicts with `solutionDesign`, use `solutionDesign` and mention the conflict in derivation evidence.
-- `Layer` in this document means execution layer only: `@api` or `@playwright`.
-- UI composition layers (Page/Component/Flow/Scenario) are defined in `CLAUDE.md` and `docs/standards/bdd-feature-implementation-standards.md`.
+- No approved TP, no scenario. A gap (unclear rule, missing domain, unsupported product) is reported, not filled in.
+- A conflict between `technicalNotes` and `solutionDesign` is resolved in favour of `solutionDesign` and named in the
+  Generation Context.
 
-## 2. Business Language Standards
+## 2. Test Design Rules
 
-Feature files are executable business specifications. Required:
+These decide *how many* scenarios there are and *what each one proves*.
 
-- Domain language in Feature title/description, scenario names, and reusable steps.
-- Consistent third-person voice using canonical actors.
-- Business contract-level wording reviewable without Java/selectors/request builders/helpers.
-- Tags classify execution layer, business module, capability, suite, polarity, and exclusions. TC IDs belong in scenario names, not tags.
-- Steps must answer: (1) business action, (2) business outcome, (3) business-rule-compliant resulting state. Forbidden:
-- Java/class/method names, snippet names, selectors/DOM IDs, endpoint paths, payload files, request builders, response matchers, page objects, API clients, fixtures/helpers, framework wording.
-- Implementation detail wording in feature/scenario steps (including `page`, `component`, `click`, `type`, `fill`, `selector`, `dialog locator`, and similar UI mechanics).
-- Tags for story IDs, AC IDs, plain `@TC-...`, case selection, or arbitrary metadata. Existing `@ADO#...` business/module tags are supported selection contracts.
-- Changing the approved business intent merely to fit glue. Reuse existing public business steps where they express the same intent; do not invent synonymous steps unnecessarily.
+1. **One scenario, one behavior.** A scenario proves one business rule: action → outcome → resulting state. Never mix
+   positive and negative behavior in one Scenario or Outline.
+2. **Group test points that share a flow.** Two or more TPs with the same `Given`, the same `When` and the same polarity
+   become one scenario with several `Then`, unless they need different data, the result would exceed 8 steps, or their
+   evidence types cannot be observed together. Every TP lands in exactly one scenario.
+3. **Products are rows, not scenarios.** A behavior every supporting product shares is one Scenario Outline over
+   `<product_type>` with one `@capability#<name>` tag; the products come from the registry (`ProductDatFiles`), never
+   typed by hand. Product differences in data go into the case data's `byProduct`, not into steps or extra columns.
+4. **Negative and permission cases use one representative product.** A validation or permission rule does not change
+   per product; repeating it per product multiplies run time without adding coverage.
+5. **Data variation that changes no step is data.** A field only some products have is case data (`byProduct`), not an
+   `Examples` column. An Outline numbered by `<case>` (`| case | dataset |`) is for datasets that are each a distinct
+   business case.
+6. **Every scenario stands alone.** Its `Given` provisions the state it needs; no scenario depends on another having run
+   or on data a previous run left behind.
+7. **Assert only what is verified.** A `Then` may not claim more than the implementation checks: a successful response
+   is not proof of persistence, an audit record or a downstream event unless that evidence is actually collected.
+8. **Smoke is the critical path.** `@ADO#smoke`: the minimal set that proves the capability works end to end (usually
+   the main positive case). Everything else is `@ADO#regression`.
+9. **Stable end state, never transient UI.** Assert the business state the user relies on, not spinners, loading
+   indicators or toasts that may vanish before they are read.
 
-### 2.1 Canonical actor names
+## 3. Identity and Placement
 
-Allowed actor names: `maker`, `checker`, `admin`, `user`.
+### 3.1 Feature name
 
-Rules:
+`featureName` = `{object}_{action}` in snake_case; it is the file name, the business tag (`@ADO#{featureName}`) and,
+upper-cased with `_` → `-`, the case-ID prefix (`trade_creation` → `TRADE-CREATION`).
 
-- Apply mapping consistently across the feature.
-- If two personas map to `maker`, distinguish by action, not by introducing new actor names.
+- **Object**: the stable domain entity, singular (`trade`, `portfolio`, `reason`). Every trade lifecycle event uses `trade`.
+- **Action**: the canonical business noun (`creation`, `cancellation`, `allocation`, `early_termination`,
+  `partial_novation_remaining`, `portfolio_reassignment`). Keep meaningful qualifiers (`partial`, `early`, `remaining`);
+  drop product names and generic verbs (`manage`, `handle`, `process`, `validate`, `execute`).
+- **Established stems win.** Reuse the existing name when one exists, even if it breaks the rule above:
+  `trade_approval_rejection`, `trade_step_out_full`, `trade_step_out_partial`, `reason_management`,
+  `product_ids_management`, `refdata_sync_management`.
+- Never derive the name from a story ID, module, Java class, endpoint or TP number. If the business identity is still
+  unclear, report it.
 
-### 2.2 Then-step business outcome test
+A broad suite tag (`@ADO#trade_lifecycle`) may sit next to the feature tag; it selects, it does not name.
 
-Every `Then` must answer: **What business goal has been achieved?** If the answer is a UI element instead of business result, rewrite.
-
-| UI-level (forbidden) | Business-semantic rewrite |
-|---|---|
-| Then the trade blotter section is displayed | Then the trade blotter is accessible |
-| Then the trade list loading indicator is displayed | Then the trades are available for selection |
-| Then the Save button is enabled | Then can submit the trade |
-| Then the error toast message appears | Then the submission is rejected with a reason |
-| Then the Allocation tab is visible | Then can view trade allocations |
-
-Never assert transient loading indicators/spinners; assert stable business end state.
-
-## 3. Naming Rules
-
-Derive identity fields:
-
-| Field | Rule |
-|---|---|
-| `featureName` | snake_case business capability, usually `{primary_business_object}_{primary_business_action}` |
-| `featureTag` | bare business stem, normally `featureName`; emitted as `@ADO#{featureTag}`, e.g. `@ADO#trade_creation` |
-| `featureModule` | uppercase business stem with `_` → `-`, e.g. `TRADE-CREATION`; do not include `@` or `ADO#` |
-
-`featureModule` must derive only from `featureTag`; never from story module, Java/package names, story IDs, existing TC IDs, or `TP-###`. An existing broad selection tag such as `@ADO#trade_lifecycle` need not equal every event filename. Preserve established selection tags; derive a new event's TC-ID prefix from its own business stem, not from a broad suite/module tag.
-
-### 3.1 `primary_business_object` conventions
-
-- Use stable domain entity noun, singular (`trade`, `allocation`, `portfolio`, `user`), never technical artifacts.
-- Keep qualifiers out of object segment (`partial` / `early` belong in action segment).
-- Use nearest stable parent entity (all trade lifecycle events use `trade`).
-- No plurals.
-
-### 3.2 `primary_business_action` conventions
-
-- Use base verb or established domain noun form (`create`, `cancel`, `approve`; or `cancellation`, `novation`, `allocation`).
-- Forbidden generic verbs: `manage`, `handle`, `process`, `validate`, `execute`.
-- This is a net-new naming rule; preserve established stems such as `reason_management` and `product_ids_management` during maintenance.
-- Event-driven stories use event concept in snake_case.
-- Preserve meaningful qualifiers (`partial`, `early`, `outgoing`, `remaining`).
-- For net-new naming, `full` may be dropped when default; in append/maintenance mode keep legacy stems unchanged.
-
-### 3.3 Trade event `featureName` derivation
-
-For trade lifecycle or trade-event scenarios, derive `featureName` by rule first, not by fixed lookup.
-
-**Default derivation**
-
-Use:
+### 3.2 Path
 
 ```text
-featureName = {primary_business_object}_{normalized_action}
+src/test/resources/features/{api|ui}/{domain}/{featureName}.feature
 ```
 
-Where:
+| Domain | `api/` | `ui/` |
+|---|---|---|
+| `trading` (creation, approval/rejection, lifecycle events, audit, query) | ✔ | ✔ |
+| `blotter` | ✔ | ✔ |
+| `reference_data` (currencies, marketers, portfolios, product IDs, reasons) | ✔ | |
+| `refdata` (legacy: `refdata_sync_management` only; new reference data goes to `reference_data`) | ✔ | |
+| `risk_management`, `product_management` | ✔ | |
+| `compose`, `notification`, `user_management` | | ✔ |
 
-- `primary_business_object` is usually `trade` for trade lifecycle/event operations.
-- `normalized_action` is the canonical business action inferred from story title + approved TP names.
-- Ignore product variants in the feature name (`FX TRF`, `NDF`, `Swap`, etc.).
-- Preserve meaningful qualifiers in the action segment such as:
-  - `partial`
-  - `early`
-  - `remaining`
-  - `outgoing`
-  - `full` (only when needed for compatibility or disambiguation)
+- API and UI are always separate files; the same `featureName` may exist under both. No `_api` / `_ui` / `_e2e` suffix,
+  no IDs in file names.
+- Check the actual tree before choosing; a new domain needs a reason (no existing domain fits) and is reported.
+- **Existing file → append mode**: add Scenario blocks only (no Feature header, tags or `Background:`), and continue
+  case numbering from the highest existing number of the same prefix.
 
-**Action normalization guidance**
-
-Prefer the canonical business noun/verb form:
-
-- `create` → `creation`
-- `amend` / `amendment` → `amendment`
-- `checker approve` / `checker approval` → use established `trade_approval_rejection` for the existing approval/rejection capability; otherwise derive from the approved scope
-- `audit` → `audit`
-- `cancel` / `cancellation` → `cancellation`
-- `early terminate` → `early_termination`
-- `partial terminate` → `partial_termination`
-- `allocate` / `allocation` → `allocation`
-- `portfolio reassign` / `portfolio reassignment` → `portfolio_reassignment`
-- `step out` → `step_out`
-- `novation remaining` → `novation_remaining`
-- `partial novation remaining` → `partial_novation_remaining`
-
-Drop generic verbs such as: `manage`, `handle`, `process`, `validate`, `execute`
-
-Normalize:
-
-- `configure` / `configuration` → `config`
-
-**Compatibility exceptions**
-
-Only use an explicit compatibility mapping when the repository already has an established legacy stem that must be preserved. Known examples:
-
-- `StepOutFull` → `trade_step_out_full`
-- `StepOutPartial` → `trade_step_out_partial`
-- Existing trade approval/rejection coverage → `trade_approval_rejection`
-
-**Decision rule**
-
-1. Extract the stable business object and real business action from story title + TP names.
-2. Remove product-specific wording and generic verbs.
-3. Normalize the action into canonical snake_case.
-4. Build `{object}_{action}`.
-5. If an established repository baseline uses a legacy variant, prefer the baseline name.
-6. If the business identity or domain is still uncertain, report the gap before creating a new stem/domain; do not silently route it to `general`.
-
-### 3.4 `businessDomain` routing (separate from feature naming)
-
-Current feature directories are channel-specific:
-
-| Domain | API | UI | Existing scope examples |
-|---|---|---|---|
-| `trading` | Yes | Yes | Trade creation, approval/rejection, lifecycle; audit currently API |
-| `reference_data` | Yes | No | Reference mappings, product IDs |
-| `product_management` | Yes | No | Cortex formula management |
-| `risk_management` | Yes | No | Risk management coverage |
-| `compose` | No | Yes | Product composition |
-| `notification` | No | Yes | Notifications |
-| `blotter` | Yes | Yes | Blotter behavior |
-| `user_management` | No | Yes | User preference/configuration |
-
-Known trading events (`Create`, `Amendment`, `CheckerApproval`, `Audit`, `PartialNovationRemaining`, `PartialTermination`, `PortfolioReassignment`, `Cancellation`, `EarlyTermination`, `NovationRemaining`, `StepOutFull`, `StepOutPartial`, `Allocation`) all map to `trading`. Rules:
-
-- This table records existing directories, not a restriction on approved future coverage. Inspect the actual tree before choosing a path.
-- Do not route all product work to `compose`; API product IDs and formula management already live in different domains.
-- `authentication` and `general` are not current feature domains. Escalate a new domain when no existing glue/snippet/data contract fits; do not create a directory merely from a keyword.
-- If multiple signals match, prefer the most business-facing object in title/description/confirmed TPs.
-- Technical module naming must not override business domain.
-- Never use story module, Java classes, endpoints, story IDs, TC IDs, or `TP-###` for feature naming.
-
-## 4. File Rules
-
-Default paths:
-
-- API: `{E2E_DIR}/src/test/resources/features/api/{businessDomain}/{featureName}.feature`
-- UI: `{E2E_DIR}/src/test/resources/features/ui/{businessDomain}/{featureName}.feature`
-- API and UI are always separate files. Rules:
-- Generate files only for layers with approved TPs.
-- Filenames are snake_case; no TC IDs/story IDs and no `_api` / `_ui` / `_e2e` suffixes.
-- Same `featureName` may exist under both `api/` and `ui/`.
-- Case data routes to `data/{api|ui}/{featureName}.json` through the event in the case ID. A snippet filename is not part of this binding and may be shared across features.
-- Ignore legacy source fields (`bddFeatureFile`, `apiFeatureFile`, `uiFeatureFile`).
-- If target file exists: read it, determine mode per layer (`create` / `append` / `not generated`), continue TC numbering by matching prefix.
-- In `append` mode: output scenario/scenario-outline blocks only; do not add top-level tags/Feature/description/Background.
-- In `append` mode: do not introduce a new top-level `Background:`; put setup explicitly in appended scenarios.
-
-## 5. Feature Level
-
-Target structure for a newly created feature:
+## 4. Feature Header
 
 ```gherkin
-@{layerTag} @ADO#{featureTag}
-Feature: {Business Object} {Capability} — Example FX Trading Platform
-  As a {canonical actor}
-  I want to {one-sentence business goal}
-  So that {business value}
+@api @ADO#trade_early_termination @ADO#trade_lifecycle
+Feature: Trade Early Termination API
+  As a maker
+  I want to terminate a live trade before its maturity
+  So that the trade stops accruing exposure once the client exits the position
 ```
 
-Rules:
+- Layer tag: `@api` or `@playwright`. Title: `{Business Capability} API` or `{Business Capability} E2E`, as in every
+  existing feature.
+- `@expected#none` on the Feature line when its API cases verify other evidence (database, audit) instead of the
+  response (implementation standard §5.4).
+- API features have no `Background:`. A UI feature may move an identical leading `Given` (typically the login) shared
+  by 2+ scenarios into `Background:`; assertions and data preparation stay in the scenarios.
+- Suite and polarity tags are never feature-level (they would select the whole file).
 
-- Use the `— Example FX Trading Platform` suffix for new feature titles. Existing `API` / `E2E` titles and personas are legacy conventions; do not rewrite them in append mode.
-- Use canonical actor names only; never `Admin` (capitalized) or story-specific role names.
-- API layer: `@api`; no API `Background:`.
-- UI layer: `@playwright`; `Background:` optional and only for stable reusable setup (for example login).
-- Background consolidation: if 2+ scenarios share identical `Given` (or identical `Given` + navigation `When`), move shared setup to `Background:`; keep assertions/dynamic data prep out of `Background:`.
+## 5. Scenarios
 
-## 6. Coverage Grouping
+### 5.1 Case ID and title
 
-Coverage Group standards:
+```gherkin
+@ADO#positive @ADO#smoke @capability#earlyTermination
+Scenario Outline: [TC-TRADE-EARLY-TERMINATION-<product_type>-API-001] Maker terminates a live <product_type> trade early
+```
 
-- One Coverage Group maps to one `Scenario` or `Scenario Outline`.
-- Every approved TP appears in exactly one Coverage Group unless human-approved plan says otherwise.
-- Grouping inputs: approved layer/tags/validation target/evidence/AC mapping/scenario name/reasoning.
-- Preserve each group's validation target and observable evidence.
-- One group must stay in one layer, one executable flow, one clear business purpose.
-- Do not mix positive and negative behavior in the same scenario or scenario outline.
-- `Grouping Basis` must justify compatibility using approved Phase 1 fields. Mandatory same-precondition grouping:
-- If 2+ TPs share identical `Given`, same `When`, and same polarity, they must be grouped into one scenario with multiple `Then` assertions unless:
-  - assertions require materially different data setup, or
-  - grouped scenario would exceed 8 steps, or
-  - observable evidence types are incompatible.
+- ID: `TC-{FEATURE-MODULE}[-{PRODUCT}]-{API|UI}-{NNN}`, inside `[...]` at the start of the scenario name. The case ID is
+  what binds the scenario to its test data; it is never a tag (`@TC-...`).
+- Product Outline: `<product_type>` in the ID. Product-independent case: no product segment
+  (`TC-TRADE-CREATION-API-004`). Numbered dataset Outline: `-API-<case>` at the end.
+- `NNN` is three digits, unique per full prefix; check existing features **and** the case rows in `data/api` and
+  `data/ui` before assigning one.
+- Title: what the actor does and what results, in business words, understandable without the code. One behavior, so no
+  "and"; a negative title names the rejected condition (`...is rejected when the counterparty is missing`).
 
-## 7. Scenario Level
+### 5.2 Tags
 
-TC-ID formats:
+| Level | Tags |
+|---|---|
+| Feature | layer (`@api` / `@playwright`), `@ADO#{featureName}`, optional suite tag (`@ADO#trade_lifecycle`), optional `@expected#none` |
+| Scenario | exactly one of `@ADO#positive` / `@ADO#negative`, exactly one of `@ADO#smoke` / `@ADO#regression` |
+| Product Outline | additionally exactly one `@capability#<name>` (case-sensitive, a `Capability` constant) |
 
-- API: `TC-{FEATURE_MODULE}[-{PRODUCT}]-API-{NNN}`
-- UI: `TC-{FEATURE_MODULE}[-{PRODUCT}]-UI-{NNN}`
-- Example: `[TC-TRADE-CREATION-FX_TRF-API-001]`; product-independent example: `[TC-REASON-MANAGEMENT-API-001]`. Rules:
-- `{FEATURE_MODULE}` comes from `featureTag`-derived `featureModule`.
-- `CaseId.fromScenarioName` reads the bracketed ID from the expanded scenario name. Use a three-digit sequence for new IDs; the parser accepts numeric sequences of other lengths in existing data.
-- Product outlines use `[TC-TRADE-CREATION-<product_type>-API-001]`; Examples must resolve registered products. Product-independent cases omit the product segment.
-- Numbered outlines are also supported, e.g. `[TC-TRADE-CREATION-FX_TRF-API-<case>]`; data rows use the expanded concrete IDs. Do not use `<case>` as a JSON row ID.
-- Before assigning an ID, check existing features and both `data/api` and `data/ui`, including product-template rows. A concrete case must not match multiple rows.
-- One Coverage Group normally becomes one scenario.
-- One scenario proves one behavior; target 3–8 executable steps when practical.
-- Preserve TP order within each layer.
-- UI steps must remain business flow level (no page/component/atomic contracts).
-- Every scenario should read as: business action → business result → business-rule-compliant state validation.
-- TC sequence scope is per full prefix, including product when present (`TC-{FEATURE_MODULE}[-{PRODUCT}]-{API|UI}`). Check expanded outline IDs as well as literal IDs.
-- In append mode, start from existing max sequence + 1 for matching prefix; if no matching prefix exists, start at `001`.
-- Scenario tags: one of `@ADO#positive` / `@ADO#negative`, then one of `@ADO#smoke` / `@ADO#regression`. Never generate `@TC-...` tags.
-- Layer/business tags may be feature-level; suite/polarity tags are scenario-level. For a `<product_type>` outline, use exactly one supported, case-sensitive `@capability#...` tag and the registry-backed product Examples (see implementation standards).
-- Scenario title format: `Scenario: [TC-ID] {specific English behavior}`. Scenario naming rules:
-- Describe business behavior/outcome, not technical implementation.
-- Include context + action + outcome.
-- Be specific; avoid vague wording.
-- Use user/business perspective.
-- No `and` in scenario name (split into multiple scenarios if needed).
-- Must be understandable by non-technical business readers.
-- Use active business wording.
-- Use consistent third-person role language.
-- Negative names must identify rejected condition. Scenario structure rules:
-- Use `Scenario Outline` for one behavior repeated over examples.
-- Do not combine positive and negative behavior in one scenario/outline.
+No story, AC or TP IDs as tags. `@wip` excludes a scenario from runs; it is not removed to force an incomplete case in.
 
-## 8. API Step Pattern Standards
+## 6. Step Language
 
-API feature steps describe business API behavior, not HTTP/glue mechanics. Rules:
+Feature files are business specifications: a reviewer who does not read Java must be able to approve them.
 
-- Use business language: actor, request/action, accepted/rejected outcome, persisted state, audit/event outcome, downstream business effect.
-- Do not expose HTTP methods/paths/headers, payload files, request builders, response matcher names, Java classes, service clients, fixtures/helpers.
-- Reuse existing public business steps without weakening the approved intent. Only add language/implementation when the existing steps cannot express it.
-- Status code and current-scenario schema/body validation must not appear as Gherkin steps.
-- `Given`: business precondition/data state; `When`: business request/action; `Then`: business outcome/evidence approved in Phase 1.
-- `Then` must not claim stronger evidence than planned implementation verifies.
-- Downstream automation uses Genie request/response helpers, JSON test data, recorded expected responses, and focused assertions. These implementation choices do not belong in feature steps. Contract outcome patterns:
-- Existing shared success step: `Then the 'trade' should be 'created' successfully` (object/action vary by business operation).
-- Existing shared rejection step: `Then failed to 'create' 'trade'`; there is also a variant with an expected status.
-- Preserve an existing domain-specific business outcome when it already expresses the approved evidence. Do not assume every illustrative sentence is an implemented step. (The shared outcome steps encapsulate status plus the current case's expected response; `trade_audit` uses its dedicated evidence rather than a response snapshot.) Business evidence patterns (use only when approved):
-- inclusion evidence: `Then the created {business object} should be included in the response`.
-- state evidence: `Then the {business object} should have status "{status}"`.
-- reason evidence: `Then the rejection reason should identify {business reason}`.
-- persistence/audit/event/side-effect evidence: `Then the {business object} should be recorded for {business purpose}`. Do not use data-completeness claims (for example “all configured reasons returned”) unless explicitly required by Phase 1 and implemented as business-field checks. API Business Language reference (canonical wording):
-- Given preconditions: valid/invalid submission data by actor; pending-approval/live/draft/dead trade provisioning; live trade with pending `<EventName>`.
-- When actions: Trade Creation/Amendment/event via API; approval/rejection/bulk approval; maker retrieves trade; actor-specific valid data setup.
-- Then outcomes: created/persisted with status; validation rejection; permission denial; amended terms updated; conflict rejection; event executed/rejected; final trade status; self-approval denied.
+- **Allowed**: canonical actors (`maker`, `checker`, `admin`, `user`), business objects, business actions, business
+  outcomes and states.
+- **Forbidden**: endpoints, HTTP verbs, payloads, file names, selectors, element keys, page/component names, UI mechanics
+  (`click`, `type`, `fill`, `select`), snippet or Java names, status codes, response matching.
+- `Given` = business precondition; `When` = the business action under test; `Then` = the business outcome.
+- **The Then test**: every `Then` answers *what business goal has been achieved?*
 
-## 9. UI Step Pattern Standards
+  | UI-level (rewrite) | Business outcome |
+  |---|---|
+  | the Save button is enabled | can submit the trade |
+  | the error toast appears | the submission is rejected with a reason |
+  | the Allocation tab is visible | can view trade allocations |
 
-UI feature steps contain business intent only. Examples:
+- **Reuse before inventing.** Use an existing public step when it expresses the same intent; a new synonym splits the
+  vocabulary and the glue. Changing the business intent to fit an existing step is not allowed either.
 
-- Existing role/login pattern: `Given maker is logged in to the trade portal`, then `When creates a new '<product_type>' trade`.
-- Business outcome pattern: `Then the trade status should be 'Live' in the blotter` (map to an existing flow step; do not add a synonym solely for this example).
-- Bad: `When user clicks the Create button`; `When user fills 'FX TRF' into product type`; `When user completes full trade lifecycle`. Rules:
-- One step = one user intent or one business-visible assertion.
-- No raw glue/selectors/clicks/fills/page-object names/fixtures/helpers.
-- Scenario-layer language must map to flow-level actions/assertions, not page/component contracts.
-- Use domain language and consistent third-person role language.
-- Multi-actor lifecycle flows are allowed.
-- Use `Given` for setup/state, `When` for action, `Then` for assertions. UI Business Language reference:
-- Given login/state: maker/checker login; Draft Pending Approval trade exists; Live trade exists; Pending Approval trade with `<EventType>` task exists.
-- When actions: create trade; approve/reject from portal/detail; perform cancellation from portal/detail; perform `<EventName>` on trade; perform amendment for `<FieldName>`; mid-scenario checker login for actor switch.
-- Then assertions: trade/event status in blotter/detail; bulk status results; event completed; approved/rejected; request rejected with error; action available/not available; lifecycle actions available/not available. Outcome wording conventions:
-- `completed successfully` for lifecycle/business event completion.
-- `approved successfully` / `rejected successfully` for checker decisions.
-- `submitted successfully` only for explicit submission into pending-approval workflow.
-- `request is rejected with an error` for negative execution outcomes. Role usage rule:
-- Role names appear only in login steps.
-- Non-login UI action/assertion steps are role-agnostic; active actor is implied by the most recent login step.
-- This rule applies to new UI wording, not API actor/permission steps. Some existing UI provisioning/event-trigger steps still name an actor; reuse their public contract where needed rather than expanding the legacy pattern.
+### 6.1 API steps
 
-## 10. Feature Annotation Standards
+- Preconditions reuse the provisioning steps: `a live '<product_type>' trade is created via api`,
+  `a '<product_type>' trade is submitted to pending approval via api`, `a draft ...`, `a dead ...`.
+- Shared outcomes: `the '<object>' should be '<action>' successfully`, `failed to '<action>' '<object>'`,
+  `failed to '<action>' '<object>' with status '<status>'`. They include the status code and the strict comparison with
+  the case's recorded response, so neither appears as a step of its own.
+- Evidence beyond the response (state, persistence, audit, rejection reason) is its own business `Then`, written only
+  when the TP asks for it: `the trade basic status is '<status>'`, `exactly one new audit record exists for action 'SUBMIT'
+  on the created trade`.
 
-Purpose: keep trace and test-design context next to executable specs; not automation instructions. These are authoring requirements for newly generated scenarios based on approved TPs, not metadata consumed or enforced by the runtime. Existing features do not consistently contain these annotations; do not invent TP/AC IDs when maintaining them without an approved source. Feature-level annotation:
+### 6.2 UI steps
 
-- Required in `create`; not added in `append`.
-- Place after Story/Goal/Scope and before `Background:`/scenarios.
-- Allowed keys: `businessDomain`, `validationScope`, `source`, `implementationBoundary`.
-- `implementationBoundary` must be generic and must not name implementation artifacts. Scenario-level annotation:
-- Required before every generated `Scenario` / `Scenario Outline` in both `create` and `append`.
-- Place immediately before scenario tags.
-- Allowed keys: `tp`, `ac`, `validationTarget`, `observableEvidence`, `testDataIntent`.
-- `tp` / `ac` must reference approved IDs; validation/evidence must come from approved Phase 1 fields.
-- `testDataIntent` describes business data intent only (no fixtures/builders/payload files/DB rows/helper names). Forbidden in annotations:
-- step definition names, snippet names, Java class/method names,
-- page objects/API clients/fixtures/helpers/request builders/response matchers,
-- selectors/endpoints/payload files/DB tables/environment IDs/implementation commands,
-- instructions to reuse/create specific automation artifacts.
+- Login: `maker is logged in to the trade portal` (also `checker`, `admin`, `user`). **Role names appear only in login
+  steps**; other UI steps are role-agnostic and act as the last logged-in user. A second login switches the actor.
+- Preconditions: `a Live '<product_type>' trade exists in the blotter` (also `Draft Pending Approval`, `Dead`,
+  `Draft`). They provision through the API and neither log in nor navigate.
+- One step = one user intent or one business-visible assertion: `creates a new '<product_type>' trade`,
+  `the trade has status 'Live' and event status 'New' in the blotter`.
+- Outcome wording: `completed successfully` (lifecycle event), `approved successfully` / `rejected successfully`
+  (checker decision), `submitted successfully` (into pending approval only), `request is rejected with an error`
+  (negative execution).
 
-## 11. Required Output Checks
+## 7. Traceability Comments
 
-Before returning, ensure:
+Every generated scenario carries its trace as Gherkin comments directly above its tags; a created file also carries
+one feature-level block below the description. They are for reviewers, never read by the runtime.
 
-- Every approved TP appears once in Coverage Grouping Plan, Scenario Blueprint, and Breakdown.
-- No scenario exists without an approved TP.
-- Scenario count is minimized via valid grouping without losing traceability.
-- Scenario language follows methodology + business-language standards.
-- API/UI scenarios keep implementation mechanics out of feature steps.
-- UI scenarios remain scenario-layer business language (no page/component/atomic contracts).
-- New UI role names appear only in login steps; existing public setup/trigger contracts are reused without inventing aliases. API actor-specific wording remains allowed.
-- Coverage grouping is justified by approved Phase 1 fields and grouping rules.
-- Every approved validation target + observable evidence is asserted or explicitly covered.
-- Generation Context explains evidence for object/action/module/tag/domain/path.
-- Generation Context declares each layer file mode: `create` / `append` / `not generated`.
-- API/UI files are separate.
-- Case IDs are in scenario names, resolve to the correct JSON event/channel, and do not duplicate existing IDs or match multiple rows; no plain `@TC-...` tags are added.
-- Domain routing uses the actual channel-specific tree; missing domain/product contracts are escalated rather than guessed.
-- Existing files are append-only.
-- AC Coverage Matrix covers every AC referenced by Phase 1.
+```gherkin
+  # tp: TP-003 | ac: AC-2
+  # validationTarget: a live trade is closed by early termination
+  # observableEvidence: trade status Terminated in the blotter
+  # testDataIntent: a live trade with a positive termination amount
+  @ADO#positive @ADO#regression @capability#earlyTermination
+  Scenario Outline: ...
+```
+
+- Feature level: `businessDomain`, `validationScope`, `source` (story and design references). Scenario level: `tp`,
+  `ac`, `validationTarget`, `observableEvidence`, `testDataIntent`.
+- Values come from the approved TPs; never invent TP or AC IDs, and never name artifacts (classes, snippets, endpoints,
+  files, tables) in them.
+
+## 8. Generation Context (returned with the files)
+
+For each layer: file path and mode (`create` / `append` / `not generated`); how `featureName`, domain and ID prefix
+were derived; the TP → scenario grouping with its reason; the AC coverage matrix; any reported gap or conflict.
+
+## 9. Review Checklist
+
+- [ ] Every approved TP is in exactly one scenario; no scenario without a TP; every AC of the TPs is covered.
+- [ ] Each scenario proves one behavior; no positive/negative mix; grouping follows §2 rule 2.
+- [ ] Every `Then` passes the business-outcome test and claims no more than is verified.
+- [ ] Product coverage is a `@capability#` Outline; negative/permission cases use one product.
+- [ ] Each scenario provisions its own state; no order dependency.
+- [ ] Name, path and ID prefix follow §3; IDs are unique against features and case data; no `@TC-` tags.
+- [ ] Exactly one polarity and one suite tag per scenario; no suite/polarity tags at feature level.
+- [ ] No implementation detail in steps; role names only in UI login steps; existing steps reused.
+- [ ] Append mode added scenarios only; numbering continues the prefix.
+- [ ] Trace comments present and sourced from approved TPs.
