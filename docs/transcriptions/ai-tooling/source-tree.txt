@@ -1,0 +1,79 @@
+Visible directory inventory from IMG_6379–6380.
+Project name, project number and employee filesystem path omitted.
+[collapsed] means contents were not shown; listed files are not necessarily transcribed.
+
+.claude/
+  agents/
+    ado-agent.md
+    ba-agent.md
+    bdd-agent.md
+    be-agent.md
+    codereview-agent.md
+    debug-agent.md
+    deploy-agent.md
+    fe-agent.md
+    plan-agent.md
+    security-gate-agent.md
+    test-agent.md
+    testcoverage-agent.md
+  commands/
+    ado-feature-health.md
+    codecommit.md
+    codemerge.md
+    codeoptimize.md
+    codereview.md
+    codetestcases.md
+    codeuserstory.md
+    codewithbdd.md
+    deploy.md
+    implementuserstory.md
+    new-project-setup.md
+    plan.md
+    review-story.md
+    sdlc-health-check.md
+    testcoverage.md
+    upsert-workflow-kb.md
+    ut-assist.md
+    ut-gate.md
+    validate-sdlc-config.md
+    writebddfeatures.md
+    writeuserstories.md
+  scripts/ [collapsed]
+  skills/
+    ba-user-story-authoring/ [collapsed]
+    fe-test-id-authoring/ [collapsed]
+    qa-api-test-authoring/
+      references/
+        api-implementation-mechanics.md
+        genie_rest_glue_catalog.md
+        reuse-and-snippet-architecture.md
+        workflow-and-guardrails.md
+      SKILL.md
+    qa-bdd-feature-authoring/
+      references/
+        canonical-step-patterns.md
+        detail-sinking-and-validation-placement.md
+        feature-file-organization-and-traceability.md
+        gherkin-authoring-rules.md
+        handoff-annotations.md
+      scripts/
+        gen-snippet-index.sh
+      SKILL.md
+    qa-bdd-test-execution/
+      SKILL.md
+    qa-e2e-test-authoring/
+      references/
+        genie_playwright_glue_catalog.md
+        reuse-and-snippet-architecture.md
+        ui-implementation-mechanics.md
+        workflow-and-guardrails.md
+      SKILL.md
+    qa-layer-test-design/
+      references/
+        api_detail_design.md
+        e2e_detail_design.md
+        ui_component_detail_design.md
+      SKILL.md
+  readme_commands.md
+  settings.json
+.github/ [collapsed]
