@@ -112,7 +112,12 @@ src/main/resources/
 src/test/java/com/example/module/oreo/
   OreoTest                                the Cucumber suite (features/, glue, report)
   testdata/*Test                          unit tests of the data code (section "Commands")
-  tools/TestDataTool                      the offline tool (section "Commands")
+  tools/                                  the offline tool (section "Commands"), one class per file:
+    TestDataTool                          the entry point: commands, data freshness
+    Checks, ExpectedFileChecks            check (ExpectedFileChecks: the recorded responses)
+    SyncExamples, ProductExamples         sync-examples
+    Compact, Lookup                       compact, case
+    FeatureCases, FeatureFile             case IDs of the feature files; the Gherkin reader and writer
 src/test/resources/
   features/api/{trading,refdata,risk_management}/, features/ui/trading/
   data/api/, data/ui/, data/setup/, data/dat/   the test data (section "Test data")
@@ -308,8 +313,8 @@ record the case again with `OREO_EXPECTED=update` (update mode does not read the
 
 ### Commands
 
-The offline tool is a normal test-source class:
-`src/test/java/com/example/module/oreo/tools/TestDataTool.java`.
+The offline tool is normal test-source code in `src/test/java/com/example/module/oreo/tools/`, entry point
+`TestDataTool.java`.
 The `test-data` Maven profile compiles it, refreshes test resources and supplies dependencies automatically.
 The Skill contains usage guidance only. From the project root on the company machine, use the same commands
 in PowerShell, macOS and Linux (each line is a separate operation):

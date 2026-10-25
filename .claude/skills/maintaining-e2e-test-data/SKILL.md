@@ -7,7 +7,7 @@ description: Use when the test data, feature files, recorded API responses or pr
 
 ## Overview
 
-The offline tools of the test data are a normal Java class in `src/test/java/com/example/module/oreo/tools/TestDataTool.java`, run through the Maven `test-data` profile. A plain `mvn test` (the pipeline) runs only the Cucumber suite `OreoTest`: it does not check the data. Run `check` before every commit that touches `src/test/resources/data/`, `src/test/resources/features/`, `ProductDatFiles`, `Capability`, or a step or snippet that names setup data.
+The offline tools of the test data are normal Java test code in `src/test/java/com/example/module/oreo/tools/` (entry point `TestDataTool.java`, one class per file), run through the Maven `test-data` profile. A plain `mvn test` (the pipeline) runs only the Cucumber suite `OreoTest`: it does not check the data. Run `check` before every commit that touches `src/test/resources/data/`, `src/test/resources/features/`, `ProductDatFiles`, `Capability`, or a step or snippet that names setup data.
 
 Paths are relative to the oreo-e2e root. Run Maven and the tool only where the user says oreo-e2e builds (the company machine); elsewhere hand over the commands.
 
@@ -37,7 +37,7 @@ with `-Dexec.args=<command>`. The company Maven repository must supply `exec-mav
 | `compact <event>` or `compact all` | Turns the recorded responses of the variants into patches on their base; nothing written on a problem |
 | `case <case ID>` | Prints the merged data of one case: layers, dat file, request, `dynamicFields`, `expectedBase`, expected file and response |
 
-The imports of `TestDataTool.java` name the package of `ProductDatFiles` (`com.example.module.oreo.testdata` here): in the company copy, the project's own.
+The imports of the files in `tools/` name the package of `ProductDatFiles` (`com.example.module.oreo.testdata` here): in the company copy, the project's own.
 
 ## What `check` checks
 
