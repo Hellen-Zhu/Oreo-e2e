@@ -18,7 +18,7 @@ import static com.example.module.oreo.testdata.Capability.*;
  * <ol>
  *   <li>Add its default dat file as {@code src/test/resources/data/dat/<P>/<P>.dat}</li>
  *   <li>Add a new enum constant here, named as the product ID, with the capabilities the product supports: the
- *       group {@link Capability#LIFECYCLE_EVENTS} (or {@code except(LIFECYCLE_EVENTS, ...)}) and the others one by
+ *       group {@link Capability#SUPPORT_CAPABILITY} (or {@code except(SUPPORT_CAPABILITY, ...)}) and the others one by
  *       one (the order of the constants is the order of the {@code Examples} rows; never put one first)</li>
  *   <li>Run {@code TestDataTool sync-examples} (skill {@code maintaining-e2e-test-data}): it writes the product
  *       into the {@code Examples} of every Outline tagged with one of its capabilities</li>
@@ -28,19 +28,19 @@ import static com.example.module.oreo.testdata.Capability.*;
 public enum ProductDatFiles {
 
     /** FX Total Return Forward — uses the standard TRF .dat template. */
-    FX_TRF(LIFECYCLE_EVENTS, FIXINGS),
+    FX_TRF(SUPPORT_CAPABILITY, FIXINGS),
 
     /** CorrOption (FX Correlation Option). */
-    FX_PSCRIPT(LIFECYCLE_EVENTS, FIXINGS),
+    FX_PSCRIPT(SUPPORT_CAPABILITY, FIXINGS),
 
     /** FX Floating Strike Barrier. */
-    FX_PSCRIPT_FSKO(LIFECYCLE_EVENTS, FIXINGS),
+    FX_PSCRIPT_FSKO(SUPPORT_CAPABILITY, FIXINGS),
 
     /**
      * TRF Generic product — uses dedicated FX_PSCRIPT_TRF template. Without cancellation, allocation, amendment and
      * portfolio reassignment: their old UI and API Examples had no FX_PSCRIPT_TRF row (to confirm).
      */
-    FX_PSCRIPT_TRF(except(LIFECYCLE_EVENTS, CANCELLATION, ALLOCATION, AMENDMENT, PORTFOLIO_REASSIGNMENT), FIXINGS),
+    FX_PSCRIPT_TRF(except(SUPPORT_CAPABILITY, CANCELLATION, ALLOCATION, AMENDMENT, PORTFOLIO_REASSIGNMENT), FIXINGS),
 
     /** Placeholder for FX Option: add data/dat/FX_OPT/FX_OPT.dat when its template is available. Supports nothing. */
     FX_OPT;
@@ -55,7 +55,7 @@ public enum ProductDatFiles {
         this(Set.of(), capabilities);
     }
 
-    /** The capabilities of {@code group} (such as {@link Capability#LIFECYCLE_EVENTS}) and {@code more}. */
+    /** The capabilities of {@code group} (such as {@link Capability#SUPPORT_CAPABILITY}) and {@code more}. */
     ProductDatFiles(Set<Capability> group, Capability... more) {
         EnumSet<Capability> set = EnumSet.noneOf(Capability.class);
         set.addAll(group);

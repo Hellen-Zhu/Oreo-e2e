@@ -21,11 +21,11 @@ API and UI data never read each other; only the code is shared.
 `ProductDatFiles` lists every product with its dat file and the capabilities it supports (`Capability`: `create`,
 `stepInFull`, `stepInPartial` and one per lifecycle event, `earlyTermination`, `novationRemaining`, `cancellation`,
 `allocation`, `amendment`, `partialTermination`, `partialNovationRemaining`, `stepOutFull`, `stepOutPartial`,
-`portfolioReassignment`, named as in the replay project's `framework/products.ts`; and `fixings`, which it has not yet).
-The trade lifecycle is also one group, `Capability.LIFECYCLE_EVENTS`: `create`, `stepInFull`, `stepInPartial` and the
-lifecycle events (`LIFECYCLE_EVENTS` there has the events only). A product names the group, or
-`except(LIFECYCLE_EVENTS, ...)` when it lacks some, and its other capabilities one by one
-(`FX_TRF(LIFECYCLE_EVENTS, FIXINGS)`).
+`portfolioReassignment`, named as in the replay project's `framework/products.ts`; then `fixings`, `cortexFormula` and
+`productUpload`). They also form one group, `Capability.SUPPORT_CAPABILITY`: every constant above (the replay
+project's `SUPPORT_CAPABILITY` has the events only). A product names the group, or `except(SUPPORT_CAPABILITY, ...)`
+when it lacks some, and any capability outside the group one by one (`FX_PSCRIPT_TRF(except(SUPPORT_CAPABILITY,
+CANCELLATION, ...), FIXINGS)`). A new constant joins the group only if every product that names the group supports it.
 Approval, rejection and query are not capabilities: an Outline that approves, rejects or queries what an event made
 carries that event's capability (`create`, `stepInFull`, `stepInPartial`, `cancellation`; a query of fixing data
 `fixings`). Each

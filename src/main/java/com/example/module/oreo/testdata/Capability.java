@@ -31,20 +31,22 @@ public enum Capability {
     STEP_OUT_FULL("stepOutFull"),
     STEP_OUT_PARTIAL("stepOutPartial"),
     PORTFOLIO_REASSIGNMENT("portfolioReassignment"),
-    /** Fixings on the trade detail page; not in the Playwright registry yet, which has no fixings spec. */
-    FIXINGS("fixings");
+    FIXINGS("fixings"),
+    CORTEX_FORMULA("cortexFormula"),
+    PRODUCT_UPLOAD("productUpload");
 
     /**
      * The trade lifecycle: booking (create, step in full / partial) and the events on a live trade. A product that
      * supports all of them names the group instead of each one, one that lacks some names
-     * {@code except(LIFECYCLE_EVENTS, ...)}. The Playwright registry's {@code LIFECYCLE_EVENTS} has the events only
+     * {@code except(SUPPORT_CAPABILITY, ...)}. The Playwright registry's {@code SUPPORT_CAPABILITY} has the events only
      * (its products list create and step in beside it). A new constant joins the group only if every product that
      * names the group supports it.
      */
-    public static final Set<Capability> LIFECYCLE_EVENTS = Collections.unmodifiableSet(EnumSet.of(
+    public static final Set<Capability> SUPPORT_CAPABILITY = Collections.unmodifiableSet(EnumSet.of(
             CREATE, STEP_IN_FULL, STEP_IN_PARTIAL,
             CANCELLATION, ALLOCATION, AMENDMENT, EARLY_TERMINATION, PARTIAL_TERMINATION, NOVATION_REMAINING,
-            PARTIAL_NOVATION_REMAINING, STEP_OUT_FULL, STEP_OUT_PARTIAL, PORTFOLIO_REASSIGNMENT));
+            PARTIAL_NOVATION_REMAINING, STEP_OUT_FULL, STEP_OUT_PARTIAL, PORTFOLIO_REASSIGNMENT, FIXINGS, CORTEX_FORMULA,
+            PRODUCT_UPLOAD));
 
     /** The tag of an Outline: {@code @capability#stepInFull}. */
     public static final String TAG_PREFIX = "@capability#";
