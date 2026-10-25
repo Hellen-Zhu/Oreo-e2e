@@ -262,6 +262,11 @@ recorded:
 A path is keys joined by `.`, `[n]` for one array element, `[*]` for all. A rule whose path is not in the response
 fails the recording. Never edit an expected file by hand: change the rule and record again.
 
+An API case that never compares its response with a recording (`trade_audit`: it calls a series of APIs, then checks
+the database) carries the tag `@expected#none`, on its Scenario or Scenario Outline line, or once on the Feature or
+Rule line for all of them. It has no expected file: `check` neither asks for one nor accepts one left from before
+the tag, and `response matches current scenario` fails in it. Not on an `Examples` table, not on a UI case.
+
 `var:<name>` records `"${var:<name>}"`, and only when the actual value is the variable's value; before each
 comparison the variable's value of that run is put in its place. It takes text, a number or a boolean, and a
 scenario that has not stored the variable fails. Example, a risk query by the trade of the case:
@@ -325,7 +330,7 @@ this profile. The company Maven repository needs `org.codehaus.mojo:exec-maven-p
 After deleting resource files, add `clean` before `process-test-classes` to remove stale copied files.
 
 - `check`: every data file loads, every case of every feature resolves, every row and event file has its feature,
-  every API case has its expected file and every expected file its case, the rules agree with the expected files,
+  every API case has its expected file (except those tagged `@expected#none`) and every expected file its case, the rules agree with the expected files,
   every setup name used exists, the expected files resolve and are compacted (a file the compaction would still change
   is a warning), the product Outlines' `Examples` match the registry, every product with a capability has its dat
   file. Exit code 1 on a problem. Run it before committing a change to the data, the features or the registry.
@@ -346,6 +351,7 @@ fails when none ran: should it report no tests (a JUnit Platform without the vin
 | New product | `ProductDatFiles` constant with its capabilities, and `data/dat/<P>/<P>.dat`; `TestDataTool sync-examples` writes it into the Outlines' Examples; `byProduct` only where its data or dynamic fields differ; run the API cases, compact, review the recorded files, commit (no base to declare: `defaults` covers every product). The skill `.claude/skills/onboarding-e2e-product` walks through it |
 | New positive case | nothing when it runs on the defaults; otherwise a row with the feature's ID; after the recording, compact |
 | New negative case | a row with the `request` change and `"dynamicFields": null` |
+| New API case that checks the database, not the response | the tag `@expected#none` on it (or on its Feature); no expected file |
 | New event | `data/<channel>/<event>.json`, named after the feature file; shared blocks through `use`. For its Outlines with `<product_type>`: a `Capability` constant named as in the replay project's `framework/products.ts`, the tag `@capability#<name>` on them, the capability on the products that support it, then `TestDataTool sync-examples` |
 | A field turns out dynamic | its rule in the event file (`defaults` or `byProduct`), then record again |
 | Change the default counterparty | `api/common.json`, `ui/common.json`, `setup/trade-create*.json` (three places, on purpose); record the API cases again |

@@ -295,9 +295,15 @@ final class Checks {
     private void everyApiCaseHasItsExpectedFile(Result result) throws IOException {
         ExpectedResponses expected = ExpectedResponses.standard();
         Set<Path> wanted = new TreeSet<>();
+        int none = 0;
         for (FeatureCases.FeatureCase c : featureCases) {
             if (!c.channelDir().equals("api")) continue;
             Path file = expected.fileFor(CaseId.parse(c.caseId()));
+            if (c.noExpected()) {
+                // Not added to wanted: a file left from before the tag is reported below as belonging to no case
+                none++;
+                continue;
+            }
             wanted.add(file.toAbsolutePath().normalize());
             if (!Files.isRegularFile(file)) {
                 result.errors.add(c.caseId() + ": no expected file " + project.relativize(file)
@@ -309,10 +315,15 @@ final class Checks {
             try (Stream<Path> walk = Files.walk(root)) {
                 for (Path file : walk.filter(p -> p.toString().endsWith(".json")).sorted().toList()) {
                     if (!wanted.contains(file.toAbsolutePath().normalize())) {
-                        result.errors.add(project.relativize(file) + " belongs to no API case of the feature files");
+                        result.errors.add(project.relativize(file) + " belongs to no API case of the feature files"
+                                + " that compares its response (a case tagged " + ExpectedResponses.NONE_TAG
+                                + " has none: delete the file, or take the tag off)");
                     }
                 }
             }
+        }
+        if (none > 0) {
+            result.notes.add(none + " API case(s) tagged " + ExpectedResponses.NONE_TAG + ": no expected file");
         }
     }
 
@@ -321,7 +332,7 @@ final class Checks {
     private void rulesAgreeWithExpectedFiles(Result result) {
         ExpectedResponses expected = ExpectedResponses.standard();
         for (FeatureCases.FeatureCase c : featureCases) {
-            if (!c.channelDir().equals("api")) continue;
+            if (!c.channelDir().equals("api") || c.noExpected()) continue;
             CaseId id = CaseId.parse(c.caseId());
             JsonNode file;
             try {
@@ -695,8 +706,16 @@ final class Lookup {
     private Lookup() {}
 
     static int run(String caseId) throws IOException {
-        TestDataTool.requireFreshData(ProjectPaths.projectRoot());
+        Path project = ProjectPaths.projectRoot();
+        TestDataTool.requireFreshData(project);
         CaseId id = CaseId.parse(caseId);
+        boolean noExpected;
+        try {
+            noExpected = FeatureCases.load(project.resolve("src/test/resources/features")).stream()
+                    .anyMatch(c -> c.caseId().equals(id.raw()) && c.noExpected());
+        } catch (RuntimeException e) {
+            noExpected = false; // a broken feature file is check's to report; the case's data still prints
+        }
         CaseData data = TestData.forCase(id.raw());
 
         StringBuilder out = new StringBuilder();
@@ -712,7 +731,10 @@ final class Lookup {
                 : data.datFile() != null ? data.datFile() + " (in the folder of the step's product)"
                 : "(the default of the step's product)").append('\n');
         out.append("Request:\n").append(Json.pretty(Json.parse(data.request())));
-        if (id.channelDir().equals("api")) {
+        if (id.channelDir().equals("api") && noExpected) {
+            out.append("Expected file: none (the case is tagged ").append(ExpectedResponses.NONE_TAG)
+                    .append(": its response is not compared with a recording)\n");
+        } else if (id.channelDir().equals("api")) {
             out.append("dynamicFields:\n");
             if (data.dynamicFields().isEmpty()) out.append("  (none)\n");
             for (Map.Entry<String, String> rule : data.dynamicFields().entrySet()) {
@@ -975,8 +997,10 @@ final class FeatureCases {
      * @param channelDir  {@code api} or {@code ui}: the folder under the features root
      * @param featureName the file name without {@code .feature}
      * @param title       the scenario name after the ID; in an Outline numbered by a column, with the row's values
+     * @param noExpected  the case or its Feature or Rule carries {@link ExpectedResponses#NONE_TAG}
      */
-    record FeatureCase(String caseId, String rowId, String channelDir, String featureName, String title) {}
+    record FeatureCase(String caseId, String rowId, String channelDir, String featureName, String title,
+                       boolean noExpected) {}
 
     private FeatureCases() {}
 
@@ -1001,15 +1025,30 @@ final class FeatureCases {
     static List<FeatureCase> cases(FeatureFile feature, String channelDir) {
         String featureName = feature.file().getFileName().toString().replaceFirst("\\.feature$", "");
         List<FeatureCase> cases = new ArrayList<>();
+        // Tags inherited as Cucumber does: the Feature's, then the current Rule's
+        boolean featureNone = false;
+        boolean ruleNone = false;
         for (FeatureFile.Block block : feature.blocks()) {
+            boolean none = block.tags().contains(ExpectedResponses.NONE_TAG);
+            if (block.kind() == FeatureFile.Kind.FEATURE) featureNone = none;
+            if (block.kind() == FeatureFile.Kind.RULE) ruleNone = none;
             boolean outline = block.kind() == FeatureFile.Kind.OUTLINE;
             if (block.rowId() == null || !(outline || block.kind() == FeatureFile.Kind.SCENARIO)) continue;
+            boolean noExpected = featureNone || ruleNone || none;
             String rowId = block.rowId();
             String title = title(feature, block);
             String where = "[FeatureCases] " + feature.file() + ": " + rowId;
+            if (block.examples().stream().anyMatch(t -> t.tags().contains(ExpectedResponses.NONE_TAG))) {
+                throw new IllegalStateException(where + ": " + ExpectedResponses.NONE_TAG + " on an Examples table;"
+                        + " put it on the Scenario Outline line (all its cases, or none, have expected files)");
+            }
+            if (noExpected && !channelDir.equals("api")) {
+                throw new IllegalStateException(where + ": " + ExpectedResponses.NONE_TAG + " is for API cases;"
+                        + " a UI case has no expected file anyway");
+            }
             long placeholders = PLACEHOLDER.matcher(rowId).results().count();
             if (placeholders == 0) {
-                cases.add(new FeatureCase(rowId, rowId, channelDir, featureName, title));
+                cases.add(new FeatureCase(rowId, rowId, channelDir, featureName, title, noExpected));
             } else if (!outline) {
                 throw new IllegalStateException(where + " has a placeholder, which only a Scenario Outline fills");
             } else if (rowId.contains(PRODUCT_PLACEHOLDER)) {
@@ -1025,9 +1064,9 @@ final class FeatureCases {
                 }
                 Set<String> ids = new LinkedHashSet<>();
                 products.forEach(p -> ids.add(rowId.replace(PRODUCT_PLACEHOLDER, p)));
-                ids.forEach(id -> cases.add(new FeatureCase(id, rowId, channelDir, featureName, title)));
+                ids.forEach(id -> cases.add(new FeatureCase(id, rowId, channelDir, featureName, title, noExpected)));
             } else {
-                cases.addAll(numbered(where, block, title, channelDir, featureName));
+                cases.addAll(numbered(where, block, title, channelDir, featureName, noExpected));
             }
         }
         return cases;
@@ -1035,7 +1074,7 @@ final class FeatureCases {
 
     /** An Outline whose ID ends with a column for the case number: one case per Examples row, each its own row. */
     private static List<FeatureCase> numbered(String where, FeatureFile.Block block, String title, String channelDir,
-                                              String featureName) {
+                                              String featureName, boolean noExpected) {
         String rowId = block.rowId();
         Matcher number = NUMBER_PLACEHOLDER.matcher(rowId);
         if (PLACEHOLDER.matcher(rowId).results().count() > 1 || !number.find()) {
@@ -1055,7 +1094,8 @@ final class FeatureCases {
                 if (!ids.add(id)) {
                     throw new IllegalStateException(where + ": two Examples rows give the case " + id);
                 }
-                cases.add(new FeatureCase(id, id, channelDir, featureName, fill(title, table.header(), row)));
+                cases.add(new FeatureCase(id, id, channelDir, featureName, fill(title, table.header(), row),
+                        noExpected));
             }
         }
         if (cases.isEmpty()) {

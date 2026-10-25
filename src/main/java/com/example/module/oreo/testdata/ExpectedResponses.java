@@ -19,6 +19,13 @@ import java.util.stream.Stream;
  */
 public final class ExpectedResponses {
 
+    /**
+     * The tag of an API case that never compares its response with a recording (it checks the database, say): on its
+     * Feature, Rule, Scenario or Scenario Outline line. Such a case has no expected file, and
+     * {@code response matches current scenario} fails in it.
+     */
+    public static final String NONE_TAG = "@expected#none";
+
     public static final String ENV = "OREO_EXPECTED";
     public static final String PROPERTY = "oreo.expected";
     private static final String UPDATE = "update";

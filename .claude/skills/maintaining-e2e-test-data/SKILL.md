@@ -46,7 +46,7 @@ One `[ok]` or `[FAIL]` line per check, its problems and `[warn]` lines below it:
 1. every data file loads (event files, `common.json`, setup files); every `byProduct` product has its dat file;
 2. every case of every feature resolves; its event file and channel match the feature;
 3. every row and event file has its feature;
-4. every API case has its expected file, every expected file its case;
+4. every API case has its expected file, every expected file its case; a case tagged `@expected#none` (on its Scenario / Outline, Rule or Feature line: it checks the database, not the response) has none, and a file left for it is a problem;
 5. the `dynamicFields` rules agree with the expected files (warning: a placeholder without a rule);
 6. the expected files resolve and are compacted (warning: a file `compact` would still change);
 7. every setup name the code, snippets or features use has its `data/setup/` file, except `trade-cancellation` and `trade-amendment` (not covered yet: the user's decision, `KNOWN_MISSING`);
@@ -75,4 +75,5 @@ One `[ok]` or `[FAIL]` line per check, its problems and `[warn]` lines below it:
 | Run from another folder | From oreo-e2e: the tool finds the project through `target/test-classes/data` |
 | `Examples` rows typed by hand | `sync-examples` |
 | Expected files written or patched by hand | Record them, then `compact` |
+| A case that checks the database fails `check` with `no expected file` | Tag it `@expected#none`; never record a response it does not compare |
 | A check loosened, or a name added to `KNOWN_MISSING`, to get `[ok]` | Fix the data; `KNOWN_MISSING` is the user's decision |

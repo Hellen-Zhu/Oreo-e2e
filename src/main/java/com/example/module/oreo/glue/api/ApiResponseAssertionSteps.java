@@ -26,10 +26,12 @@ public class ApiResponseAssertionSteps {
     private static final Logger log = LoggerFactory.getLogger(ApiResponseAssertionSteps.class);
 
     private RestServiceResolver.Context ctx;
+    private Scenario scenario;
 
     @Before
     public void beforeScenario(Scenario scenario) {
         this.ctx = RestServiceResolver.from(scenario);
+        this.scenario = scenario;
     }
 
     @Then("^response body contains a key '(.+)' as '(.+)'$")
@@ -82,13 +84,19 @@ public class ApiResponseAssertionSteps {
      * (a patch file is applied to its base first). A missing file is recorded (the actual response with the case's
      * {@code dynamicFields} masked, in full) and the scenario fails once, so the recording is reviewed; with
      * {@code OREO_EXPECTED=update} (or {@code -Doreo.expected=update}) the file is rewritten without being read and
-     * the step passes. A {@code ${var:<name>}} value of the file is the scenario variable of that name.
+     * the step passes. A {@code ${var:<name>}} value of the file is the scenario variable of that name. Fails in a
+     * case tagged {@link ExpectedResponses#NONE_TAG}, which has no expected file by design.
      */
     @Then("^response matches current scenario$")
     public void responseMatchesCurrentScenario() {
         String tcKey = ctx.find("_tc.key");
         if (tcKey == null) {
             throw new AssertionError("[ApiResponseAssertionSteps] No [TC-...] case ID in the scenario name");
+        }
+        if (scenario.getSourceTagNames().contains(ExpectedResponses.NONE_TAG)) {
+            throw new AssertionError("[ApiResponseAssertionSteps] " + tcKey + " is tagged "
+                    + ExpectedResponses.NONE_TAG + " but compares its response with a recording: take the tag off,"
+                    + " or use a step that does not end in 'response matches current scenario'");
         }
         CaseId id = CaseId.parse(tcKey);
         ExpectedResponses expectedResponses = ExpectedResponses.standard();
