@@ -2,7 +2,7 @@
 
 How a generated feature is made executable in oreo-e2e: test data, snippets, element repository, Java glue and
 verification. What the scenarios say is decided by the [generation standard](bdd-feature-generation-standards.md);
-the test data format in full is in the README, section "Test data". Where this document and the code disagree, the
+the test data format in full is in [docs/test-data.md](../test-data.md). Where this document and the code disagree, the
 code wins and this document is fixed.
 
 ## 1. How a Scenario Runs
@@ -138,7 +138,7 @@ designing a new one.
 
 ## 5. Test Data
 
-Full rules: README, "Test data". The essentials:
+Full rules: [docs/test-data.md](../test-data.md). The essentials:
 
 ### 5.1 Case data — `data/{api|ui}/{event}.json`
 

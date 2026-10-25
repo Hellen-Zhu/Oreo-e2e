@@ -31,7 +31,7 @@ Read this before changing files. It holds the rules and the traps; the details l
 | Write or append feature files | `docs/standards/bdd-feature-generation-standards.md` |
 | Implement steps, snippets, glue, data; verify | `docs/standards/bdd-feature-implementation-standards.md` |
 | Built-in steps | `docs/genie_rest_glue_catalog.md`, `docs/genie_playwright_glue_catalog.md` |
-| Test data formats, recorded responses, the tool's commands | `README.md`, section "Test data" |
+| Test data formats, recorded responses, the tool's commands | `docs/test-data.md` |
 | Change data, features, recordings or the registry | skill `maintaining-e2e-test-data` |
 | Add a product | skill `onboarding-e2e-product` |
 
