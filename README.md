@@ -1,16 +1,80 @@
-# oreo-e2e: the Java E2E project with layered test data
+# oreo-e2e
 
-This published copy uses anonymized counterparty and portfolio identifiers, example internal type names, and placeholder environment settings. DAT files are placeholders. Restore approved local test data and configuration in the company environment before running tests; do not commit credentials or real trade data.
+E2E tests of the OREO trade portal: Java + Cucumber on the Genie framework, in two channels, API and UI
+(Playwright). Test data is layered JSON per lifecycle event; API responses are recorded and compared strictly
+(section "Test data").
 
-The Java + Cucumber (Genie) E2E project's file tree, transcribed from the user's photos, with its test data moved
-from YAML to layered JSON case data, setup files and recorded API responses compared strictly (section "Test data").
-Design and reasons: `docs/superpowers/specs/2026-10-16-oreo-e2e-test-data-design.md`.
+This published copy uses anonymized counterparty and portfolio identifiers, example internal type names, and
+placeholder environment settings. DAT files are placeholders. Restore approved local test data and configuration in
+the company environment before running tests; do not commit credentials or real trade data.
 
-The folders follow the E2E project's layout (`glue`, `testdata`, `utils`, `OreoModule`, `OreoModuleConfiguration`
-in `src/main`; `OreoTest`, `data`, `features/ui/trading`, `genie.properties`, `log4j2.xml` in `src/test`). The
-package is `com.example.module.oreo` because this repository is public: rename it to the E2E project's package when
-copying. Not created, as they need Genie or were not seen: `META-INF/services`, `snippet/`, `cucumber.xml`,
-`elements/`, `log4j2.xml`, the other environments' properties.
+## Quick start (company machine)
+
+| Goal | Command |
+|---|---|
+| Run the E2E suite (what the pipeline runs) | `mvn test` |
+| Check the test data before a commit (unit tests of the data code, then `check`) | `mvn -Ptest-data process-test-classes` |
+| See what one case sends and is compared with | `mvn -Ptest-data process-test-classes "-Dexec.args=case <case ID>"` |
+| Add a product | skill `.claude/skills/onboarding-e2e-product` |
+| Change data, features, recordings or the registry | skill `.claude/skills/maintaining-e2e-test-data` |
+
+## How the cases are organised
+
+- **One feature file per lifecycle event and channel** (`features/api/trading/trade_creation.feature`,
+  `features/ui/trading/trade_early_termination.feature`), with one event data file of the same name
+  (`data/api/trade_creation.json`).
+- **A product is a row, not a file.** Each Scenario Outline whose case ID has `<product_type>` carries one
+  `@capability#<name>` tag; its `Examples` are the products of that capability in `ProductDatFiles`, written by
+  `TestDataTool sync-examples`. A new product is one registry constant and one dat file; product differences go into
+  `byProduct` of the event files.
+- **The case ID in the scenario name selects the data**: `[TC-TRADE-CREATION-FX_TRF-API-001]` → event
+  `trade_creation`, product `FX_TRF`, channel API, case `001`.
+
+## How a scenario runs
+
+1. `ScenarioLifecycleHooks` reads the case ID from the scenario name and merges the case's data
+   (`TestData.forCase`): `defaults` → `byProduct[P]` → the case's row → the row's `byProduct[P]`.
+2. It puts the request into the scenario context (`_tc.key`, `_tc.request`, `_tc.request.<field>`, flat leaves such as
+   `basic.counterpartyName`, `_tc.datFile`) and writes the applied layers to the report.
+3. The steps (`glue/api`, `glue/ui`) and the snippets (`src/main/resources/snippet`) read it from there; setup data
+   (`data/setup/<name>.json`) prepares what a case needs (a live trade, a mocked risk calculation).
+4. API cases end with `response matches current scenario`: a strict comparison with
+   `data/api/expected/<event>/<caseId>.json`, masked by the case's `dynamicFields`.
+
+## Status
+
+**Transcription.** The E2E project's files are typed in from the user's photos as they are, without guessing missing
+code; only the company package prefix is written `com.example` and the accounts' e-mail domain `example.com`, since this
+repository is public. Comments the user did not photograph are left out. The project is not built here, and until all
+files are in, `mvn test` is not expected to pass. Rename the package to the E2E project's when copying.
+
+Coverage of the lifecycle events (`Y`: the event data file exists; `–`: the feature exists, its data file does not yet):
+
+| Event | API feature | API data | UI feature | UI data |
+|---|:-:|:-:|:-:|:-:|
+| trade_creation | Y | Y | Y | Y |
+| trade_early_termination | Y | Y | Y | Y |
+| trade_allocation | Y | Y | Y | – |
+| trade_novation_remaining | | | Y | Y |
+| trade_amendment | Y | – | Y | – |
+| trade_cancellation | Y | – | Y | – |
+| trade_checker_approval / trade_approval_reject | Y | – | Y | – |
+| trade_fixings | Y | – | Y | – |
+| trade_partial_novation_remaining | Y | – | Y | – |
+| trade_partial_termination | Y | – | Y | – |
+| trade_portfolio_reassignment | Y | – | Y | – |
+| trade_step_out_full | Y | – | Y | – |
+| trade_step_out_partial | Y | – | Y | – |
+| trade_query | Y | – | | |
+| refdata_sync_management | Y | Y | | |
+| risk_metric_retrieval | Y | Y | | |
+
+The setup files `trade-cancellation` and `trade-amendment` do not exist yet (`KNOWN_MISSING` of `TestDataTool`).
+
+Placeholders, to be replaced by the E2E project's file (a comment only; Java: an empty class): `.gitattributes`,
+`.mcp.json`, `azure-pipelines-maven.yml`, `META-INF/services/com.example.genie.module.GenieModule`,
+`glue/hooks/PlaywrightTraceHooks.java` and the dat files `data/dat/{FX_TRF,FX_PSCRIPT,FX_PSCRIPT_FSKO,FX_PSCRIPT_TRF}`.
+Not in this copy: the other environments' properties (enrich, pt, sit).
 
 ## Problem it solves
 
@@ -20,81 +84,42 @@ case carried a hand-copied full response (770 lines for 15 API cases); a missing
 
 ## Layout
 
-**Current stage: transcription.** The E2E project's files are typed in from the user's photos as they are, without
-guessing missing code and without making the project compile; only the company package prefix is written `com.example`
-and the accounts' e-mail domain `example.com`, since this repository is public. Comments the user did not photograph are
-left out (only comments are left out). Until all files are in, `mvn test` is not expected to pass.
-
-The folders follow the E2E project. Files marked *placeholder* hold only a comment (Java: an empty class) and are
-there so the tree matches; copy the real file over them from the E2E project.
-
 ```
-pom.xml, .gitignore
-.gitattributes, .mcp.json, azure-pipelines-maven.yml, .claude/, docs/   placeholders
-.claude/skills/onboarding-e2e-product/   skill: a new product
-.claude/skills/maintaining-e2e-test-data/   skill: the offline checks and tools of the test data
-                                  (Maven test-data profile, "Commands")
+pom.xml                                   build; profile test-data: the unit tests of the data code, then TestDataTool
+azure-pipelines-maven.yml                 the pipeline: mvn test (placeholder)
+.claude/skills/onboarding-e2e-product/    skill: a new product
+.claude/skills/maintaining-e2e-test-data/ skill: the offline checks and tools of the test data
 src/main/java/com/example/module/oreo/
-  OreoModule.java, OreoModuleConfiguration.java   transcribed from the E2E project
-  glue/ScenarioContext.java       transcribed from the E2E project
-  glue/ui/PlaywrightServiceResolver.java, CommonE2EInteraction.java, CommonE2EAssertion.java,
-          CommonHelpers.java, LoginSteps.java, NewTradeSteps.java, ToastSteps.java,
-          TradeDetailSteps.java, TradePortalSteps.java, TradeLifecycleEventSteps.java,
-          TradeProvisioningSteps.java   transcribed from the E2E project
-  glue/ui/RiskMetricSteps.java    the E2E project's risk metrics mocks, on TestData, both steps in one method
-  glue/ui/ToastRecorder.java      records every toast as it appears, so ToastSteps asserts on the record
-  glue/api/RestServiceResolver.java, ApiRequestSteps.java, ApiResponseAssertionSteps.java,
-          TradeApiSteps.java   transcribed from the E2E project
-  glue/hooks/ScenarioLifecycleHooks.java, E2EScenarioHooks.java   transcribed from the E2E project
-  glue/hooks/PlaywrightTraceHooks          placeholder
-  glue/ui/LoginSteps.java                  "<role> is logged in to the trade portal" (authentication_login.snippet)
-  glue/ui/NewTradeSteps.java               trade_creation.snippet
-  glue/ui/TradeProvisioningSteps.java      "a Live '<P>' trade exists in the blotter" (API, setup data trade-create)
-  glue/ui/TradeLifecycleEventSteps.java    lifecycle_event / common_trade_action / trade_early_termination snippets
-  glue/ui/CommonE2EAssertion, CommonE2EInteraction, CommonHelpers, PlaywrightServiceResolver,
-          ToastSteps, TradeDetailSteps, TradePortalSteps            placeholders
-  testdata/ProductDatFiles.java   the products: dat file and capabilities ("Products and capabilities")
-  testdata/Capability.java        what a product can be tested for: the @capability# tag names
-  testdata/TestData, TestDataRepository, CaseData, SetupData, CaseId, JsonLayers, Json,
-          ExpectedResponses, ResponseMasker, ProjectPaths, TradeRequests   test data and recording ("Test data")
-  utils/DateUtil.java, RestApiUtil.java   transcribed from the E2E project
+  OreoModule, OreoModuleConfiguration     the Genie module and its settings (risk engine mode)
+  glue/ScenarioContext                    the scenario context
+  glue/hooks/                             ScenarioLifecycleHooks (test data into ctx), E2EScenarioHooks,
+                                          PlaywrightTraceHooks (placeholder)
+  glue/api/                               ApiRequestSteps, ApiResponseAssertionSteps, TradeApiSteps,
+                                          RestServiceResolver
+  glue/ui/                                LoginSteps, NewTradeSteps, TradeLifecycleEventSteps, TradeProvisioningSteps
+                                          ("a Live '<P>' trade exists in the blotter"), TradeDetailSteps,
+                                          TradePortalSteps, ToastSteps + ToastRecorder (records every toast as it
+                                          appears), RiskMetricSteps (risk metrics mocks), CommonE2E*, CommonHelpers,
+                                          PlaywrightServiceResolver
+  testdata/                               ProductDatFiles (products and capabilities), Capability, TestData,
+                                          TestDataRepository, CaseData, CaseId, SetupData, JsonLayers, Json,
+                                          JsonPatch, ExpectedResponses, ExpectedCompaction, ResponseMasker,
+                                          DataPlaceholders, ProjectPaths, TradeRequests
+  utils/                                  DateUtil, RestApiUtil
 src/main/resources/
-  META-INF/services/com.example.genie.module.GenieModule   placeholder (named after the GenieModule interface there)
-  snippet/api/common_api.snippet, common_trade_action.snippet, trade_creation.snippet,
-          trade_early_termination.snippet, trade_query.snippet,
-          snippet/ui/components/*.snippet, snippet/ui/flows/*.snippet,
-          snippet/ui/pages/*.snippet, elements/**/*.json,
-          pom.xml, genie.properties, log4j2.xml   transcribed from the E2E project
-  cucumber.xml                    transcribed from the E2E project
+  snippet/api/*.snippet, snippet/ui/{flows,pages,components}/*.snippet
+  cucumber.xml, META-INF/services/        (the services file is a placeholder)
 src/test/java/com/example/module/oreo/
-  OreoTest.java                   the Cucumber run (features/; glue and report set here)
-  testdata/ResponseMaskerTest, ExpectedResponsesTest, JsonPatchTest, TestDataRepositoryTest, JsonLayersTest
-                                  unit tests of what decides a case's request and verdict (not in a plain mvn
-                                  test); to be deleted after one green run on the company machine
+  OreoTest                                the Cucumber suite (features/, glue, report)
+  testdata/*Test                          unit tests of the data code (section "Commands")
+  tools/TestDataTool                      the offline tool (section "Commands")
 src/test/resources/
-  data/api/, data/ui/, data/setup/   the test data ("Test data")
-  data/common.json                left from an earlier design; nothing reads it (kept on purpose)
-  testdata-fixtures/data/         small data files for the loader's unit tests
-  data/dat/<PRODUCT ID>/<PRODUCT ID>.dat   placeholders: FX_PSCRIPT, FX_PSCRIPT_FSKO, FX_PSCRIPT_TRF, FX_TRF
-  elements/components|pages/*.json       the files the replay project has (../elements/) copied; the others []
-  features/ui/trading/, features/api/trading/   creation and the lifecycle events (API: also checker approval and
-                                  query), as in the E2E project; most of their snippets are not here yet
-                                  (product column product_type, @capability# tags, Examples in registry order)
-  features/api/refdata/, risk_management/   refdata sync, risk metric retrieval, as in the E2E project
-  genie.properties, log4j2.xml          settings (addresses and accounts are placeholders)
-  enrich, pt, sit .properties, log4j2.xml   placeholders
+  features/api/{trading,refdata,risk_management}/, features/ui/trading/
+  data/api/, data/ui/, data/setup/, data/dat/   the test data (section "Test data")
+  data/common.json                        left from an earlier design; nothing reads it (kept on purpose)
+  elements/{components,pages}/*.json      the UI element keys
+  genie.properties, log4j2.xml            settings (addresses and accounts are placeholders)
 ```
-
-## How a step maps to the E2E project
-
-| E2E project | Here |
-|---|---|
-| feature line -> FLOW snippet | a Cucumber step method (`steps/`) doing the snippet's lines in order |
-| PAGE / COMPONENT snippet, built-in step on `'<element key>'` | a page object method calling `OreoUi` with the same element key |
-| `ctx.clickAndWaitForResponse`, `clickWithMockedResponse`, `clickAndCaptureResponse` | the `OreoUi` methods of the same names |
-| `RestApiUtil.postMultipart(...)` | `OreoApi.postMultipart(...)` |
-| `ctx.riskEngineMode()` | `OreoConfig.riskEngineMode()`; `RiskCalculation.clickUsingMode` = the switch of TradeLifecycleEventSteps |
-| `from stored variable 'earlyTermination.amount'` | `ctx.text("earlyTermination.amount")`, injected by the hook |
 
 Taken from the replay project, not seen in the Java code: the login testids, `/checker/tasks/<taskId>/approve`
 with `{}`, `/trades/calculate-risk-for-new` for Book (mocked like the trade's calculation), the trade detail check of
@@ -291,8 +316,11 @@ mvn -Ptest-data process-test-classes "-Dexec.args=case TC-TRADE-CREATION-FX_TRF-
 mvn -Ptest-data process-test-classes "-Dexec.args=compact trade_creation"
 ```
 
-The first command defaults to `check`. These commands stop before test execution: they do not run Cucumber
-or unit tests. A failed check fails Maven. Plain `mvn test` retains its existing behavior and does not activate
+The first command defaults to `check`. Each command first runs the five unit tests of the code that decides what a
+case sends and what its response is compared with (`ResponseMaskerTest`, `ExpectedResponsesTest`, `JsonPatchTest`,
+`TestDataRepositoryTest`, `JsonLayersTest`; their data is written in the tests themselves, none of it lives under
+`src/test/resources`): a failing one stops Maven before the tool reads any data. The commands stop before the
+`test` phase: they do not run Cucumber. A failed check fails Maven. Plain `mvn test` retains its existing behavior and does not activate
 this profile. The company Maven repository needs `org.codehaus.mojo:exec-maven-plugin:3.6.4`.
 After deleting resource files, add `clean` before `process-test-classes` to remove stale copied files.
 
@@ -307,15 +335,9 @@ After deleting resource files, add `clean` before `process-test-classes` to remo
   file, the request, the `dynamicFields`, the `expectedBase`, the expected file (full, or patch on which base) and the
   expected response in full.
 
-```bash
-mvn test -Dtest='com.example.module.oreo.testdata.*Test'
-```
-
-Runs the five unit tests of the code that decides what a case sends and what its response is compared with
-(`ResponseMaskerTest`, `ExpectedResponsesTest`, `JsonPatchTest`, `TestDataRepositoryTest`, `JsonLayersTest`, with
-the fixtures in `testdata-fixtures/`); the pom keeps them out of a plain `mvn test`. They are JUnit 4: should the
-command report no tests (a JUnit Platform without the vintage engine), add `org.junit.vintage:junit-vintage-engine`
-in test scope. They go once they have passed on the company machine.
+The unit tests stay out of a plain `mvn test` (the pipeline runs `OreoTest` only). They are JUnit 4, and the profile
+fails when none ran: should it report no tests (a JUnit Platform without the vintage engine), add
+`org.junit.vintage:junit-vintage-engine` in test scope. Change a rule of the data code together with its test.
 
 ### Maintenance
 

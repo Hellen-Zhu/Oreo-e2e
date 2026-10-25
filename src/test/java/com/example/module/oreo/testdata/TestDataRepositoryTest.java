@@ -1,8 +1,19 @@
 package com.example.module.oreo.testdata;
 
 import com.example.module.oreo.utils.DateUtil;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
+import java.io.IOException;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 
@@ -12,9 +23,136 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+/**
+ * The data files of these tests are written here, into a temporary folder, and read through a class loader that sees
+ * that folder only: the project's own {@code data/} is never read, and no fixture lives under {@code src/test/resources}.
+ */
 public class TestDataRepositoryTest {
 
-    private final TestDataRepository repo = new TestDataRepository("testdata-fixtures/data/");
+    @ClassRule
+    public static final TemporaryFolder TMP = new TemporaryFolder();
+
+    private static URLClassLoader fixtures;
+
+    private final TestDataRepository repo = new TestDataRepository("data/");
+    private ClassLoader previousLoader;
+
+    @BeforeClass
+    public static void writeFixtures() throws IOException {
+        // Shared blocks
+        write("api/common.json", """
+                { "shared": {
+                    "base": { "request": { "basic": { "a": "1", "premium": 10 } } },
+                    "extra": { "request": { "basic": { "udf": ["x"] } }, "dynamicFields": { "msg": "type" } } } }""");
+        // Every layer
+        write("api/sample_event.json", """
+                {
+                  "defaults": { "use": ["base"], "dynamicFields": { "data.id": "type" },
+                    "expectedBase": "TC-SAMPLE-EVENT-<product_type>-API-001" },
+                  "byProduct": { "FX_PSCRIPT_TRF": { "request": { "basic": { "premium": null } } } },
+                  "cases": [
+                    { "id": "TC-SAMPLE-EVENT-<product_type>-API-002", "use": ["extra"],
+                      "byProduct": { "FX_PSCRIPT_TRF": { "request": { "basic": { "ccy": "" } }, "expectedBase": null } } },
+                    { "id": "TC-SAMPLE-EVENT-API-004", "_comment": "a negative case drops the rules",
+                      "request": { "basic": { "a": "2" } }, "dynamicFields": null }
+                  ]
+                }""");
+        // A block of the file's own, an _append, and dates filled in when the case runs
+        write("api/block_event.json", """
+                {
+                  "shared": { "target-amount": {
+                    "request": { "data": { "_append": [ { "key": "newTargetAmount", "value": 1000, "type": "Numeric" } ] } } } },
+                  "defaults": { "request": {
+                    "data": [
+                      { "key": "newCptyName", "value": "A", "type": "Text" },
+                      { "key": "novationDate", "value": "${date:T}", "type": "Date" }
+                    ],
+                    "comments": "settles on ${date:T+2}, booked by ${userName}" } },
+                  "byProduct": { "FX_TRF": { "use": ["target-amount"] } },
+                  "cases": [
+                    { "id": "TC-BLOCK-EVENT-<product_type>-API-002", "_comment": "an _append of a key the list already has",
+                      "request": { "data": { "_append": [ { "key": "newCptyName", "value": "B", "type": "Text" } ] } } },
+                    { "id": "TC-BLOCK-EVENT-API-003", "_comment": "a case without a product names the block itself",
+                      "use": ["target-amount"] },
+                    { "id": "TC-BLOCK-EVENT-API-004", "_comment": "an _append with no list under it",
+                      "request": { "udf": { "_append": [ { "key": "x", "value": "1", "type": "Text" } ] } } }
+                  ]
+                }""");
+        // The dat file as case data
+        write("api/dat_event.json", """
+                {
+                  "byProduct": { "FX_PSCRIPT": { "datFile": "variant.dat" } },
+                  "cases": [
+                    { "id": "TC-DAT-EVENT-<product_type>-API-002",
+                      "byProduct": { "FX_TRF": { "datFile": "variant.dat" }, "FX_PSCRIPT": { "datFile": null } } },
+                    { "id": "TC-DAT-EVENT-FX_TRF-API-003", "datFile": "missing.dat" },
+                    { "id": "TC-DAT-EVENT-API-004", "_comment": "no product: the step's product folder", "datFile": "variant.dat" }
+                  ]
+                }""");
+        write("dat/FX_TRF/variant.dat", "# a variant dat file of FX_TRF");
+        write("dat/FX_PSCRIPT/variant.dat", "# a variant dat file of FX_PSCRIPT");
+        // Broken event files, one mistake each
+        write("api/two_rows.json", """
+                { "cases": [ { "id": "TC-TWO-ROWS-<product_type>-API-001" }, { "id": "TC-TWO-ROWS-FX_TRF-API-001" } ] }""");
+        write("api/bad_key.json", """
+                { "byproduct": {} }""");
+        write("api/bad_use.json", """
+                { "cases": [ { "id": "TC-BAD-USE-API-009", "use": ["nope"] } ] }""");
+        write("api/bad_base.json", """
+                { "defaults": { "expectedBase": "TC-OTHER-EVENT-<product_type>-API-001" } }""");
+        write("api/bad_date.json", """
+                { "defaults": { "request": { "trade": { "tradeDate": "${date:tomorrow}" } } } }""");
+        write("api/bad_append.json", """
+                { "defaults": { "request": { "data": [ { "_append": [ { "key": "x" } ] } ] } } }""");
+        write("api/bad_dat.json", """
+                { "defaults": { "datFile": "../FX_TRF.dat" } }""");
+        write("api/clash_block.json", """
+                { "shared": { "base": { "request": { "basic": { "a": "9" } } } } }""");
+        // UI: flattening into ctx keys; dynamicFields and expectedBase are API only
+        write("ui/flatten_event.json", """
+                { "defaults": { "request": { "basic": { "a": "1" }, "udf": [ { "k": "v" } ] } } }""");
+        write("ui/ui_event.json", """
+                { "defaults": { "dynamicFields": { "x": "type" } } }""");
+        write("ui/ui_base.json", """
+                { "defaults": { "expectedBase": "TC-UI-BASE-<product_type>-UI-001" } }""");
+        // Setup data
+        write("setup/base-setup.json", """
+                { "request": { "basic": { "a": "1" } } }""");
+        write("setup/child-setup.json", """
+                { "extends": "base-setup", "request": { "basic": { "b": "2" } } }""");
+        write("setup/list-setup.json", """
+                { "request": { "udf": [ { "key": "a", "value": "1" } ], "valueDate": "${date:T-1}" } }""");
+        write("setup/list-child-setup.json", """
+                { "extends": "list-setup", "request": { "udf": { "_append": [ { "key": "b", "value": "2" } ] } } }""");
+        write("setup/orphan-append-setup.json", """
+                { "request": { "udf": { "_append": [ { "key": "b" } ] } } }""");
+        write("setup/response-only-setup.json", """
+                { "response": { "code": 200 } }""");
+        write("setup/loop-a.json", """
+                { "extends": "loop-b" }""");
+        write("setup/loop-b.json", """
+                { "extends": "loop-a" }""");
+
+        // No parent: a resource is looked up in the temporary folder only, never in target/test-classes
+        fixtures = new URLClassLoader(new URL[] {TMP.getRoot().toURI().toURL()}, null);
+    }
+
+    private static void write(String path, String content) throws IOException {
+        Path file = TMP.getRoot().toPath().resolve("data").resolve(path);
+        Files.createDirectories(file.getParent());
+        Files.writeString(file, content, StandardCharsets.UTF_8);
+    }
+
+    @Before
+    public void readFixtures() {
+        previousLoader = Thread.currentThread().getContextClassLoader();
+        Thread.currentThread().setContextClassLoader(fixtures);
+    }
+
+    @After
+    public void restoreClassLoader() {
+        Thread.currentThread().setContextClassLoader(previousLoader);
+    }
 
     private static void assertJson(String expected, String actual) {
         assertEquals(Json.parse(expected), Json.parse(actual));
@@ -201,7 +339,7 @@ public class TestDataRepositoryTest {
     @Test
     public void missingVariantNamesTheLayerAndTheFile() {
         assertFailsWith(() -> repo.forCase("TC-DAT-EVENT-FX_TRF-API-003"),
-                "[row TC-DAT-EVENT-FX_TRF-API-003 datFile]", "testdata-fixtures/data/dat/FX_TRF/missing.dat");
+                "[row TC-DAT-EVENT-FX_TRF-API-003 datFile]", "data/dat/FX_TRF/missing.dat");
     }
 
     @Test

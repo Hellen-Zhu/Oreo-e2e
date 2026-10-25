@@ -24,8 +24,10 @@ mvn -Ptest-data process-test-classes "-Dexec.args=compact trade_creation"
 
 Each line is a complete command. The first defaults to `check`; choose one command for the task.
 Maven compiles the project, copies test resources and supplies the test classpath automatically.
-Stopping at `process-test-classes` does not execute the Cucumber suite or unit tests. Do not replace it
-with `test` or `verify` for a data-only operation. Below, `TestDataTool <command>` means this Maven invocation
+Before the tool, the profile runs the five unit tests of the test data code (`src/test/java/.../testdata/*Test`;
+their data files are written by the tests, into a temporary folder): a failing one stops Maven before the tool reads any data, and the tool's verdict
+is not to be trusted until they pass. Stopping at `process-test-classes` does not execute the Cucumber suite. Do
+not replace it with `test` or `verify` for a data-only operation. Below, `TestDataTool <command>` means this Maven invocation
 with `-Dexec.args=<command>`. The company Maven repository must supply `exec-maven-plugin:3.6.4`.
 
 | Command | What it does |
@@ -67,6 +69,8 @@ One `[ok]` or `[FAIL]` line per check, its problems and `[warn]` lines below it:
 | Running the compiled class directly after a change | Use the full Maven command to refresh classes and resources |
 | Stale resource message after deleting a data file | Run `mvn -Ptest-data clean process-test-classes` with the desired `exec.args` |
 | Plugin cannot be resolved | Ensure the company Maven repository provides `org.codehaus.mojo:exec-maven-plugin:3.6.4` |
+| A unit test fails | Fix the code under `testdata/` (or the test, if the rule it checks changed on purpose); never `-DskipTests` to get the tool to run |
+| "No tests were executed" | The JUnit Platform has no vintage engine: add `org.junit.vintage:junit-vintage-engine` in test scope |
 | A `-D` argument unquoted in PowerShell | Quote each one whole |
 | Run from another folder | From oreo-e2e: the tool finds the project through `target/test-classes/data` |
 | `Examples` rows typed by hand | `sync-examples` |

@@ -1,1 +1,0 @@
-{ "_comment": "Fixture: a dat file is a name in the product's folder, never a path", "defaults": { "datFile": "../FX_TRF.dat" } }

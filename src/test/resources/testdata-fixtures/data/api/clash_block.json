@@ -1,1 +1,0 @@
-{ "_comment": "Fixture: a block named like one of common.json", "shared": { "base": { "request": { "basic": { "a": "9" } } } } }

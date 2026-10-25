@@ -1,1 +1,0 @@
-{ "_comment": "Fixture", "request": { "udf": [ { "key": "a", "value": "1" } ], "valueDate": "${date:T-1}" } }

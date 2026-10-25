@@ -169,9 +169,8 @@
                         <PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD>1</PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD>
                     </environmentVariables>
                     <!-- A plain mvn test (the pipeline) runs the Cucumber suite (OreoTest) only, not the unit tests
-                         of the test data code: those run with mvn test -Dtest='com.example.module.oreo.testdata.*Test'
-                         (-Dtest overrides these excludes). The data checks are TestDataTool, run by hand
-                         (.claude/skills/maintaining-e2e-test-data).
+                         of the test data code: those run first in every mvn -Ptest-data command (the profile's
+                         test-data-unit-tests execution), before TestDataTool.
                          **/*$* is surefire's default exclude (inner classes), which a list of excludes replaces. -->
                     <excludes>
                         <exclude>**/*$*</exclude>
@@ -211,6 +210,31 @@
             </properties>
             <build>
                 <plugins>
+                    <!-- The unit tests of the code that decides what a case sends and what its response is compared
+                         with, run before TestDataTool in the same phase (surefire is declared before exec, so it runs
+                         first): a failure stops Maven before the tool reads any data. failIfNoTests fails the build
+                         when none ran (JUnit 4 tests on a JUnit Platform without the vintage engine).
+                         -DskipTests skips them. -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>test-data-unit-tests</id>
+                                <phase>process-test-classes</phase>
+                                <goals><goal>test</goal></goals>
+                                <configuration>
+                                    <includes>
+                                        <include>**/testdata/*Test.java</include>
+                                    </includes>
+                                    <excludes combine.self="override">
+                                        <exclude>**/*$*</exclude>
+                                    </excludes>
+                                    <failIfNoTests>true</failIfNoTests>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
                     <plugin>
                         <groupId>org.codehaus.mojo</groupId>
                         <artifactId>exec-maven-plugin</artifactId>
