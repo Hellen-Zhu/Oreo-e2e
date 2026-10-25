@@ -48,16 +48,19 @@ repair round the failure output and `revisionInstructions`.
    against `{rest.base.url}/v3/api-docs` (read `rest.base.url` from `genie.properties`; never print or copy the address
    into a file). When neither gives them, stop and list exactly what is missing; never copy a neighbouring snippet and
    hope.
-3. **Data** (`docs/test-data.md`):
-   - A case that runs on the event file's `defaults` needs no row. Add a row only for a case that differs; one row per
-     case; product differences in its `byProduct`.
+3. **Data**: follow `references/test-data-decisions.md` for every value (which file, which layer, merge traps,
+   dates, masking rules). In short:
+   - A case that runs on the event file's `defaults` needs no row; a row only for a case that differs, its `id` as the
+     feature writes it; product differences in `byProduct`.
    - A new event needs `data/api/<event>.json` named after the feature, with `use` for shared blocks of
      `api/common.json`.
-   - A negative case: a row with the `request` change and `"dynamicFields": null`.
-   - A precondition payload: reuse `data/setup/*.json` before adding one.
-   - Never `basic.productId`, never a `datFile` path (a variant dat file name only, in its folder).
+   - A rejected case: a row with the `request` change, plus `"dynamicFields": null` when `defaults` has rules for
+     success fields the error response lacks.
+   - A precondition payload: reuse or `extends` a `data/setup/*.json` before adding one.
+   - Dates as `${date:T+N}`; never `basic.productId`, a `datFile` path or a real ID.
    - A case whose evidence is the database or audit, not the response: tag it `@expected#none` (feature authors' tag;
      report it if missing), no recording.
+   - Read `TestDataTool case <ID>` for every case you added a row for (company machine).
 4. **Snippets** (`snippet/api/<featureName>.snippet`, or `common_*.snippet` for cross-feature steps): sections
    `Build request / Make api call / Assertions`; HTTP only behind business steps; an assertion never changes state;
    ctx keys camelCase; reuse `ApiRequestSteps` (`build json request with body from current scenario ...`) instead of

@@ -32,11 +32,13 @@ written for <storyId>. Run again? (yes/no)". No: stop.
 
 Invoke `bdd-agent` with this context and nothing else (extra instructions override its skill):
 
-```yaml
-phase: 1
-story: <the story, as given>
-artifactPath: .ai-sdlc/<storyId>/test-layer-analysis.json
-goal: design the layered test points of this story and return them for approval
+```json
+{
+  "phase": 1,
+  "story": "<the story, as given>",
+  "artifactPath": ".ai-sdlc/<storyId>/test-layer-analysis.json",
+  "goal": "design the layered test points of this story and return them for approval"
+}
 ```
 
 Show the agent's output exactly as returned, then:
@@ -52,11 +54,13 @@ Show the agent's output exactly as returned, then:
 
 ## Step 3 - Phase 2: feature content
 
-```yaml
-phase: 2
-story: <the story, as given>
-artifactPath: .ai-sdlc/<storyId>/test-layer-analysis.json
-goal: author the feature content of the approved test points and return it for approval
+```json
+{
+  "phase": 2,
+  "story": "<the story, as given>",
+  "artifactPath": ".ai-sdlc/<storyId>/test-layer-analysis.json",
+  "goal": "author the feature content of the approved test points and return it for approval"
+}
 ```
 
 Show the output exactly as returned, then the same approve / revise / stop prompt ("Approve the feature content?").

@@ -232,6 +232,7 @@ flowchart LR
       <dl>
         <dt>规则</dt><dd>实现标准 §1–§5、§7，<code>docs/test-data.md</code></dd>
         <dt>做</dt><dd>先给每个步骤定实现方式（REUSE → NEW_SNIPPET → NEW_STEP），再写 case 数据行、API snippet，最后才写 Java</dd>
+        <dt>数据</dt><dd>JSON，不是 YAML：按 <code>references/test-data-decisions.md</code> 决定每个值放哪一层（setup → defaults → byProduct → 行 → 行的 byProduct），UI skill 也用它</dd>
         <dt>交出</dt><dd>authoring 报告（含新接口的契约来源）</dd>
       </dl>
     </div>

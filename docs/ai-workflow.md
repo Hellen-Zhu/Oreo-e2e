@@ -24,7 +24,7 @@ feature files ──/codetestcases──► test-agent ── qa-api-test-author
 | `test-agent` | agent | Runs the authoring skills and the validation; never runs against the environment |
 | `qa-layer-test-design` | skill (`.claude/skills/`) | Test points, layer, evidence, product scope |
 | `qa-bdd-feature-authoring` | skill | Feature file, case IDs, tags, step reuse (`scripts/gen-snippet-index.sh`) |
-| `qa-api-test-authoring` | skill | Case data, API snippets, API glue |
+| `qa-api-test-authoring` | skill | Case data, API snippets, API glue; `references/test-data-decisions.md` decides where every data value goes (also used by the UI skill) |
 | `qa-e2e-test-authoring` | skill | Flows / pages / components, element repository, UI data, UI glue |
 | `qa-bdd-test-execution` | skill | `check`, `dry-run`, `real-run`, `record`; per-case classification |
 | `maintaining-e2e-test-data`, `onboarding-e2e-product` | skills | Test data tool; new products (unchanged) |

@@ -29,11 +29,13 @@ hand over the commands instead, and the run steps are skipped.
 
 Invoke `test-agent` with this context and nothing else:
 
-```yaml
-featureFiles: [<paths>]
-caseIds: [<case IDs>]
-where: <company|offline>
-retryBudget: 3
+```json
+{
+  "featureFiles": ["<path>"],
+  "caseIds": ["<case ID>"],
+  "where": "company | offline",
+  "retryBudget": 3
+}
 ```
 
 Show its output exactly as returned. If `validationStatus` is `failed`, show the blocker summary and stop. If `open`

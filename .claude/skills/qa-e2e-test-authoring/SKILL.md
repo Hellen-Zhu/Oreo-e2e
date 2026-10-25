@@ -74,8 +74,12 @@ From `test-agent`: the feature file, the case IDs to implement (only the new or 
 5. **Waiting**: never `Thread.sleep()` or `waitForTimeout`. Eventual assertions of `CommonE2EAssertion`
    (`assert that '<element>' is eventually visible / hidden / enabled / disabled`, `... eventually has value '...'`),
    Playwright auto-wait, or the response helpers (`ctx.clickAndWaitForResponse(...)`) for server-driven refreshes.
-6. **Data** (`docs/test-data.md`): `data/ui/<event>.json` rows only for cases that differ from `defaults`; trade
-   preparation through `data/setup/` names the provisioning steps already use. UI and API data never read each other.
+6. **Data**: follow `.claude/skills/qa-api-test-authoring/references/test-data-decisions.md` sections 1-4 (UI data
+   has no `dynamicFields`, `expectedBase` or recordings). The hook flattens the case's `request` into ctx, and a flow
+   reads it by path: `defaults.request.earlyTermination.amount` in `data/ui/trade_early_termination.json` is read as
+   `from stored variable 'earlyTermination.amount'`. Rows only for cases that differ from `defaults`; a field only
+   some products' forms have goes into their `byProduct` with an `... if it is set` step. Trade preparation goes
+   through the `data/setup/` names the provisioning steps already use. UI and API data never read each other.
 7. **Java** only for `NEW_STEP` (runtime-scoped row selection, a value captured into ctx, a response-aware helper):
    the domain's existing `*Steps` class first; POJO, `PlaywrightServiceResolver.from(scenario)` in `@Before`;
    `ctx.service().getLocator("<name>")` or parameterized locators, never a selector or a test ID built in Java; a step
