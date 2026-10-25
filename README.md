@@ -19,6 +19,7 @@ Playwright once if missing: `npx playwright install msedge`.
 | Run a selection | `mvn -B test -Dtest=OreoTest "-Dcucumber.options=--tags @api --tags @ADO#smoke"` |
 | Run one case | `mvn -B test -Dtest=OreoTest "-Dcucumber.options=--name ^\[TC-TRADE-CREATION-FX_TRF-API-001\].*$"` |
 | See what one case sends and is compared with | `mvn -Ptest-data process-test-classes "-Dexec.args=case <case ID>"` |
+| Update a case's recorded response | "Updating a recorded response", below |
 | Add a product | skill `.claude/skills/onboarding-e2e-product` |
 | Change data, features, recordings or the registry | skill `.claude/skills/maintaining-e2e-test-data` |
 
@@ -62,6 +63,34 @@ writes traces to `target/traces` (`npx playwright show-trace <zip>`). Never comm
   values by `dynamicFields` rules. A missing file is recorded on the first run.
 - **UI steps are layered**: scenario (business language) → flow snippet → page / component snippet → element
   repository (locators).
+
+## Updating a recorded response
+
+When the API changed on purpose and a case now fails its comparison (company machine):
+
+```shell
+# 1. Re-record: update mode overwrites the file with the full response, without reading it
+#    (PowerShell: $env:OREO_EXPECTED = "update" ... Remove-Item Env:OREO_EXPECTED)
+OREO_EXPECTED=update mvn -B test -Dtest=OreoTest "-Dcucumber.options=--name ^\[TC-TRADE-CREATION-FX_TRF-API-001\].*$"
+
+# 2. Turn the variants back into patches on their base case
+mvn -Ptest-data process-test-classes "-Dexec.args=compact trade_creation"
+
+# 3. Check, then run the case again without update mode: it must pass
+mvn -Ptest-data process-test-classes
+mvn -B test -Dtest=OreoTest "-Dcucumber.options=--name ^\[TC-TRADE-CREATION-FX_TRF-API-001\].*$"
+```
+
+- `-Doreo.expected=update` is the same switch as a system property; the environment variable also reaches the
+  runner's forked JVMs. Unset it afterwards, or every later run re-records instead of comparing.
+- Review `git diff` of `data/api/expected/` against the requirement before committing: a wrong value recorded is a
+  wrong expectation. Never edit an expected file by hand.
+- Re-recording a **base** case (`...-API-001`)? Re-record its variants in the same run (`--name ^\[TC-TRADE-CREATION-FX_TRF-API-\d+\].*$`),
+  or their patches may no longer apply.
+- A value that differs on every run (an ID, a date) is not an update: add a `dynamicFields` rule for it, then re-record.
+- A new case needs no update mode: its first run records the file and fails once.
+
+Details: [docs/test-data.md](docs/test-data.md), "Recorded responses" and "Base and patch".
 
 ## Layout
 
