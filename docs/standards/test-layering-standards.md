@@ -1,105 +1,131 @@
-# Test Layering Standards
+# Test Layering Standard (Phase 1: Test Analysis)
 
-Define execution-layer selection, test-point fields, tags, and the Phase 1 report contract for Example E2E coverage.
+Turns a confirmed story into **test points** (TP): what must be proven, how it is observed, and on which execution
+layer. It is test analysis, not automation: no Gherkin, file names or code. Downstream,
+[feature generation](bdd-feature-generation-standards.md) turns the TPs into scenarios and
+[implementation](bdd-feature-implementation-standards.md) makes them run.
 
-Repository alignment checked on 2026-10-23 against the current workspace. This document owns test design, [feature generation](bdd-feature-generation-standards.md) owns executable Gherkin/identity/path rules, and [implementation standards](bdd-feature-implementation-standards.md) own JSON data, snippets, glue, and execution.
+**Output**: the TP table (§5), the AC coverage matrix and the gap list (§6).
 
-## 1. Source Boundaries
+## 1. Inputs and Authority
 
-| Purpose | Source of truth | Fallback | Forbidden |
-|---|---|---|---|
-| Behavior scope | Confirmed Story Contract ACs and business fields | Approved assumptions | Inventing behavior not present in the Story Contract |
-| Observable evidence | Story Contract `observableEvidence` | AC expected outcome when explicit evidence is absent | Ignoring evidence because it is awkward to automate |
-| Test-relevant design | Approved `solutionDesign` | `technicalNotes` only as weak trace context | Letting technical notes override approved solution design |
-| Layer selection | Validation target from methodology | None | Selecting layer because an endpoint, page, or module name exists |
-| Domain risk | Story scope plus FX structured products judgement | Domain gap report | Adding unapproved product rules or pricing formulas |
+| Question | Decided by | Never from |
+|---|---|---|
+| Which behaviors exist | Confirmed Story Contract ACs and business fields; approved assumptions | Inventing behavior; existing coverage ("the other events have it") |
+| How an outcome is observed | Story Contract `observableEvidence`; else the AC's expected outcome | Dropping evidence because it is hard to automate |
+| Endpoints, screens, data the design implies | Approved `solutionDesign` (`technicalNotes` only as weak context) | `technicalNotes` that contradict `solutionDesign` |
+| Product and domain rules | The story and the BA | FX product knowledge filled in as fact (§6) |
 
-Terminology note:
+## 2. Analysis Method
 
-- This standard decides **execution layer** only (`@api` vs `@playwright`).
-- It does not define UI snippet composition layers (Page Snippet / Component Snippet / Flow Snippet / Scenario).
-- Current coverage illustrates available mechanisms; it is not permission to invent behavior outside an approved Story Contract.
+Work through each AC in this order; each step can add test points.
 
-## 2. Test Point Field Rules
+1. **Split compound ACs.** One TP proves one behavior. An AC with two outcomes, two actors or two layers becomes
+   several TPs.
+2. **Find the rule and its partitions.** For every input the rule depends on: valid and invalid classes (equivalence
+   partitioning), the edges between them (boundary values: 0, minimum, maximum, just outside), and missing / empty /
+   wrong type.
+3. **Walk the state model.** For lifecycle behavior: every allowed transition, and the most likely forbidden ones (an
+   event on a Dead or Pending Approval trade, a second approval, an action after cancellation).
+4. **Cover the roles.** Maker-checker: who may act, who must be refused (checker submitting, maker approving, self-
+   approval), and what an unauthorized user gets.
+5. **Decide the product scope.** Does the behavior hold for every product that supports the capability, for one
+   representative product (validation and permission rules rarely vary by product), or for one product only?
+6. **Rank by risk.** Impact (money, regulatory, data integrity, lost trade) × likelihood (new code, complex rule,
+   past defects). High risk gets the strongest evidence and smoke; low risk may share a TP or be left out with a
+   reason.
 
-Every test point must include:
+Negative coverage is not optional: for each positive TP, ask which invalid input, forbidden state and unauthorized role
+the requirement implies.
 
-- `TP-###`: sequential, neutral, and stable within the report.
-- `Layer` (Execution Layer): exactly one of `@api` or `@playwright`.
-- `Scenario Name`: English, descriptive, and specific. This is a test-point name, not final Gherkin.
-- `Tags`: exactly one polarity tag and exactly one suite-selection tag; the execution tag is recorded separately in `Layer`.
-- `AC Mapping`: one or more AC IDs from the Story Contract.
-- `Validation Target`: what must be proven.
-- `Observable Evidence`: how the outcome is observed.
-- `Reasoning`: concise layer/risk rationale.
+## 3. Choosing the Layer
 
-Do not include feature names, feature tags, TC IDs, file paths, step wording, snippets, Java classes, endpoints, story modules, or implementation artifacts.
+**Rule: test each behavior on the lowest layer that can produce its evidence.** API tests are faster, more stable
+and cheaper to maintain; the UI is for what only the browser can show.
 
-## 3. Tag Rules
+| The validation target is... | Layer |
+|---|---|
+| A business rule, validation, calculation, permission, maker-checker enforcement, state transition, persistence, audit | `@api` |
+| A request/response contract (fields, types, error codes and messages) | `@api` |
+| What the user sees or can do: displayed state, available/unavailable actions, form behavior, navigation, notifications | `@playwright` |
+| An end-to-end user journey whose risk is in the wiring between screen and backend | `@playwright`, few and smoke-level |
 
-Layer tag:
+- **Choose by evidence, not by name.** An endpoint or a page existing for a capability does not decide the layer.
+- **How the setup is done does not decide the layer.** A UI scenario may provision its trade through the API, and a
+  notification test may trigger its event through the API; both are `@playwright` because the evidence is in the
+  browser.
+- **Duplication needs distinct value.** The same rule on both layers is justified only when each proves something the
+  other cannot: backend self-approval prevention (API) versus the approve action being unavailable to the maker (UI)
+  are two targets, not a duplicate. Otherwise keep the API TP and drop the UI one.
+- **Do not promote backend checks to UI** to "see them work"; do not push user-visible behavior down to API because it
+  is easier to automate.
 
-- `@api` — REST API contract tests via genie-rest (no browser).
-- `@playwright` — browser end-to-end tests via genie-playwright; `genie.properties` configures Microsoft Edge. The active runner/environment properties determine the actual browser configuration.
+## 4. Evidence
 
-Select by validation target and evidence, not by business capability name:
+The **observable evidence** says how the outcome is seen. Choose the weakest evidence that still proves the target,
+and never claim a stronger one than the test will check:
 
-- Backend rules, request/response contracts, permissions, and maker-checker enforcement belong at API level when API/backend evidence proves the requirement.
-- Browser interactions, available actions, and displayed business state belong at UI level when browser evidence is required.
-- Approval/rejection already has both API and UI trading coverage. Backend self-approval prevention and browser approval/action availability are distinct targets, not automatic duplication.
-- Audit currently has API trading coverage using dedicated persistence/audit evidence. Do not infer a new UI audit scenario without an approved UI-visible requirement.
-- A UI precondition may provision trades via the dedicated UI API-provisioning infrastructure. This does not turn the scenario into `@api`, and a `@playwright` scenario must not call API snippets.
-- Some notification scenarios use an API event trigger and verify browser notifications. Classify by the browser evidence, not solely by how the event was triggered.
+| Strength | Evidence | Proves |
+|---|---|---|
+| 1 | Status code + response body | The request was accepted / rejected with this contract |
+| 2 | A read-back of the business object (status, event status, fields) | The state changed as required |
+| 3 | Persistence / audit record / downstream event | The change was recorded or propagated |
+| UI | Displayed state, enabled/disabled actions, messages in the browser | What the user experiences |
 
-Actual feature placement and channel-specific domains are defined in the generation standard; Phase 1 does not output file paths.
+A "successful response" is level 1; it is not evidence of persistence, audit or a downstream event (levels 2-3) unless
+the TP says that evidence is collected. Transient UI (spinners, toasts that disappear) is not evidence; stable end state
+is.
 
-Polarity tag:
+## 5. Test Point Fields
 
-- `@ADO#positive`
-- `@ADO#negative`
+| Field | Content |
+|---|---|
+| `TP-###` | Sequential, neutral, stable within the report |
+| `Scenario Name` | English, specific: actor, action, outcome (`Maker cannot approve a trade they submitted`) |
+| `Layer` | Exactly one: `@api` or `@playwright` |
+| `Tags` | Exactly one polarity (`@ADO#positive` / `@ADO#negative`) and one suite (`@ADO#smoke` / `@ADO#regression`) |
+| `Product Scope` | `all supporting products` / `one representative product` / `product-independent` / `<product> only` |
+| `AC Mapping` | One or more AC IDs |
+| `Validation Target` | What must be proven, as a rule (`a checker cannot approve their own submission`) |
+| `Observable Evidence` | How it is seen, with its strength (§4) |
+| `Risk` | High / Medium / Low, with the reason in one phrase |
+| `Reasoning` | Why this layer and this evidence (one or two sentences) |
 
-Suite-selection tag:
+- **Smoke** = the few high-risk positive TPs that prove the capability works end to end; everything else is
+  regression. A negative TP is smoke only when its failure would be critical (for example, self-approval).
+- No feature names, file paths, TC IDs, step wording, snippets, classes or endpoints: those are decided downstream.
+  Business, capability and case-ID tags are added at feature generation, never here.
 
-- `@ADO#smoke`
-- `@ADO#regression`
+Example:
 
-Each test point must include exactly one execution tag in `Layer`, and exactly one polarity plus one suite-selection tag in `Tags`.
+| TP | Scenario Name | Layer | Tags | Product Scope | AC | Validation Target | Observable Evidence | Risk | Reasoning |
+|---|---|---|---|---|---|---|---|---|---|
+| TP-001 | Maker terminates a live trade early | `@api` | `@ADO#positive @ADO#smoke` | all supporting products | AC-1 | A live trade can be early-terminated | Response accepted; trade read back as Terminated (2) | High | Core lifecycle rule, backend-owned |
+| TP-002 | Early termination of a dead trade is rejected | `@api` | `@ADO#negative @ADO#regression` | one representative product | AC-2 | A dead trade cannot be terminated | Rejection with reason (1) | Medium | State rule; does not vary by product |
+| TP-003 | Terminated trade shows as closed in the blotter | `@playwright` | `@ADO#positive @ADO#regression` | one representative product | AC-3 | The user sees the terminated state | Blotter status Terminated (UI) | Medium | Only the browser shows it |
 
-The `Tags` field restriction applies to the Phase 1 report only. Generated features additionally use business/module tags such as `@ADO#trade_creation` and supported `@capability#...` tags where required. Those are assigned during feature generation, not in this report. Case IDs are later placed in scenario names, never added as plain `@TC-...` tags.
+## 6. Gaps
 
-## 4. Domain And Design Gaps
+When safe test design needs information the story or design does not give, list it as a gap with the question to ask
+and the TPs it blocks; never fill it with assumed product behavior. Typical areas for FX structured products:
 
-Report gaps when safe test design requires information not available in the confirmed Story Contract or approved solution design.
+- target redemption, knock-out and early termination amounts
+- fixing, settlement, maturity, tenor, holiday calendar and value date rules
+- currency pair, direction, strike, notional, leverage and product variant constraints
+- payoff, precision, rounding and rate source
+- maker-checker roles and self-approval
+- lifecycle states and the transitions allowed from each
+- persistence, audit, downstream events, confirmations and reporting
 
-For FX TRF and derivatives stories, common gap areas include:
+## 7. Review Checklist
 
-- target redemption and early termination behavior
-- fixing, settlement, maturity, tenor, holiday calendar, and value date rules
-- currency pair, direction, strike, notional, leverage, and product variant constraints
-- payoff, precision, rounding, and FX rate source
-- maker-checker permissions and self-approval prevention
-- trade lifecycle state transitions
-- persistence, audit, downstream events, confirmation, and reporting visibility
-
-Do not fill these gaps by inventing product behavior.
-
-## 5. Required Output Checks
-
-Before returning:
-
-- Every AC appears in at least one test point.
-- Every observable evidence item is covered by at least one test point or explicitly justified in reasoning.
-- Compound ACs are split when behaviors, validation targets, layers, or evidence differ.
-- Every test point has exactly one execution tag in `Layer`, plus one polarity and one suite-selection tag in `Tags`.
-- API/UI layer assignment follows the methodology's validation-target rules.
-- Test layering decisions do not imply snippet composition layering decisions.
-- No UI-visible behavior is incorrectly pushed to API.
-- No backend-only validation is unnecessarily promoted to UI.
-- Duplicate API/UI coverage is justified by distinct value.
-- API-based UI setup or notification triggering is not mistaken for API-layer validation.
-- Domain and design gaps are reported instead of guessed.
-- No Gherkin, TC IDs, feature paths, step wording, snippets, or automation implementation details appear.
-- Scenario names must be English, descriptive, and specific.
-- `TP-###` is sequential and neutral; never include module/domain/file naming.
-- The report's `Tags` field is limited to `@ADO#positive`, `@ADO#negative`, `@ADO#smoke`, `@ADO#regression`; `Layer` is separately limited to `@api` or `@playwright`.
-- Each test point must include exactly one polarity tag (`@ADO#positive` or `@ADO#negative`) and exactly one selection tag (`@ADO#smoke` or `@ADO#regression`).
+- [ ] Every AC is in at least one TP; every `observableEvidence` item is covered or its omission explained.
+- [ ] Compound ACs are split; each TP proves one behavior.
+- [ ] Partitions, boundaries, forbidden transitions and unauthorized roles were considered for each rule.
+- [ ] Each TP is on the lowest layer that can produce its evidence; API/UI duplicates have distinct value.
+- [ ] API-based setup or event triggering did not decide a layer.
+- [ ] Evidence strength matches the target and is not overstated.
+- [ ] Product scope is stated; negative and permission TPs are not repeated per product without a reason.
+- [ ] Exactly one layer, one polarity and one suite tag per TP; smoke is small and high-risk.
+- [ ] Gaps are listed with their question and the TPs they block, not guessed.
+- [ ] No Gherkin, paths, IDs, steps or implementation details.

@@ -27,7 +27,8 @@ These decide *how many* scenarios there are and *what each one proves*.
 2. **Group test points that share a flow.** Two or more TPs with the same `Given`, the same `When` and the same polarity
    become one scenario with several `Then`, unless they need different data, the result would exceed 8 steps, or their
    evidence types cannot be observed together. Every TP lands in exactly one scenario.
-3. **Products are rows, not scenarios.** A behavior every supporting product shares is one Scenario Outline over
+3. **Products are rows, not scenarios.** The TP's `Product Scope` decides the shape: `all supporting products` is one
+   Outline, anything else one product (or none). A behavior every supporting product shares is one Scenario Outline over
    `<product_type>` with one `@capability#<name>` tag; the products come from the registry (`ProductDatFiles`), never
    typed by hand. Product differences in data go into the case data's `byProduct`, not into steps or extra columns.
 4. **Negative and permission cases use one representative product.** A validation or permission rule does not change
