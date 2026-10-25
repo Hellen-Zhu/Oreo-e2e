@@ -28,22 +28,22 @@ import static com.example.module.oreo.testdata.Capability.*;
 public enum ProductDatFiles {
 
     /** FX Total Return Forward — uses the standard TRF .dat template. */
-    FX_TRF(SUPPORT_CAPABILITY, FIXINGS),
+    FX_TRF(SUPPORT_CAPABILITY),
 
     /** CorrOption (FX Correlation Option). */
-    FX_PSCRIPT(SUPPORT_CAPABILITY, FIXINGS),
+    FX_PSCRIPT(SUPPORT_CAPABILITY),
 
     /** FX Floating Strike Barrier. */
-    FX_PSCRIPT_FSKO(SUPPORT_CAPABILITY, FIXINGS),
+    FX_PSCRIPT_FSKO(SUPPORT_CAPABILITY),
 
     /**
      * TRF Generic product — uses dedicated FX_PSCRIPT_TRF template. Without cancellation, allocation, amendment and
      * portfolio reassignment: their old UI and API Examples had no FX_PSCRIPT_TRF row (to confirm).
      */
-    FX_PSCRIPT_TRF(except(SUPPORT_CAPABILITY, CANCELLATION, ALLOCATION, AMENDMENT, PORTFOLIO_REASSIGNMENT), FIXINGS),
+    FX_PSCRIPT_TRF(SUPPORT_CAPABILITY);
 
     /** Placeholder for FX Option: add data/dat/FX_OPT/FX_OPT.dat when its template is available. Supports nothing. */
-    FX_OPT;
+//    FX_OPT(except(ALLOCATION, PORTFOLIO_REASSIGNMENT));
 
     /** The classpath folder of the dat files, one folder per product. */
     public static final String DAT_DIR = "data/dat/";

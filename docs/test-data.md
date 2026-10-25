@@ -24,8 +24,8 @@ API and UI data never read each other; only the code is shared.
 `portfolioReassignment`, named as in the replay project's `framework/products.ts`; then `fixings`, `cortexFormula` and
 `productUpload`). They also form one group, `Capability.SUPPORT_CAPABILITY`: every constant above (the replay
 project's `SUPPORT_CAPABILITY` has the events only). A product names the group, or `except(SUPPORT_CAPABILITY, ...)`
-when it lacks some, and any capability outside the group one by one (`FX_PSCRIPT_TRF(except(SUPPORT_CAPABILITY,
-CANCELLATION, ...), FIXINGS)`). A new constant joins the group only if every product that names the group supports it.
+when it lacks some, and any capability outside the group one by one (`FX_TRF(SUPPORT_CAPABILITY)`,
+`<P>(except(SUPPORT_CAPABILITY, CANCELLATION))`). A new constant joins the group only if every product that names the group supports it.
 Approval, rejection and query are not capabilities: an Outline that approves, rejects or queries what an event made
 carries that event's capability (`create`, `stepInFull`, `stepInPartial`, `cancellation`; a query of fixing data
 `fixings`). Each
