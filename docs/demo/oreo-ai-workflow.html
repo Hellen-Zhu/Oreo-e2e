@@ -1,0 +1,349 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>OREO QA 智能体流水线</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: a working manual. Left rail = table of contents (stacks on phones); body = sections from the whole picture down to each contract. */
+:root{
+  --bg:#f6f7f9; --panel:#ffffff; --ink:#1b2230; --muted:#5b6475; --line:#dde1e8;
+  --accent:#1f5fbf; --accent-soft:#e7eefb;
+  --gate:#a65f00; --gate-soft:#fdf1df;
+  --ok:#1d7a4f; --ok-soft:#e3f4ea; --stop:#b3261e; --stop-soft:#fbe7e5;
+  --code-bg:#eef1f6;
+  --f-display:"Noto Serif SC","Songti SC",serif;
+  --f-body:"Noto Sans SC","PingFang SC","Microsoft YaHei",system-ui,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#12161d; --panel:#1a2029; --ink:#e4e8ef; --muted:#9aa4b5; --line:#2c3441;
+  --accent:#7aa7ff; --accent-soft:#1e2c45; --gate:#f0b35c; --gate-soft:#3a2c17;
+  --ok:#5cc995; --ok-soft:#173326; --stop:#ff8a80; --stop-soft:#3d1d1b; --code-bg:#232a35; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#12161d; --panel:#1a2029; --ink:#e4e8ef; --muted:#9aa4b5; --line:#2c3441;
+  --accent:#7aa7ff; --accent-soft:#1e2c45; --gate:#f0b35c; --gate-soft:#3a2c17;
+  --ok:#5cc995; --ok-soft:#173326; --stop:#ff8a80; --stop-soft:#3d1d1b; --code-bg:#232a35; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15.5px;line-height:1.75;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:1180px;margin:0 auto;display:grid;grid-template-columns:220px minmax(0,1fr);gap:40px;padding-block:40px 80px}
+nav.toc{position:sticky;top:calc(env(safe-area-inset-top,0px) + 24px);align-self:start;font-size:13.5px}
+nav.toc .k{font-family:var(--f-mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+nav.toc ol{list-style:none;margin:0;padding:0;display:grid;gap:2px;counter-reset:t}
+nav.toc a{display:block;padding:4px 10px;border-left:2px solid var(--line);color:var(--muted);text-decoration:none}
+nav.toc a:hover,nav.toc a:focus-visible{color:var(--accent);border-left-color:var(--accent);outline:none}
+main{min-width:0}
+header.hero{padding-bottom:24px;border-bottom:1px solid var(--line);margin-bottom:8px}
+.eyebrow{font-family:var(--f-mono);font-size:12px;letter-spacing:.08em;color:var(--accent);text-transform:uppercase}
+h1{font-family:var(--f-display);font-size:clamp(28px,4vw,38px);line-height:1.25;margin:6px 0 12px;text-wrap:balance}
+h2{font-family:var(--f-display);font-size:24px;line-height:1.35;margin:0 0 14px;text-wrap:balance}
+h3{font-size:17px;margin:22px 0 8px}
+p{margin:0 0 12px;max-width:72ch}
+.lead{color:var(--muted);font-size:16.5px}
+section{padding-block:36px 8px;border-bottom:1px solid var(--line)}
+section:last-of-type{border-bottom:0}
+code,.mono{font-family:var(--f-mono);font-size:.88em;background:var(--code-bg);padding:1px 5px;border-radius:4px;overflow-wrap:anywhere}
+pre{font-family:var(--f-mono);font-size:13px;line-height:1.6;background:var(--code-bg);padding:14px 16px;border-radius:6px;overflow-x:auto;margin:10px 0 16px}
+pre code{background:none;padding:0;overflow-wrap:normal}
+.scroll{overflow-x:auto;margin:10px 0 18px}
+table{border-collapse:collapse;width:100%;font-size:14px;min-width:560px}
+th,td{text-align:left;vertical-align:top;padding:9px 12px;border-bottom:1px solid var(--line)}
+th{font-weight:600;color:var(--muted);font-size:12.5px;letter-spacing:.03em;background:var(--panel)}
+td:first-child{white-space:nowrap}
+.layers{display:grid;gap:10px;margin:16px 0}
+.layer{display:grid;grid-template-columns:150px minmax(0,1fr);gap:16px;align-items:start;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:14px 16px}
+.layer .name{font-weight:700}
+.layer .name small{display:block;font-family:var(--f-mono);font-weight:400;font-size:12px;color:var(--muted)}
+.layer p{margin:0}
+.pill{display:inline-block;font-family:var(--f-mono);font-size:11.5px;padding:1px 8px;border-radius:999px;white-space:nowrap}
+.pill.gate{background:var(--gate-soft);color:var(--gate)}
+.pill.ok{background:var(--ok-soft);color:var(--ok)}
+.pill.stop{background:var(--stop-soft);color:var(--stop)}
+.pill.acc{background:var(--accent-soft);color:var(--accent)}
+ol.steps{list-style:none;margin:12px 0 18px;padding:0;display:grid;gap:0}
+ol.steps li{display:grid;grid-template-columns:44px minmax(0,1fr);gap:12px;padding:12px 0;border-top:1px solid var(--line)}
+ol.steps li:first-child{border-top:0}
+ol.steps .n{font-family:var(--f-mono);font-size:13px;color:var(--muted);padding-top:2px}
+ol.steps .t{font-weight:600}
+ol.steps .d{color:var(--ink)}
+ol.steps .d p{margin:4px 0 0}
+li.gate{background:linear-gradient(90deg,var(--gate-soft),transparent 70%);margin-inline:-12px;padding-inline:12px !important;border-radius:6px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:14px;margin:14px 0}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:16px 18px;min-width:0}
+.card h3{margin:0 0 6px;font-family:var(--f-mono);font-size:14.5px}
+.card dl{margin:8px 0 0;display:grid;grid-template-columns:64px minmax(0,1fr);gap:4px 10px;font-size:14px}
+.card dt{color:var(--muted)}
+.card dd{margin:0}
+.note{border-left:3px solid var(--accent);background:var(--accent-soft);padding:10px 14px;border-radius:0 6px 6px 0;margin:12px 0 16px;max-width:80ch}
+.note.warn{border-left-color:var(--gate);background:var(--gate-soft)}
+pre.mermaid{background:var(--panel);border:1px solid var(--line);text-align:center}
+.files{columns:2 260px;column-gap:28px;font-family:var(--f-mono);font-size:13px;line-height:1.9;margin:10px 0}
+.files div{break-inside:avoid}
+.files .c{color:var(--muted);font-family:var(--f-body);font-size:12.5px}
+@media (max-width:860px){
+  .wrap{grid-template-columns:minmax(0,1fr);gap:16px;padding-block:24px 60px}
+  nav.toc{position:static}
+  nav.toc ol{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+  .layer{grid-template-columns:minmax(0,1fr);gap:4px}
+}
+@media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+html{scroll-behavior:smooth}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+<nav class="toc" aria-label="目录">
+  <div class="k">目录</div>
+  <ol>
+    <li><a href="#overview">总体结构</a></li>
+    <li><a href="#pipeline">两条流水线</a></li>
+    <li><a href="#write">/writebddfeatures</a></li>
+    <li><a href="#code">/codetestcases</a></li>
+    <li><a href="#agents">两个 agent</a></li>
+    <li><a href="#skills">五个 skill</a></li>
+    <li><a href="#contracts">交接物</a></li>
+    <li><a href="#failures">失败怎么分流</a></li>
+    <li><a href="#example">走一遍例子</a></li>
+    <li><a href="#diff">和公司版的差异</a></li>
+    <li><a href="#files">文件位置</a></li>
+  </ol>
+</nav>
+
+<main>
+<header class="hero">
+  <div class="eyebrow">oreo-e2e · .claude/</div>
+  <h1>OREO QA 智能体流水线</h1>
+  <p class="lead">从一个 user story 到能在公司环境跑通的 case：两个 command 负责编排和让你审批，两个 agent 负责干活，五个 skill 规定具体步骤，规则本身只写在 <code>CLAUDE.md</code> 和 <code>docs/standards/</code> 里。</p>
+</header>
+
+<section id="overview">
+  <h2>总体结构：四层，各管一件事</h2>
+  <p>改版最核心的一点是职责分层。公司版把同一条规则抄进好几个 skill，抄着抄着就不一致了；这里每条规则只有一个出处，skill 只写"按什么顺序做、读哪份标准、交出什么"。</p>
+  <div class="layers">
+    <div class="layer"><div class="name">Command<small>.claude/commands/</small></div><p>编排顺序、审批关口、写最终文件、保存进度。你直接用 <code>/writebddfeatures</code>、<code>/codetestcases</code> 调用。</p></div>
+    <div class="layer"><div class="name">Agent<small>.claude/agents/</small></div><p>拿到一份干净的上下文，选对 skill 去执行，把结果原样交回。<code>bdd-agent</code> 做设计，<code>test-agent</code> 做实现和校验。</p></div>
+    <div class="layer"><div class="name">Skill<small>.claude/skills/qa-*</small></div><p>具体步骤、允许读哪些文件、输出格式（交接合同）。每个 skill 开头写明"规则在哪份标准里，先读完"。</p></div>
+    <div class="layer"><div class="name">Standard<small>CLAUDE.md · docs/standards/</small></div><p>规则本身：分层、命名、标签、case ID、测试数据、录制、硬性禁止项。改规则只改这里。</p></div>
+  </div>
+  <div class="note">command 调 agent 时只传结构化字段（<code>phase</code>、<code>artifactPath</code>、<code>caseIds</code>、<code>where</code>），不附加额外说明。多加的文字会和 skill 自己的指令抢优先级。这是公司版里最好的一条约定，保留了下来。</div>
+</section>
+
+<section id="pipeline">
+  <h2>两条流水线</h2>
+  <p>第一条把 story 变成 feature 文件，全程不需要 Maven，在这台电脑上就能跑完。第二条把 feature 变成能运行的 case，真实运行只能在公司电脑上。</p>
+<pre class="mermaid">
+flowchart LR
+  S[User story] --> W[/writebddfeatures/]
+  W --> B1[bdd-agent 阶段 1<br/>qa-layer-test-design]
+  B1 --> G1{审批 1<br/>测试点}
+  G1 -- revise --> B1
+  G1 -- approve --> B2[bdd-agent 阶段 2<br/>qa-bdd-feature-authoring]
+  B2 --> G2{审批 2<br/>feature 内容}
+  G2 -- revise --> B2
+  G2 -- approve --> F[写 .feature<br/>sync-examples<br/>离线 check]
+  F --> C[/codetestcases/]
+  C --> T[test-agent<br/>api / e2e authoring]
+  T --> V[check + dry run<br/>不下单]
+  V --> G3{审批 3<br/>真实运行}
+  G3 -- yes --> R[real run<br/>录制 + 复核]
+  R --> D[连续两次通过]
+</pre>
+  <p><span class="pill gate">审批</span> 三个关口都由 command 发出，你回复 approve / revise / stop（或 yes / no / edit first）后才继续。</p>
+</section>
+
+<section id="write">
+  <h2>/writebddfeatures：story → feature 文件</h2>
+  <p>输入是 story 文本或文件路径。这个仓库没有接 ADO，只给一个 ID 时会请你把 story 贴进来。</p>
+  <ol class="steps">
+    <li><span class="n">1</span><div class="d"><div class="t">加载</div><p>确定 <code>storyId</code>；若 <code>.ai-sdlc/&lt;storyId&gt;/state.json</code> 显示已经写过 feature，先问要不要重来。</p></div></li>
+    <li><span class="n">2</span><div class="d"><div class="t">阶段 1：测试分层</div><p>调 <code>bdd-agent</code>（phase 1）→ skill <code>qa-layer-test-design</code>。产出测试点表和 JSON 产物 <code>test-layer-analysis.json</code>：每个 TP 一个层（<code>@api</code> 或 <code>@playwright</code>）、一组标签、产品范围、证据强度、风险。组件级的东西列为"交给 FE 仓库"，不在这里造 UI 用例。</p></div></li>
+    <li class="gate"><span class="n">关口</span><div class="d"><div class="t">审批 1 <span class="pill gate">approve / revise / stop</span></div><p>revise 时只改你说的部分，其他 TP 编号和字段保持不变。</p></div></li>
+    <li><span class="n">3</span><div class="d"><div class="t">阶段 2：写 feature 内容</div><p>调 <code>bdd-agent</code>（phase 2）→ skill <code>qa-bdd-feature-authoring</code>。决定文件名和路径（已有的命名优先）、create 还是 append、续编 case ID、生成步骤索引并优先复用现有步骤；所有产品共享的行为写成带 <code>@capability#</code> 的 Outline，Examples 只留表头。</p></div></li>
+    <li class="gate"><span class="n">关口</span><div class="d"><div class="t">审批 2 <span class="pill gate">approve / revise / stop</span></div><p>你看到的就是将要写进文件的 Gherkin，外加命名依据、TP→场景映射、AC 覆盖、新步骤清单、缺口。</p></div></li>
+    <li><span class="n">4</span><div class="d"><div class="t">写文件</div><p>command 自己写，只按审批过的内容；append 前再 grep 一次确认 case ID 没被占用。</p></div></li>
+    <li><span class="n">5</span><div class="d"><div class="t">检查</div><p>公司电脑：<code>sync-examples</code> 填产品行，再跑 <code>mvn -Ptest-data process-test-classes</code>。新 API case 报 <code>no expected file</code> 是预期的，录制在下一条流水线里做。其他电脑：给出命令。</p></div></li>
+    <li><span class="n">6</span><div class="d"><div class="t">保存进度并总结</div><p>写 <code>state.json</code>（featureFiles、caseIds），下一步提示 <code>/codetestcases &lt;storyId&gt;</code>。不提交。</p></div></li>
+  </ol>
+</section>
+
+<section id="code">
+  <h2>/codetestcases：feature → 能跑的 case</h2>
+  <p>输入是 storyId（读 <code>state.json</code>）或 feature 路径；没指定 case 时，取工作区里新加的 <code>[TC-...]</code> 场景。只实现、只运行这些 case，不碰整个文件。</p>
+  <ol class="steps">
+    <li><span class="n">1</span><div class="d"><div class="t">判断在哪台机器</div><p><code>qa.properties</code> 存在且 <code>mvn -v</code> 成功 → <span class="pill acc">company</span>，可以运行；否则 <span class="pill acc">offline</span>，所有 Maven 步骤改为给出命令。</p></div></li>
+    <li><span class="n">2</span><div class="d"><div class="t">实现 + 校验</div><p>调 <code>test-agent</code>：按路径分给 <code>qa-api-test-authoring</code> 或 <code>qa-e2e-test-authoring</code>（先 API 后 UI），然后用 <code>qa-bdd-test-execution</code> 做 <code>check</code> 和 <code>dry-run --strict</code>，失败就在预算内（3 次）修。最后交回 <code>VALIDATION_HANDOFF</code>。</p></div></li>
+    <li class="gate"><span class="n">关口</span><div class="d"><div class="t">审批 3：真实运行 <span class="pill gate">yes / no / edit first</span></div><p>展示确切的命令和会选中的 case，并提醒：会在 <code>qa.properties</code> 的环境里真实下单；新 API case 第一次运行会录制并失败一次。</p></div></li>
+    <li><span class="n">4</span><div class="d"><div class="t">运行与录制</div><p>第一次录制，第二次比对；两次之间变化的值加 <code>dynamicFields</code> 规则后再录一次（<code>record</code> 模式也要先问你）。每份新录制都和需求逐项对照给你看，然后 <code>compact</code> 和离线 check。连续两次通过才算完成。</p></div></li>
+    <li><span class="n">5</span><div class="d"><div class="t">失败分流</div><p>按四类处理（见下文）。总共最多 3 轮修复。</p></div></li>
+    <li><span class="n">6</span><div class="d"><div class="t">保存进度并总结</div><p>按类别列出改动的文件、每个 case 的结果、重跑命令和待办。不提交。</p></div></li>
+  </ol>
+</section>
+
+<section id="agents">
+  <h2>两个 agent</h2>
+  <div class="cards">
+    <div class="card">
+      <h3>bdd-agent</h3>
+      <p>资深 BDD 测试工程师。只看 command 传来的 <code>phase</code> 决定做什么，不从对话里猜。</p>
+      <dl>
+        <dt>做</dt><dd>阶段 1 调 <code>qa-layer-test-design</code>，写分析产物；阶段 2 调 <code>qa-bdd-feature-authoring</code>。</dd>
+        <dt>不做</dt><dd>不写 .feature，不提交，不更新任何跟踪系统；缺的信息写成缺口，不当事实。</dd>
+        <dt>修订</dt><dd>只改要求的部分，返回完整结果而不是 diff。</dd>
+      </dl>
+    </div>
+    <div class="card">
+      <h3>test-agent</h3>
+      <p>资深 QA 自动化工程师。让 feature 可执行，并在不碰环境的前提下证明它准备好了。</p>
+      <dl>
+        <dt>做</dt><dd>按路径路由到 API / E2E authoring skill；整批做一次 check + dry run；只修 <code>automation</code> 类失败。</dd>
+        <dt>不做</dt><dd>不改 feature 业务措辞、录制文件、Examples 行、产品注册表；从不做真实运行或录制。</dd>
+        <dt>交回</dt><dd>各 authoring 报告、校验报告、<code>VALIDATION_HANDOFF</code>。</dd>
+      </dl>
+    </div>
+  </div>
+</section>
+
+<section id="skills">
+  <h2>五个 skill</h2>
+  <div class="cards">
+    <div class="card">
+      <h3>qa-layer-test-design</h3>
+      <dl>
+        <dt>规则</dt><dd><code>test-layering-standards.md</code> + OREO 领域经验（角色、状态、界面、产品）</dd>
+        <dt>可读</dt><dd>只有标准、<code>Capability.java</code>、<code>ProductDatFiles.java</code>；不看现有用例，"别的事件有"不是需求</dd>
+        <dt>交出</dt><dd>TP 表 + <code>test-layer-analysis.json</code></dd>
+      </dl>
+    </div>
+    <div class="card">
+      <h3>qa-bdd-feature-authoring</h3>
+      <dl>
+        <dt>规则</dt><dd><code>bdd-feature-generation-standards.md</code> + 步骤措辞参考</dd>
+        <dt>工具</dt><dd><code>gen-snippet-index.sh api|ui|glue</code>，每次重新生成到 <code>target/ai/</code></dd>
+        <dt>交出</dt><dd>待写文件清单、生成依据、Gherkin 块</dd>
+      </dl>
+    </div>
+    <div class="card">
+      <h3>qa-api-test-authoring</h3>
+      <dl>
+        <dt>规则</dt><dd>实现标准 §1–§5、§7，<code>docs/test-data.md</code></dd>
+        <dt>做</dt><dd>先给每个步骤定实现方式（REUSE → NEW_SNIPPET → NEW_STEP），再写 case 数据行、API snippet，最后才写 Java</dd>
+        <dt>交出</dt><dd>authoring 报告（含新接口的契约来源）</dd>
+      </dl>
+    </div>
+    <div class="card">
+      <h3>qa-e2e-test-authoring</h3>
+      <dl>
+        <dt>规则</dt><dd>flow → page / component 分层；元素仓库；Playwright 内置步骤目录</dd>
+        <dt>做</dt><dd>新元素先在真实页面上确认（公司电脑），看不到就记为待办，绝不猜选择器；等待只用语义条件</dd>
+        <dt>交出</dt><dd>authoring 报告（含看过哪个页面状态）</dd>
+      </dl>
+    </div>
+    <div class="card">
+      <h3>qa-bdd-test-execution</h3>
+      <dl>
+        <dt>模式</dt><dd><code>check</code> · <code>dry-run --strict</code> · <code>real-run</code> · <code>record</code></dd>
+        <dt>选择</dt><dd>能用 case ID 就不用 feature，能用 feature 就不跑全量；<code>Tests run: 0</code> 报为"没选中"，不算通过</dd>
+        <dt>交出</dt><dd>每个 case 的结果和失败类别</dd>
+      </dl>
+    </div>
+  </div>
+  <div class="note warn"><b>为什么 dry run 要加 <code>--strict</code>：</b>Cucumber 4 默认把未定义的步骤记为 skipped，dry run 会显示通过。加上后未定义步骤直接失败，这正是 dry run 要抓的问题。</div>
+</section>
+
+<section id="contracts">
+  <h2>交接物：每一步交给下一步什么</h2>
+  <div class="scroll"><table>
+    <thead><tr><th>交接物</th><th>谁产出</th><th>谁使用</th><th>放在哪</th></tr></thead>
+    <tbody>
+      <tr><td><code>test-layer-analysis.json</code></td><td>qa-layer-test-design</td><td>阶段 2 的范围边界；修订时的唯一依据</td><td><code>.ai-sdlc/&lt;storyId&gt;/</code>（git 忽略）</td></tr>
+      <tr><td>Feature 生成结果</td><td>qa-bdd-feature-authoring</td><td>审批 2；command 按它写文件</td><td>对话中</td></tr>
+      <tr><td><code>state.json</code></td><td>两个 command</td><td><code>/codetestcases &lt;storyId&gt;</code> 找文件和 case</td><td><code>.ai-sdlc/&lt;storyId&gt;/</code></td></tr>
+      <tr><td>Authoring 报告</td><td>API / E2E authoring</td><td>test-agent 汇总；你审阅</td><td>对话中</td></tr>
+      <tr><td><code>VALIDATION_HANDOFF</code></td><td>test-agent</td><td>审批 3 展示的命令、要录制的 case、待办</td><td>对话中（JSON）</td></tr>
+      <tr><td>执行报告</td><td>qa-bdd-test-execution</td><td>失败分流</td><td>对话中；失败细节在 <code>target/results/failed-scenarios-*.log</code></td></tr>
+    </tbody>
+  </table></div>
+<pre><code>{
+  "where": "company",
+  "validationStatus": "passed",
+  "targets": [{
+    "featureFile": "src/test/resources/features/api/trading/trade_allocation.feature",
+    "layer": "@api",
+    "caseIds": ["TC-TRADE-ALLOCATION-&lt;product_type&gt;-API-004"],
+    "selection": "--name ^\\[TC-TRADE-ALLOCATION-[A-Z_]+-API-004\\].*$"
+  }],
+  "expectedRecordings": ["TC-TRADE-ALLOCATION-&lt;product_type&gt;-API-004"],
+  "open": []
+}</code></pre>
+</section>
+
+<section id="failures">
+  <h2>失败怎么分流</h2>
+  <p>公司版的修复循环会"修好"任何失败，包括系统行为和需求不一致的情况，测试被改成迁就缺陷。现在每个失败先分类，只有第一类由 agent 自动修。</p>
+  <div class="scroll"><table>
+    <thead><tr><th>类别</th><th>信号</th><th>处理</th></tr></thead>
+    <tbody>
+      <tr><td><span class="pill ok">automation</span></td><td>未定义步骤、元素找不到或不唯一、缺数据行或 setup、check 报错、编译错误</td><td>test-agent 修复，再跑这些 case</td></tr>
+      <tr><td><span class="pill acc">recording</span></td><td><code>no expected file</code>、新 case 的第一次比对、两次运行间变化的值</td><td>录制流程：加 <code>dynamicFields</code> 规则、重录、compact、你复核</td></tr>
+      <tr><td><span class="pill stop">behavior</span></td><td>状态或业务值和需求不符</td><td>停下，并列需求与实际；由你判断是缺陷还是需求问题。绝不改数据、录制或步骤去迁就</td></tr>
+      <tr><td><span class="pill gate">environment</span></td><td>登录失败、连不上、多个无关 case 同时 5xx 或超时</td><td>停下报告，仓库里没有可修的</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="example">
+  <h2>走一遍例子</h2>
+  <p>假设 story：<i>"提前终止只能对 Live 状态的交易发起，对 Dead 交易应被拒绝"</i>。</p>
+  <ol class="steps">
+    <li><span class="n">阶段 1</span><div class="d"><div class="t">两个测试点</div><p>TP-001 Live 交易可提前终止：<code>@api</code>，所有支持的产品（capability <code>earlyTermination</code>），证据为回读交易状态（强度 2），smoke。<br>TP-002 Dead 交易被拒绝：<code>@api</code>，一个代表产品，证据为拒绝响应（强度 1），regression。不需要 UI 测试点：用户在界面上看不到额外结果。</p></div></li>
+    <li><span class="n">阶段 2</span><div class="d"><div class="t">追加到现有文件</div><p><code>trade_early_termination.feature</code> 已存在 → append。TP-001 已被现有 Outline 覆盖则报告；TP-002 续编为 <code>[TC-TRADE-EARLY-TERMINATION-FX_TRF-API-004]</code>，步骤全部来自索引：<code>a dead 'FX_TRF' trade is created via api</code> → <code>performs the EarlyTermination event via api</code> → <code>failed to '...' '...'</code>。</p></div></li>
+    <li><span class="n">实现</span><div class="d"><div class="t">只加一行数据</div><p>步骤都是 REUSE，数据跑 defaults 即可；负向 case 加一行 <code>"dynamicFields": null</code>。check 只报这个新 case 缺录制文件，dry run 通过。</p></div></li>
+    <li><span class="n">运行</span><div class="d"><div class="t">录制并复核</div><p>你同意后运行：第一次录下拒绝响应并失败，第二次通过；你确认拒绝信息里说的确实是"交易不是 Live"，compact 后完成。</p></div></li>
+  </ol>
+</section>
+
+<section id="diff">
+  <h2>和公司版的差异</h2>
+  <div class="scroll"><table>
+    <thead><tr><th>方面</th><th>公司 ai-tooling</th><th>oreo-e2e 版本</th></tr></thead>
+    <tbody>
+      <tr><td>测试数据</td><td>YAML，每个 <code>@TC-</code> 一个 key，响应写死在文件里，用 json-unit 占位</td><td>分层 JSON（defaults → byProduct → 行），响应真实录制，用 <code>dynamicFields</code> 规则屏蔽动态值</td></tr>
+      <tr><td>Case ID 和标签</td><td><code>@TC-...</code> 标签；<code>@smoke</code>、<code>@positive</code></td><td>case ID 写在场景名里；<code>@ADO#smoke</code>、<code>@ADO#positive</code>、<code>@capability#</code></td></tr>
+      <tr><td>产品</td><td>没有产品概念</td><td>产品是 Outline 的行，由 <code>sync-examples</code> 按注册表写入</td></tr>
+      <tr><td>层次</td><td>API、UI 组件、UI 集成、E2E 四层</td><td>只有 <code>@api</code>、<code>@playwright</code>；组件级列给 FE 仓库</td></tr>
+      <tr><td>校验</td><td><code>mvn clean test --dry-run</code></td><td>先离线 check，再 <code>--dry-run --strict</code>；空运行不算通过</td></tr>
+      <tr><td>真实运行</td><td>校验后直接跑</td><td>先审批；新录制逐份对照需求复核</td></tr>
+      <tr><td>修复</td><td>失败一律修</td><td>分四类，行为不符时停下</td></tr>
+      <tr><td>步骤索引脚本</td><td>遇到第一个没有步骤的文件就退出；漏掉 <code>@And</code>；需要 bash 4</td><td>重写：每次生成到 <code>target/ai/</code>，含 <code>@And</code> 和 Java glue，Mac / Git Bash 都能跑</td></tr>
+      <tr><td>外部依赖</td><td>ado-agent、debug-agent、<code>/codeuserstory</code></td><td>story 用文本或文件输入，进度存在本地 <code>.ai-sdlc/</code></td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="files">
+  <h2>文件位置</h2>
+  <div class="files">
+    <div>.claude/commands/writebddfeatures.md</div>
+    <div>.claude/commands/codetestcases.md</div>
+    <div>.claude/agents/bdd-agent.md</div>
+    <div>.claude/agents/test-agent.md</div>
+    <div>.claude/skills/qa-layer-test-design/ <span class="c">+ references/oreo-layer-heuristics.md</span></div>
+    <div>.claude/skills/qa-bdd-feature-authoring/ <span class="c">+ references/、scripts/gen-snippet-index.sh</span></div>
+    <div>.claude/skills/qa-api-test-authoring/</div>
+    <div>.claude/skills/qa-e2e-test-authoring/</div>
+    <div>.claude/skills/qa-bdd-test-execution/</div>
+    <div>docs/ai-workflow.md <span class="c">英文版说明</span></div>
+    <div>docs/transcriptions/ai-tooling/ <span class="c">公司原版存档</span></div>
+  </div>
+</section>
+</main>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
+<script>mermaid.initialize({ startOnLoad: true, theme: window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "default" });</script>
+</body>
+</html>
