@@ -119,6 +119,7 @@ src/test/resources/
 | [bdd-feature-generation-standards.md](docs/standards/bdd-feature-generation-standards.md) | Test points → feature files |
 | [bdd-feature-implementation-standards.md](docs/standards/bdd-feature-implementation-standards.md) | Feature files → steps, snippets, glue, data |
 | [REST](docs/genie_rest_glue_catalog.md) / [Playwright](docs/genie_playwright_glue_catalog.md) catalogs | Genie built-in steps |
+| [ai-workflow.md](docs/ai-workflow.md) | The agent pipeline: `/writebddfeatures`, `/codetestcases`, their agents and skills |
 
 ## This copy
 

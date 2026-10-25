@@ -21,3 +21,6 @@ playwright-report/
 settings.xml
 **/local.properties
 **/*.local.properties
+
+# Agent workflow state (story text may be internal)
+.ai-sdlc/
