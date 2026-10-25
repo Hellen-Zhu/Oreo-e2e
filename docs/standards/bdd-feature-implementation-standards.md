@@ -191,12 +191,21 @@ commands: `"-Dexec.args=case <case ID>"` (what a case sends and is compared with
 
 ### 6.2 Against an environment
 
+`OreoTest` is a JUnit Platform suite running the Cucumber engine; select scenarios with its `cucumber.filter.*`
+properties:
+
 ```shell
-mvn -B test -Dtest=OreoTest "-Dcucumber.options=--tags @api"
-mvn -B test -Dtest=OreoTest "-Dcucumber.options=--name ^\[TC-TRADE-CREATION-FX_TRF-API-001\].*$"
+mvn -B test -Dtest=OreoTest "-Dcucumber.filter.tags=@api"
+mvn -B test -Dtest=OreoTest "-Dcucumber.filter.tags=@api and @ADO#smoke and not @wip"
+mvn -B test -Dtest=OreoTest "-Dcucumber.filter.tags=@capability#earlyTermination"
+mvn -B test -Dtest=OreoTest "-Dcucumber.filter.name=^\[TC-TRADE-CREATION-FX_TRF-API-001\].*$"
+mvn -B test -Dtest=OreoTest "-Dcucumber.filter.name=^\[TC-TRADE-CREATION-FX_TRF-API-\d+\].*$"
 ```
 
-- `--tags` selects by layer, business tag, capability or suite; `--name` selects one case ID.
+- `cucumber.filter.tags` takes a tag expression (`and`, `or`, `not`, parentheses) over layer, business, capability
+  and suite tags; `cucumber.filter.name` takes a regular expression on the scenario name, which starts with the case
+  ID. Quote each `-D` argument whole (PowerShell included). The legacy `-Dcucumber.options=--tags ...` is not read by
+  this runner.
 - An API run books real trades in the target environment, and a first run writes expected files into `src`. Know what
   a filter selects before running it.
 - Re-recording on purpose: add `-Doreo.expected=update` (or `OREO_EXPECTED=update`), then compact and review the diff.

@@ -51,7 +51,7 @@ The tool is `src/test/java/com/example/module/oreo/tools/TestDataTool.java`, doc
 
 ## 4. Record the API responses (company machine, real system)
 
-Every run books real UAT trades. The project does not document how to run a subset with Genie: ask the user how they run one feature or case, never invent a `-D` flag. The risk engine mode is `oreo.risk.engine.mode` in `genie.properties`.
+Every run books real UAT trades: run only the product's cases. `OreoTest` is a JUnit Platform suite; select them with `cucumber.filter.*` (`docs/standards/bdd-feature-implementation-standards.md` §6.2), e.g. `mvn -B test -Dtest=OreoTest "-Dcucumber.filter.name=^\[TC-[A-Z-]+-<P>-API-\d+\].*$"` for every API case of the product, `"-Dcucumber.filter.tags=@playwright"` together with that name filter (`-UI-`) for its UI cases. Never `-Dcucumber.options=...`, which this runner ignores. The risk engine mode is `oreo.risk.engine.mode` in `genie.properties`.
 
 1. Run the product's API cases: each records `data/api/expected/<event>/<caseId>.json` and fails once.
 2. Run them again. A failure on a value that changed between the two runs (an ID, a date, a version, a generated schedule) is a dynamic field. Add a rule under `byProduct.<P>.dynamicFields` of the event file, shaped like the other products' entries (`type`, `type-tree`, `regex:<pattern>`, `var:<name>`, `ignore`: README "Recorded responses"). Record again with `OREO_EXPECTED=update`, then run once more: it must pass.
@@ -76,7 +76,8 @@ In the user's language:
 | A new `Capability` constant or `@capability#` tag for the product | A new scenario: report it |
 | A row commented out to skip the product for a while | Take the capability off its constant, then `sync-examples`; a comment inside a product table stops it |
 | QA's real dat file committed to the public copy | The placeholder line |
-| `-Dcucumber.filter.name=...`, `-Doreo.risk.engine.mode=...` | Ask how the user runs a subset; the mode is in `genie.properties` |
+| `-Dcucumber.options=--tags ...` (ignored by this runner), `-Doreo.risk.engine.mode=...` | `-Dcucumber.filter.tags` / `-Dcucumber.filter.name`; the mode is in `genie.properties` |
+| A run without a filter | It runs every feature and books UAT trades for all of them: always filter to the product's cases |
 | `dynamicFields` guessed before a recording | A rule whose path is not in the response fails the recording |
 | Expected files written by hand | Record them |
 | The product added to negative scenarios | They are written for one product |
