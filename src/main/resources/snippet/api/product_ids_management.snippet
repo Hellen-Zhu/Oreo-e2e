@@ -1,0 +1,11 @@
+# ── Make API call ───────────────────────────────────────────────────
+@When "^retrieves available product ids$"
+    Given build request as user 'maker@example.com'
+    When get from path '/refdata/productIds'
+    And attach the response body to the report
+
+# ── Assertions ──────────────────────────────────────────────────────
+@Then "^the governed product id list is returned with a total count of '([^']*)'$"
+    Then response status code is '200'
+    And response matches current scenario
+    And response body contains an element 'data' of size $1

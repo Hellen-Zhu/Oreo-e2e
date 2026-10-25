@@ -1,0 +1,11 @@
+[
+  {"name": "allocation_dialog.number_split_input", "lookupDetails": {"findBy": "testId", "value": "allocation-number-split-input"}},
+  {"name": "allocation_dialog.percentage_input", "lookupDetails": {"findBy": "testId", "value": "allocation-pct-input"}},
+  {"name": "allocation_dialog.allocate_btn", "lookupDetails": {"findBy": "testId", "value": "allocation-allocate-btn"}},
+  {"name": "allocation_dialog.add_subtrade_btn", "lookupDetails": {"findBy": "testId", "value": "allocation-add-sub-trade-btn"}},
+  {"name": "allocation_dialog.allocation_remaining_value", "lookupDetails": {"findBy": "testId", "value": "allocation-remaining-value"}},
+  {"name": "allocation_dialog.allocation_total_pct_value", "lookupDetails": {"findBy": "testId", "value": "allocation-total-pct-value"}},
+  {"name": "allocation_dialog.subtrade_counterparty_select", "lookupDetails": {"findBy": "testId", "value": "allocation-sub-trade-counterparty-select"}},
+  {"name": "allocation_dialog.subtrade_portfolio_select", "lookupDetails": {"findBy": "testId", "value": "allocation-sub-trade-portfolio-select"}},
+  {"name": "allocation_dialog.subtrade_percentage_input", "lookupDetails": {"findBy": "testId", "value": "allocation-sub-trade-percentage-input"}}
+]

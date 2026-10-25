@@ -1,0 +1,41 @@
+# PartialNovationRemaining API - step snippets
+
+# ── Build requests ──────────────────────────────────────────────────
+@When "^maker has valid data for PartialNovationRemaining event$"
+    Given build json request from current scenario with trade id from stored variable 'createdTradeId' as user 'maker@example.com'
+
+@When "^maker has invalid data with a non-existent trade for PartialNovationRemaining event$"
+    Given build json request with body from current scenario as user 'maker@example.com'
+
+@When "^maker has invalid data with missing remaining notional for PartialNovationRemaining event$"
+    Given build json request from current scenario with trade id from stored variable 'createdTradeId' as user 'maker@example.com'
+    And attach the request body to the report
+
+@When "^performs the PartialNovationRemaining event via api$"
+    When post to path '/trades/trigger-event'
+    And attach the response body to the report
+
+
+# ── Then steps - Assertions ─────────────────────────────────────────
+
+@Then "^the PartialNovationRemaining event is rejected with a validation error$"
+    Then failed to 'execute' 'PartialNovationRemaining'
+
+@Then "^the PartialNovationRemaining event is executed successfully$"
+    Then the 'PartialNovationRemaining' should be 'executed' successfully
+    And store response field 'data.results[0].childTradeIds[0]' as 'newTradeId'
+
+@Then "^original trade is partially novated successfully$"
+    Then maker retrieves the trade for stored variable 'createdTradeId'
+    And response body contains a key 'data.trade.basic.notionalAmount' with stored variable 'data[0].value'
+    And response body contains a key 'data.trade.trace.find { it.action == "PARTIAL_NOVATION_REMAINING" }.action' as 'PARTIAL_NOVATION_REMAINING'
+    And response body contains a key 'data.trade.trace.find { it.action == "PARTIAL_NOVATION_REMAINING" }.afterState.notionalAmount' with stored variable 'data[0].value'
+    And response body contains a key 'data.trade.basic.status' as 'Live'
+    And response body contains a key 'data.trade.basic.eventStatus' as 'Novated'
+
+@Then "^new trade is created with the correct notional successfully$"
+    Then maker retrieves the trade for stored variable 'newTradeId'
+    And response body contains a key 'data.trade.basic.counterpartyName' with stored variable 'data[1].value'
+    And response body contains a key 'data.trade.basic.counterpartyFmId' with stored variable 'data[2].value'
+    And response body contains a key 'data.trade.basic.status' as 'Live'
+    And response body contains a key 'data.trade.basic.eventStatus' as 'New'

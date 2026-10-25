@@ -1,0 +1,33 @@
+# ── PAGE: USER PREFERENCE ───────────────────────────────────────────────────────
+
+@Then "^page user preference settings panel is visible$"
+    Then assert that 'user_preference.settings_panel' is eventually visible
+
+@Then "^page user preference settings panel is hidden$"
+    Then assert that 'user_preference.settings_panel' is eventually hidden
+
+@When "^page user preference opens settings panel$"
+    When click 'user_preference.menu_btn'
+    And page user preference settings panel is visible
+
+@When "^page user preference closes settings panel$"
+    When click 'user_preference.menu_btn'
+    And page user preference settings panel is hidden
+
+@When "^page user preference clicks logout button$"
+    When click 'user_preference.logout_btn'
+
+@When "^page user preference clicks theme toggle button$"
+    When click 'user_preference.theme_toggle_btn'
+
+@When "^page user preference clicks number format button$"
+    When click 'user_preference.number_format_btn'
+
+@When "^page user preference clicks date format button$"
+    When click 'user_preference.date_format_btn'
+
+@Then "^page user preference dark theme is applied$"
+    Then assert that attribute 'class' of 'user_preference.app_root' contains 'dark'
+
+@Then "^page user preference light theme is applied$"
+    Then assert that attribute 'class' of 'user_preference.app_root' is empty

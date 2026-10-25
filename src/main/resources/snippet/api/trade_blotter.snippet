@@ -1,0 +1,121 @@
+# ── Provisioning ────────────────────────────────────────────────────
+@Given "^a blotter was created via api$"
+    Given store dynamic api timestamp with prefix 'TC-API-Blotter' as 'blotterName'
+    And build json request with body from test data 'trade-blotter' at json path 'name' from stored variable 'blotterName'
+    When post to path '/uc/blotters/create'
+    And attach the response body to the report
+    Then response status code is '201'
+    And store response field 'data.id' as 'newBlotterId'
+
+@Given "^a blotter was published as public via api$"
+    Given store dynamic api timestamp with prefix 'TC-API-Blotter' as 'blotterName'
+    And build json request with body from test data 'trade-blotter-public' at json path 'name' from stored variable 'blotterName'
+    When post to path '/uc/blotters/create'
+    And attach the response body to the report
+    Then response status code is '201'
+    And store response field 'data.id' as 'newBlotterId'
+    And store response field 'data.publishedId' as 'newMarketplaceBlotterId'
+
+# ── Build request ───────────────────────────────────────────────────
+@Given "^maker have valid data for blotter creation$"
+    Given store dynamic api timestamp with prefix 'TC-API-Blotter' as 'blotterName'
+    And build json request with body from current scenario at json path 'name' from stored variable 'blotterName' as user 'maker@example.com'
+
+@Given "^user have valid data to import the blotter$"
+    Given build request as user 'user@example.com'
+    And set path parameter 'marketplaceBlotterId' from stored variable 'newMarketplaceBlotterId'
+
+@Given "^maker have invalid data to import the blotter$"
+    Given build request as user 'maker@example.com'
+    And set path parameter 'marketplaceBlotterId' from stored variable 'newBlotterId'
+
+@Given "^maker have valid data to publish the blotter$"
+    Given build request as user 'maker@example.com'
+    And set path parameter 'blotterId' from stored variable 'newBlotterId'
+
+@Given "^maker have valid data to update blotter$"
+    And build json request with body from current scenario at json path 'name' from stored variable 'blotterName' as user 'maker@example.com'
+    And set path parameter 'blotterId' from stored variable 'newBlotterId'
+@Given "^maker is ready to query blotter list$"
+    Given build request as user 'maker@example.com'
+
+@Given "^maker have a marketplace blotter to import$"
+    Given build request as user 'maker@example.com'
+    And set path parameter 'marketplaceBlotterId' from stored variable 'newMarketplaceBlotterId'
+
+# ── Make API call ───────────────────────────────────────────────────
+
+@When "^create the blotter via api"
+    When post to path '/uc/blotters/create'
+    And attach the response body to the report
+    And store response field 'data.id' as 'newBlotterId'
+
+@When "^publish the saved blotter to marketplace$"
+    When post to path '/uc/blotters/{blotterId}/publish'
+    And attach the response body to the report
+    And store response field 'data.marketplaceId' as 'newMarketplaceBlotterId'
+
+@When "^re-publish the saved blotter to marketplace$"
+    When publish the saved blotter to marketplace
+
+@When "^update the saved blotter to public$"
+    When put to path '/uc/blotters/{blotterId}'
+    And attach the response body to the report
+
+@When "^import marketplace blotter as personal copy$"
+    When post to path '/uc/blotters/{marketplaceBlotterId}/import'
+    And attach the response body to the report
+    And store response field 'data.id' as 'importedBlotterId'
+
+@When "^import blotter as personal copy$"
+    When post to path '/uc/blotters/{marketplaceBlotterId}/import'
+    And attach the response body to the report
+
+@When "^maker retrieves all available trade blotters$"
+    Given build request as user 'maker@example.com'
+    When get from path '/uc/blotters'
+    And attach the response body to the report
+
+@When "^maker retrieves all available public trade blotters$"
+    Given build request as user 'maker@example.com'
+    When get from path '/uc/marketplace/blotters'
+    And attach the response body to the report
+
+# ── Assertions ──────────────────────────────────────────────────────
+
+@Then "^the blotter should be created and persisted successfully$"
+    Then response status code is '201'
+    And response matches current scenario
+
+@Then "^marketplace blotter was published successfully$"
+    Then response status code is '201'
+    And response matches current scenario
+
+@Then "^marketplace blotter was updated successfully$"
+    Then response status code is '200'
+    And response matches current scenario
+
+@Then "^marketplace blotter was published successfully and version updated$"
+    Then response status code is '201'
+    And response matches current scenario
+
+@Then "^marketplace blotter was re-published successfully$"
+    Then response status code is '201'
+    And response matches current scenario
+
+@Then "^marketplace blotter was imported successfully$"
+    Then response status code is '201'
+    And response matches current scenario
+
+@Then "^the import request is rejected with a validation error$"
+    Then response status code is '404'
+    And response matches current scenario
+
+@Then "^all blotters are retrieved successfully$"
+    Then the 'blotter' should be 'retrieved' successfully
+
+@Then "^all configured blotters are returned with a total count of '([^']*)'$"
+    And response body contains an element 'data' of size $1
+
+@Then "^all configured public blotters are returned with a total count of '([^']*)'$"
+    And response body contains an element 'data' of size $1

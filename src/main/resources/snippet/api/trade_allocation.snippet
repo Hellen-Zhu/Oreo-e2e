@@ -1,0 +1,51 @@
+# ── Provisioning ────────────────────────────────────────────────────
+
+@Given "^a trade is allocated with 2-way equal split via api$"
+    Given a live 'FX_TRF' trade is created via api
+    And build json request from test data 'allocation-create' with trade id from stored variable 'createdTradeId' as user 'maker@example.com'
+    When post to path '/trades/trigger-event'
+    Then response status code is '200'
+    And store response field 'data.results[0].tradeId' as 'allocatedParentTradeId'
+
+
+# ── Build request ───────────────────────────────────────────────────
+@When "^maker has valid data for 2-way equal Allocation event$"
+    Given build json request from current scenario with trade id from stored variable 'createdTradeId' as user 'maker@example.com'
+
+@When "^maker has valid data for 3-way unequal Allocation event$"
+    Given build json request from current scenario with trade id from stored variable 'createdTradeId' as user 'maker@example.com'
+
+@When "^maker has invalid data with notional amounts not summing to parent trade for Allocation event$"
+    Given build json request from current scenario with trade id from stored variable 'createdTradeId' as user 'maker@example.com'
+
+@When "^maker has invalid data with an empty sub-trade list for Allocation event$"
+    Given build json request from current scenario with trade id from stored variable 'createdTradeId' as user 'maker@example.com'
+
+@When "^maker has invalid data with notional exceeding the parent trade value$"
+    Given build json request from current scenario with trade id from stored variable 'createdTradeId' as user 'maker@example.com'
+
+@When "^maker has invalid data with mismatched sub-trade array lengths$"
+    Given build json request from current scenario with trade id from stored variable 'createdTradeId' as user 'maker@example.com'
+
+@When "^maker has invalid data for a non-existent trade$"
+    Given build json request with body from current scenario as user 'maker@example.com'
+
+@When "^maker has invalid data with the already-allocated trade$"
+    Given build json request from current scenario with trade id from stored variable 'allocatedParentTradeId' as user 'maker@example.com'
+
+
+# ── Make api call ───────────────────────────────────────────────────
+@When "^performs the Allocation event via api$"
+    When post to path '/trades/trigger-event'
+    And attach the response body to the report
+
+# ── Then steps - Assertions ─────────────────────────────────────────
+
+@Then "^the Allocation event is executed successfully$"
+    Then the 'allocation' should be 'executed' successfully
+
+@Then "^the Allocation event is rejected with a validation error$"
+    Then failed to 'execute' 'Allocation'
+
+@Then "^the Allocation event is rejected with a business rule violation$"
+    Then failed to 'execute' 'Allocation'

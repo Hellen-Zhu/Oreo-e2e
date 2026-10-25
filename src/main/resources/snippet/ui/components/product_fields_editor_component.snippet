@@ -1,0 +1,17 @@
+# ── PRODUCT FIELDS EDITOR COMPONENT ─────────────────────────────────
+
+@Then "^component product fields editor save changes button is visible$"
+    Then assert that 'product_edit.fields_editor_save_changes_btn' is eventually visible
+
+@When "^component product fields editor types first field display label from stored variable '([^']*)'$"
+    When type inner value '$1' from stored variable into 'product_edit.fields_editor_first_row_display_label_input'
+
+@When "^component product fields editor clicks save changes button$"
+    When click 'product_edit.fields_editor_save_changes_btn'
+
+@Then "^component product fields editor updates are confirmed as saved$"
+    Then assert toast notification with type 'success' and title as 'Product fields saved successfully'
+    And assert that 'product_edit.fields_editor_modal' is eventually hidden
+
+@Then "^component product fields editor first field display label input has value from stored variable '([^']*)'$"
+    Then assert that 'product_edit.fields_editor_first_row_display_label_input' eventually has inner 'input' property value from stored variable '$1'

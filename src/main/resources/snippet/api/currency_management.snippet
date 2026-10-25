@@ -1,0 +1,16 @@
+# ── Make API call ───────────────────────────────────────────────────
+@When "^retrieves the full governed currency code list$"
+    Given build request as user 'maker@example.com'
+    When get from path '/refdata/currencies'
+    And attach the response body to the report
+
+# ── Assertions ──────────────────────────────────────────────────────
+@Then "^the governed currency code list should be retrieved successfully$"
+    Then response status code is '200'
+    And response matches current scenario
+    And response body contains a non-empty value at key 'data'
+
+@Then "^the governed currency code list is returned with a total count of '([^']*)'$"
+    Then response status code is '200'
+    And response matches current scenario
+    And response body contains an element 'data' of size $1

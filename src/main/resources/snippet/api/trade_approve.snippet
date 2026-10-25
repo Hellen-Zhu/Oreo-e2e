@@ -1,0 +1,63 @@
+# ── Provisioning ────────────────────────────────────────────────────
+@When "^checker approves the pending task$"
+    Given checker approve a trade by stored taskId 'createdTaskId'
+
+@When "^checker rejects the pending task$"
+    Given checker reject a trade by stored taskId 'createdTaskId'
+
+@Given "^checker approve a trade by stored taskId '([^']*)'$"
+    Given build json request with path parameter 'taskId' from stored variable '$1' as user 'checker@example.com'
+    When post to path '/checker/tasks/{taskId}/approve'
+    Then response status code is '200'
+
+@Given "^checker reject a trade by stored taskId '([^']*)'$"
+    Given build json request with path parameter 'taskId' from stored variable '$1' as user 'checker@example.com'
+    When post to path '/checker/tasks/{taskId}/reject'
+    Then response status code is '200'
+
+# ── Build request ───────────────────────────────────────────────────
+
+@When "^checker has valid data for trade creation approval$"
+    Given build json request with path parameter 'taskId' from stored variable 'createdTaskId' as user 'checker@example.com'
+
+@When "^checker has valid data for trade creation rejection$"
+    Given build json request with path parameter 'taskId' from stored variable 'createdTaskId' as user 'checker@example.com'
+
+@When "^maker has valid data for trade creation self-approval$"
+    Given build json request with path parameter 'taskId' from stored variable 'createdTaskId' as user 'maker@example.com'
+
+
+# ── Make api call ───────────────────────────────────────────────────
+@When "^performs the approval for the request$"
+    When post to path '/checker/tasks/{taskId}/approve'
+    And attach the response body to the report
+
+@When "^performs the rejection for the request$"
+    When post to path '/checker/tasks/{taskId}/reject'
+    And attach the response body to the report
+
+@When "^performs the bulk approval for the request$"
+    When post to path '/checker/tasks/bulk-approve'
+    And attach the response body to the report
+
+# ── Assertions ──────────────────────────────────────────────────────
+@Then "^the creation approval request is processed successfully$"
+    Then the 'creation approval' should be 'processed' successfully
+
+@Then "^the creation rejection request is processed successfully$"
+    Then the 'creation rejection' should be 'processed' successfully
+
+@Then "^the amendment approval request is processed successfully$"
+    Then the 'amendment approval' should be 'processed' successfully
+
+@Then "^the amendment rejection request is processed successfully$"
+    Then the 'amendment rejection' should be 'processed' successfully
+
+@Then "^the cancellation approval request is processed successfully$"
+    Then the 'cancellation approval' should be 'processed' successfully
+
+@Then "^the cancellation rejection request is processed successfully$"
+    Then the 'cancellation rejection' should be 'processed' successfully
+
+@Then "^the trade creation self-approval request is rejected with permission denied$"
+    Then failed to 'approve' 'trade creation' with status '403'

@@ -1,0 +1,34 @@
+# PartialNovationRemaining API - step snippets
+
+# ── Build requests ──────────────────────────────────────────────────
+@When "^maker has valid data for NovationRemaining event$"
+    Given build json request from current scenario with trade id from stored variable 'createdTradeId' as user 'maker@example.com'
+
+@When "^maker has invalid data with a non-existent trade for NovationRemaining event$"
+    Given build json request with body from current scenario as user 'maker@example.com'
+
+@When "^maker has invalid data with missing remaining notional for NovationRemaining event$"
+    Given build json request from current scenario with trade id from stored variable 'createdTradeId' as user 'maker@example.com'
+    And attach the request body to the report
+
+@When "^performs the NovationRemaining event via api$"
+    When post to path '/trades/trigger-event'
+    And attach the response body to the report
+
+
+# ── Then steps - Assertions ─────────────────────────────────────────
+
+@Then "^the NovationRemaining event is rejected with a validation error$"
+    Then failed to 'execute' 'NovationRemaining'
+
+@Then "^the NovationRemaining event is executed successfully$"
+    Then the 'PartialNovationRemaining' should be 'executed' successfully
+    And store response field 'data.results[0].childTradeIds[0]' as 'newTradeId'
+
+@Then "^original trade is novated successfully$"
+    Then maker retrieves the trade for stored variable 'createdTradeId'
+    And response body contains a key 'data.trade.basic.notionalAmount' with stored variable 'data[0].value'
+    And response body contains a key 'data.trade.trace.find { it.action == "NOVATION_REMAINING" }.action' as 'NOVATION_REMAINING'
+    And response body contains a key 'data.trade.trace.find { it.action == "NOVATION_REMAINING" }.afterState.notionalAmount' with stored variable 'data[0].value'
+    And response body contains a key 'data.trade.basic.status' as 'Live'
+    And response body contains a key 'data.trade.basic.eventStatus' as 'Novated'

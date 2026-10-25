@@ -20,7 +20,7 @@
         "status": "Pending Approval Draft",
         "eventStatus": "${json-unit.any-string}",
         "trader": "system",
-        "scbEntity": "LONDON",
+        "bankEntity": "LONDON",
         "source": "OREO",
         "ci": 0,
         "hardMargin": 0,

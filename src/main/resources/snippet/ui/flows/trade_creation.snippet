@@ -1,4 +1,11 @@
 # ── FLOW: TRADE CREATION ────────────────────────────────────────────
+@When "^creates a draft '([^']*)' trade$"
+    When page trade portal clicks new trade button
+    And page new trade container is visible
+    And page new trade selects basic mandatory info for product '$1'
+    And upload '$1' dat file
+    And page new trade save and captures trade id as 'createdTradeId'
+    And page trade detail header card contains from stored variable 'createdTradeId'
 
 @When "^creates a new '([^']*)' trade$"
     When page trade portal clicks new trade button
@@ -26,6 +33,16 @@
     And page new trade selects old counterparty from stored variable 'stepIn.oldCounterpartyName'
     And page new trade book and captures trade id as 'createdTradeId'
 
+@When "^book trade from the draft '([^']*)' trade$"
+    When opens trade detail for current trade from trade portal
+    And trade detail page book trade
+    And page trade detail header card contains from stored variable 'createdTradeId'
+
+@Then "^trade is created with draft status and info$"
+    Then page trade detail header card contains from stored variable 'createdTradeId'
+    And page trade detail status badge shows 'DRFT'
+    And the trade show correct info in trade details
+
 @Then "^trade is created with pending approval status and info$"
     Then page trade detail header card contains from stored variable 'createdTradeId'
     And page trade detail status badge shows 'PARV'
@@ -38,6 +55,9 @@
 
 @Then "^the StepIn Full trade is Live in trade details$"
     Then the trade remains Live in trade details
+
+@Then "^the StepIn Partial trade is Draft in trade details$"
+    Then the trade is reverted to Draft in trade details
 
 @Then "^the newly created trade is pending checker approval$"
     Then the trade has status 'PARV' and event status 'New' in the blotter

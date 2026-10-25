@@ -1,0 +1,52 @@
+# ── FLOW: USER PREFERENCE ───────────────────────────────────────────────────────
+
+@Given "^user preferences are set to application defaults$"
+    Given atomic user preferences are set to application defaults
+
+@When "^none blotter view is visible in the application$"
+    When page trade portal closes New Today Blotter view
+    Then page trade portal New Today Blotter view is not visible
+    And page trade portal Validation Blotter view is not visible
+    And page trade portal Pending Approval Blotter view is not visible
+
+@When "^changes the theme preference$"
+    When page user preference clicks theme toggle button
+
+@When "^changes the number format preference to '([^']*)' and date format preference to '([^']*)'$"
+    When page user preference opens settings panel
+    And page user preference clicks number format button
+    And click option from stored variable '$1.numberOptionLabel'
+    And page user preference clicks date format button
+    And click option from stored variable '$1.dateOptionLabel'
+    And page user preference closes settings panel
+
+@When "^changes the blotter view to show blotters$"
+    When page trade portal clicks New Today Blotter button
+    And page trade portal clicks Validation Blotter button
+    And page trade portal clicks Pending Approval Blotter button
+
+@When "^updates theme and blotter view preferences$"
+    When changes the theme preference
+    And changes the blotter view to show blotters
+
+@Then "^the updated theme and blotter view preferences are applied$"
+    Then page user preference dark theme is applied
+    And the configured Trades blotter view preference is applied in the settings
+
+@Then "^the updated theme and blotter view preferences persist after re-login$"
+    Then page user preference dark theme is applied
+    And the configured Trades blotter view preference is applied in the settings
+
+@Then "^the number format is applied for '([^']*)' and date format is applied for '([^']*)' in the blotter$"
+    Then page trade portal searches and views trade stored as 'createdTradeId'
+    And page trade portal blotter column 'premiumAmount' matches stored variable '$1.premiumAmount'
+    And page trade portal blotter column 'valueDate' matches stored variable '$2.expectedValueDateLabel'
+
+@Then "^the number and date format preferences persist after refresh for '([^']*)'$"
+    Then atomic refresh webpage and wait for page ready
+    And the number format is applied for '$1' and date format is applied for '$1' in the blotter
+
+@Then "^the configured Trades blotter view preference is applied in the settings$"
+    Then page trade portal New Today Blotter view is visible
+    And page trade portal Validation Blotter view is visible
+    And page trade portal Pending Approval Blotter view is visible

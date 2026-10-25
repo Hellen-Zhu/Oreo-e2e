@@ -1,0 +1,79 @@
+# ── FLOW: COMPOSE PRODUCT ──────────────────────────────────────────────────────
+
+@Given "^a new product live in the compose page$"
+    Given a product is provisioned via playwright api
+
+@Given "^setup Customized formula for product P001 Portfolio Reassignment event$"
+    When store e2e variable value 'FX_TRF' as 'createdProductId'
+    And page compose navigates to compose page
+    And page compose opens product edit for stored product id 'createdProductId'
+    And page product edit opens PortfolioReassignment event editor
+    And page product edit selects formula type option 'Customized Formula'
+    And page product edit types formula expression from stored variable 'formula.expression'
+    And page product edit clicks save event configuration button
+    And page trade portal navigates to Trade Portal page
+
+@And "^restore Cortex formula for product P001 Portfolio Reassignment event$"
+    When store e2e variable value 'FX_TRF' as 'createdProductId'
+    And page compose navigates to compose page
+    And page compose opens product edit for stored product id 'createdProductId'
+    And page product edit opens PortfolioReassignment event editor
+    And page product edit clears formula expression
+    And page product edit selects formula type option 'Cortex Formula'
+    And page product edit clicks save event configuration button
+
+@When "^navigates and opens the detail page for the product$"
+    When page compose navigates to compose page
+    And page compose opens product edit for stored product id 'createdProductId'
+
+@When "^back and revisit detail page for the product$"
+    When page product edit navigates back to compose page
+    And page compose opens product edit for stored product id 'createdProductId'
+
+@When "^perform amendment on product description$"
+    When page product edit types description as 'TRF Auto Test'
+    And save product edit for metadata of product 'createdProductId' and wait for page ready
+
+@When "^adds the cancellation event to the product canvas$"
+    When page product edit scrolls canvas drop area into view
+    And page product edit adds cancellation event into canvas
+    And page product edit cancellation canvas node is visible
+    And save product edit for product 'CreatedProductEntityId' and wait for page ready
+
+@When "^removes the EarlyTermination event from the product canvas$"
+    When page product edit scrolls canvas drop area into view
+    And page product edit hovers early termination canvas node
+    And page product edit clicks early termination delete button
+    And save product edit for product 'CreatedProductEntityId' and wait for page ready
+    And page product edit early termination canvas node is hidden
+
+@When "^perform amendment on direction for Early Termination event editor$"
+    When page product edit opens EarlyTermination event editor
+    And page product edit types event direction input from stored variable 'directionName'
+    And page product edit clicks save event configuration button
+
+# ── ASSERTIONS ─────────────────────────────────────────────────────────────────
+
+@Then "^the product description is displayed as amended value successfully$"
+    And page product edit description textarea has value 'TRF Auto Test'
+
+@Then "^the cancellation event is available on the product canvas$"
+    When back and revisit detail page for the product
+    And page product edit scrolls canvas drop area into view
+    And page product edit cancellation canvas node is visible
+
+@Then "^the EarlyTermination event is not available on the product canvas$"
+    When back and revisit detail page for the product
+    And page product edit scrolls canvas drop area into view
+    And page product edit early termination canvas node is hidden
+
+@Then "^the direction is updated as amended value successfully$"
+    When page product edit opens EarlyTermination event editor
+    And page product edit event direction input has value from stored variable 'directionName'
+
+@Then "^the product is updated successfully$"
+    Then assert toast notification with type 'success' and title as 'Changes saved successfully'
+
+# Lifecycle event maker action type: Creation, Amendment, Early Termination, Cancellation, etc
+@Then "^the event configuration is saved successfully$"
+    Then assert toast notification with type 'success' and title as 'Event configuration saved'

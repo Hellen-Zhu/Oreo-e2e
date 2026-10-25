@@ -1,0 +1,11 @@
+@When "^perform the Step Out Partial event on the '([^']*)' trade$"
+    When opens lifecycle action 'step out partial' for current trade
+    And component dynamic action selects direction from stored variable 'direction'
+    And component dynamic action types amount from stored variable 'amount'
+    And component dynamic action types currency from stored variable 'currency'
+    And component dynamic action types new notional from stored variable 'newNotional'
+    And component dynamic action selects counterparty from stored variable 'counterpartyName'
+    And submits lifecycle event and waits for page ready
+
+@Then "^the step out partial is completed successfully$"
+    Then assert toast notification with type 'success' and message 'StepOutPartial completed successfully'

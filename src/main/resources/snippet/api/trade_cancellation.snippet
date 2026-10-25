@@ -1,0 +1,82 @@
+# ── Provisioning ────────────────────────────────────────────────────
+
+@Given "^maker submit triggers a Cancellation event and task stored as '([^']*)'$"
+    Given build json request from test data 'trade-cancellation' with trade id from stored variable 'createdTradeId' as user 'maker@example.com'
+    When post to path '/trades/trigger-event'
+    Then response status code is '200'
+    And store response field 'data.results[0].checkerTaskId' as '$1'
+
+@Given "^a '([^']*)' trade with pending cancellation is created and task stored as '([^']*)'$"
+    Given a live '$1' trade is created via api
+    And maker submit triggers a Cancellation event and task stored as '$2'
+
+@Given "^a '([^']*)' trade with pending cancellation is created with trade stored as '([^']*)' and task stored as '([^']*)'$"
+    Given a live '$1' trade is created via api with trade stored as '$2' and task stored as '$3'
+    And build json request from test data 'trade-cancellation' with trade id from stored variable '$2' as user 'maker@example.com'
+    When post to path '/trades/trigger-event'
+    Then response status code is '200'
+    And store response field 'data.results[0].checkerTaskId' as '$3'
+
+@Given "^a live '([^']*)' trade with a pending Cancellation exists$"
+    Given a '$1' trade with pending cancellation is created and task stored as 'createdTaskId'
+
+@Given "^multiple live '([^']*)' trades have pending cancellation requests$"
+    Given a '$1' trade with pending cancellation is created with trade stored as 'createdTradeId1' and task stored as 'createdTaskId1'
+    And a '$1' trade with pending cancellation is created with trade stored as 'createdTradeId2' and task stored as 'createdTaskId2'
+
+# ── Build request ───────────────────────────────────────────────────
+@When "^checker has invalid Cancellation data for a non-existent trade$"
+    Given build json request with body from current scenario as user 'checker@example.com'
+
+@When "^maker has valid data for Cancellation event$"
+    Given build json request from current scenario with trade id from stored variable 'createdTradeId' as user 'maker@example.com'
+
+@When "^checker has valid data for Cancellation event$"
+    Given build json request from current scenario with trade id from stored variable 'createdTradeId' as user 'checker@example.com'
+
+@When "^checker has valid data for cancellation approval$"
+    Given build json request with path parameter 'taskId' from stored variable 'createdTaskId' as user 'checker@example.com'
+
+@When "^checker has valid data for cancellation rejection$"
+    Given build json request with path parameter 'taskId' from stored variable 'createdTaskId' as user 'checker@example.com'
+
+@When "^maker has valid data for cancellation approval$"
+    Given build json request with path parameter 'taskId' from stored variable 'createdTaskId' as user 'maker@example.com'
+
+@When "^checker has valid data for bulk cancellation approval$"
+    Given build json request from current scenario with task ids from stored variables 'createdTaskId1' and 'createdTaskId2' as user 'checker@example.com'
+
+# ── Make api call ───────────────────────────────────────────────────
+
+@When "^performs the Cancellation event via api$"
+    When post to path '/trades/trigger-event'
+    And attach the response body to the report
+
+
+
+
+# ── Assertions ──────────────────────────────────────────────────────
+
+@Then "^the Cancellation event is executed successfully$"
+    Then the 'cancellation' should be 'executed' successfully
+
+@Then "^the '([^']*)' Cancellation event is submitted for checker approval$"
+    Then response status code is '200'
+    And response matches current scenario
+
+@Then "^the Cancellation event is rejected with permission denied$"
+    Then failed to 'execute' 'cancellation' with status '403'
+
+@Then "^the Cancellation event is rejected with a business rule violation$"
+    Then failed to 'execute' 'cancellation' with status '400'
+
+@Then "^the trade status is updated to '([^']*)'$"
+    Then response status code is '200'
+    And response body contains a key 'data.basic.status' with value '$1'
+    And attach the response body to the report
+
+@Then "^the cancellation approval request is rejected with permission denied$"
+    Then failed to 'approve' 'cancellation' with status '403'
+
+@Then "^all cancellation tasks should be approved successfully$"
+    Then the 'bulk cancellation' should be 'executed' successfully

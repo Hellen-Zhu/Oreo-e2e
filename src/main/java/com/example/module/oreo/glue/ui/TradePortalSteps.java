@@ -152,10 +152,10 @@ public class TradePortalSteps {
         cell.waitFor(new Locator.WaitForOptions()
                 .setState(WaitForSelectorState.ATTACHED)
                 .setTimeout(ctx.timeoutMillis()));
-        // sc-badge renders text as a DOM property (badge.label), not as DOM content.
-        // Use JS evaluate to read the property when an sc-badge is present.
+        // ui-badge renders text as a DOM property (badge.label), not as DOM content.
+        // Use JS evaluate to read the property when an ui-badge is present.
         String actualValue = (String) cell.evaluate(
-                "el => { const badge = el.querySelector('sc-badge'); " +
+                "el => { const badge = el.querySelector('ui-badge'); " +
                         "const span = el.querySelector('span'); " +
                         "return badge ? badge.label : span ? span.textContent.trim() : el.textContent.trim(); }");
         ctx.write(String.format("Blotter cell actual value = '%s'", actualValue));

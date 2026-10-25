@@ -1,0 +1,7 @@
+[
+  {"name": "blotter_marketplace_dialog.dialog", "lookupDetails": {"findBy": "testId", "value": "blotter-marketplace-dialog"}},
+  {"name": "blotter_marketplace_dialog.search_input", "lookupDetails": {"findBy": "testId", "value": "blotter-marketplace-search-input"}},
+  {"name": "blotter_marketplace_dialog.table", "lookupDetails": {"findBy": "testId", "value": "blotter-marketplace-table"}},
+  {"name": "blotter_marketplace_dialog.row", "lookupDetails": {"findBy": "testId", "value": "marketplace-blotter-row"}},
+  {"name": "blotter_marketplace_dialog.import_btn", "lookupDetails": {"findBy": "testId", "value": "blotter-marketplace-import-btn"}}
+]

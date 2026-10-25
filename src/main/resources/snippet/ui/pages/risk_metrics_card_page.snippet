@@ -1,0 +1,39 @@
+# ── PAGE: RISK METRICS CARD ─────────────────────────────────────────────────────
+
+@When "^page risk metrics card scrolls section into view$"
+    When scroll element 'risk_metrics_card.section_container' into view
+
+@Then "^page risk metrics card section is visible$"
+    Then assert that 'risk_metrics_card.section_container' is eventually visible
+
+@Then "^page risk metrics card loading states are visible$"
+    Then assert that 'risk_metrics_card.pnl_loading_state' is eventually visible
+    And assert that 'risk_metrics_card.var_95_loading_state' is eventually visible
+    And assert that 'risk_metrics_card.var_99_loading_state' is eventually visible
+    And assert that 'risk_metrics_card.expected_shortfall_loading_state' is eventually visible
+    And assert that 'risk_metrics_card.delta_loading_state' is eventually visible
+    And assert that 'risk_metrics_card.gamma_loading_state' is eventually visible
+    And assert that 'risk_metrics_card.vega_loading_state' is eventually visible
+    And assert that 'risk_metrics_card.theta_loading_state' is eventually visible
+
+@Then "^page risk metrics card pnl loading states are hidden"
+    Then assert that 'risk_metrics_card.pnl_loading_state' is eventually hidden
+
+@Then "^page risk metrics card pnl value is visible$"
+    Then assert that 'risk_metrics_card.pnl_value' is eventually visible
+
+@Then "^page risk metrics card var95 and var99 error states are visible$"
+    Then assert that 'risk_metrics_card.var_95_error_state' is eventually visible
+    And assert that 'risk_metrics_card.var_99_error_state' is eventually visible
+
+@Then "^page risk metrics card var95 and var99 values are hidden$"
+    Then assert that 'risk_metrics_card.var_95_value' is not visible
+    And assert that 'risk_metrics_card.var_99_value' is not visible
+
+@Then "^page risk metrics card available metric values are visible$"
+    Then assert that 'risk_metrics_card.pnl_value' is eventually visible
+    And assert that 'risk_metrics_card.expected_shortfall_value' is eventually visible
+    And assert that 'risk_metrics_card.delta_value' is eventually visible
+    And assert that 'risk_metrics_card.gamma_value' is eventually visible
+    And assert that 'risk_metrics_card.vega_value' is eventually visible
+    And assert that 'risk_metrics_card.theta_value' is eventually visible

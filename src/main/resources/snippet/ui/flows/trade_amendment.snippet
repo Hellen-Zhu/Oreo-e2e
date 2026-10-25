@@ -1,0 +1,60 @@
+@When "^submits amendment change and waits for trade update$"
+    When click amend using configured risk engine mode for trade stored as 'createdTradeId' from trade details page
+    Then component trade change confirmation dialog is visible
+    And component trade change confirmation selects reason option 'NON_ECON_CHANGE'
+    And click amendment confirm and wait for trade update for trade stored as 'createdTradeId'
+    And component trade change confirmation dialog is hidden
+
+@When "^save amendment and waits for trade update$"
+    When trade detail page save trade
+
+@When "^perform amendment for Deal Date on the trade$"
+    When opens trade detail for current trade from trade portal
+    And store today plus 1 business day as 'dealDate' with format 'yyyy-MM-dd'
+    And store today plus 1 business day as 'actualDate' with format 'dd MMM yyyy'
+    And page trade detail fills deal date from stored variable 'dealDate'
+    And submits amendment change and waits for trade update
+
+@When "^perform amendment for Counterparty for the draft trade$"
+    When opens trade detail for current trade from trade portal
+    And page trade detail selects counterparty from stored variable 'newCounterpartyName'
+    And save amendment and waits for trade update
+
+@When "^perform amendment for Counterparty on the trade$"
+    When opens trade detail for current trade from trade portal
+    And page trade detail selects counterparty from stored variable 'newCounterpartyName'
+    And submits amendment change and waits for trade update
+
+@Then "^Deal Date field shows the amended value in the trade detail page$"
+    Then page trade detail deal date field shows value from stored variable 'actualDate'
+
+@Then "^the trade is amended to the updated Counterparty value for approval$"
+    Then the trade is pending checker approval in trade details
+    And the trade details show the amended Counterparty value
+
+@Then "^the trade is amended to the updated Counterparty value and keeps as Live$"
+    Then the trade remains Live in trade details
+    And the trade details show the amended Counterparty value
+
+@Then "^the trade is amended to the updated Counterparty value and keeps as Draft"
+    Then the trade remains Draft in trade details
+    And the trade details show the amended Counterparty value
+
+@Then "^the trade details show the amended Counterparty value$"
+    Then page trade detail counterparty field shows value from stored variable 'newCounterpartyName'
+
+@Then "^the trade details show the original Counterparty value$"
+    Then page trade detail counterparty field shows value from stored variable 'originalCounterpartyName'
+
+@Then "^the checker cannot amend the trade without maker permission$"
+    When opens trade detail for current trade from trade portal
+    Then page trade detail fields are disabled for amendment
+
+@Then "^the amendment request is pending checker approval$"
+    Then trade status is updated to 'PARV' and event status is updated to 'Amended' in the trade portal page
+
+@Then "^the rejected amendment is reverted to Live$"
+    Then trade status is updated to 'LIVE' and event status is updated to 'New' in the trade portal page
+
+@Then "^the amendment is submitted successfully$"
+    Then assert toast notification with type 'success' and title as 'Trade updated successfully'

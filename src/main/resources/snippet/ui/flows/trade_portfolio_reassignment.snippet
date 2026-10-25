@@ -1,0 +1,17 @@
+@When "^perform Portfolio Reassignment event on the '([^']*)' trade$"
+    When opens lifecycle action 'portfolio reassignment' for current trade
+    And component dynamic action selects portfolio from stored variable 'portfolioReassignment.newPortfolio'
+    And submits lifecycle event and waits for page ready
+
+@Then "^the trade details show the updated portfolio assignment$"
+    When double click to navigate to trade detail and wait for page ready for stored variable 'createdTradeId'
+    Then page trade detail container is visible
+    And the trade remains Live in trade details
+    And page trade detail portfolio combobox contains from stored variable 'expectedPortfolio'
+
+@Then "^the portfolio reassignment is completed successfully$"
+    Then assert toast notification with type 'success' and message 'PortfolioReassignment completed successfully'
+
+@Then "^the trade details reflect the td_bf value calculated from the configured PortfolioReassignment formula$"
+    When double click to navigate to trade detail and wait for page ready for stored variable 'createdTradeId'
+    Then page trade detail td_bf value is calculated correctly based on configured PortfolioReassignment formula

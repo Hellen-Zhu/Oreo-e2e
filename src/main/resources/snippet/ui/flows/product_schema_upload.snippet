@@ -1,0 +1,83 @@
+# ── FLOW: PRODUCT SCHEMA UPLOAD ─────────────────────────────────────────────────
+
+@When "^product schema upload workspace is opened$"
+    When page schema upload workspace is opened
+
+# ── SCHEMA UPLOAD FLOW ──────────────────────────────────────────────────────────
+
+@Given "^a valid schema file with version information is prepared for confirmation$"
+    When product schema upload workspace is opened
+    And component schema upload uploads schema file from current scenario key 'schema.filePath'
+    And component schema upload requests schema preview and waits for completion
+    Then component schema upload change summary input is visible
+
+@Then "^schema history for the confirmed version is available$"
+    When page schema upload opens history table
+
+# ── BUSINESS-READABLE FLOW ALIASES ───────────────────────────────────────────────
+
+@When "^uploaded a valid json schema file and reviewed parsed schema preview$"
+    When a valid schema file with version information is prepared for confirmation
+    Then component schema upload parsed info is visible
+
+@Then "^should be able to save the product successfully$"
+    When component schema upload clicks confirm save button
+    Then assert toast notification with type 'success' and title as '${json-unit.regex}Schema v.*saved.*'
+    And page schema upload captures current product identifier from edit url when available
+
+@Then "^the product is accessible in the product list and detail page$"
+    Then schema history for the confirmed version is available
+    And page schema upload section is visible
+
+@When "^overwrite is acknowledged for duplicate schema version submission$"
+    When component schema upload clicks confirm save button
+    Then component schema upload version exists warning is visible
+    When component schema upload clicks override confirm button
+
+@Then "^duplicate schema version is saved successfully and recorded in schema history$"
+    Then page schema upload captures current product identifier from edit url when available
+    And schema history records another entry for the same product version
+
+@Given "^a product schema is uploaded and committed successfully$"
+    When uploaded a valid json schema file and reviewed parsed schema preview
+    Then should be able to save the product successfully
+
+@When "^the first product field display label is updated and saved from product detail page$"
+    When product field details are opened for editing
+    And first product field display label is updated
+    And component product fields editor clicks save changes button
+    Then product field updates are confirmed as saved
+
+# ── RE-UPLOAD WARNING FLOW ──────────────────────────────────────────────────────
+
+@Given "^an existing schema version is ready for overwrite re-upload$"
+    When product schema upload workspace is opened
+    And component schema upload uploads schema file from current scenario key 'schema.filePath'
+    And component schema upload requests schema preview and waits for completion
+    Then component schema upload change summary input is visible
+    When component schema upload clicks confirm save button
+    Then assert toast notification with type 'success' and title as '${json-unit.regex}Schema v.*saved.*'
+    And page schema upload captures current product identifier from edit url when available
+    And page schema upload section is visible
+    When component schema upload uploads schema file from current scenario key 'schema.filePath'
+    And component schema upload requests schema preview and waits for completion
+    Then component schema upload change summary input is visible
+
+@Then "^schema history records another entry for the same product version$"
+    When page schema upload opens history table
+
+# ── PRODUCT FIELDS EDITOR ───────────────────────────────────────────────────────
+
+@When "^product field details are opened for editing$"
+    When page product edit opens product fields editor
+
+@When "^first product field display label is updated$"
+    When store e2e variable value 'E2E Updated Display Label' as 'editedDisplayLabel'
+    And component product fields editor types first field display label from stored variable 'editedDisplayLabel'
+
+@Then "^product field updates are confirmed as saved$"
+    Then component product fields editor updates are confirmed as saved
+
+@Then "^the updated display label remains after reopening product fields editor$"
+    When product field details are opened for editing
+    Then component product fields editor first field display label input has value from stored variable 'editedDisplayLabel'

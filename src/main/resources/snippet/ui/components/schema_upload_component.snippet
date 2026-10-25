@@ -1,0 +1,25 @@
+# ── SCHEMA UPLOAD COMPONENT ─────────────────────────────────────────
+
+@Then "^component schema upload change summary input is visible$"
+    Then assert that 'schema_upload.change_summary_input' is eventually visible
+
+@Then "^component schema upload parsed info is visible$"
+    Then assert that 'schema_upload.parsed_info' is eventually visible
+
+@Then "^component schema upload history table is visible$"
+    Then assert that 'schema_upload.history_table' is eventually visible
+
+@Then "^component schema upload version exists warning is visible$"
+    Then assert that 'schema_upload.version_exists_warning' is eventually visible
+
+@When "^component schema upload uploads schema file from current scenario key '([^']*)'$"
+    When schema file from current scenario '$1' is uploaded for validation
+
+@When "^component schema upload requests schema preview and waits for completion$"
+    When schema preview is requested and completed
+
+@When "^component schema upload clicks confirm save button$"
+    When click 'schema_upload.confirm_save_btn'
+
+@When "^component schema upload clicks override confirm button$"
+    When click 'schema_upload.override_confirm_btn'

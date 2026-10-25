@@ -1,0 +1,9 @@
+[
+  {"name": "compose.container", "lookupDetails": {"findBy": "testId", "value": "product-composer-container"}},
+  {"name": "compose.product_list", "lookupDetails": {"findBy": "testId", "value": "product-composer-list"}},
+  {"name": "compose.product_P001_card", "lookupDetails": {"findBy": "testId", "value": "product-composer-item-P001"}},
+  {"name": "compose.toolbar", "lookupDetails": {"findBy": "testId", "value": "product-composer-toolbar"}},
+  {"name": "compose.upload_product_btn", "lookupDetails": {"findBy": "testId", "value": "product-composer-upload-btn"}},
+  {"name": "compose.audit_log_container", "lookupDetails": {"findBy": "testId", "value": "audit-log-container"}},
+  {"name": "compose.audit_log_empty_state", "lookupDetails": {"findBy": "testId", "value": "audit-log-empty-state"}}
+]

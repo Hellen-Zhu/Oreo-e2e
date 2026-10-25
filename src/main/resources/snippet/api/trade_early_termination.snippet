@@ -17,10 +17,8 @@
 
 
 # ── Assertions ──────────────────────────────────────────────────────
-
-@Then "^the EarlyTermination event processed successfully$"
-    Then the 'EarlyTermination' should be 'processed' successfully
-    And response body contains an element in 'data.results' with key 'tradeId' with stored variable 'createdTradeId'
+@Then "^the EarlyTermination event is executed successfully$"
+    Then the 'EarlyTermination' should be 'executed' successfully
 
 @Then "^the EarlyTermination event is rejected with a validation error$"
     Then failed to 'execute' 'EarlyTermination'

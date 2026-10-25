@@ -3,7 +3,7 @@ Feature: Trade Creation E2E
   As a Trader  I want to create and submit FX TRF trades in the portal
   So that trades progress through the correct trade states and are visible in the blotter
 
-  @ADO#positive @ADO#smoke @test @capability#create
+  @ADO#positive @ADO#smoke @sanity @capability#create
   Scenario Outline: [TC-TRADE-CREATION-<product_type>-UI-001] Should be able to create a <product_type> Trade
     When maker is logged in to the trade portal
     And creates a new '<product_type>' trade
@@ -33,6 +33,33 @@ Feature: Trade Creation E2E
   Scenario Outline: [TC-TRADE-CREATION-<product_type>-UI-003] Should be able to create a <product_type> StepIn Partial trade
     When maker is logged in to the trade portal
     And creates a new '<product_type>' StepIn partial trade
+    Then trade is created with pending approval status and info
+
+    Examples:
+      | product_type    |
+      | FX_TRF          |
+      | FX_PSCRIPT      |
+      | FX_PSCRIPT_FSKO |
+      | FX_PSCRIPT_TRF  |
+
+  @ADO#positive @ADO#smoke @capability#create
+  Scenario Outline: [TC-TRADE-CREATION-<product_type>-UI-004] Should be able to create a draft <product_type> Trade
+    When maker is logged in to the trade portal
+    And creates a draft '<product_type>' trade
+    Then trade is created with draft status and info
+
+    Examples:
+      | product_type    |
+      | FX_TRF          |
+      | FX_PSCRIPT      |
+      | FX_PSCRIPT_FSKO |
+      | FX_PSCRIPT_TRF  |
+
+  @ADO#positive @ADO#smoke @capability#create
+  Scenario Outline: [TC-TRADE-CREATION-<product_type>-UI-005] Should be able to book a trade from a draft <product_type> Trade
+    Given a saved Draft '<product_type>' trade exists in the blotter
+    And maker is logged in to the trade portal
+    And book trade from the draft '<product_type>' trade
     Then trade is created with pending approval status and info
 
     Examples:

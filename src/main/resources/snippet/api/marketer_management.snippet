@@ -1,0 +1,38 @@
+# ── Provisioning ────────────────────────────────────────────────────
+
+# ── Make api call ───────────────────────────────────────────────────
+@When "^retrieves all active marketers$"
+    Given build request as user 'maker@example.com'
+    When get from path '/refdata/marketers/active'
+    And attach the response body to the report
+
+@When "^retrieves the marketer by an existing id$"
+    When get '/refdata/marketers/{id}' with path parameter 'id' from stored variable 'marketerId' as user 'maker@example.com'
+    And attach the response body to the report
+
+@When "^retrieves the marketer by a non-existing id$"
+    When get '/refdata/marketers/{id}' with path parameter 'id' from stored variable 'marketerId' as user 'maker@example.com'
+    And attach the response body to the report
+
+@When "^searches marketers by keyword$"
+    Given build request as user 'maker@example.com'
+    And set query parameter 'keyword' from stored variable 'marketerKeyword'
+    When get from path '/refdata/marketers/search'
+    And attach the response body to the report
+
+# ── Assertions ──────────────────────────────────────────────────────
+@Then "^the active marketer list is returned with the current business semantics$"
+    Then response status code is '200'
+    And response body is not empty
+
+@Then "^all active marketers are returned with a total count of '([^']*)'$"
+    Then the 'marketers' should be 'retrieved' successfully
+    And response body contains an element 'data' of size $1
+
+@Then "^the marketer record is returned with the current business semantics$"
+    Then the 'marketer' should be 'retrieved' successfully
+
+@Then "^the marketer lookup should be rejected with validation error$"
+    Then failed to 'retrieve' 'marketer' with status '404'
+
+@Then "^the marketer search results match the keyword criteria$"

@@ -1,0 +1,66 @@
+# ── Provisioning ────────────────────────────────────────────────────
+
+@Given "^a '([^']*)' trade pending amendment approval is created via api$"
+    Given a live '$1' trade is created via api
+    When maker has valid data for Trade Amendment
+    And performs the Trade Amendment action via api
+    Then response status code is '200'
+
+@Given "^a live '([^']*)' trade with a pending Amendment exists$"
+    Given a live '$1' trade is created via api
+    Given build json request with path parameter 'tradeId' from stored variable 'createdTradeId' as user 'maker@example.com'
+    And set request body from test data 'trade-amendment'
+    When post to path '/trades/{tradeId}/update'
+    Then response status code is '200'
+    And store response field 'msg' as 'amendTaskMsg'
+    And the amendment task ID is extracted and stored
+
+# ── Build request ───────────────────────────────────────────────────
+
+@When "^maker has valid data for Trade Amendment$"
+    Given build json request with path parameter 'tradeId' from stored variable 'createdTradeId' as user 'maker@example.com'
+    And set request body from current scenario
+
+@When "^checker has valid data for amendment approval$"
+    Given build json request with path parameter 'taskId' from stored variable 'createdAmendTaskId' as user 'checker@example.com'
+
+@When "^checker has valid data for amendment rejection$"
+    Given build json request with path parameter 'taskId' from stored variable 'createdAmendTaskId' as user 'checker@example.com'
+
+@When "^maker has valid data for amendment approval$"
+    Given build json request with path parameter 'taskId' from stored variable 'createdAmendTaskId' as user 'maker@example.com'
+
+# ── Make api call ───────────────────────────────────────────────────
+
+@When "^performs the Trade Amendment action via api$"
+    When post to path '/trades/{tradeId}/update'
+    And attach the response body to the report
+
+# ── Assertions ──────────────────────────────────────────────────────
+
+@Then "^the trade amendment enters Pending Approval status$"
+    Then response matches current scenario
+
+@Then "^the trade is updated with the amended terms$"
+    Then the 'trade' should be 'updated' successfully
+
+# Stores the task ID extracted from the msg field for downstream checker steps.
+@Then "^the '([^']*)' trade should be updated with the amended terms$"
+    Then response matches current scenario
+    And store response field 'msg' as 'amendTaskMsg'
+    And the amendment task ID is extracted and stored
+
+@Then "^the amended fields are persisted on the trade$"
+    Then response matches current scenario
+
+@Then "^the Trade Amendment request is rejected with a business rule violation$"
+    Then failed to 'update' 'trade' with status '409'
+
+@Then "^the Amendment request is rejected with a conflict$"
+    Then failed to 'update' 'trade' with status '409'
+
+@Then "^the amendment self-approval request is rejected with permission denied$"
+    Then failed to 'approve' 'amendment' with status '403'
+
+@Then "^the original trade fields are preserved after amendment rejection$"
+    Then response matches current scenario

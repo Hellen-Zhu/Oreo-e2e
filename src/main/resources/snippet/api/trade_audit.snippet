@@ -1,0 +1,24 @@
+@Then "^exactly one new audit record exists for action '([^']*)' on the created trade$"
+    When execute sql query:
+        | SELECT COUNT(*) FROM audit_entries WHERE data->>'tradeId' = '\${createdTradeId}' AND data->>'action' = '$1' |
+    Then assert query result is 1
+
+@Then "^the audit_entries record contains all mandatory fields$"
+    When execute sql query:
+        | SELECT * FROM audit_entries WHERE data->>'tradeId' = '\${createdTradeId}' AND data->>'userId' IS NOT NULL AND data->>'action' IS NOT NULL |
+    Then assert query result is not empty
+
+@Then "^four lifecycle event audit records exist for the trade$"
+    When execute sql query:
+        | SELECT COUNT(*) FROM audit_entries WHERE data->>'tradeId' = '\${createdTradeId}' AND data->>'action' IN ('SUBMIT', 'CHECKER_APPROVED', 'CANCELLATION') |
+    Then assert query result is 4
+
+@Then "^no cancellation record is written to audit_entries for that trade$"
+    When execute sql query:
+        | SELECT * FROM audit_entries WHERE data->>'tradeId' = '\${createdTradeId}' AND data->>'action' = 'CANCELLATION' |
+    Then assert query result is empty
+
+@Then "^the live trade state is preserved in the database$"
+    When execute sql query:
+        | SELECT * FROM trades WHERE id = '\${createdTradeId}' AND data->'basic'->>'status' = 'Live' |
+    Then assert query result is not empty

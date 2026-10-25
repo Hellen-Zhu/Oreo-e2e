@@ -1,0 +1,53 @@
+# ── Provisioning ────────────────────────────────────────────────────
+
+@Given "^an existing counterparty keyword is available$"
+    Given build request as user 'maker@example.com'
+    And set query parameter 'page' to '1'
+    And set query parameter 'size' to '10'
+    When get from path '/refdata/counterparties'
+    Then response status code is '200'
+    And store response field 'data.content[0].counterpartyCode' as 'counterpartyKeywordFromList'
+
+@Given "^an existing counterparty id is available$"
+    Given build request as user 'maker@example.com'
+    And set query parameter 'page' to '0'
+    And set query parameter 'size' to '10'
+    When get from path '/refdata/counterparties'
+    Then response status code is '200'
+    And store response field 'data.content[0].id' as 'counterpartyIdFromList'
+
+# ── Make API calls ───────────────────────────────────────────────────
+
+@When "^retrieves counterparties with paging parameters$"
+    Given build request as user 'maker@example.com'
+    And set query parameter 'page' to '0'
+    And set query parameter 'size' to '10'
+    When get from path '/refdata/counterparties'
+    And attach the response body to the report
+
+@When "^searches counterparties by keyword$"
+    Given build request as user 'maker@example.com'
+    And set query parameter 'keyword' from stored variable 'counterpartyKeywordFromList'
+    And set query parameter 'page' to '0'
+    And set query parameter 'size' to '10'
+    When get from path '/refdata/counterparties'
+    And attach the response body to the report
+
+@When "^retrieves counterparty detail by id$"
+    Given build request as user 'maker@example.com'
+    And set path parameter 'id' from stored variable 'counterpartyIdFromList'
+    When get from path '/refdata/counterparties/{id}'
+    And attach the response body to the report
+
+# ── Assertions ──────────────────────────────────────────────────────
+
+@Then "^counterparties list should be retrieved successfully$"
+    Then the 'counterparties list' should be 'retrieved' successfully
+
+@Then "^counterparties search results should match requested keyword$"
+    Then the 'counterparties search' should be 'retrieved' successfully
+    And response body contains a key 'data.content[0].counterpartyCode' with stored variable 'counterpartyKeywordFromList'
+
+@Then "^counterparty detail should be retrieved successfully$"
+    Then the 'counterparty detail' should be 'retrieved' successfully
+    And response body contains a key 'data.id' with stored variable 'counterpartyIdFromList'

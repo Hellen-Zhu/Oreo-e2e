@@ -1,0 +1,28 @@
+# ── Provisioning ────────────────────────────────────────────────────
+@Given "^a reason exists$"
+    Given build json request with body from test data 'reason-create'
+    When post to path '/refdata/reasons'
+    Then response status code is '200'
+    And store response field 'data.id' as 'reasonId'
+
+# ── Build request ───────────────────────────────────────────────────
+@Given "^admin has valid data for a new trade lifecycle event reason$"
+    Given build json request with body from current scenario
+
+# ── Make api call ───────────────────────────────────────────────────
+@When "^creates the new reason$"
+    When post to path '/refdata/reasons'
+    And attach the response body to the report
+
+@When "^retrieves all available trade lifecycle event reasons$"
+    Given build request as user 'maker@example.com'
+    When get from path '/refdata/reasons'
+    And attach the response body to the report
+
+# ── Then steps - Assertions──────────────────────────────────────────
+@Then "^the reason should be created and persisted successfully$"
+    Then the 'reason' should be 'created' successfully
+
+@Then "^all configured reasons are returned with a total count of '([^']*)'$"
+    Then the 'reason' should be 'retrieved' successfully
+    And response body contains a key 'data.totalElements' with value '$1'

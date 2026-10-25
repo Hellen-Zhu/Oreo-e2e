@@ -1,0 +1,9 @@
+[
+  {"name": "user_preference.menu_btn", "lookupDetails": {"findBy": "testId", "value": "layout-user-menu-btn"}},
+  {"name": "user_preference.settings_panel", "lookupDetails": {"findBy": "testId", "value": "layout-user-settings-panel"}},
+  {"name": "user_preference.theme_toggle_btn", "lookupDetails": {"findBy": "testId", "value": "layout-theme-toggle-btn"}},
+  {"name": "user_preference.number_format_btn", "lookupDetails": {"findBy": "testId", "value": "layout-number-format-select"}},
+  {"name": "user_preference.date_format_btn", "lookupDetails": {"findBy": "testId", "value": "layout-date-format-select"}},
+  {"name": "user_preference.logout_btn", "lookupDetails": {"findBy": "testId", "value": "layout-logout-btn"}},
+  {"name": "user_preference.app_root", "lookupDetails": {"findBy": "locator", "value": "html"}}
+]

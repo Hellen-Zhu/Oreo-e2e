@@ -1,0 +1,16 @@
+# ── Query ───────────────────────────────────────────────────────────
+
+@When "^maker retrieves online fixings for the trade$"
+    When get '/trades/{id}/fixings/online' with path parameter 'id' from stored variable 'createdTradeId' as user 'maker@example.com'
+    And attach the response body to the report
+
+@Given "^fixing data is prepared$"
+    When maker retrieves online fixings for the trade
+    Then response status code is '200'
+
+# ── Assertions ──────────────────────────────────────────────────────
+
+@Then "^online fixings are returned successfully$"
+    Then response status code is '200'
+    And response matches current scenario
+    And response body contains a non-empty value at key 'data.fixings.values()[0][0].value'

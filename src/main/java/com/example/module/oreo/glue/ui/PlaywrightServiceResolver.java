@@ -182,7 +182,7 @@ public final class PlaywrightServiceResolver {
             input.evaluate(
                     "(el, v) => {" +
                             "el.value = v;" +
-                            "el.dispatchEvent(new CustomEvent('sc-change', {" +
+                            "el.dispatchEvent(new CustomEvent('ui-change', {" +
                             "detail: { value: v }, bubbles: true, composed: true" +
                             "}));" +
                             "}",
@@ -197,8 +197,8 @@ public final class PlaywrightServiceResolver {
          * @param name the visible label of the option to click
          */
         public void clickOption(String name) {
-            // SC WebKit: sc-dropdown-input renders sl-menu-item elements inside its shadow DOM.
-            // sc-dropdown-option elements exist in light DOM but have zero bounding rect and
+            // UI WebKit: ui-dropdown-input renders sl-menu-item elements inside its shadow DOM.
+            // ui-dropdown-option elements exist in light DOM but have zero bounding rect and
             // cannot be clicked directly. We must traverse the shadow DOM to find sl-menu-item.
             Locator option = service().getPage().getByRole(
                     com.microsoft.playwright.options.AriaRole.MENUITEM,

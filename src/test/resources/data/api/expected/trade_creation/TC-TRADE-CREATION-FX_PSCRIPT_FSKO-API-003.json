@@ -20,7 +20,7 @@
         "status": "Pending Approval Draft",
         "eventStatus": "StepInFull",
         "trader": "system",
-        "scbEntity": "${json-unit.any-string}",
+        "bankEntity": "${json-unit.any-string}",
         "source": "OREO",
         "ci": "${json-unit.any-number}",
         "hardMargin": "${json-unit.any-number}",

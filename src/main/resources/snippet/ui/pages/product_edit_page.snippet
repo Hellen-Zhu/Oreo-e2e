@@ -1,0 +1,78 @@
+# ── PAGE: PRODUCT EDIT ──────────────────────────────────────────────────────────
+
+@Then "^page product edit container is visible$"
+    Then assert that 'product_edit.container' is eventually visible
+
+@When "^page product edit navigates back to compose page$"
+    When click 'product_edit.product_editor_back_btn'
+    And page compose container is visible
+
+@When "^page product edit types description as '([^']*)'$"
+    When type '$1' into 'product_edit.product_description_textarea'
+
+@When "^page product edit scrolls canvas drop area into view$"
+    When scroll element 'product_edit.canvas_drop_area' into view
+
+@When "^page product edit adds cancellation event into canvas$"
+    When add event 'product_edit.event_toolbox_item_Cancellation' into canvas
+
+@Then "^page product edit cancellation canvas node is visible$"
+    Then assert that 'product_edit.Cancellation_canvas_node' is eventually visible
+
+@Then "^page product edit early termination canvas node is hidden$"
+    Then assert that 'product_edit.EarlyTermination_canvas_node' is eventually hidden
+
+@When "^page product edit hovers early termination canvas node$"
+    When hover on 'product_edit.EarlyTermination_canvas_node'
+
+@When "^page product edit clicks early termination delete button$"
+    When click 'product_edit.EarlyTermination_delete_btn'
+
+@Then "^page product edit event dialog panel is visible$"
+    Then assert that 'product_edit.event_dialog_panel' is eventually visible
+
+@Then "^page product edit event dialog panel is hidden$"
+    Then assert that 'product_edit.event_dialog_panel' is eventually hidden
+
+@When "^page product edit opens EarlyTermination event editor$"
+    When scroll element 'product_edit.EarlyTermination_canvas_node' into view
+    And hover on 'product_edit.EarlyTermination_canvas_node'
+    And click 'product_edit.EarlyTermination_edit_btn'
+    And page product edit event dialog panel is visible
+
+@When "^page product edit opens PortfolioReassignment event editor$"
+    When hover on 'product_edit.PortfolioReassignment_canvas_node'
+    And click 'product_edit.PortfolioReassignment_edit_btn'
+    And page product edit event dialog panel is visible
+
+@When "^page product edit types event direction input from stored variable '([^']*)'$"
+    When type inner value '$1' from stored variable into 'product_edit.event_direction_user_input' with dynamic value from stored variable 'reformattedProductId'
+
+@When "^page product edit selects formula type option '([^']*)'$"
+    When click 'product_edit.feature_editor_formula_type'
+    And click option '$1'
+
+@When "^page product edit types formula expression from stored variable '([^']*)'$"
+    When type '$1' from stored variable into 'product_edit.formula_textarea'
+
+@When "^page product edit clears formula expression$"
+    When clear 'product_edit.formula_textarea'
+
+@When "^page product edit clicks save event configuration button$"
+    When click 'product_edit.feature_editor_save_btn'
+    And page product edit event dialog panel is hidden
+
+@Then "^page product edit description textarea has value '([^']*)'$"
+    Then assert that 'product_edit.product_description_textarea' eventually has value '$1'
+
+@Then "^page product edit event direction input has value from stored variable '([^']*)'$"
+    Then assert that inner 'input' property of 'product_edit.event_direction_user_input' with dynamic value from stored variable 'reformattedProductId' eventually has value from stored variable '$1'
+
+@Then "^page product edit formula textarea has value from stored variable '([^']*)'$"
+    Then assert that 'product_edit.formula_textarea' eventually has value from stored variable '$1'
+
+@When "^page product edit opens product fields editor$"
+    Then page product edit container is visible
+    And assert that 'product_edit.edit_fields_btn' is eventually visible
+    When click 'product_edit.edit_fields_btn'
+    Then component product fields editor save changes button is visible

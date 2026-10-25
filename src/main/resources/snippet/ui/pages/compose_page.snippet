@@ -1,0 +1,15 @@
+# ── PAGE: COMPOSE ───────────────────────────────────────────────────────────────
+
+@Then "^page compose container is visible$"
+    Then assert that 'compose.container' is eventually visible
+
+@When "^page compose navigates to compose page$"
+    When click 'trade_portal.nav_compose_tab'
+    And page compose container is visible
+
+@When "^page compose clicks upload product button$"
+    When click 'compose.upload_product_btn'
+
+@When "^page compose opens product edit for stored product id '([^']*)'$"
+    When click element 'product_edit.product_edit_btn' with dynamic value from stored variable '$1' and wait for product page ready
+    And page product edit container is visible

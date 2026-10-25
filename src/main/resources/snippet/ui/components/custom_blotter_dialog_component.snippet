@@ -1,0 +1,35 @@
+# ── CUSTOM BLOTTER DIALOG COMPONENT ─────────────────────────────────
+
+@Then "^component custom blotter dialog is visible$"
+    Then assert that inner 'div[slot="footer-button"]' property of 'custom_blotter_dialog.create_dialog' is eventually visible
+    And component custom blotter dialog name input is visible
+
+@Then "^component custom blotter dialog name input is visible$"
+    Then assert that 'custom_blotter_dialog.name_input' is eventually visible
+
+@When "^component custom blotter dialog types blotter name from stored variable '([^']*)'$"
+    When type inner value '$1' from stored variable into 'custom_blotter_dialog.name_input'
+
+@When "^component custom blotter dialog clicks save blotter button$"
+    When click 'custom_blotter_dialog.confirm_btn'
+
+@When "^component custom blotter dialog clicks available trade id column$"
+    When click 'custom_blotter_dialog.available_trade_id_column'
+
+
+@When "^component custom blotter dialog clicks available instrument button$"
+    When click 'custom_blotter_dialog.available_instrument_btn'
+
+@When "^component custom blotter dialog clicks available product basics button$"
+    When click 'custom_blotter_dialog.available_product_basics_btn'
+
+@When "^component custom blotter dialog clicks available settlement column$"
+    When click 'custom_blotter_dialog.available_settlement_column'
+
+@When "^component custom blotter dialog clicks make it public checkbox$"
+    When click 'custom_blotter_dialog.make_it_public_checkbox'
+
+@When "^component custom blotter dialog add product basic settlement column$"
+    When component custom blotter dialog clicks available instrument button
+    And component custom blotter dialog clicks available product basics button
+    And component custom blotter dialog clicks available settlement column

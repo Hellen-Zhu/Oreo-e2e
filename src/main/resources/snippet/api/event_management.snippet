@@ -1,0 +1,11 @@
+# ── Provisioning ────────────────────────────────────────────────────
+@Given "^an event created via api$"
+    Given build json request with body from test data 'event-create' as user 'maker@example.com'
+    When post to path '/events/create'
+    Then response status code is '201'
+    And store response field 'data.id' as 'eventId'
+
+@Given "^the event is deleted via api$"
+    Given build json request with path parameter 'id' from stored variable 'eventId' as user 'maker@example.com'
+    When post to path '/events/{id}/delete'
+    Then response status code is '200'

@@ -1,0 +1,4 @@
+[
+  {"name": "portfolioreassignment_dialog.container", "lookupDetails": {"findBy": "testId", "value": "dynamic-action-portfolioreassignment-dialog"}},
+  {"name": "portfolioreassignment_dialog.portfolio_select", "lookupDetails": {"findBy": "testId", "value": "dynamic-action-portfolio-select"}}
+]

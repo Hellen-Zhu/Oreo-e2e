@@ -1,0 +1,77 @@
+# ── FLOW: CANCELLATION ──────────────────────────────────────────────────────────
+
+@Given "^a '([^']*)' trade in Pending Approval status with a Cancellation task is visible in the blotter$"
+    Given a Live '$1' trade exists in the blotter
+    And maker is logged in to the trade portal
+    And perform cancellation for the trade from trade portal
+    And the cancellation is submitted successfully
+
+# Product param must match a ProductDatFiles enum name: FX_TRF | FX_PSCRIPT that match a .dat test data file name
+
+@Given "^multiple '([^']*)' trades in Pending Approval status with Cancellation tasks are visible in the blotter$"
+    Given multiple '$1' trades with pending cancellation are provisioned via playwright api
+    And page trade portal clicks refresh button
+
+# ── MAKER ACTIONS ──────────────────────────────────────────────────────────────
+
+@When "^perform cancellation for the trade from trade portal$"
+    When page trade portal searches and opens action menu for trade stored as 'createdTradeId'
+    And page trade portal cancellation action button is visible
+    And trigger cancellation for trade using configured risk engine mode from trade portal for trade stored as 'createdTradeId'
+    And component trade change confirmation dialog is visible
+    And component trade change confirmation selects reason option 'DEALER_ERROR'
+    And component trade change confirmation types comments as 'cancellation for test'
+    And confirm cancel trade and wait for page ready
+
+@When "^perform cancellation for the trade from trade detail page$"
+    When opens trade detail for current trade from trade portal
+    And page trade detail clicks more actions button
+    And trigger cancellation for trade using configured risk engine mode from trade detail page for trade stored as 'createdTradeId'
+    And component trade change confirmation dialog is visible
+    And component trade change confirmation selects reason option 'DEALER_ERROR'
+    And component trade change confirmation types comments as 'cancellation for test'
+    And confirm cancel trade and wait for page ready
+
+@Then "^the Cancellation option is available for the trade$"
+    When page trade portal searches and opens action menu for trade stored as 'createdTradeId'
+    And page trade portal row action menu shows view details
+    And page trade portal cancellation action button is visible
+
+@Then "^the Cancellation option is not available for the trade$"
+    When page trade portal searches and opens action menu for trade stored as 'createdTradeId'
+    And page trade portal row action menu shows view details
+    And page trade portal cancellation action button is hidden
+
+@Then "^the Approve and Reject option is available for the trade$"
+    When page trade portal searches and opens action menu for trade stored as 'createdTradeId'
+    And page trade portal approve action button is visible
+    And page trade portal reject action button is visible
+
+@Then "^the Approve and Reject option is not available for the trade$"
+    When page trade portal searches and opens action menu for trade stored as 'createdTradeId'
+    And page trade portal row action menu shows view details
+    And page trade portal approve action button is hidden
+    And page trade portal reject action button is hidden
+
+@Then "^all selected trades are closed as cancelled in the blotter$"
+    Then search for trade stored as 'createdTradeId1' in blotter
+    And page trade portal blotter column 'status' is 'DEAD'
+    And page trade portal blotter column 'eventStatus' is 'Cancelled'
+    And search for trade stored as 'createdTradeId2' in blotter
+    And page trade portal blotter column 'status' is 'DEAD'
+    And page trade portal blotter column 'eventStatus' is 'Cancelled'
+
+@Then "^the cancellation is submitted successfully$"
+    Then assert toast notification with type 'success' and message 'Cancellation completed successfully'
+
+@Then "^the cancellation request is rejected with an error$"
+    Then assert toast notification with type 'error' and message 'Request failed with status code 500'
+
+@Then "^the cancellation request is pending checker approval in trade details$"
+    Then page trade detail status badge shows 'PARV'
+
+@Then "^the cancellation request is pending checker approval$"
+    Then the trade has status 'PARV' and event status 'Cancelled' in the blotter
+
+@Then "^the trade is closed as Cancelled$"
+    Then the trade has status 'DEAD' and event status 'Cancelled' in the blotter

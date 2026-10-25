@@ -1,0 +1,33 @@
+@When "^approves the pending trade from trade portal$"
+    When page trade portal searches and opens action menu for trade stored as 'createdTradeId'
+    And page trade portal approve action button is visible
+    And page trade portal clicks approve action for current trade
+    And page trade portal confirms approval or reject trade
+
+@When "^rejects the pending trade from trade portal$"
+    When page trade portal searches and opens action menu for trade stored as 'createdTradeId'
+    And page trade portal reject action button is visible
+    And page trade portal clicks reject action for current trade
+    And page trade portal confirms approval or reject trade
+
+@When "^selects all pending cancellation trades and submits a bulk approval$"
+    When page trade portal filters trade by product type as 'FX_TRF'
+    And page trade portal filters trade by trade status as 'Pending Approval'
+    And page trade portal filters trade by event status as 'Cancelled'
+    And page trade portal selects trade stored as 'createdTradeId1' for bulk action
+    And page trade portal selects trade stored as 'createdTradeId2' for bulk action
+    And page trade portal clicks bulk approve for selected trades
+    And page trade portal confirms approval or reject trade
+
+@Then "^cannot approve or reject the Pending Approval trade$"
+    When page trade portal searches and opens action menu for trade stored as 'createdTradeId'
+    Then page trade portal approve action is not available for current trade
+    And page trade portal reject action is not available for current trade
+    And page trade portal view details action is available for current trade
+    And page trade portal cancel action is available for current trade
+    And page trade portal lifecycle event actions are not available for current trade
+
+@Then "^can perform lifecycle actions on the Live trade$"
+    When page trade portal searches and opens action menu for trade stored as 'createdTradeId'
+    Then page trade portal view details action is available for current trade
+    And page trade portal lifecycle event actions are available for current trade

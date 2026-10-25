@@ -1,0 +1,16 @@
+# ── FLOW: WEBSOCKET NOTIFICATION ────────────────────────────────────────────────
+
+@Given "^checker notification counter is captured$"
+    Given checker marks all notifications as read via api
+    And checker is logged in to the trade portal
+    And notification counter is captured
+
+@When "^maker books one trade via api$"
+    When a draft pending approval 'FX_TRF' trade is provisioned via playwright api
+
+@Then "^checker notification count updates and content contains booked trade id$"
+    Then notification counter bumps up
+    And page trade portal opens notification center
+    And page trade portal notification center contains from stored variable 'createdTradeId'
+    And page trade portal clicks notification action url for stored trade id 'createdTradeId'
+    And page trade detail container contains from stored variable 'createdTradeId'

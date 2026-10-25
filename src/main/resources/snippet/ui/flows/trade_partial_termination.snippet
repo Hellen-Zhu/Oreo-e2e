@@ -1,0 +1,13 @@
+@When "^perform Partial Termination event on the '([^']*)' trade$"
+    When opens lifecycle action 'partial termination' for current trade
+    And component dynamic action types new notional from stored variable 'partialTermination.newNotional'
+    And component dynamic action types amount from stored variable 'partialTermination.unwindFeeAmount'
+    And submits lifecycle event and waits for page ready
+
+@Then "^the trade notional reflects the partial termination reduction in trade detail page$"
+    Then double click to navigate to trade detail and wait for page ready for stored variable 'createdTradeId'
+    And page trade detail basic info notional amount field shows value from stored variable 'expectedNotional'
+    And page trade detail status badge shows 'LIVE'
+
+@Then "^the partial termination is completed successfully$"
+    Then assert toast notification with type 'success' and message '${json-unit.regex}Trade .* updated with new notional .*'

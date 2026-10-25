@@ -1,0 +1,10 @@
+# ── Make API call ───────────────────────────────────────────────────
+@When "^triggers reference data sync$"
+    Given build json request with body from current scenario as user 'maker@example.com'
+    When post to path '/ops/refdata/sync'
+    And attach the response body to the report
+
+# ── Assertions ──────────────────────────────────────────────────────
+@Then "^the reference data sync should be accepted successfully$"
+    Then response status code is '200'
+    And response matches current scenario

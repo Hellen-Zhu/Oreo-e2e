@@ -1,0 +1,37 @@
+# ── Provisioning ────────────────────────────────────────────────────
+
+# ── Make API calls ───────────────────────────────────────────────────
+
+@When "^retrieves portfolios with paging parameters$"
+    Given build request as user 'maker@example.com'
+    And set query parameter 'page' from stored variable 'page'
+    And set query parameter 'size' from stored variable 'size'
+    When get from path '/refdata/portfolios'
+    And attach the response body to the report
+
+@When "^searches portfolios by keyword$"
+    Given build request as user 'maker@example.com'
+    And set query parameter 'keyword' from stored variable 'keyword'
+    And set query parameter 'page' from stored variable 'page'
+    And set query parameter 'size' from stored variable 'size'
+    When get from path '/refdata/portfolios'
+    And attach the response body to the report
+
+@When "^retrieves portfolio detail by id$"
+    Given build request as user 'maker@example.com'
+    And set path parameter 'id' from stored variable 'portfolioId'
+    When get from path '/refdata/portfolios/{id}'
+    And attach the response body to the report
+
+# ── Assertions ──────────────────────────────────────────────────────
+
+@Then "^portfolios list should be retrieved successfully$"
+    Then the 'portfolios list' should be 'retrieved' successfully
+
+@Then "^portfolios search results should match requested keyword$"
+    Then the 'portfolios search' should be 'retrieved' successfully
+    And response body contains a key 'data.content[0].portfolioName' with stored variable 'keyword'
+
+@Then "^portfolio detail should be retrieved successfully$"
+    Then the 'portfolio detail' should be 'retrieved' successfully
+    And response body contains a key 'data.id' with stored variable 'portfolioId'

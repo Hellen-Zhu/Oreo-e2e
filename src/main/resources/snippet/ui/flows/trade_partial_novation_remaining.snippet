@@ -1,0 +1,38 @@
+# Lifecycle event maker action type: Creation, Amendment, Early Termination, Cancellation, etc
+@When "^perform the Partial Novation Remaining event on the '([^']*)' trade from portal page$"
+    When opens lifecycle action 'partial novation remaining' for current trade
+    And fills Partial Novation Remaining event form with required values for '$1' product type
+    And confirms Partial Novation Remaining event and stores new trade id
+
+@When "^perform the Partial Novation Remaining event on the '([^']*)' trade from detail page$"
+    When navigate to trade details for stored trade 'createdTradeId'
+    And page trade detail clicks more actions button
+    And page trade detail clicks partial novation remaining button
+    And fills Partial Novation Remaining event form with required values for '$1' product type
+    And confirms Partial Novation Remaining event and stores new trade id
+
+@When "^fills Partial Novation Remaining event form with required values for '([^']*)' product type$"
+    When component dynamic action types remaining notional from stored variable 'remainingNotional'
+    And component dynamic action equation line contains stored variable 'equationLineValue.$1'
+    And component dynamic action selects counterparty from stored variable 'newCptyName'
+    And confirm dynamic action form using configured partial risk engine mode for trade stored as 'createdTradeId'
+
+@When "^confirms Partial Novation Remaining event and stores new trade id$"
+    When component trade change confirmation dialog is visible
+    And confirm lifecycle event trade change and capture response as 'partialNovationRemainingResponse'
+    And store e2e response field 'data.results[0].childTradeIds[0]' from stored variable 'partialNovationRemainingResponse' as 'newTradeId'
+
+@Then "^trade is partially novated with remaining notional retained and counterparty transferred for '([^']*)'$"
+    Then trade details show 'LIVE' status with correct notional 'remainingNotional' and counterparty 'basic.counterpartyName' for trade 'createdTradeId'
+    When navigate to trade details for stored trade 'newTradeId'
+    Then trade details show 'LIVE' status with correct notional 'newNotional.$1' and counterparty 'newCptyName' for trade 'newTradeId'
+
+@Then "^trade details show '([^']*)' status with correct notional '([^']*)' and counterparty '([^']*)' for trade '([^']*)'$"
+    When navigate to trade details for stored trade '$4'
+    Then page trade detail header card contains from stored variable '$4'
+    And page trade detail status badge shows '$1'
+    And page trade detail basic info notional amount field shows value from stored variable '$2'
+    And page trade detail counterparty field shows value from stored variable '$3'
+
+@Then "^the partial novation remaining is completed successfully$"
+    Then assert toast notification with type 'success' and message 'PartialNovationRemaining completed successfully'

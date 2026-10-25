@@ -1,0 +1,19 @@
+# ── PAGE: SCHEMA UPLOAD ─────────────────────────────────────────────────────────
+
+@When "^page schema upload workspace is opened$"
+    When page compose navigates to compose page
+    And page compose clicks upload product button
+    And page schema upload panel is visible
+
+@Then "^page schema upload panel is visible$"
+    Then assert that 'schema_upload.panel' is eventually visible
+
+@Then "^page schema upload section is visible$"
+    Then assert that 'schema_upload.section' is eventually visible
+
+@When "^page schema upload opens history table$"
+    When click 'schema_upload.history_btn'
+    Then component schema upload history table is visible
+
+@Then "^page schema upload captures current product identifier from edit url when available$"
+    Then current product identifier is captured from edit url when available

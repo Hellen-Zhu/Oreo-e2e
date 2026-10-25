@@ -1,0 +1,39 @@
+# ── Provisioning ────────────────────────────────────────────────────
+
+# ── Build request ───────────────────────────────────────────────────
+
+@When "^maker has valid data for bulk risk metrics retrieval$"
+    Given build json request with path parameter 'tradeId' from stored variable 'createdTradeId' as user 'maker@example.com'
+
+@When "^maker has valid data for single risk metric retrieval$"
+    Given build json request with path parameter 'tradeId' from stored variable 'createdTradeId' as user 'maker@example.com'
+    And set path parameter 'metricType' from stored variable 'metricType'
+
+@When "^maker has valid data for the '([^']*)' risk metric retrieval$"
+    Given build json request with path parameter 'tradeId' from stored variable 'createdTradeId' as user 'maker@example.com'
+    And set path parameter 'metricType' to '$1'
+
+@When "^maker has valid data for unsupported risk metric retrieval$"
+    Given build json request with path parameter 'tradeId' from stored variable 'createdTradeId' as user 'maker@example.com'
+    And set path parameter 'metricType' from stored variable 'metricType'
+
+# ── Make api call ───────────────────────────────────────────────────
+
+@When "^performs the bulk risk metrics retrieval request$"
+    When get from path '/trades/{tradeId}/risk-metrics'
+    And attach the response body to the report
+
+@When "^performs the single risk metric retrieval request$"
+    When get from path '/trades/{tradeId}/risk-metrics/{metricType}'
+    And attach the response body to the report
+
+# ── Assertions ──────────────────────────────────────────────────────
+
+@Then "^the risk metrics should be retrieved successfully$"
+    Then the 'risk metrics' should be 'retrieved' successfully
+
+@Then "^the '([^']*)' risk metric should be retrieved successfully$"
+    Then the 'risk metrics' should be 'retrieved' successfully
+
+@Then "^the risk metrics request should be rejected$"
+    Then failed to 'retrieve' 'risk metrics'

@@ -13,6 +13,16 @@
     And page trade detail clicks reject button
     And page trade detail confirms checker action and waits for page ready
 
+@When "^trade detail page book trade$"
+    When click book using configured risk engine mode for new trade 'createdTradeId' creation from detail page
+    And component trade change confirmation dialog is visible
+    And confirm book trade from detail page for trade 'createdTradeId'
+
+@When "^trade detail page save trade$"
+    When click save using configured risk engine mode for new trade 'createdTradeId' creation from detail page
+    And component trade change confirmation dialog is visible
+    And confirm save trade from detail page for trade 'createdTradeId'
+
 @Then "^the trade show correct info in trade details$"
     Then page trade detail basic info card is visible
     And page trade detail risk metrics section is visible
@@ -28,4 +38,7 @@
     Then page trade detail status badge shows 'LIVE'
 
 @Then "^the trade is reverted to Draft in trade details$"
+    Then page trade detail status badge shows 'DRFT'
+
+@Then "^the trade remains Draft in trade details$"
     Then page trade detail status badge shows 'DRFT'

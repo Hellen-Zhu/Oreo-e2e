@@ -1,0 +1,4 @@
+[
+  {"name": "blotter_delete_dialog.dialog", "lookupDetails": {"findBy": "testId", "value": "blotter-delete-dialog"}},
+  {"name": "blotter_delete_dialog.delete_confirm_btn", "lookupDetails": {"findBy": "testId", "value": "blotter-delete-confirm-btn"}}
+]

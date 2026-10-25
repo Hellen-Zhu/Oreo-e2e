@@ -9,6 +9,7 @@
   {"name": "trade_detail.status_badge","lookupDetails": {"findBy": "testId","value": "trade-detail-status-badge"}},
   {"name": "trade_detail.actions_container","lookupDetails": {"findBy": "testId","value": "trade-detail-actions"}},
   {"name": "trade_detail.save_btn","lookupDetails": {"findBy": "testId","value": "trade-detail-save-btn"}},
+  {"name": "trade_detail.book_btn","lookupDetails": {"findBy": "testId","value": "trade-detail-book-btn"}},
   {"name": "trade_detail.amend_btn","lookupDetails": {"findBy": "testId","value": "trade-detail-amend-btn"}},
   {"name": "trade_detail.deal_date_input","lookupDetails": {"findBy": "testId","value": "trade-detail-deal-date-input"}},
   {"name": "trade_detail.counterparty_combobox","lookupDetails": {"findBy": "testId","value": "trade-detail-counterparty-combobox"}},

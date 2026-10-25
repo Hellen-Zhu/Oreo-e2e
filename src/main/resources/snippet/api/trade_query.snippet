@@ -13,3 +13,32 @@
 @When "^checker retrieves the trade for stored variable '([^']*)'$"
     When get '/trades/{id}' with path parameter 'id' from stored variable '$1' as user 'checker@example.com'
     And attach the response body to the report
+
+@Then "^the submitted '([^']*)' trade schedule is available for review$"
+    Then the 'trade details' should be 'retrieved' successfully
+    And the submitted '$1' trade schedule contains expected review data
+
+@Then "^the submitted 'FX_PSCRIPT' trade schedule contains expected review data$"
+    And response body contains a non-empty value at key 'data.tradeDetailsSchedule["Fixing Date"][0]'
+
+@Then "^the submitted 'FX_PSCRIPT_FSKO' trade schedule contains expected review data$"
+    And response body contains a non-empty value at key 'data.tradeDetailsSchedule.Reset[0]'
+    And response body contains a non-empty value at key 'data.tradeDetailsSchedule.Payment[0]'
+    And response body contains a non-empty value at key 'data.tradeDetailsSchedule["Strike Fixing"][0]'
+    And response body contains a non-empty value at key 'data.tradeDetailsSchedule["Barrier Fixing"][0]'
+
+@Then "^the submitted 'FX_TRF' trade schedule contains expected review data$"
+    And response body contains a non-empty value at key 'data.tradeDetailsSchedulePayoffs[0]'
+
+@Then "^the submitted 'FX_PSCRIPT_TRF' trade schedule contains expected review data$"
+    And response body contains a non-empty value at key 'data.tradeDetailsSchedule["Fixing Date"][0]'
+    And response body contains a non-empty value at key 'data.tradeDetailsSchedule["Payment Date"][0]'
+
+@Then "^the queried trade contains empty fixing data$"
+    Then response status code is '200'
+    And response body contains a key 'data.fixings' as '{}'
+
+@Then "^the queried trade contains expected fixing data$"
+    Then response status code is '200'
+    And response matches current scenario
+    And response body contains a non-empty value at key 'data.fixings.values()[0][0].value'

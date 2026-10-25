@@ -1,0 +1,84 @@
+@Given "^a public blotter trade exists in the marketplace"
+    Given a dynamic timestamp with prefix 'TC-E2E-MKT-Blotter' is generated and stored as 'newBlotterName'
+    And a public blotter named 'newBlotterName' is provisioned via playwright api
+
+@Given "^a blotter trade exists in the marketplace"
+    Given a dynamic timestamp with prefix 'TC-E2E-Blotter' is generated and stored as 'newBlotterName'
+    And a blotter named 'newBlotterName' is provisioned via playwright api
+
+@When "^create a custom blotter from trade portal$"
+    When page trade portal clicks create blotter button
+    And component custom blotter dialog is visible
+    And a dynamic timestamp with prefix 'TC-E2E-Blotter' is generated and stored as 'newBlotterName'
+    And component custom blotter dialog types blotter name from stored variable 'newBlotterName'
+    And add customized column to show in the blotter
+    And confirm new blotter creation and capture response as 'newBlotterResponse'
+    And store e2e response field 'data.id' from stored variable 'newBlotterResponse' as 'newBlotterId'
+
+@When "^create a public custom blotter from trade portal$"
+    When page trade portal clicks create blotter button
+    And component custom blotter dialog is visible
+    And a dynamic timestamp with prefix 'TC-E2E-Blotter' is generated and stored as 'newBlotterName'
+    And component custom blotter dialog types blotter name from stored variable 'newBlotterName'
+    And add customized column to show in the blotter
+    And component custom blotter dialog clicks make it public checkbox
+    And confirm new blotter creation and capture response as 'newBlotterResponse'
+    And store e2e response field 'data.id' from stored variable 'newBlotterResponse' as 'newBlotterId'
+
+@When "^add customized column to show in the blotter$"
+    And component custom blotter dialog clicks available trade id column
+    And component custom blotter dialog add product basic settlement column
+
+@And "^show the blotter in trade portal page$"
+    And click element 'trade_portal.transaction_blotter_filter_btn' with dynamic value from stored variable 'newBlotterId'
+    And the blotter is accessible in the blotter list
+
+@When "^edit the blotter to add customized column to show in the trade portal page"
+    When hover element 'trade_portal.transaction_blotter_filter_btn' with dynamic value from stored variable 'newBlotterId'
+    And click element 'trade_portal.transaction_blotter_edit_btn' with dynamic value from stored variable 'newBlotterId'
+    And component custom blotter dialog add product basic settlement column
+    And component custom blotter dialog clicks save blotter button
+
+@When "^delete the blotter from the trade portal page$"
+    When hover element 'trade_portal.transaction_blotter_filter_btn' with dynamic value from stored variable 'newBlotterId'
+    And click element 'trade_portal.transaction_blotter_delete_btn' with dynamic value from stored variable 'newBlotterId'
+    And component blotter delete dialog clicks confirm delete button
+
+@Then "^the blotter is accessible with customized columns in the blotter list$"
+    Then the blotter is accessible in the blotter list
+    And blotter 'trade_portal.custom_blotter_container' with dynamic value from stored variable 'newBlotterId' contains column 'id'
+    And blotter 'trade_portal.custom_blotter_container' with dynamic value from stored variable 'newBlotterId' contains column 'instrument.product-basics.settlement'
+
+@Then "^the blotter is accessible in the blotter list$"
+    Then assert that element 'trade_portal.custom_blotter_container' with dynamic value from stored variable 'newBlotterId' is eventually visible
+
+@Then "^the blotter is not accessible in the blotter list$"
+    Then assert that element 'trade_portal.custom_blotter_container' with dynamic value from stored variable 'newBlotterId' is eventually hidden
+
+@Then "^the blotter is accessible in the transaction blotter list$"
+    Then assert that element 'trade_portal.transaction_blotter_filter_btn' with dynamic value from stored variable 'newBlotterId' is eventually visible
+
+@Then "^the imported blotter is accessible in the transaction blotter list$"
+    Then assert that element 'trade_portal.transaction_blotter_filter_btn' with dynamic value from stored variable 'importedBlotterId' is eventually visible
+
+@And "^the blotter is accessible in the marketplace list$"
+    And page trade portal clicks import blotter button
+    And component blotter marketplace searches by stored variable 'newBlotterName'
+    And component blotter marketplace table contains read-only row for stored variable 'newBlotterName'
+
+@When "^import the public blotter from marketplace$"
+    When the blotter is accessible in the marketplace list
+    And confirm to import 'newMarketplaceBlotterId' blotter and capture response as 'importBlotterResponse'
+    And store e2e response field 'data.id' from stored variable 'importBlotterResponse' as 'importedBlotterId'
+
+@Then "^the blotter was created successfully$"
+    Then assert toast notification with type 'success', title as 'Blotter created' and message from stored variable 'expectedToastMessage'
+
+@Then "^blotter is imported successfully"
+    Then assert toast notification with type 'success', title as 'Blotter imported' and message from stored variable 'expectedToastMessage'
+
+@Then "^the blotter was updated successfully$"
+    Then assert toast notification with type 'success', title as 'Blotter updated' and message from stored variable 'expectedToastMessage'
+
+@Then "^the blotter was deleted successfully$"
+    Then assert toast notification with type 'success', title as 'Blotter removed' and message from stored variable 'expectedToastMessage'

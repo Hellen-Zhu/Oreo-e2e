@@ -1,0 +1,26 @@
+@When "^perform equal '(\d+)' way allocation for the trade$"
+    When opens lifecycle action 'allocation' for current trade
+    And component allocation dialog enters split number '$1'
+    And user fills $1 way sub-trade allocation info
+    And component allocation dialog total pct value is 'Total: 100.00% ✓'
+    And submits allocation event and waits for allocation response
+
+@When "^perform unequal '(\d+)' way allocation for the trade$"
+    When opens lifecycle action 'allocation' for current trade
+    And component allocation dialog enters split number '$1'
+    And user fills $1 way sub-trade allocation info
+    And component allocation dialog total pct value is 'Total: 100.00% ✓'
+    And submits allocation event and waits for allocation response
+
+@When "^submits allocation event and waits for allocation response$"
+    When component dynamic action clicks confirm button
+    And component trade change confirmation dialog is visible
+    And component trade change confirmation types comments from stored variable 'comments'
+    And user confirms allocation and waits for allocation response
+
+@Then "^the allocation is completed successfully$"
+    Then assert toast notification with type 'success' and message from stored variable 'toastMessage'
+
+@Then "^the trade is allocated to Dead in the trade details$"
+    When navigate to trade details for stored trade 'createdTradeId'
+    Then page trade detail status badge shows 'DEAD'

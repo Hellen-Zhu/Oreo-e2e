@@ -1,0 +1,29 @@
+# ── Build request ───────────────────────────────────────────────────
+
+@When "^maker has valid data for PartialTermination event$"
+    Given build json request from current scenario with trade id from stored variable 'createdTradeId' as user 'maker@example.com'
+
+@When "^maker has invalid data with unknown amount filed for PartialTermination event$"
+    Given build json request from current scenario with trade id from stored variable 'createdTradeId' as user 'maker@example.com'
+
+@When "^maker has invalid data with newNotional exceeds the original notional for PartialTermination event$"
+    Given build json request from current scenario with trade id from stored variable 'createdTradeId' as user 'maker@example.com'
+
+# ── Make api call ───────────────────────────────────────────────────
+
+@When "^performs the PartialTermination event via api$"
+    When post to path '/trades/trigger-event'
+    And attach the response body to the report
+
+
+# ── Assertions ──────────────────────────────────────────────────────
+
+@Then "^the PartialTermination event is executed successfully$"
+    Then the 'partial termination' should be 'executed' successfully
+
+@Then "^the trade notional is reduced by the terminated amount$"
+    Then the trade basic status is 'Live'
+    And response body contains a key 'data.trade.basic.notionalAmount' with stored variable 'data[0].value'
+
+@Then "^the PartialTermination event is rejected with a validation error$"
+    Then failed to 'execute' 'PartialTermination'
