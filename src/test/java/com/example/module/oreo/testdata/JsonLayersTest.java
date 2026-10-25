@@ -5,8 +5,6 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 public class JsonLayersTest {
 
@@ -46,40 +44,6 @@ public class JsonLayersTest {
 
         assertEquals(baseBefore, base);
         assertEquals(patchBefore, patch);
-    }
-
-    @Test
-    public void appendAddsToTheInheritedList() {
-        ObjectNode base = object("{\"data\":[{\"key\":\"a\"}],\"x\":1}");
-        ObjectNode merged = JsonLayers.merge(base, object("{\"data\":{\"_append\":[{\"key\":\"b\"}]}}"));
-        assertEquals(Json.parse("{\"data\":[{\"key\":\"a\"},{\"key\":\"b\"}],\"x\":1}"), merged);
-        assertEquals(Json.parse("{\"data\":[{\"key\":\"a\"}],\"x\":1}"), base);
-    }
-
-    @Test
-    public void appendWithoutAnInheritedListNamesTheKey() {
-        try {
-            JsonLayers.merge(object("{\"basic\":{}}"), object("{\"basic\":{\"udf\":{\"_append\":[1]}}}"));
-            fail("expected an IllegalStateException");
-        } catch (IllegalStateException e) {
-            assertTrue(e.getMessage(), e.getMessage().startsWith("basic.udf: "));
-        }
-    }
-
-    @Test(expected = IllegalStateException.class)
-    public void appendOfAKeyTheListHasIsAnError() {
-        JsonLayers.merge(object("{\"data\":[{\"key\":\"a\",\"value\":1}]}"),
-                object("{\"data\":{\"_append\":[{\"key\":\"a\",\"value\":2}]}}"));
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void appendInsideAListIsRejected() {
-        JsonLayers.checkAppends(Json.parse("{\"data\":[{\"_append\":[]}]}"));
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void appendBesideOtherKeysIsRejected() {
-        JsonLayers.checkAppends(Json.parse("{\"data\":{\"_append\":[],\"x\":1}}"));
     }
 
     @Test

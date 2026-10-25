@@ -67,10 +67,8 @@ with the columns `| case | dataset |` (`001`, `002` ...); each case is its own r
   gets `defaults` and its row only.
 - `use` names a block of `common.json` or of the event file's own `shared` (same shape: `request`, `dynamicFields`),
   for data of this event only. A name in both files is an error.
-- Objects merge key by key; arrays and values replace; `null` removes a key. `_comment` is a comment at any depth.
-- `{ "_append": [ ... ] }` as the value of a key adds its elements to the end of the list an earlier layer gave that
-  key. No list there, or an element whose `key` the list already has, is an error (to change an element, give the
-  whole list); written inside a list it is a load error.
+- Objects merge key by key; arrays and values replace whole; `null` removes a key. `_comment` is a comment at any
+  depth. To change one element of a list, give the whole list.
 - `${date:T}`, `${date:T+N}`, `${date:T-N}` in a text value, alone or in a longer text: today's date plus or minus N
   calendar days, `yyyy-MM-dd`, this machine's time zone (`DateUtil.resolveDate`), filled in each time a step reads the
   data (`request()`, `flattenRequest()`, a setup's `request()` / `response()`). Any other `${...}` is left for the step
@@ -84,11 +82,12 @@ with the columns `| case | dataset |` (`001`, `002` ...); each case is its own r
   variable into '<element>' if it is set` types nothing when the case has no value). Example: `targetAmount` of
   `ui/trade_novation_remaining.json`, which the old feature chose with an `input_profile` column.
 - An element that only some products' API body has, in a list such as `data`: the list without it in `defaults`, the
-  element once in a block of the file, and one line per product that has it:
+  whole list with it once in a block of the file, and one line per product that has it:
 
   ```jsonc
-  "shared":    { "target-amount": { "request": { "data": { "_append": [
-                   { "key": "newTargetAmount", "value": 1000, "type": "Numeric" } ] } } } },
+  "shared":    { "target-amount": { "request": { "data": [
+                   { "key": "novationDate", "value": "${date:T}", "type": "Date" },
+                   { "key": "newTargetAmount", "value": 1000, "type": "Numeric" } ] } } },
   "defaults":  { "request": { "data": [ { "key": "novationDate", "value": "${date:T}", "type": "Date" } ] } },
   "byProduct": { "FX_TRF": { "use": ["target-amount"] }, "FX_PSCRIPT_TRF": { "use": ["target-amount"] } }
   ```
@@ -108,7 +107,7 @@ with the columns `| case | dataset |` (`001`, `002` ...); each case is its own r
 ## Setup data
 
 `data/setup/<name>.json`: `request` and / or `response`, `_comment`, and `extends` (another setup file, merged
-under this one, so an `_append` adds to its lists; `${date:...}` as in case data). Read by the steps `... from test data '<name>'` and by `TestData.setup("<name>")`; its `request()` /
+under this one, its lists replaced whole; `${date:...}` as in case data). Read by the steps `... from test data '<name>'` and by `TestData.setup("<name>")`; its `request()` /
 `response()` fail when the file (with its `extends` chain) has no such part, so a caller never checks for null and
 asks `hasRequest()` / `hasResponse()` only when the part is optional. The setup trade
 and the API case blocks hold the same values but are kept apart on purpose: what an API case sends must not change

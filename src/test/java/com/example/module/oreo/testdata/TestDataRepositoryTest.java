@@ -57,11 +57,13 @@ public class TestDataRepositoryTest {
                       "request": { "basic": { "a": "2" } }, "dynamicFields": null }
                   ]
                 }""");
-        // A block of the file's own, an _append, and dates filled in when the case runs
+        // A block of the file's own (lists replace whole), and dates filled in when the case runs
         write("api/block_event.json", """
                 {
-                  "shared": { "target-amount": {
-                    "request": { "data": { "_append": [ { "key": "newTargetAmount", "value": 1000, "type": "Numeric" } ] } } } },
+                  "shared": { "target-amount": { "request": { "data": [
+                    { "key": "newCptyName", "value": "A", "type": "Text" },
+                    { "key": "novationDate", "value": "${date:T}", "type": "Date" },
+                    { "key": "newTargetAmount", "value": 1000, "type": "Numeric" } ] } } },
                   "defaults": { "request": {
                     "data": [
                       { "key": "newCptyName", "value": "A", "type": "Text" },
@@ -70,12 +72,8 @@ public class TestDataRepositoryTest {
                     "comments": "settles on ${date:T+2}, booked by ${userName}" } },
                   "byProduct": { "FX_TRF": { "use": ["target-amount"] } },
                   "cases": [
-                    { "id": "TC-BLOCK-EVENT-<product_type>-API-002", "_comment": "an _append of a key the list already has",
-                      "request": { "data": { "_append": [ { "key": "newCptyName", "value": "B", "type": "Text" } ] } } },
                     { "id": "TC-BLOCK-EVENT-API-003", "_comment": "a case without a product names the block itself",
-                      "use": ["target-amount"] },
-                    { "id": "TC-BLOCK-EVENT-API-004", "_comment": "an _append with no list under it",
-                      "request": { "udf": { "_append": [ { "key": "x", "value": "1", "type": "Text" } ] } } }
+                      "use": ["target-amount"] }
                   ]
                 }""");
         // The dat file as case data
@@ -102,8 +100,6 @@ public class TestDataRepositoryTest {
                 { "defaults": { "expectedBase": "TC-OTHER-EVENT-<product_type>-API-001" } }""");
         write("api/bad_date.json", """
                 { "defaults": { "request": { "trade": { "tradeDate": "${date:tomorrow}" } } } }""");
-        write("api/bad_append.json", """
-                { "defaults": { "request": { "data": [ { "_append": [ { "key": "x" } ] } ] } } }""");
         write("api/bad_dat.json", """
                 { "defaults": { "datFile": "../FX_TRF.dat" } }""");
         write("api/clash_block.json", """
@@ -123,9 +119,7 @@ public class TestDataRepositoryTest {
         write("setup/list-setup.json", """
                 { "request": { "udf": [ { "key": "a", "value": "1" } ], "valueDate": "${date:T-1}" } }""");
         write("setup/list-child-setup.json", """
-                { "extends": "list-setup", "request": { "udf": { "_append": [ { "key": "b", "value": "2" } ] } } }""");
-        write("setup/orphan-append-setup.json", """
-                { "request": { "udf": { "_append": [ { "key": "b" } ] } } }""");
+                { "extends": "list-setup", "request": { "udf": [ { "key": "b", "value": "2" } ] } }""");
         write("setup/response-only-setup.json", """
                 { "response": { "code": 200 } }""");
         write("setup/loop-a.json", """
@@ -266,7 +260,7 @@ public class TestDataRepositoryTest {
     }
 
     @Test
-    public void productThatUsesTheFilesBlockGetsTheAppendedField() {
+    public void productThatUsesTheFilesBlockGetsItsWholeList() {
         CaseData data = repo.forCase("TC-BLOCK-EVENT-FX_TRF-API-001");
         assertJson("{\"data\":[{\"key\":\"newCptyName\",\"value\":\"A\",\"type\":\"Text\"},"
                 + "{\"key\":\"novationDate\",\"value\":\"" + day(0) + "\",\"type\":\"Date\"},"
@@ -290,25 +284,9 @@ public class TestDataRepositoryTest {
     }
 
     @Test
-    public void appendOfAKeyTheListHasNamesTheRow() {
-        assertFailsWith(() -> repo.forCase("TC-BLOCK-EVENT-FX_TRF-API-002"),
-                "block_event.json [row TC-BLOCK-EVENT-<product_type>-API-002 request]", "'newCptyName'");
-    }
-
-    @Test
-    public void appendWithoutAListUnderItIsAnError() {
-        assertFailsWith(() -> repo.forCase("TC-BLOCK-EVENT-API-004"), "[row TC-BLOCK-EVENT-API-004 request]", "udf");
-    }
-
-    @Test
     public void unknownDateIsALoadErrorNamingTheField() {
         assertFailsWith(() -> repo.forCase("TC-BAD-DATE-FX_TRF-API-001"),
                 "bad_date.json [defaults.request]", "trade.tradeDate", "${date:tomorrow}");
-    }
-
-    @Test
-    public void appendInsideAListIsALoadError() {
-        assertFailsWith(() -> repo.forCase("TC-BAD-APPEND-FX_TRF-API-001"), "[defaults.request]", "data[0]");
     }
 
     @Test
@@ -317,14 +295,9 @@ public class TestDataRepositoryTest {
     }
 
     @Test
-    public void setupAppendsToTheListOfTheSetupItExtends() {
-        assertJson("{\"udf\":[{\"key\":\"a\",\"value\":\"1\"},{\"key\":\"b\",\"value\":\"2\"}],"
+    public void setupListReplacesTheListOfTheSetupItExtends() {
+        assertJson("{\"udf\":[{\"key\":\"b\",\"value\":\"2\"}],"
                 + "\"valueDate\":\"" + day(-1) + "\"}", repo.setup("list-child-setup").request());
-    }
-
-    @Test
-    public void setupAppendWithoutASetupToExtendIsAnError() {
-        assertFailsWith(() -> repo.setup("orphan-append-setup"), "orphan-append-setup.json [request]");
     }
 
     @Test

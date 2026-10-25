@@ -147,7 +147,7 @@ Full rules: [docs/test-data.md](../test-data.md). The essentials:
   `shared`.
 - A case without a row runs on the defaults: add a row only for a case that differs. One case matches at most one row;
   product differences go into `byProduct`.
-- Objects merge, arrays and values replace, `null` removes; `_append` adds to a list; `${date:T±N}` for dates.
+- Objects merge, arrays and values replace whole, `null` removes; `${date:T±N}` for dates.
   `dynamicFields` and `expectedBase` are API only.
 - Never write `basic.productId`: the step sets it from the product.
 

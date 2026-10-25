@@ -138,24 +138,15 @@ public final class TestDataRepository {
                 throw error(path, label + " use", "no shared block '" + name + "' in common.json or this file "
                         + shared.keySet());
             }
-            add(merged, block, label + " use " + name, path);
+            merged.add(block);
             uses.add(name);
         }
-        add(merged, layer, label, path);
+        merged.add(layer);
         if (layer.has("datFile")) {
             merged.datFile = layer.get("datFile").isNull() ? null : layer.get("datFile").asText();
             merged.datFileFrom = label;
         }
         merged.layers.add(uses.isEmpty() ? label : label + " (use " + String.join(", ", uses) + ")");
-    }
-
-    /** {@link Merged#add}, with an {@code _append} that has nothing to add to reported against the layer. */
-    private static void add(Merged merged, JsonNode part, String label, String path) {
-        try {
-            merged.add(part);
-        } catch (IllegalStateException e) {
-            throw error(path, label + " request", e.getMessage());
-        }
     }
 
     /** The request, dynamic fields, expected base and dat file merged so far. */
@@ -364,10 +355,9 @@ public final class TestDataRepository {
         checkValues(request, path, where + ".request");
     }
 
-    /** The {@code _append} directives and the {@code ${date:...}} placeholders of a request or a response. */
+    /** The {@code ${date:...}} placeholders of a request or a response. */
     private static void checkValues(JsonNode part, String path, String where) {
         try {
-            JsonLayers.checkAppends(part);
             DataPlaceholders.check(part);
         } catch (IllegalArgumentException e) {
             throw error(path, where, e.getMessage());
@@ -444,26 +434,16 @@ public final class TestDataRepository {
             parent = resolveSetup(parentName.asText(), chain);
             chain.remove(chain.size() - 1);
         }
-        request = under(parent == null ? null : parent.requestNode(), request, path, "request");
-        response = under(parent == null ? null : parent.responseNode(), response, path, "response");
+        request = under(parent == null ? null : parent.requestNode(), request);
+        response = under(parent == null ? null : parent.responseNode(), response);
         return new SetupData(name, path, request, response);
     }
 
-    /** {@code child} merged over {@code parent}; an {@code _append} in {@code child} needs the parent's part. */
-    private static ObjectNode under(ObjectNode parent, ObjectNode child, String path, String part) {
+    /** {@code child} merged over {@code parent}. */
+    private static ObjectNode under(ObjectNode parent, ObjectNode child) {
         if (child == null) return parent;
-        if (parent == null) {
-            if (JsonLayers.hasAppend(child)) {
-                throw error(path, part, "an _append adds to a list of the setup this one extends, and there is no "
-                        + part + " to add to (no extends, or the setup it extends has no " + part + ")");
-            }
-            return child;
-        }
-        try {
-            return JsonLayers.merge(parent, child);
-        } catch (IllegalStateException e) {
-            throw error(path, part, e.getMessage());
-        }
+        if (parent == null) return child;
+        return JsonLayers.merge(parent, child);
     }
 
     private static String via(List<String> chain) {
