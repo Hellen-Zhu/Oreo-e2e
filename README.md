@@ -253,8 +253,8 @@ recorded:
 
 | Rule | Still checked |
 |---|---|
-| `type` | presence and type of the value |
-| `type-tree` | the whole structure, and the type of every leaf |
+| `type` | presence and type of the value; on an array (`${json-unit.any-array}`), that it is an array, of any length and content; not on an object |
+| `type-tree` | the whole structure (array lengths included), and the type of every leaf |
 | `regex:<pattern>` | the value matches the pattern |
 | `var:<name>` | the value equals the scenario variable `<name>` of this run (`createdTradeId`, stored by `a live '<product_type>' trade is created via api`) |
 | `ignore` | nothing; only when the others cannot work |

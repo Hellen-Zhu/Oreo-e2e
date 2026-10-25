@@ -19,7 +19,9 @@ import java.util.regex.PatternSyntaxException;
  *
  * <table>
  *   <caption>Rules</caption>
- *   <tr><td>{@code type}</td><td>{@code ${json-unit.any-string|any-number|any-boolean}}; {@code null} stays</td></tr>
+ *   <tr><td>{@code type}</td><td>{@code ${json-unit.any-string|any-number|any-boolean}}; an array
+ *       {@code ${json-unit.any-array}} (any length and elements, JsonUnit 4); {@code null} stays; an object fails
+ *       (JsonUnit has no any-object: {@code type-tree} or {@code ignore})</td></tr>
  *   <tr><td>{@code type-tree}</td><td>the subtree, every leaf replaced as by {@code type}</td></tr>
  *   <tr><td>{@code regex:<p>}</td><td>{@code ${json-unit.regex}<p>}; the actual value must match</td></tr>
  *   <tr><td>{@code ignore}</td><td>{@code ${json-unit.ignore}}</td></tr>
@@ -34,6 +36,7 @@ public final class ResponseMasker {
     public static final String ANY_STRING = "${json-unit.any-string}";
     public static final String ANY_NUMBER = "${json-unit.any-number}";
     public static final String ANY_BOOLEAN = "${json-unit.any-boolean}";
+    public static final String ANY_ARRAY = "${json-unit.any-array}";
     public static final String REGEX = "${json-unit.regex}";
     public static final String IGNORE = "${json-unit.ignore}";
     public static final String VAR_START = "${var:";
@@ -98,9 +101,12 @@ public final class ResponseMasker {
                     + " var:<name> or ignore");
         }
         if (rule.equals("type")) {
-            if (value.isContainerNode()) {
-                throw new IllegalStateException("[ResponseMasker] " + where + ": the value is an "
-                        + (value.isObject() ? "object" : "array") + "; use type-tree");
+            if (value.isArray()) {
+                return TextNode.valueOf(ANY_ARRAY);
+            }
+            if (value.isObject()) {
+                throw new IllegalStateException("[ResponseMasker] " + where + ": the value is an object, which"
+                        + " JsonUnit has no type placeholder for; use type-tree (its structure is checked) or ignore");
             }
             return leaf(value, where);
         }

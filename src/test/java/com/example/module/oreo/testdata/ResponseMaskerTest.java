@@ -78,6 +78,25 @@ public class ResponseMaskerTest {
         assertJson("{\"a\":[{\"t\":\"" + ANY_STRING + "\"},{\"t\":\"" + ANY_STRING + "\"}]}", masked);
     }
 
+    @Test
+    public void typeOnArrayWritesAnyArray() {
+        String masked = ResponseMasker.mask("{\"s\":[{\"d\":\"2026-01-01\"}],\"e\":[]}", rules("s", "type", "e", "type"),
+                "x");
+        assertJson("{\"s\":\"${json-unit.any-array}\",\"e\":\"${json-unit.any-array}\"}", masked);
+    }
+
+    @Test
+    public void anyArrayMatchesAnArrayOfAnotherLength() {
+        String masked = ResponseMasker.mask("{\"s\":[1,2]}", rules("s", "type"), "x");
+        JsonAssert.assertJsonEquals(masked, "{\"s\":[1,2,3]}");
+    }
+
+    @Test(expected = AssertionError.class)
+    public void anyArrayRejectsAnotherType() {
+        String masked = ResponseMasker.mask("{\"s\":[1,2]}", rules("s", "type"), "x");
+        JsonAssert.assertJsonEquals(masked, "{\"s\":\"1,2\"}");
+    }
+
     @Test(expected = IllegalStateException.class)
     public void typeOnObjectFails() {
         ResponseMasker.mask("{\"t\":{\"a\":1}}", rules("t", "type"), "x");

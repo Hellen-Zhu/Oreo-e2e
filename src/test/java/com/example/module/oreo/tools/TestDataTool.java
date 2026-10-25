@@ -127,7 +127,8 @@ final class Checks {
 
     private static final String PLACEHOLDER = "${json-unit.";
     private static final Set<String> TYPE_PLACEHOLDERS =
-            Set.of(ResponseMasker.ANY_STRING, ResponseMasker.ANY_NUMBER, ResponseMasker.ANY_BOOLEAN);
+            Set.of(ResponseMasker.ANY_STRING, ResponseMasker.ANY_NUMBER, ResponseMasker.ANY_BOOLEAN,
+                    ResponseMasker.ANY_ARRAY);
 
     private static final String INDENT = "         ";
 
