@@ -1,0 +1,463 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>oreo-e2e 框架讲解</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: sticky running-order rail on the left (a talk's agenda with minutes), one readable script column on the right. */
+:root {
+  --bg: #f6f7f5;
+  --paper: #ffffff;
+  --ink: #1d2623;
+  --muted: #5b6863;
+  --line: #dde3df;
+  --accent: #0f6b5c;      /* trading-desk green */
+  --accent-soft: #e3f0ec;
+  --cue: #8a5a14;         /* stage-direction amber */
+  --cue-soft: #fbf3e4;
+  --code-bg: #eef1ef;
+  --font-display: "Noto Serif SC", "Songti SC", serif;
+  --font-body: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #121816; --paper: #18201d; --ink: #e4ebe7; --muted: #9aa8a2; --line: #2b3632;
+    --accent: #5cc3ad; --accent-soft: #1b2e29; --cue: #e3b066; --cue-soft: #2a2317; --code-bg: #1f2925;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #121816; --paper: #18201d; --ink: #e4ebe7; --muted: #9aa8a2; --line: #2b3632;
+  --accent: #5cc3ad; --accent-soft: #1b2e29; --cue: #e3b066; --cue-soft: #2a2317; --code-bg: #1f2925;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink);
+  font-family: var(--font-body); font-size: 17px; line-height: 1.85;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.wrap { max-width: 1120px; margin: 0 auto; display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: 48px; padding-block: 40px 80px; }
+nav.rail { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 24px); align-self: start; font-size: 14px; line-height: 1.5; }
+nav.rail h2 { font-family: var(--font-body); font-size: 12px; letter-spacing: .12em; color: var(--muted); font-weight: 500; margin: 0 0 12px; }
+nav.rail ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+nav.rail a { display: grid; grid-template-columns: 1fr auto; gap: 8px; padding: 6px 10px; border-radius: 6px; color: var(--ink); text-decoration: none; }
+nav.rail a:hover, nav.rail a:focus-visible { background: var(--accent-soft); outline: none; }
+nav.rail .min { color: var(--muted); font-variant-numeric: tabular-nums; font-family: var(--font-mono); font-size: 12px; }
+.rail-foot { margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--line); color: var(--muted); display: grid; gap: 10px; }
+button.toggle { font: inherit; font-size: 13px; padding: 6px 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--paper); color: var(--ink); cursor: pointer; }
+button.toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+main { min-width: 0; }
+header.cover { padding-bottom: 28px; border-bottom: 1px solid var(--line); margin-bottom: 8px; }
+.eyebrow { font-size: 13px; letter-spacing: .14em; color: var(--accent); font-weight: 500; }
+h1 { font-family: var(--font-display); font-size: clamp(30px, 4.4vw, 42px); line-height: 1.25; margin: 8px 0 12px; text-wrap: balance; }
+.lede { color: var(--muted); max-width: 40em; margin: 0; }
+.facts { display: flex; flex-wrap: wrap; gap: 8px 22px; margin-top: 18px; font-size: 14px; color: var(--muted); }
+.facts b { color: var(--ink); font-family: var(--font-mono); font-weight: 600; font-variant-numeric: tabular-nums; }
+section { padding-block: 36px 8px; border-bottom: 1px solid var(--line); scroll-margin-top: 16px; }
+section:last-of-type { border-bottom: 0; }
+.sec-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px; margin-bottom: 6px; }
+.sec-no { font-family: var(--font-mono); color: var(--accent); font-size: 14px; font-weight: 600; }
+h2.sec { font-family: var(--font-display); font-size: 26px; line-height: 1.35; margin: 0; text-wrap: balance; }
+.dur { font-size: 13px; color: var(--muted); font-family: var(--font-mono); }
+.say p { margin: 0 0 1em; max-width: 38em; }
+.say strong { color: var(--accent); font-weight: 700; }
+.cue { background: var(--cue-soft); border-left: 3px solid var(--cue); padding: 10px 14px; margin: 4px 0 18px; font-size: 15px; line-height: 1.7; border-radius: 0 6px 6px 0; max-width: 42em; }
+.cue .tag { color: var(--cue); font-weight: 700; font-size: 12px; letter-spacing: .1em; margin-right: 8px; }
+.cue code { background: transparent; padding: 0; }
+pre.code { background: var(--code-bg); border-radius: 8px; padding: 14px 16px; overflow-x: auto; font-family: var(--font-mono); font-size: 13.5px; line-height: 1.6; margin: 4px 0 20px; max-width: 100%; }
+code { font-family: var(--font-mono); font-size: .88em; background: var(--code-bg); padding: 1px 5px; border-radius: 4px; overflow-wrap: anywhere; }
+pre.code code { background: none; padding: 0; font-size: inherit; overflow-wrap: normal; }
+.diagram { overflow-x: auto; margin: 4px 0 20px; background: var(--paper); border: 1px solid var(--line); border-radius: 8px; padding: 12px; }
+table.t { border-collapse: collapse; width: 100%; font-size: 15px; line-height: 1.6; }
+.tbl { overflow-x: auto; margin: 4px 0 20px; }
+table.t th, table.t td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+table.t th { font-weight: 500; color: var(--muted); font-size: 13px; letter-spacing: .04em; }
+.flow { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 4px 0 20px; font-size: 14px; }
+.flow span.n { background: var(--paper); border: 1px solid var(--line); border-radius: 6px; padding: 6px 10px; }
+.flow span.a { color: var(--muted); }
+.qa { background: var(--accent-soft); border-radius: 8px; padding: 14px 18px; margin: 4px 0 20px; max-width: 42em; }
+.qa p { margin: 0 0 .6em; }
+body.script-only .cue, body.script-only pre.code, body.script-only .diagram, body.script-only .tbl, body.script-only .flow { display: none; }
+@media (max-width: 860px) {
+  .wrap { grid-template-columns: minmax(0, 1fr); gap: 8px; padding-block: 24px 60px; }
+  nav.rail { position: static; border-bottom: 1px solid var(--line); padding-bottom: 16px; }
+  nav.rail ol { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
+}
+@media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <nav class="rail" aria-label="讲解顺序">
+    <h2>讲解顺序 · 约 32 分钟</h2>
+    <ol>
+      <li><a href="#s0"><span>开场：我们要解决什么</span><span class="min">2′</span></a></li>
+      <li><a href="#s1"><span>全景：从需求到报告</span><span class="min">4′</span></a></li>
+      <li><a href="#s2"><span>两层测试各证明什么</span><span class="min">2′</span></a></li>
+      <li><a href="#s3"><span>事件是文件，产品是行</span><span class="min">4′</span></a></li>
+      <li><a href="#s4"><span>一个场景怎么跑起来</span><span class="min">3′</span></a></li>
+      <li><a href="#s5"><span>测试数据：四层合并</span><span class="min">4′</span></a></li>
+      <li><a href="#s6"><span>录制响应：严格比对</span><span class="min">4′</span></a></li>
+      <li><a href="#s7"><span>UI 的分层</span><span class="min">3′</span></a></li>
+      <li><a href="#s8"><span>新上一个产品</span><span class="min">3′</span></a></li>
+      <li><a href="#s9"><span>怎么跑、怎么检查</span><span class="min">2′</span></a></li>
+      <li><a href="#s10"><span>标准与 AI 协作</span><span class="min">2′</span></a></li>
+      <li><a href="#s11"><span>现状、下一步、Q&amp;A</span><span class="min">2′</span></a></li>
+    </ol>
+    <div class="rail-foot">
+      <span>琥珀色框是给讲者的屏幕提示，不用读出来。</span>
+      <button class="toggle" id="toggle-cues" type="button" aria-pressed="false">只看口播</button>
+    </div>
+  </nav>
+
+  <main>
+    <header class="cover">
+      <div class="eyebrow">组内 DEMO · 演讲稿</div>
+      <h1>oreo-e2e：一套按"事件 × 产品"组织的端到端测试框架</h1>
+      <p class="lede">由面到点：先看整体怎么分层，再看一个用例从数据到断言怎么跑，最后落到"新上一个产品要做什么"。每节的正文可以直接照着读。</p>
+      <div class="facts">
+        <span>Feature 文件 <b>42</b>（API 24 · UI 18）</span>
+        <span>场景 <b>130</b></span>
+        <span>Snippet <b>66</b></span>
+        <span>已录制响应 <b>52</b></span>
+        <span>产品 <b>4</b></span>
+      </div>
+    </header>
+
+    <!-- 0 -->
+    <section id="s0">
+      <div class="sec-head"><span class="sec-no">00</span><h2 class="sec">开场：我们要解决什么</h2><span class="dur">2 分钟</span></div>
+      <div class="say">
+        <p>大家好，今天花三十分钟左右，把我们现在的 E2E 框架完整过一遍。我会按"由面到点"的顺序讲：先看全景，再看一个用例是怎么跑起来的，最后落到大家最常做的事，比如新上一个产品、更新一个响应。</p>
+        <p>先说为什么要重新整理。旧的做法有几个问题：每个产品、每个 case 都要单独写一条数据，产品 ID 和请求引用反复复制；一个产品要支持某个事件，就要复制一整套模板；每个 API case 的期望响应都是手工复制进去的完整 JSON，15 个 case 就有七百多行；而且数据缺了只打一个 warning，测试照样跑。</p>
+        <p>我们的产品是一个一个上线的。所以这套框架的核心目标只有一句话：<strong>新上一个产品，应该是加一行配置，而不是复制一堆用例</strong>。后面讲的所有设计，都是围绕这句话展开的。</p>
+      </div>
+    </section>
+
+    <!-- 1 -->
+    <section id="s1">
+      <div class="sec-head"><span class="sec-no">01</span><h2 class="sec">全景：从需求到报告</h2><span class="dur">4 分钟</span></div>
+      <div class="say">
+        <p>先看全景。一个需求进来，到最后出测试报告，中间分成三个阶段，每个阶段有一份标准文档。</p>
+        <p>第一阶段是<strong>测试分析</strong>：从 Story 的验收标准出发，拆出测试点，决定每个测试点在 API 层测还是 UI 层测、用什么证据证明。这一步不写任何 Gherkin。</p>
+        <p>第二阶段是<strong>生成 Feature</strong>：把测试点写成业务语言的场景，决定放在哪个文件、叫什么、编号是多少。</p>
+        <p>第三阶段是<strong>实现</strong>：让每一个步骤真的能跑。这里又分几层：Feature 里的业务步骤，由 Snippet 组合出来；Snippet 再调用 Genie 自带的步骤或者我们自己的 Java glue；请求体、产品、期望响应这些数据，全部放在 JSON 测试数据里，不写在 Feature 和代码里。</p>
+        <p>大家记住一个原则：<strong>Feature 只写业务，数据只放在数据文件，代码只做通用能力</strong>。三者各管一块，谁也不往对方那里塞东西。</p>
+      </div>
+      <div class="diagram">
+<pre class="mermaid">
+flowchart LR
+  A[Story / 验收标准] --> B[测试分析<br/>测试点 · 分层 · 证据]
+  B --> C[Feature 文件<br/>业务语言场景]
+  C --> D[Snippet<br/>步骤组合]
+  D --> E[Genie 内置步骤<br/>+ Java glue]
+  F[(JSON 测试数据<br/>请求 · 产品 · 录制响应)] --> E
+  E --> G[API / 浏览器]
+  G --> H[报告]
+</pre>
+      </div>
+      <div class="cue"><span class="tag">屏幕</span>打开 <code>docs/standards/</code>，依次点开三份标准的标题给大家看：test-layering、bdd-feature-generation、bdd-feature-implementation。</div>
+    </section>
+
+    <!-- 2 -->
+    <section id="s2">
+      <div class="sec-head"><span class="sec-no">02</span><h2 class="sec">两层测试各证明什么</h2><span class="dur">2 分钟</span></div>
+      <div class="say">
+        <p>我们有两个执行层。<strong>API 层</strong>打 <code>@api</code> 标签，走 genie-rest，不开浏览器。业务规则、校验、权限、maker-checker、状态流转、接口契约，都在这一层证明。</p>
+        <p><strong>UI 层</strong>打 <code>@playwright</code> 标签，走 genie-playwright，用 Edge。它只证明用户看到了什么、能做什么：页面上显示的状态、按钮能不能点、表单行为、通知。</p>
+        <p>选哪一层，规则只有一条：<strong>在能拿到证据的最低一层测</strong>。API 测试快、稳、维护成本低，所以后端规则不要为了"看得见"搬到 UI 上测。反过来，UI 用例的前置交易可以通过 API 造出来，这不会让它变成 API 用例，因为它的证据在浏览器里。</p>
+      </div>
+      <div class="tbl">
+        <table class="t">
+          <thead><tr><th>要证明的是…</th><th>层</th></tr></thead>
+          <tbody>
+            <tr><td>业务规则、校验、权限、maker-checker、状态流转、审计</td><td><code>@api</code></td></tr>
+            <tr><td>请求 / 响应契约：字段、类型、错误码</td><td><code>@api</code></td></tr>
+            <tr><td>用户看到的状态、可用的操作、表单、通知</td><td><code>@playwright</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 3 -->
+    <section id="s3">
+      <div class="sec-head"><span class="sec-no">03</span><h2 class="sec">事件是文件，产品是行</h2><span class="dur">4 分钟</span></div>
+      <div class="say">
+        <p>这是整个框架最关键的一个设计决定。我们当时讨论过：一个产品一个 Feature 文件，还是一个生命周期事件一个文件？结论是<strong>按事件拆文件，产品作为 Examples 的行</strong>。</p>
+        <p>原因很简单。同一个事件，比如提前终止，对所有产品的业务流程是一样的，只是数据不同。如果按产品拆，新上一个产品就要把十几个事件的用例全部复制一遍；按事件拆，新产品只是在每个事件的 Examples 里多一行。</p>
+        <p>所以现在是：一个事件、一个层，对应一个 Feature 文件，比如 <code>features/api/trading/trade_early_termination.feature</code>；同名还有一个数据文件 <code>data/api/trade_early_termination.json</code>。</p>
+        <p>大家看这个场景。场景名最前面方括号里的是<strong>用例 ID</strong>，<code>&lt;product_type&gt;</code> 会被每一行产品替换。这个 ID 不是装饰，它决定了这个用例读哪个数据文件、哪个产品、哪一行数据。还有一个 <code>@capability#earlyTermination</code> 标签，它决定了 Examples 里应该有哪些产品，这个后面讲新产品时再展开。</p>
+      </div>
+<pre class="code"><code>@ADO#positive @ADO#smoke @capability#earlyTermination
+Scenario Outline: [TC-TRADE-EARLY-TERMINATION-&lt;product_type&gt;-API-001] &lt;product_type&gt; trade status is updated to Terminated ...
+  Given a live '&lt;product_type&gt;' trade is created via api
+  When maker has valid data for EarlyTermination event
+  And performs the EarlyTermination event via api
+  ...
+  Then the trade basic event status is 'Terminated'
+
+  Examples:
+    | product_type    |
+    | FX_TRF          |
+    | FX_PSCRIPT      |
+    | FX_PSCRIPT_FSKO |
+    | FX_PSCRIPT_TRF  |</code></pre>
+      <div class="say">
+        <p>用例 ID 拆开看是这样的：</p>
+      </div>
+      <div class="flow">
+        <span class="n"><code>TC-TRADE-CREATION</code> → 事件 trade_creation</span><span class="a">·</span>
+        <span class="n"><code>FX_TRF</code> → 产品</span><span class="a">·</span>
+        <span class="n"><code>API</code> → 层</span><span class="a">·</span>
+        <span class="n"><code>001</code> → 第几个 case</span>
+      </div>
+      <div class="say">
+        <p>另外一点：负向用例和权限用例，比如"数据格式错误被拒绝"，一般只用一个代表产品来写。校验规则不会因为产品而变，每个产品都跑一遍只会增加时间，不会增加覆盖。</p>
+      </div>
+      <div class="cue"><span class="tag">屏幕</span>打开 <code>trade_early_termination.feature</code>，指出方括号里的 ID、<code>@capability#</code> 标签和 Examples。</div>
+    </section>
+
+    <!-- 4 -->
+    <section id="s4">
+      <div class="sec-head"><span class="sec-no">04</span><h2 class="sec">一个场景怎么跑起来</h2><span class="dur">3 分钟</span></div>
+      <div class="say">
+        <p>现在从面落到点，跟着一个场景走一遍。</p>
+        <p>第一步，场景开始前，<code>ScenarioLifecycleHooks</code> 从场景名里读出用例 ID，找到对应的数据文件，把这个 case 的数据合并好。合并的规则下一节讲。</p>
+        <p>第二步，合并好的请求被放进场景上下文，比如 <code>_tc.request</code>，以及展开后的字段 <code>basic.counterpartyName</code>。同时报告里会写出这次用了哪几层数据，出了问题一眼就能看到数据从哪来的。</p>
+        <p>第三步，各个步骤和 Snippet 从上下文里取数据去调接口或者操作页面。需要前置交易的，用 setup 数据造出来，比如一笔 Live 状态的交易。</p>
+        <p>最后一步，API 用例结束时会做一次<strong>完整响应的严格比对</strong>，跟录制好的期望文件比。这一点很重要，下下节专门讲。</p>
+      </div>
+      <div class="diagram">
+<pre class="mermaid">
+sequenceDiagram
+  participant H as Hook
+  participant D as 测试数据
+  participant S as 步骤 / Snippet
+  participant X as 被测系统
+  participant E as 录制响应
+  H->>D: 用例 ID → 事件文件、产品、行
+  D-->>H: 合并后的请求
+  H->>S: 放进场景上下文
+  S->>X: 调接口 / 操作页面
+  X-->>S: 响应
+  S->>E: 与期望文件严格比对
+</pre>
+      </div>
+    </section>
+
+    <!-- 5 -->
+    <section id="s5">
+      <div class="sec-head"><span class="sec-no">05</span><h2 class="sec">测试数据：四层合并</h2><span class="dur">4 分钟</span></div>
+      <div class="say">
+        <p>测试数据是 JSON，一个事件一个文件，API 和 UI 各自独立，互不读取。</p>
+        <p>每个 case 的数据由<strong>四层</strong>合并而成，后面的覆盖前面的：先是 <code>defaults</code>，所有 case 共用；然后是 <code>byProduct</code>，某个产品不一样的地方；然后是这个 case 自己的那一行；最后是这一行里的 <code>byProduct</code>。每一层都是可选的。</p>
+        <p>合并规则也很简单：对象按 key 逐个合并，数组和值整体替换，写 <code>null</code> 就是删掉这个字段。我们最近把"往数组里追加元素"的能力删掉了，因为它带来的复杂度比收益大。现在想改数组里的一个元素，就把整个数组写出来，最终发出去的是什么，看最后一层就知道。</p>
+        <p>关键是：<strong>一行数据只为"和默认值不一样"的 case 存在</strong>。正向 case 跑默认值就够了，根本不需要写一行。大家看这个文件，三个 case，只有很少的几行。</p>
+      </div>
+<pre class="code"><code>{
+  "defaults": {
+    "request": { "eventType": "EarlyTermination", "data": [ ... ], "tradeIds": ["PLACEHOLDER"] }
+  },
+  "cases": [
+    { "id": "TC-TRADE-EARLY-TERMINATION-&lt;product_type&gt;-API-001",
+      "dynamicFields": { "msg": "type", "data.results[*].tradeId": "type" } },
+    { "id": "TC-TRADE-EARLY-TERMINATION-&lt;product_type&gt;-API-002",
+      "request": { "data": [] } },
+    { "id": "TC-TRADE-EARLY-TERMINATION-&lt;product_type&gt;-API-003",
+      "dynamicFields": { "msg": "regex:.*status 'Dead' does not permit 'EarlyTermination'.*" } }
+  ]
+}</code></pre>
+      <div class="say">
+        <p>还有两个小工具。一个是 <code>use</code>：把几个事件都要用的数据块放在 <code>common.json</code>，按名字引用。另一个是日期：写 <code>${date:T+2}</code> 就是今天往后两个日历日，运行时才填进去，不用每次手改日期。</p>
+      </div>
+      <div class="cue"><span class="tag">演示</span>运行 <code>mvn -Ptest-data process-test-classes "-Dexec.args=case TC-TRADE-CREATION-FX_TRF-API-001"</code>，展示这个 case 用了哪几层、最终请求长什么样、和哪个期望文件比对。</div>
+    </section>
+
+    <!-- 6 -->
+    <section id="s6">
+      <div class="sec-head"><span class="sec-no">06</span><h2 class="sec">录制响应：严格比对</h2><span class="dur">4 分钟</span></div>
+      <div class="say">
+        <p>以前 API 用例只断言几个字段，接口多返回了一个字段、某个值悄悄变了，都发现不了。现在每个 API case 结束时，会把<strong>整个响应</strong>和 <code>data/api/expected/&lt;事件&gt;/&lt;用例ID&gt;.json</code> 严格比对。</p>
+        <p>期望文件不是手写的，是<strong>录出来的</strong>。新 case 第一次跑，文件不存在，框架就把真实响应录下来，这次会失败一次；你审一下内容对不对，提交，之后就是严格比对了。</p>
+        <p>那每次都变的值怎么办，比如交易 ID、日期？在数据里配 <code>dynamicFields</code> 规则。<code>type</code> 只检查类型，<code>regex</code> 按正则匹配，<code>var</code> 要求等于这次运行里存下的变量，比如刚造出来的交易 ID。录制时这些值会被替换成占位符。</p>
+      </div>
+      <div class="tbl">
+        <table class="t">
+          <thead><tr><th>规则</th><th>还检查什么</th></tr></thead>
+          <tbody>
+            <tr><td><code>type</code></td><td>值存在、类型对；数组只检查是数组</td></tr>
+            <tr><td><code>type-tree</code></td><td>整个结构和每个叶子的类型</td></tr>
+            <tr><td><code>regex:&lt;pattern&gt;</code></td><td>值匹配正则</td></tr>
+            <tr><td><code>var:&lt;name&gt;</code></td><td>等于本次运行存下的变量</td></tr>
+            <tr><td><code>ignore</code></td><td>不检查，其他规则都不行时才用</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="say">
+        <p>接口有意改了怎么办？用 update 模式重新录：</p>
+      </div>
+<pre class="code"><code>OREO_EXPECTED=update mvn -B test -Dtest=OreoTest "-Dcucumber.options=--name ^\[TC-TRADE-CREATION-FX_TRF-API-001\].*$"
+mvn -Ptest-data process-test-classes "-Dexec.args=compact trade_creation"</code></pre>
+      <div class="say">
+        <p>第二条命令是压缩：同一个产品的几个变体，响应大部分一样，压缩后变体只存和基础 case 的差异，也就是一个 patch。最后一定要看 <code>git diff</code>，对着需求审：<strong>录进去一个错的值，就等于写了一个错的期望</strong>。</p>
+        <p>还有一种情况：有些 API case 调完一串接口后去查数据库，根本不比对响应，比如审计。给它打上 <code>@expected#none</code> 标签，就不需要期望文件了。</p>
+      </div>
+    </section>
+
+    <!-- 7 -->
+    <section id="s7">
+      <div class="sec-head"><span class="sec-no">07</span><h2 class="sec">UI 的分层</h2><span class="dur">3 分钟</span></div>
+      <div class="say">
+        <p>UI 这边分四层，从上到下越来越具体。</p>
+        <p>最上面是<strong>场景</strong>，纯业务语言，不出现"点击""输入"这些词，也不出现页面名。下面是 <strong>flow snippet</strong>，一个业务动作，比如"对这笔交易做提前终止"。flow 不直接碰元素，它调用 <strong>page 或 component snippet</strong>，这一层才做具体的点击、输入、断言。最底下是<strong>元素库</strong>，一个 JSON 文件，按名字登记定位方式，优先用 testId。</p>
+      </div>
+      <div class="flow">
+        <span class="n">场景：业务语言</span><span class="a">→</span>
+        <span class="n">flow snippet：业务动作</span><span class="a">→</span>
+        <span class="n">page / component snippet：原子操作</span><span class="a">→</span>
+        <span class="n">元素库：定位</span>
+      </div>
+<pre class="code"><code>@When "^perform the Early Termination event on the '([^']*)' trade$"
+    When opens lifecycle action 'early termination' for current trade
+    And component dynamic action types amount from stored variable 'earlyTermination.amount'
+    And submits lifecycle event and waits for page ready
+
+@Then "^the trade is closed as Terminated$"
+    Then the trade has status 'DEAD' and event status 'Terminated' in the blotter</code></pre>
+      <div class="say">
+        <p>这么分的好处是：页面改版，定位变了，只改元素库；交互方式变了，只改 page snippet；业务场景一行不用动。</p>
+        <p>新加一个步骤时按这个顺序找：先看有没有现成的 snippet，再看 Genie 自带步骤，再看已有的 Java glue，都没有才写新 Java。几条红线：Feature 里不写接口和选择器，Java 里不硬编码选择器，不加 <code>Thread.sleep</code>。</p>
+      </div>
+    </section>
+
+    <!-- 8 -->
+    <section id="s8">
+      <div class="sec-head"><span class="sec-no">08</span><h2 class="sec">新上一个产品</h2><span class="dur">3 分钟</span></div>
+      <div class="say">
+        <p>回到开场那句话：新上一个产品，应该是加一行配置。现在看它是怎么做到的。</p>
+        <p>产品注册表是 <code>ProductDatFiles</code>，每个产品一个常量，写明它支持哪些<strong>能力</strong>。能力对应 Feature 里的 <code>@capability#</code> 标签。支持全部能力的，写 <code>SUPPORT_CAPABILITY</code>；缺几项的，写 <code>except(SUPPORT_CAPABILITY, …)</code>；只支持少数几项的，直接逐个列出来。</p>
+      </div>
+<pre class="code"><code>FX_TRF(SUPPORT_CAPABILITY),
+FX_PSCRIPT_TRF(SUPPORT_CAPABILITY);
+
+// 缺几项时
+FX_NEW(except(SUPPORT_CAPABILITY, ALLOCATION, PORTFOLIO_REASSIGNMENT)),
+// 只支持少数几项时
+FX_DCD(CREATE, EARLY_TERMINATION),</code></pre>
+      <div class="say">
+        <p>然后跑一条命令 <code>sync-examples</code>，工具会把这个产品写进所有带对应能力标签的 Outline 的 Examples 里。<strong>Examples 里的产品行没有人手改</strong>，都是工具按注册表写的，手改的话检查会直接报错。</p>
+        <p>所以新上一个产品的完整步骤是：</p>
+      </div>
+      <div class="tbl">
+        <table class="t">
+          <thead><tr><th>步骤</th><th>做什么</th></tr></thead>
+          <tbody>
+            <tr><td>1 · 问清楚</td><td>产品 ID、支持哪些能力、默认 dat 文件、哪些值和默认不同</td></tr>
+            <tr><td>2 · 注册</td><td><code>ProductDatFiles</code> 加一个常量，加 <code>data/dat/&lt;P&gt;/&lt;P&gt;.dat</code></td></tr>
+            <tr><td>3 · 写行</td><td><code>sync-examples</code> 写入所有相关 Outline</td></tr>
+            <tr><td>4 · 差异</td><td>只有和默认值不同的地方才写 <code>byProduct</code></td></tr>
+            <tr><td>5 · 录制</td><td>只跑这个产品的 API case，录制、审查、压缩、提交</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="say">
+        <p>这一套流程已经写成了 Claude 的 skill，叫 <code>onboarding-e2e-product</code>，它会先问齐这些信息，缺了就不动手。</p>
+      </div>
+      <div class="cue"><span class="tag">演示</span>打开 <code>ProductDatFiles.java</code> 和 <code>Capability.java</code>；运行 <code>sync-examples</code>，展示它打印的每个 Outline 的 <code>add &lt;P&gt;</code> 或 <code>unchanged</code>。</div>
+    </section>
+
+    <!-- 9 -->
+    <section id="s9">
+      <div class="sec-head"><span class="sec-no">09</span><h2 class="sec">怎么跑、怎么检查</h2><span class="dur">2 分钟</span></div>
+      <div class="say">
+        <p>运行入口是 <code>OreoTest</code>。有三点大家一定要知道。</p>
+        <p>第一，<strong><code>mvn test</code> 不是全量</strong>。runner 里固定了标签 <code>not @wip</code> 和 <code>@ADO#trade_creation</code>，命令行的筛选是和它叠加的。所以跑出来零个用例，不代表通过，先去看 runner。</p>
+        <p>第二，筛选用 <code>-Dcucumber.options</code>，<strong>不要用 <code>-Dcucumber.filter.tags</code></strong>。我们的 Cucumber 版本不支持后者，它可能被悄悄忽略，结果跑了全部用例。</p>
+        <p>第三，每次跑 API 都会在真实环境里下单。所以永远先想清楚筛选条件，只跑需要的。</p>
+      </div>
+<pre class="code"><code># 按标签
+mvn -B test -Dtest=OreoTest "-Dcucumber.options=--tags @api --tags @ADO#smoke"
+# 按用例 ID（它在场景名里，不是标签）
+mvn -B test -Dtest=OreoTest "-Dcucumber.options=--name ^\[TC-TRADE-CREATION-FX_TRF-API-001\].*$"
+# 离线检查：不开浏览器，不连环境
+mvn -Ptest-data process-test-classes</code></pre>
+      <div class="say">
+        <p>最后这条离线检查，提交数据、Feature 或注册表之前一定要跑。它先跑五个单元测试，保证数据合并和比对的逻辑本身是对的；然后检查每个数据文件能加载、每个 case 都能解析、期望文件和规则一致、Examples 和注册表一致。一分钟以内，不需要环境。</p>
+        <p>另外，runner 是按 Feature 并行的，同时跑三个。所以每个场景要自己准备数据，不能依赖别的场景先跑，也不能共用会被别人改掉的交易或设置。</p>
+      </div>
+    </section>
+
+    <!-- 10 -->
+    <section id="s10">
+      <div class="sec-head"><span class="sec-no">10</span><h2 class="sec">标准与 AI 协作</h2><span class="dur">2 分钟</span></div>
+      <div class="say">
+        <p>这套框架的规则都写成了文档，不靠口口相传，而且 AI 也能直接按它工作。</p>
+        <p>三份标准对应前面说的三个阶段：测试分析、生成 Feature、实现。仓库根目录的 <code>CLAUDE.md</code> 是给 AI 和新同学的工作规则，最前面列了最容易踩的坑，比如 <code>mvn test</code> 不是全量。<code>docs/test-data.md</code> 是测试数据的完整参考。还有两个 skill：一个是新上产品，一个是维护测试数据。</p>
+        <p>实际效果是：给 AI 一个 Story，它能按标准拆测试点、生成 Feature、复用已有步骤；新上产品时，它会先把该问的问题问齐。我们审它的产出，而不是从零写。</p>
+      </div>
+      <div class="tbl">
+        <table class="t">
+          <thead><tr><th>文档</th><th>什么时候看</th></tr></thead>
+          <tbody>
+            <tr><td><code>CLAUDE.md</code></td><td>改任何东西之前</td></tr>
+            <tr><td><code>test-layering-standards.md</code></td><td>拿到 Story，拆测试点、选层</td></tr>
+            <tr><td><code>bdd-feature-generation-standards.md</code></td><td>写 Feature</td></tr>
+            <tr><td><code>bdd-feature-implementation-standards.md</code></td><td>写步骤、snippet、glue、数据</td></tr>
+            <tr><td><code>docs/test-data.md</code></td><td>查数据格式、录制规则、工具命令</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 11 -->
+    <section id="s11">
+      <div class="sec-head"><span class="sec-no">11</span><h2 class="sec">现状、下一步、Q&amp;A</h2><span class="dur">2 分钟</span></div>
+      <div class="say">
+        <p>最后说一下现状。框架本身已经定型：事件按文件、产品按行、数据分层、响应录制、离线检查，都已经可以用。</p>
+        <p>还没完成的是<strong>数据迁移</strong>。API 这边，创建、提前终止、分配、参考数据同步、风险指标这几个事件已经有数据文件；UI 这边是创建、提前终止、novation remaining。其他事件的 Feature 已经在了，但数据文件还没写，所以还有一批 API case 没有录制响应。另外 cancellation 和 amendment 的 setup 数据还没有。</p>
+        <p>还有一件最近的事：<code>FX_PSCRIPT_TRF</code> 现在支持全部能力了，需要跑一次 <code>sync-examples</code>，再把它新增的那几个 case 录制一遍。</p>
+        <p>下一步我想请大家一起推进：按事件分工，把剩下的数据文件补上，每补一个事件就录制、审查、提交。流程都在文档和 skill 里，有问题随时找我。</p>
+        <p>我就讲到这里，大家有什么问题？</p>
+      </div>
+      <div class="qa">
+        <p><strong>可能被问到的问题</strong></p>
+        <p>问：为什么不按产品拆 Feature？答：同一事件的流程对所有产品一样，按产品拆就要为每个新产品复制所有事件的用例；按事件拆，新产品只多一行。</p>
+        <p>问：录制的响应会不会把 bug 也录进去？答：会，所以录完必须对着需求审 diff，录制只说明系统做了什么，不说明它应该做什么。</p>
+        <p>问：每个产品都跑负向用例吗？答：不跑，校验规则不随产品变化，用一个代表产品就够了。</p>
+        <p>问：本地能跑吗？答：离线检查哪里都能跑；真正的用例要在公司环境，因为会连真实系统下单。</p>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script>
+(function () {
+  var btn = document.getElementById('toggle-cues');
+  function apply(on) {
+    document.body.classList.toggle('script-only', on);
+    btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    btn.textContent = on ? '显示屏幕提示和代码' : '只看口播';
+  }
+  var saved = false;
+  try { saved = localStorage.getItem('oreo-demo-script-only') === '1'; } catch (e) {}
+  apply(saved);
+  btn.addEventListener('click', function () {
+    var on = !document.body.classList.contains('script-only');
+    apply(on);
+    try { localStorage.setItem('oreo-demo-script-only', on ? '1' : '0'); } catch (e) {}
+  });
+})();
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
+<script>mermaid.initialize({ startOnLoad: true, theme: window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "default" });</script>
+</body>
+</html>

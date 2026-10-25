@@ -101,7 +101,7 @@ a side effect of another change.
 
 ## 7. This repository
 
-- Everything in the repo is written in English.
+- Everything in the repo is written in English. One exception, on the user's decision: `docs/demo/oreo-e2e-demo.html`, the Chinese script of the team demo.
 - This is the public copy. It builds and runs only on the company machine: elsewhere, give the commands instead of
   running them. Never commit a server address, IP, account, password, company name or real trade / task ID.
 - Transcribed files stay as typed in (only the `com.example` package and the `example.com` e-mail domain are
