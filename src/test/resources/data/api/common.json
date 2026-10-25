@@ -15,30 +15,32 @@
       }
     },
     "stepin-partial": {
-      "_comment": "StepIn Partial: the old counterparty and the novation date as udf entries",
+      "_comment": "StepIn Partial: the old counterparty and the novation date as udf entries; the date is today's, so its echo in the response (udf[3]) is masked",
       "request": {
         "basic": {
           "udf": [
             { "key": "stepInType", "value": "StepInPartial", "type": "Text" },
             { "key": "oldCptyName", "value": "EXAMPLE COUNTERPARTY B", "type": "Text" },
             { "key": "oldCptyFmId", "value": "900000002", "type": "Text" },
-            { "key": "novationDate", "value": "2026-06-10", "type": "Date" }
+            { "key": "novationDate", "value": "${date:T}", "type": "Date" }
           ]
         }
-      }
+      },
+      "dynamicFields": { "data.trade.basic.udf[3].value": "type" }
     },
     "stepin-full": {
-      "_comment": "StepIn Full: the old counterparty and the novation date as udf entries",
+      "_comment": "StepIn Full: the old counterparty and the novation date as udf entries; the date is today's, so its echo in the response (udf[3]) is masked",
       "request": {
         "basic": {
           "udf": [
             { "key": "stepInType", "value": "StepInFull", "type": "Text" },
             { "key": "oldCptyName", "value": "EXAMPLE COUNTERPARTY B", "type": "Text" },
             { "key": "oldCptyFmId", "value": "900000002", "type": "Text" },
-            { "key": "novationDate", "value": "2026-06-10", "type": "Date" }
+            { "key": "novationDate", "value": "${date:T}", "type": "Date" }
           ]
         }
-      }
+      },
+      "dynamicFields": { "data.trade.basic.udf[3].value": "type" }
     }
   }
 }

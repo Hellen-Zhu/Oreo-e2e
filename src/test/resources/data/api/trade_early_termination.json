@@ -7,7 +7,7 @@
         { "key": "direction", "value": "Pay", "type": "Text" },
         { "key": "amount", "value": "0", "type": "Numeric" },
         { "key": "ccy", "value": "USD", "type": "Text" },
-        { "key": "settleDate", "value": "2026-05-29", "type": "Date" },
+        { "key": "settleDate", "value": "${date:T+2}", "type": "Date" },
         { "key": "ci", "value": "0", "type": "Numeric" }
       ],
       "reason": "Trade Early Termination E2E Test",
