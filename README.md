@@ -13,7 +13,7 @@ the company environment before running tests; do not commit credentials or real 
 | Goal | Command |
 |---|---|
 | Run the E2E suite (what the pipeline runs) | `mvn test` |
-| Run a selection (JUnit Platform filters) | `mvn -B test -Dtest=OreoTest "-Dcucumber.filter.tags=@api and @ADO#smoke"`, or one case: `"-Dcucumber.filter.name=^\[TC-TRADE-CREATION-FX_TRF-API-001\].*$"` |
+| Run a selection (`-Dcucumber.options`, not `cucumber.filter.*`) | `mvn -B test -Dtest=OreoTest "-Dcucumber.options=--tags @api --tags @ADO#smoke"`, or one case: `"-Dcucumber.options=--name ^\[TC-TRADE-CREATION-FX_TRF-API-001\].*$"` |
 | Check the test data before a commit (unit tests of the data code, then `check`) | `mvn -Ptest-data process-test-classes` |
 | See what one case sends and is compared with | `mvn -Ptest-data process-test-classes "-Dexec.args=case <case ID>"` |
 | Add a product | skill `.claude/skills/onboarding-e2e-product` |
