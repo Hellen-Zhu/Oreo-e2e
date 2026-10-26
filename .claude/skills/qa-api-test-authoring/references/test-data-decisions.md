@@ -75,7 +75,7 @@ the recording. `TestDataTool suggest <event>` reads the recordings and proposes 
 | Nothing else works | `ignore` (last resort) |
 
 Paths: keys joined by `.`, `[n]` one element, `[*]` every element (`data.results[*].tradeId`), `*` every value of an
-object (`data.fixings.*`), `['...']` a key holding `.`, `[` or `]` (`data.fixings['FX:EURSGD@[BFIX]-1500-JP TYO']`). Where the rule goes
+object (`data.fixings.*`, also for keys holding `.`, `[` or `]`). Where the rule goes
 follows section 2: every case → `defaults`, one product → `byProduct`, one case → the row.
 
 **A rejected case usually needs `"dynamicFields": null`** in its row when `defaults` has rules for success fields

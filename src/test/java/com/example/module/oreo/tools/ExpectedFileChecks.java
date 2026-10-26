@@ -178,10 +178,9 @@ final class ExpectedFileChecks {
         }
     }
 
-    /** {@code key} appended to the rendered path {@code at}: {@code .key}, or {@code ['key']} when it must be quoted. */
+    /** {@code key} appended to the rendered path {@code at}. */
     private static String keyStep(String at, String key) {
-        String step = ResponseMasker.render(List.of(key));
-        return at.isEmpty() || step.startsWith("[") ? step : "." + step;
+        return at.isEmpty() ? key : "." + key;
     }
 
     private static void checkHit(String label, String rule, Hit hit, List<String> errors, List<String> warnings) {

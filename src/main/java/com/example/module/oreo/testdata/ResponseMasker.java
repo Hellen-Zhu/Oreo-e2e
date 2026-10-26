@@ -29,9 +29,9 @@ import java.util.regex.PatternSyntaxException;
  *       value, put in again by {@link #fillVariables} before the comparison</td></tr>
  * </table>
  *
- * A path is keys joined by {@code .}, with {@code [n]} for one array element and {@code [*]} for every element. A
- * key holding {@code .}, {@code [} or {@code ]} is quoted in brackets, {@code data.fixings['FX:EURSGD@[BFIX]-1500-JP
- * TYO']} (any character but {@code '}); {@code *} as a key is every value of an object, {@code data.fixings.*}.
+ * A path is keys joined by {@code .}, with {@code [n]} for one array element and {@code [*]} for every element;
+ * {@code *} as a key is every value of an object, {@code data.fixings.*} (also for keys a path cannot name, such as
+ * {@code FX:EURSGD@[BFIX]-1500-JP TYO}).
  */
 public final class ResponseMasker {
 
@@ -43,7 +43,7 @@ public final class ResponseMasker {
     public static final String IGNORE = "${json-unit.ignore}";
     public static final String VAR_START = "${var:";
 
-    private static final Pattern PLAIN_KEY = Pattern.compile("[^.\\[\\]']+");
+    private static final Pattern PLAIN_KEY = Pattern.compile("[^.\\[\\]]+");
     private static final Pattern VAR_NAME = Pattern.compile("[A-Za-z][A-Za-z0-9_.-]*");
     private static final Pattern VAR = Pattern.compile("\\$\\{var:(" + VAR_NAME.pattern() + ")}");
     private static final Object ANY = new Object();
@@ -248,8 +248,7 @@ public final class ResponseMasker {
 
     /**
      * {@code data.trade.udf[*].value} -> {@code ["data", "trade", "udf", ANY, "value"]}: keys as String, indexes as
-     * Integer, {@code [*]} as a value {@link #isAny} accepts, the key {@code *} as one {@link #isAnyKey} accepts;
-     * {@code ['...']} is a key written as it is.
+     * Integer, {@code [*]} as a value {@link #isAny} accepts, the key {@code *} as one {@link #isAnyKey} accepts.
      */
     public static List<Object> parsePath(String path, String caseLabel) {
         if (path == null || path.isEmpty()) {
@@ -277,13 +276,6 @@ public final class ResponseMasker {
                 i++;
                 needKey = path.charAt(i) != '[';
                 if (!needKey) throw badPath(path, caseLabel);
-            } else if (path.startsWith("['", i)) {
-                int end = path.indexOf("']", i + 2);
-                if (end < 0 || end == i + 2) throw badPath(path, caseLabel);
-                String key = path.substring(i + 2, end);
-                if (key.contains("'")) throw badPath(path, caseLabel);
-                steps.add(key);
-                i = end + 2;
             } else if (path.charAt(i) == '[') {
                 int end = path.indexOf(']', i);
                 String index = end < 0 ? "" : path.substring(i + 1, end);
@@ -305,20 +297,18 @@ public final class ResponseMasker {
 
     private static IllegalStateException badPath(String path, String caseLabel) {
         return new IllegalStateException("[ResponseMasker] rule path '" + path + "' of " + caseLabel
-                + " is not keys joined by '.' (a key with . [ or ] quoted as ['...'], * for every value of an"
-                + " object), with [n] or [*] for array elements");
+                + " is not keys joined by '.' (* for every value of an object), with [n] or [*] for array elements");
     }
 
-    /** A concrete path (keys and indexes) as a rule path: {@code data.fixings['FX:EURSGD@[BFIX]'].x[0]}. */
+    /**
+     * A path as a rule path: {@code data.trade.udf[0].value}. A key a path cannot name ({@code .}, {@code [} or
+     * {@code ]} in it) becomes {@code *}, which matches it among the object's other keys.
+     */
     public static String render(List<Object> path) {
         StringBuilder out = new StringBuilder();
         for (Object step : path) {
             if (step instanceof String key) {
-                if (PLAIN_KEY.matcher(key).matches() && !key.equals("*")) {
-                    out.append(out.length() == 0 ? "" : ".").append(key);
-                } else {
-                    out.append("['").append(key).append("']");
-                }
+                out.append(out.length() == 0 ? "" : ".").append(PLAIN_KEY.matcher(key).matches() ? key : "*");
             } else if (isAnyKey(step)) {
                 out.append(out.length() == 0 ? "*" : ".*");
             } else {

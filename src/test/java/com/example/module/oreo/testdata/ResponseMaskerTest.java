@@ -1,6 +1,5 @@
 package com.example.module.oreo.testdata;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import net.javacrumbs.jsonunit.JsonAssert;
 import org.junit.Test;
 
@@ -92,31 +91,17 @@ public class ResponseMaskerTest {
     }
 
     @Test
-    public void quotedKeyNamesAKeyWithBrackets() {
-        String masked = ResponseMasker.mask(FIXINGS, rules("data.fixings['FX:EURSGD@[BFIX]-1500-JP TYO']", "type"), "x");
-        assertJson("{\"data\":{\"fixings\":{\"FX:EURSGD@[BFIX]-1500-JP TYO\":\"" + ResponseMasker.ANY_ARRAY + "\","
-                + "\"FX:EURUSD@[BFIX]-1500-JP TYO\":[\"2026-01-02\",\"2026-01-03\"]}}}", masked);
-    }
-
-    @Test
-    public void quotedKeyThenIndex() {
-        String masked = ResponseMasker.mask(FIXINGS, rules("data.fixings['FX:EURUSD@[BFIX]-1500-JP TYO'][1]", "type"), "x");
-        JsonNode values = Json.parse(masked).at("/data/fixings/FX:EURUSD@[BFIX]-1500-JP TYO");
-        assertEquals("2026-01-02", values.get(0).asText());
-        assertEquals(ANY_STRING, values.get(1).asText());
-    }
-
-    @Test
     public void pathsParseAndRenderBack() {
         for (String path : List.of("data.trade.udf[*].value", "data.fixings.*", "[0].id", "a.b[2][*]",
-                "data.fixings['FX:EURSGD@[BFIX]-1500-JP TYO'].x", "data.fixings['a.b']")) {
+                "data.fixings.*[0]")) {
             assertEquals(path, ResponseMasker.render(ResponseMasker.parsePath(path, "x")));
         }
+        assertEquals("data.fixings.*", ResponseMasker.render(List.of("data", "fixings", "FX:EURSGD@[BFIX]-1500-JP TYO")));
     }
 
     @Test
     public void malformedPathsFail() {
-        for (String path : List.of("a..b", "a.", "a[x]", "a['']", "a['b", "a.[0]", "a[BFIX]", "")) {
+        for (String path : List.of("a..b", "a.", "a[x]", "a['b']", "a.[0]", "a[BFIX]", "")) {
             try {
                 ResponseMasker.parsePath(path, "x");
                 fail("expected a failure for " + path);

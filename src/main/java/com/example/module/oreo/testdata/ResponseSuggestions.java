@@ -72,7 +72,7 @@ public final class ResponseSuggestions {
             node.properties().forEach(e -> {
                 String step = ResponseMasker.render(List.of(e.getKey()));
                 walk(e.getValue(), previous == null ? null : previous.get(e.getKey()),
-                        at.isEmpty() || step.startsWith("[") ? at + step : at + "." + step, request, out);
+                        at.isEmpty() ? step : at + "." + step, request, out);
             });
             return;
         }
