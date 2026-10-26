@@ -9,6 +9,11 @@
     And set the payload content type to 'application/json'
     And set request body from test data '$1'
 
+@Given "^build json request with body from test data '([^']*)' at json path '([^']*)' from stored variable '([^']*)'$"
+    Given start a new api request as user 'maker@example.com'
+    And set the payload content type to 'application/json'
+    And set json request body from test data '$1' at json path '$2' from stored variable '$3'
+
 @Given "^build json request with body from test data '([^']*)' as user '([^']*)'$"
     Given start a new api request as user '$2'
     And set the payload content type to 'application/json'
@@ -18,6 +23,16 @@
     Given start a new api request as user 'maker@example.com'
     And set the payload content type to 'application/json'
     And set request body from current scenario
+
+@Given "^build json request with body from current scenario at json path '([^']*)' from stored variable '([^']*)'$"
+    Given start a new api request as user 'maker@example.com'
+    And set the payload content type to 'application/json'
+    And set json request body from current scenario at json path '$1' from stored variable '$2'
+
+@Given "^build json request with body from current scenario at json path '([^']*)' from stored variable '([^']*)' as user '([^']*)'$"
+    Given start a new api request as user '$3'
+    And set the payload content type to 'application/json'
+    And set json request body from current scenario at json path '$1' from stored variable '$2'
 
 @Given "^build json request with body from current scenario as user '([^']*)'$"
     Given start a new api request as user '$1'
