@@ -6,7 +6,9 @@ description: Use when approved oreo-e2e test points have to become Gherkin - whi
 # QA BDD feature authoring (oreo-e2e)
 
 Turns approved test points into feature content and returns it for approval. It never writes `.feature` files: the
-command does that after the user approves.
+command does that after the user approves. It never implements either: the case data, snippets, elements and glue a
+scenario needs come later from `/codetestcases`. Its job is business language, the right annotations (case IDs, tags,
+`@capability#`, trace comments) and the list of steps the implementation must provide.
 
 **The rules are `docs/standards/bdd-feature-generation-standards.md`. Read it in full before starting**; this skill is
 the procedure, the step vocabulary and the output around it. Where they disagree, the standard wins. Also read

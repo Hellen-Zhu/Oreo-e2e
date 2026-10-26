@@ -36,4 +36,6 @@ On revision, start from the artifact at `artifactPath` and `revisionInstructions
 - On revision, change only what the instructions ask; keep every other ID, tag, path, mode, mapping and decision, and
   return the complete updated output, not a diff.
 - Do not write `.feature` files, commit, or update any tracker. Phase 1 writes only its artifact under `.ai-sdlc/`.
+- Never implement: no test data, snippet, element, glue or recording, and no wording chosen to fit a data file. A step
+  the index lacks is new business wording, listed for the implementer.
 - Return the skill's output and nothing else: the command shows it verbatim and adds its own approval prompt.

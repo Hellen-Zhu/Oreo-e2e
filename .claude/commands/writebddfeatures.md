@@ -8,6 +8,10 @@ argument-hint: <ADO story ID | workflow-state JSON file | story file path | past
 You orchestrate: the `bdd-agent` analyses and authors, the user approves, you write the approved files and check them.
 Rules: `CLAUDE.md`; the standards under `docs/standards/`.
 
+**Scope: feature files only.** From the approved test points, business-language scenarios with their case IDs, tags,
+product Outlines and trace annotations. This command never implements a step or writes test data, snippets,
+elements, glue or recordings; a step without a definition is listed for `/codetestcases`, which makes the cases run.
+
 ## Input
 
 `$ARGUMENTS`, detected in this order:
@@ -88,14 +92,17 @@ From the approved output only; do not re-derive names, paths, modes or IDs.
 
 Keep the file's line endings and the two-space indentation of the existing features.
 
-## Step 5 - Check
+## Step 5 - Check the feature files
 
 Use the skill `qa-bdd-test-execution` to decide `where`.
 
-- `company`: when a product Outline was written, `mvn -Ptest-data process-test-classes "-Dexec.args=sync-examples"`,
-  then show `git diff` of the `Examples`; then `mvn -Ptest-data process-test-classes`. Expected: no problem other than
-  one `no expected file` per new API case (they are recorded by `/codetestcases`). Anything else: show it and fix the
+- `company`: when a product Outline was written, `mvn -Ptest-data process-test-classes "-Dexec.args=sync-examples"`
+  (it fills the `Examples` rows, part of the feature file), then show `git diff` of the `Examples`; then
+  `mvn -Ptest-data process-test-classes`. Read only the problems about the feature files: a case ID whose prefix or
+  channel does not match its file, a duplicated case ID, `Examples` that do not match the registry. Fix those in the
   written content with the user.
+- Expected and left alone, for each new case: its event data file or row not found, its expected file missing. They
+  are `/codetestcases`'s work; never create data to silence them.
 - `offline`: give the same commands for the company machine.
 
 ## Step 6 - Save workflow context

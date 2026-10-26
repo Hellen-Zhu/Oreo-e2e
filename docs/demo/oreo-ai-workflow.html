@@ -158,6 +158,7 @@ flowchart LR
 
 <section id="write">
   <h2>/writebddfeatures：story → feature 文件</h2>
+  <p><b>只写 feature 文件</b>：根据 TP 写业务语言的场景、case ID、标签、产品 Outline 和 trace 注释；不实现步骤，不写数据、snippet、元素、glue 或录制。没有定义的步骤列成清单，交给 <code>/codetestcases</code>。</p>
   <p>输入有四种：ADO User Story ID（<code>1234</code>、<code>#1234</code>、<code>ado:1234</code>）、workflow-state JSON 文件、story 文件、粘贴的 story 文本。ADO 模式要用公司 ai-tooling 的 <code>ado-agent</code>；本仓库没装时会直接说明，并改用文本或 JSON 输入，不会凭 ID 猜 story。</p>
   <ol class="steps">
     <li><span class="n">1</span><div class="d"><div class="t">加载</div><p>ADO：<code>ado-agent</code> <code>FETCH_STORY</code>，工作项的 <code>bddFeatureFiles</code> 不为空就先问要不要重来。JSON：看 <code>lastCompletedStage</code>。文本/文件：看 <code>.ai-sdlc/&lt;storyId&gt;/state.json</code>。</p></div></li>
@@ -166,7 +167,7 @@ flowchart LR
     <li><span class="n">3</span><div class="d"><div class="t">阶段 2：写 feature 内容</div><p>调 <code>bdd-agent</code>（phase 2）→ skill <code>qa-bdd-feature-authoring</code>。决定文件名和路径（已有的命名优先）、create 还是 append、续编 case ID、生成步骤索引并优先复用现有步骤；所有产品共享的行为写成带 <code>@capability#</code> 的 Outline，Examples 只留表头。</p></div></li>
     <li class="gate"><span class="n">关口</span><div class="d"><div class="t">审批 2 <span class="pill gate">approve / revise / stop</span></div><p>你看到的就是将要写进文件的 Gherkin，外加命名依据、TP→场景映射、AC 覆盖、新步骤清单、缺口。</p></div></li>
     <li><span class="n">4</span><div class="d"><div class="t">写文件</div><p>command 自己写，只按审批过的内容；append 前再 grep 一次确认 case ID 没被占用。</p></div></li>
-    <li><span class="n">5</span><div class="d"><div class="t">检查</div><p>公司电脑：<code>sync-examples</code> 填产品行，再跑 <code>mvn -Ptest-data process-test-classes</code>。新 API case 报 <code>no expected file</code> 是预期的，录制在下一条流水线里做。其他电脑：给出命令。</p></div></li>
+    <li><span class="n">5</span><div class="d"><div class="t">检查</div><p>公司电脑：<code>sync-examples</code> 填产品行（属于 feature 文件本身），再跑 <code>mvn -Ptest-data process-test-classes</code>，只看 feature 相关的问题：case ID 前缀或层与文件不符、ID 重复、Examples 与注册表不符。新 case 报"数据文件或行找不到""没有录制文件"是预期的，留给 <code>/codetestcases</code>，不为了消掉报错去建数据。其他电脑：给出命令。</p></div></li>
     <li><span class="n">6</span><div class="d"><div class="t">保存进度并总结</div><p>三种模式写同样的字段：<code>lastCompletedStage</code>、<code>bddFeatureFiles</code>、<code>tcTags</code>（这里存的是 case ID）。ADO 模式依次 <code>ADD_COMMENT</code>（覆盖摘要）、<code>UPDATE_TAGS</code>（加 <code>bdd-ready</code>）、<code>SAVE</code>；JSON 模式改原文件；文本模式写 <code>state.json</code>。下一步提示 <code>/codetestcases</code>。不提交。</p></div></li>
   </ol>
 </section>
