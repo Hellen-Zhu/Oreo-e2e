@@ -1,13 +1,15 @@
 package com.example.module.oreo.glue.api;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.example.module.oreo.testdata.SetupData;
 import com.example.module.oreo.testdata.TestData;
+import com.example.module.oreo.utils.DateUtil;
 import com.example.module.oreo.utils.RestApiUtil;
 import cucumber.api.Scenario;
 import cucumber.api.java.Before;
 import cucumber.api.java.en.Given;
-import cucumber.api.java.en.Then;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -51,6 +53,15 @@ public class ApiRequestSteps {
         ctx.set(varName, value);
         ctx.write("[stored] " + varName + " = " + value);
         log.info("[ApiRequestSteps] stored '{}' = '{}'", varName, value);
+    }
+
+    @Given("^store dynamic api timestamp with prefix '([^']*)' as '([^']*)'$")
+    public void storeDynamicApiTimestamp(String prefix, String varName) {
+        String value = prefix + "-" + DateUtil.format(DateUtil.now(), "MMddHHmmss");
+        ctx.set(varName, value);
+        ctx.write("[stored] " + varName + " = " + value);
+        log.info("[ApiRequestSteps] stored dynamic timestamp '{}' = '{}' using prefix='{}'",
+                varName, value, prefix);
     }
 
     /**
@@ -105,8 +116,30 @@ public class ApiRequestSteps {
     @Given("^set request body from test data '([^']*)'$")
     public void setRequestBodyFromTestData(String key) {
         setRequestBody(
-                TestData.setup(key).request(),
+                requestBodyFromTestData(key),
                 "test data '" + key + "'"
+        );
+    }
+
+    @Given("^set json request body from test data '([^']*)' at json path '([^']*)' from stored variable '([^']*)'$")
+    public void setJsonRequestBodyFromTestDataAtPath(String key, String jsonPath, String varName) {
+        setJsonRequestBodyAtPath(
+                requestBodyFromTestData(key),
+                jsonPath,
+                ctx.get(varName),
+                "setup data '" + key + "'",
+                varName
+        );
+    }
+
+    @Given("^set json request body from current scenario at json path '([^']*)' from stored variable '([^']*)'$")
+    public void setJsonRequestBodyFromCurrentScenarioAtPath(String jsonPath, String varName) {
+        setJsonRequestBodyAtPath(
+                requestBodyFromCurrentScenario(),
+                jsonPath,
+                ctx.get(varName),
+                currentScenarioLabel(),
+                varName
         );
     }
 
@@ -178,6 +211,15 @@ public class ApiRequestSteps {
         log.info("[ApiRequestSteps] set query param '{}' = '{}'", paramName, value);
     }
 
+    /** The {@code request} of setup file {@code data/setup/<key>.json}. */
+    private String requestBodyFromTestData(String key) {
+        SetupData setup = TestData.setup(key);
+        if (!setup.hasRequest()) {
+            throw new AssertionError("[ApiRequestSteps] Setup data '" + key + "' has no request.");
+        }
+        return requireRequestBody(setup.request(), "setup data '" + key + "'");
+    }
+
     /** The merged request of the case ({@code _tc.request}, set by the hook only when the case has one). */
     private String requestBodyFromCurrentScenario() {
         String tcKey = ctx.get("_tc.key");
@@ -197,6 +239,58 @@ public class ApiRequestSteps {
         ctx.helper().request().body(requestBody);
         ctx.write("[request:body] source=" + sourceLabel + "\n" + requestBody);
         log.info("[ApiRequestSteps] set request body from {}: {}", sourceLabel, requestBody);
+    }
+
+    private void setJsonRequestBodyAtPath(
+            String requestBody,
+            String jsonPath,
+            String value,
+            String sourceLabel,
+            String varName) {
+        if (jsonPath == null || jsonPath.isBlank()) {
+            throw new AssertionError(
+                    "[ApiRequestSteps] JSON path is null/blank — cannot inject stored variable '"
+                    + varName + "' into request body from " + sourceLabel);
+        }
+        if (value == null || value.isBlank()) {
+            throw new AssertionError(
+                    "[ApiRequestSteps] stored variable '" + varName
+                    + "' is null/blank — cannot inject into request body from " + sourceLabel);
+        }
+
+        try {
+            JsonNode root = MAPPER.readTree(requestBody);
+            if (!(root instanceof ObjectNode body)) {
+                throw new IllegalArgumentException("request body root must be a JSON object");
+            }
+
+            String[] pathParts = jsonPath.split("\\.", -1);
+            ObjectNode parent = body;
+            for (int i = 0; i < pathParts.length - 1; i++) {
+                JsonNode child = parent.get(pathParts[i]);
+                if (!(child instanceof ObjectNode)) {
+                    throw new IllegalArgumentException(
+                            "JSON path parent does not resolve to an object: '" + jsonPath + "'");
+                }
+                parent = (ObjectNode) child;
+            }
+
+            String leaf = pathParts[pathParts.length - 1];
+            if (leaf.isBlank()) {
+                throw new IllegalArgumentException("JSON path has a blank field: '" + jsonPath + "'");
+            }
+            parent.put(leaf, value);
+            setRequestBody(
+                    MAPPER.writeValueAsString(root),
+                    sourceLabel + " with JSON path '" + jsonPath
+                    + "' from stored variable '" + varName + "'"
+            );
+        } catch (Exception e) {
+            throw new AssertionError(
+                    "[ApiRequestSteps] Failed to inject stored variable '" + varName
+                    + "' at JSON path '" + jsonPath + "' into request body from "
+                    + sourceLabel + ": " + e.getMessage(), e);
+        }
     }
 
     private String currentScenarioLabel() {
