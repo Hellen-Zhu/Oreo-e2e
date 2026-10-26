@@ -63,7 +63,7 @@ blocks first, then its own `request` and `dynamicFields`.
 ## 5. Recorded responses and `dynamicFields` (API only)
 
 Rules are written **after** a run shows what changes, never guessed: a rule whose path is not in the response fails
-the recording. `TestDataTool suggest <event>` reads the recordings and proposes the rules and their layer; judge each
+the recording. `mvn -Ptest-data process-test-classes "-Dexec.args=suggest <event>"` reads the recordings and proposes the rules and their layer; judge each
 (a date the request fixes is data, the ID this scenario created is `var:`).
 
 | The value | Rule |
@@ -83,8 +83,8 @@ follows section 2: every case → `defaults`, one product → `byProduct`, one c
 When `defaults` has no rules (`api/trade_early_termination.json`), the negative row needs none.
 
 **`expectedBase`**: when the cases of an event return mostly the same response, `defaults` names the base
-(`"expectedBase": "TC-TRADE-CREATION-<product_type>-API-001"`) and `TestDataTool compact <event>` turns the variants into
-patches. When the responses share nothing, leave it out and say why in `_comment`. `TestDataTool suggest <event>`
+(`"expectedBase": "TC-TRADE-CREATION-<product_type>-API-001"`) and `mvn -Ptest-data process-test-classes "-Dexec.args=compact <event>"` turns the variants into
+patches. When the responses share nothing, leave it out and say why in `_comment`. `mvn -Ptest-data process-test-classes "-Dexec.args=suggest <event>"`
 measures every candidate base on the masked recordings.
 
 **`sharedFragments`**: when the response holds a part another event returns too (the trade's `basic` and

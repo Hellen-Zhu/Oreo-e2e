@@ -36,7 +36,7 @@ Nothing else is asked first. With the dat file, make the change (section 2), the
 | `src/test/resources/data/dat/<P>/<P>.dat` (the default; variants QA names go into the same folder) | If the committed `.dat` files are one-line placeholders (`# Placeholder: copy <P>.dat from the E2E project.`), this is the public copy: write the same line for `<P>`, never the real file, and add `<P>` to the placeholder list in `README.md` ("This copy"). Otherwise copy QA's file byte for byte |
 | `byProduct.<P>` of an event file | Nothing at first: the product runs on the defaults. Only values QA gives in the review that differ from them. `dynamicFields` only after a recording shows them (section 5) |
 
-Then the `Examples`, never by hand: `TestDataTool sync-examples` (section 4) writes the row `| <P> |` into every Outline tagged with one of the product's capabilities, in registry order, and prints one line per Outline (`add <P>`). It writes nothing when a feature file has a problem. After QA's review, change the constant and run it again: it removes the rows of the capabilities taken off.
+Then the `Examples`, never by hand: `mvn -Ptest-data process-test-classes "-Dexec.args=sync-examples"` (section 4) writes the row `| <P> |` into every Outline tagged with one of the product's capabilities, in registry order, and prints one line per Outline (`add <P>`). It writes nothing when a feature file has a problem. After QA's review, change the constant and run it again: it removes the rows of the capabilities taken off.
 
 Leave alone:
 - steps, snippets, hooks, `expected/` files, `expectedBase`, `Capability.java` and the `@capability#` tags;
@@ -49,7 +49,7 @@ Coverage QA asks for that no Outline has (a capability no Outline carries, an ev
 One message, in the user's language, after section 2 and `sync-examples`; nothing is recorded or committed until QA
 answers. It holds:
 
-1. **Capabilities** (default: all). The tables `TestDataTool product <P>` prints: one row per capability with a
+1. **Capabilities** (default: all). The tables `mvn -Ptest-data process-test-classes "-Dexec.args=product <P>"` prints: one row per capability with a
    column QA fills in, then the Outlines it runs for `<P>` (case ID with `<P>`, title, feature file). QA answers
    **supported / not supported, row by row**. A general "looks fine" is not an answer: ask again
    for the rows still empty. A capability without its row answered stays a default: it is not recorded, run or
@@ -57,7 +57,7 @@ answers. It holds:
    not a registry line. The answer comes from the requirement or the BA.
 2. **Data the product runs on** (default: the current values). Per event the product joins: the `defaults` of
    `src/test/resources/data/api|ui/<event>.json` and the `shared` blocks they `use` (the event file's own `shared`, or
-   `api/common.json`, `ui/common.json`); `TestDataTool case TC-<EVENT>-<P>-API-001` prints the merged request. QA gives
+   `api/common.json`, `ui/common.json`); `mvn -Ptest-data process-test-classes "-Dexec.args=case TC-<EVENT>-<P>-API-001"` prints the merged request. QA gives
    only the values that differ (e.g. `earlyTermination.amount` must fit the dat file's notional); a wrong default fails
    the case (the status check runs before any recording).
 3. **Anything the current products do not have**: in the New Trade form, the trade detail page or the setup trade
@@ -70,11 +70,11 @@ Apply QA's answers: capabilities off the constant and `sync-examples` again, the
 
 ## 4. Offline check
 
-The tool is `src/test/java/com/example/module/oreo/tools/TestDataTool.java`, documented in `.claude/skills/maintaining-e2e-test-data/SKILL.md`. Run `mvn -Ptest-data process-test-classes "-Dexec.args=<command>"`; without `exec.args` it defaults to `check`. Below, `TestDataTool <command>` means this Maven command. Run them only where the user says oreo-e2e builds (the company machine); elsewhere give them the commands.
+The tool is `src/test/java/com/example/module/oreo/tools/TestDataTool.java`, documented in `.claude/skills/maintaining-e2e-test-data/SKILL.md`. Every command below is that Maven command, written in full: `mvn -Ptest-data process-test-classes "-Dexec.args=<command>"`; without `exec.args` it runs `check`. The class `TestDataTool` is run only through it. Run them only where the user says oreo-e2e builds (the company machine); elsewhere give them the commands.
 
-`TestDataTool check`. Expected before `sync-examples`: "the product Outlines' Examples match the registry" fails with one `add <P>` line per Outline of the product's capabilities. After it, until the recordings: only "every API case has its expected file" fails, one `no expected file` line per new API case. Any other problem (a product that is not in `ProductDatFiles`, a `byProduct` without a dat file, a `remove` line before QA took a capability off) is a mistake in section 2.
+`mvn -Ptest-data process-test-classes`. Expected before `sync-examples`: "the product Outlines' Examples match the registry" fails with one `add <P>` line per Outline of the product's capabilities. After it, until the recordings: only "every API case has its expected file" fails, one `no expected file` line per new API case. Any other problem (a product that is not in `ProductDatFiles`, a `byProduct` without a dat file, a `remove` line before QA took a capability off) is a mistake in section 2.
 
-`TestDataTool case TC-TRADE-CREATION-<P>-API-001` prints the merged request the case will send. `TestDataTool product <P>`
+`mvn -Ptest-data process-test-classes "-Dexec.args=case TC-TRADE-CREATION-<P>-API-001"` prints the merged request the case will send. `mvn -Ptest-data process-test-classes "-Dexec.args=product <P>"`
 prints the review table of section 3; after `sync-examples` its Examples column says `row` for every Outline.
 
 ## 5. Record the API responses (company machine, real system)
@@ -82,9 +82,9 @@ prints the review table of section 3; after `sync-examples` its Examples column 
 Every run books real UAT trades: run only the product's cases. Select them with `-Dcucumber.options` (`docs/standards/bdd-feature-implementation-standards.md` §6.2), e.g. `mvn -B test -Dtest=OreoTest "-Dcucumber.options=--name ^\[TC-[A-Z-]+-<P>-API-\d+\].*$"` for every API case of the product, and `-UI-` in the same pattern for its UI cases. Never `-Dcucumber.filter.tags` / `-Dcucumber.filter.name`: unsupported here, they may be ignored silently and run everything. The risk engine mode is `oreo.risk.engine.mode` in `genie.properties`.
 
 1. Run the product's API cases: each records `data/api/expected/<event>/<caseId>.json` and fails once.
-2. Run `TestDataTool suggest <event>` for the values that look generated, then run the cases again. A failure on a value that changed between the two runs (an ID, a date, a version, a generated schedule) is a dynamic field. Add a rule under `byProduct.<P>.dynamicFields` of the event file, shaped like the other products' entries (`type`, `type-tree`, `regex:<pattern>`, `var:<name>`, `ignore`: `docs/test-data.md`, "Recorded responses"). Record again with `OREO_EXPECTED=update`, then run once more: it must pass.
+2. Run `mvn -Ptest-data process-test-classes "-Dexec.args=suggest <event>"` for the values that look generated, then run the cases again. A failure on a value that changed between the two runs (an ID, a date, a version, a generated schedule) is a dynamic field. Add a rule under `byProduct.<P>.dynamicFields` of the event file, shaped like the other products' entries (`type`, `type-tree`, `regex:<pattern>`, `var:<name>`, `ignore`: `docs/test-data.md`, "Recorded responses"). Record again with `OREO_EXPECTED=update`, then run once more: it must pass.
 3. Review each recorded file against the requirement: a wrong value recorded is a wrong expectation.
-4. Compact with `TestDataTool compact <event>`, then review `git diff`: the product's variants become patches on its `API-001`, and where the event declares shared parts (`sharedFragments`, e.g. the block `trade-response-parts`) the product gets its own `expected/_shared/basic/<P>.json` and `instrument/<P>.json`, taken from its first recorded case, with references in its files. Nothing to write by hand. If a rule was added after the shared files were written, run `compact all` instead: `compact <event>` keeps a shared file as it is, so a value masked later would stay as a key that differs in every case. Run `TestDataTool check` again: no problem.
+4. Compact with `mvn -Ptest-data process-test-classes "-Dexec.args=compact <event>"`, then review `git diff`: the product's variants become patches on its `API-001`, and where the event declares shared parts (`sharedFragments`, e.g. the block `trade-response-parts`) the product gets its own `expected/_shared/basic/<P>.json` and `instrument/<P>.json`, taken from its first recorded case, with references in its files. Nothing to write by hand. If a rule was added after the shared files were written, run `mvn -Ptest-data process-test-classes "-Dexec.args=compact all"` instead: `compact <event>` keeps a shared file as it is, so a value masked later would stay as a key that differs in every case. Run `mvn -Ptest-data process-test-classes` again: no problem.
 5. Run the product's UI cases.
 
 ## 6. Report

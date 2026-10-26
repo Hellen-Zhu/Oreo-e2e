@@ -60,7 +60,7 @@ problem with a TP (it cannot be expressed, its capability does not exist) is rep
    implementer. Never bend the business intent to fit an existing step.
 7. **Write the content** (standard §4-§7): header (create only), scenario tags, case ID and title, steps, trace
    comments, optional `# handoff:` notes (reference). A product Outline ends with an `Examples` table that has the
-   header only; `TestDataTool sync-examples` writes the rows:
+   header only; `mvn -Ptest-data process-test-classes "-Dexec.args=sync-examples"` writes the rows:
 
    ```gherkin
        Examples:

@@ -20,6 +20,8 @@ mvn -Ptest-data process-test-classes
 mvn -Ptest-data process-test-classes "-Dexec.args=sync-examples"
 mvn -Ptest-data process-test-classes "-Dexec.args=case TC-TRADE-CREATION-FX_TRF-API-001"
 mvn -Ptest-data process-test-classes "-Dexec.args=compact trade_creation"
+mvn -Ptest-data process-test-classes "-Dexec.args=suggest trade_creation"
+mvn -Ptest-data process-test-classes "-Dexec.args=product FX_TRF"
 ```
 
 Each line is a complete command. The first defaults to `check`; choose one command for the task.
@@ -27,10 +29,10 @@ Maven compiles the project, copies test resources and supplies the test classpat
 Before the tool, the profile runs the six unit tests of the test data code (`src/test/java/.../testdata/*Test`;
 their data files are written by the tests, into a temporary folder): a failing one stops Maven before the tool reads any data, and the tool's verdict
 is not to be trusted until they pass. Stopping at `process-test-classes` does not execute the Cucumber suite. Do
-not replace it with `test` or `verify` for a data-only operation. Below, `TestDataTool <command>` means this Maven invocation
-with `-Dexec.args=<command>`. The company Maven repository must supply `exec-maven-plugin:3.6.4`.
+not replace it with `test` or `verify` for a data-only operation. The commands below are the value of `-Dexec.args`
+(`"-Dexec.args=suggest trade_creation"`), not commands of their own: Maven runs the class `TestDataTool` with them, nothing else does. The company Maven repository must supply `exec-maven-plugin:3.6.4`.
 
-| Command | What it does |
+| `-Dexec.args=` | What it does |
 |---|---|
 | `check` | All offline checks (next section). Exit code 1 on a problem |
 | `sync-examples` | Writes the `Examples` of every product Outline from `ProductDatFiles`: one line per Outline (`unchanged`, `add X`, `remove Y`, `reordered`, `reformatted`); nothing written when a feature file has a problem |
@@ -57,7 +59,7 @@ One `[ok]` or `[FAIL]` line per check, its problems and `[warn]` lines below it:
 
 ## When
 
-| Change | Run |
+| Change | Run (`-Dexec.args=` of the command above) |
 |---|---|
 | Event or setup data, a row, `byProduct`, `use`, `datFile` | `check`; `case <ID>` to see what a case sends |
 | A product or capability in `ProductDatFiles`, a `@capability#` tag | `sync-examples`, review `git diff` (`product <P>` for the review of one product), then `check`. A new product: the skill `onboarding-e2e-product` |

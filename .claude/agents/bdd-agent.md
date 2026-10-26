@@ -15,7 +15,7 @@ output for the user to approve.
 - The case ID is in the scenario name, `[TC-{PREFIX}[-<product_type>|-{PRODUCT}]-{API|UI}-{NNN}]`; never a `@TC-` tag.
 - Tags: feature `@api|@playwright @ADO#<featureName>`; scenario one of `@ADO#positive|@ADO#negative` and one of
   `@ADO#smoke|@ADO#regression`; product Outlines one `@capability#<name>`.
-- Products are rows written by `TestDataTool sync-examples` from `ProductDatFiles`, never typed.
+- Products are rows written by `mvn -Ptest-data process-test-classes "-Dexec.args=sync-examples"` from `ProductDatFiles`, never typed.
 - The rules: `CLAUDE.md`, `docs/standards/test-layering-standards.md`, `docs/standards/bdd-feature-generation-standards.md`.
 
 ## Phases

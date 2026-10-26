@@ -60,7 +60,7 @@ repair round the failure output and `revisionInstructions`.
    - Dates as `${date:T+N}`; never `basic.productId`, a `datFile` path or a real ID.
    - A case whose evidence is the database or audit, not the response: tag it `@expected#none` (feature authors' tag;
      report it if missing), no recording.
-   - Read `TestDataTool case <ID>` for every case you added a row for (company machine).
+   - Read `mvn -Ptest-data process-test-classes "-Dexec.args=case <ID>"` for every case you added a row for (company machine).
 4. **Snippets** (`snippet/api/<featureName>.snippet`, or `common_*.snippet` for cross-feature steps): sections
    `Build request / Make api call / Assertions`; HTTP only behind business steps; an assertion never changes state;
    ctx keys camelCase; reuse `ApiRequestSteps` (`build json request with body from current scenario ...`) instead of
@@ -74,10 +74,10 @@ repair round the failure output and `revisionInstructions`.
 ## Recorded responses (what the first run does)
 
 The first run of a new API case writes `data/api/expected/<event>/<case ID>.json` and fails once: expected, not a
-defect. After it: `TestDataTool suggest <event>` lists the values that look generated and where each rule goes; run
+defect. After it: `mvn -Ptest-data process-test-classes "-Dexec.args=suggest <event>"` lists the values that look generated and where each rule goes; run
 again for the values a pattern misses (a value that changed between runs); each dynamic value gets a `dynamicFields`
 rule in the event file (`type`, `type-tree`, `regex:`, `var:`, `ignore` last), record again with
-`OREO_EXPECTED=update`, then `TestDataTool compact <event>`. Never mask a business message or value to make a case pass. The command reviews every
+`OREO_EXPECTED=update`, then `mvn -Ptest-data process-test-classes "-Dexec.args=compact <event>"`. Never mask a business message or value to make a case pass. The command reviews every
 recording against the requirement before it is committed.
 
 ## Repair round
