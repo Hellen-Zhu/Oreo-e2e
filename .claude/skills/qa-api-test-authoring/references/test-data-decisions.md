@@ -72,7 +72,6 @@ the recording. `TestDataTool suggest <event>` reads the recordings and proposes 
 | A generated structure whose shape matters (a schedule, a payoff table) | `type-tree` |
 | A message with a variable part | `regex:<pattern>`, keeping the business words: `regex:.*status 'Dead' does not permit 'EarlyTermination'.*` |
 | The ID this scenario created | `var:createdTradeId` |
-| A value the request sent and the response echoes (a `${date:...}` date) | `var:<its path in the request>`: `var:basic.udf[3].value` |
 | Nothing else works | `ignore` (last resort) |
 
 Paths: keys joined by `.`, `[n]` one element, `[*]` every element (`data.results[*].tradeId`), `*` every value of an

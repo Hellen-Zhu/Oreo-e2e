@@ -15,7 +15,7 @@
       }
     },
     "stepin-partial": {
-      "_comment": "StepIn Partial: the old counterparty and the novation date as udf entries; the response echoes the date sent (udf[3]), compared with the request's value",
+      "_comment": "StepIn Partial: the old counterparty and the novation date as udf entries; the date is today's, so its echo in the response (udf[3]) is masked",
       "request": {
         "basic": {
           "udf": [
@@ -26,10 +26,10 @@
           ]
         }
       },
-      "dynamicFields": { "data.trade.basic.udf[3].value": "var:basic.udf[3].value" }
+      "dynamicFields": { "data.trade.basic.udf[3].value": "type" }
     },
     "stepin-full": {
-      "_comment": "StepIn Full: the old counterparty and the novation date as udf entries; the response echoes the date sent (udf[3]), compared with the request's value",
+      "_comment": "StepIn Full: the old counterparty and the novation date as udf entries; the date is today's, so its echo in the response (udf[3]) is masked",
       "request": {
         "basic": {
           "udf": [
@@ -40,7 +40,7 @@
           ]
         }
       },
-      "dynamicFields": { "data.trade.basic.udf[3].value": "var:basic.udf[3].value" }
+      "dynamicFields": { "data.trade.basic.udf[3].value": "type" }
     }
   },
   "defaults": {
