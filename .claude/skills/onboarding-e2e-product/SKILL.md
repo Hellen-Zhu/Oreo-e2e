@@ -50,9 +50,11 @@ One message, in the user's language, after section 2 and `sync-examples`; nothin
 answers. It holds:
 
 1. **Capabilities** (default: all). A table: capability, the Outlines it now runs for `<P>` (case ID with `<P>`,
-   title), from `git diff` of the feature files or `grep -rn -A1 "@capability#" src/test/resources/features`. QA marks
-   the ones the product does not support. A capability covers all its Outlines, API and UI: a no for only some of them
-   is a question for the user, not a registry line. The answer comes from the requirement or the BA.
+   title), from `git diff` of the feature files or `grep -rn -A1 "@capability#" src/test/resources/features`, with a
+   column QA fills in: **supported / not supported, row by row**. A general "looks fine" is not an answer: ask again
+   for the rows still empty. A capability without its row answered stays a default: it is not recorded, run or
+   committed. A capability covers all its Outlines, API and UI: a no for only some of them is a question for the user,
+   not a registry line. The answer comes from the requirement or the BA.
 2. **Data the product runs on** (default: the current values). Per event the product joins: the `defaults` of
    `src/test/resources/data/api|ui/<event>.json` and the `shared` blocks they `use` (the event file's own `shared`, or
    `api/common.json`, `ui/common.json`); `TestDataTool case TC-<EVENT>-<P>-API-001` prints the merged request. QA gives
@@ -64,7 +66,7 @@ answers. It holds:
 4. **The diff**: files created and changed.
 
 Apply QA's answers: capabilities off the constant and `sync-examples` again, the values that differ under
-`byProduct.<P>`. When QA cannot be reached, stop here: the change stays uncommitted, the review is the report.
+`byProduct.<P>`. Record and commit only when every capability row has its answer. When QA cannot be reached, stop here: the change stays uncommitted, the review is the report.
 
 ## 4. Offline check
 
@@ -98,7 +100,7 @@ In the user's language:
 
 | Mistake | Instead |
 |---|---|
-| Every capability recorded or committed "like the other products" | All capabilities are the starting point of the review; record and commit only after QA confirmed them |
+| Every capability recorded or committed "like the other products", or on a general "looks fine" | All capabilities are the starting point of the review; record and commit only after QA answered every capability row |
 | `Examples` rows typed by hand | `sync-examples` writes them; a row the registry does not back fails `check` |
 | A new `Capability` constant or `@capability#` tag for the product | A new scenario: report it |
 | A row commented out to skip the product for a while | Take the capability off its constant, then `sync-examples`; a comment inside a product table stops it |
