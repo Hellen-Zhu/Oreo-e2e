@@ -29,7 +29,9 @@ import java.util.regex.PatternSyntaxException;
  *       value, put in again by {@link #fillVariables} before the comparison</td></tr>
  * </table>
  *
- * A path is keys joined by {@code .}, with {@code [n]} for one array element and {@code [*]} for every element.
+ * A path is keys joined by {@code .}, with {@code [n]} for one array element and {@code [*]} for every element. A
+ * key holding {@code .}, {@code [} or {@code ]} is quoted in brackets, {@code data.fixings['FX:EURSGD@[BFIX]-1500-JP
+ * TYO']} (any character but {@code '}); {@code *} as a key is every value of an object, {@code data.fixings.*}.
  */
 public final class ResponseMasker {
 
@@ -41,11 +43,11 @@ public final class ResponseMasker {
     public static final String IGNORE = "${json-unit.ignore}";
     public static final String VAR_START = "${var:";
 
-    private static final Pattern PART = Pattern.compile("([^.\\[\\]]*)((?:\\[(?:\\d+|\\*)])*)");
-    private static final Pattern INDEX = Pattern.compile("\\[(\\d+|\\*)]");
+    private static final Pattern PLAIN_KEY = Pattern.compile("[^.\\[\\]']+");
     private static final Pattern VAR_NAME = Pattern.compile("[A-Za-z][A-Za-z0-9_.-]*");
     private static final Pattern VAR = Pattern.compile("\\$\\{var:(" + VAR_NAME.pattern() + ")}");
     private static final Object ANY = new Object();
+    private static final Object ANY_KEY = new Object();
 
     private ResponseMasker() {}
 
@@ -234,35 +236,96 @@ public final class ResponseMasker {
 
     // ── Paths ────────────────────────────────────────────────────────────────
 
-    /** {@code true} for the {@code [*]} step of a parsed path. */
+    /** {@code true} for the {@code [*]} step of a parsed path (every array element). */
     public static boolean isAny(Object step) {
         return step == ANY;
     }
 
+    /** {@code true} for the {@code *} key of a parsed path (every value of an object). */
+    public static boolean isAnyKey(Object step) {
+        return step == ANY_KEY;
+    }
+
     /**
      * {@code data.trade.udf[*].value} -> {@code ["data", "trade", "udf", ANY, "value"]}: keys as String, indexes as
-     * Integer, {@code [*]} as a value {@link #isAny} accepts.
+     * Integer, {@code [*]} as a value {@link #isAny} accepts, the key {@code *} as one {@link #isAnyKey} accepts;
+     * {@code ['...']} is a key written as it is.
      */
     public static List<Object> parsePath(String path, String caseLabel) {
-        List<Object> steps = new ArrayList<>();
-        String[] parts = path == null ? new String[0] : path.split("\\.", -1);
-        for (int i = 0; i < parts.length; i++) {
-            Matcher part = PART.matcher(parts[i]);
-            boolean firstIndexOnly = i == 0 && parts[i].startsWith("[");
-            if (!part.matches() || (part.group(1).isEmpty() && !firstIndexOnly)) {
-                throw new IllegalStateException("[ResponseMasker] rule path '" + path + "' of " + caseLabel
-                        + " is not keys joined by '.', with [n] or [*] for array elements");
-            }
-            if (!part.group(1).isEmpty()) steps.add(part.group(1));
-            Matcher index = INDEX.matcher(part.group(2));
-            while (index.find()) {
-                steps.add(index.group(1).equals("*") ? ANY : Integer.valueOf(index.group(1)));
-            }
-        }
-        if (steps.isEmpty()) {
+        if (path == null || path.isEmpty()) {
             throw new IllegalStateException("[ResponseMasker] empty rule path in the rules of " + caseLabel);
         }
+        List<Object> steps = new ArrayList<>();
+        int i = 0;
+        boolean needKey = !path.startsWith("[");
+        while (i < path.length()) {
+            if (needKey) {
+                int end = i;
+                while (end < path.length() && path.charAt(end) != '.' && path.charAt(end) != '[') end++;
+                String key = path.substring(i, end);
+                if (key.equals("*")) {
+                    steps.add(ANY_KEY);
+                } else if (PLAIN_KEY.matcher(key).matches()) {
+                    steps.add(key);
+                } else {
+                    throw badPath(path, caseLabel);
+                }
+                i = end;
+                needKey = false;
+            } else if (path.charAt(i) == '.') {
+                if (i + 1 == path.length()) throw badPath(path, caseLabel);
+                i++;
+                needKey = path.charAt(i) != '[';
+                if (!needKey) throw badPath(path, caseLabel);
+            } else if (path.startsWith("['", i)) {
+                int end = path.indexOf("']", i + 2);
+                if (end < 0 || end == i + 2) throw badPath(path, caseLabel);
+                String key = path.substring(i + 2, end);
+                if (key.contains("'")) throw badPath(path, caseLabel);
+                steps.add(key);
+                i = end + 2;
+            } else if (path.charAt(i) == '[') {
+                int end = path.indexOf(']', i);
+                String index = end < 0 ? "" : path.substring(i + 1, end);
+                if (index.equals("*")) {
+                    steps.add(ANY);
+                } else if (index.matches("\\d+")) {
+                    steps.add(Integer.valueOf(index));
+                } else {
+                    throw badPath(path, caseLabel);
+                }
+                i = end + 1;
+            } else {
+                throw badPath(path, caseLabel);
+            }
+        }
+        if (needKey) throw badPath(path, caseLabel);
         return steps;
+    }
+
+    private static IllegalStateException badPath(String path, String caseLabel) {
+        return new IllegalStateException("[ResponseMasker] rule path '" + path + "' of " + caseLabel
+                + " is not keys joined by '.' (a key with . [ or ] quoted as ['...'], * for every value of an"
+                + " object), with [n] or [*] for array elements");
+    }
+
+    /** A concrete path (keys and indexes) as a rule path: {@code data.fixings['FX:EURSGD@[BFIX]'].x[0]}. */
+    public static String render(List<Object> path) {
+        StringBuilder out = new StringBuilder();
+        for (Object step : path) {
+            if (step instanceof String key) {
+                if (PLAIN_KEY.matcher(key).matches() && !key.equals("*")) {
+                    out.append(out.length() == 0 ? "" : ".").append(key);
+                } else {
+                    out.append("['").append(key).append("']");
+                }
+            } else if (isAnyKey(step)) {
+                out.append(out.length() == 0 ? "*" : ".*");
+            } else {
+                out.append('[').append(isAny(step) ? "*" : step).append(']');
+            }
+        }
+        return out.toString();
     }
 
     /** Every concrete path (keys and indexes) in {@code node} that {@code steps} matches. */
@@ -277,6 +340,14 @@ public final class ResponseMasker {
                 at.add(key);
                 collect(node.get(key), steps, i + 1, at, out);
                 at.remove(at.size() - 1);
+            }
+        } else if (step == ANY_KEY) {
+            if (node.isObject()) {
+                for (String key : List.copyOf(node.properties()).stream().map(Map.Entry::getKey).toList()) {
+                    at.add(key);
+                    collect(node.get(key), steps, i + 1, at, out);
+                    at.remove(at.size() - 1);
+                }
             }
         } else if (node.isArray()) {
             int from = step == ANY ? 0 : (Integer) step;

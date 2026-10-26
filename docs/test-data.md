@@ -136,8 +136,10 @@ recorded:
 | `var:<name>` | the value equals the scenario variable `<name>` of this run (`createdTradeId`, stored by `a live '<product_type>' trade is created via api`) |
 | `ignore` | nothing; only when the others cannot work |
 
-A path is keys joined by `.`, `[n]` for one array element, `[*]` for all. A rule whose path is not in the response
-fails the recording. Never edit an expected file by hand: change the rule and record again.
+A path is keys joined by `.`, `[n]` for one array element, `[*]` for all. A key holding `.`, `[` or `]` is quoted in
+brackets, `data.fixings['FX:EURSGD@[BFIX]-1500-JP TYO']` (any character but `'`); `*` as a key is every value of an
+object, for keys that change per product or per run: `"data.fixings.*": "type"` checks that each fixing is an array
+while every key stays in the file, compared exactly. A rule whose path is not in the response fails the recording. Never edit an expected file by hand: change the rule and record again.
 
 An API case that never compares its response with a recording (`trade_audit`: it calls a series of APIs, then checks
 the database) carries the tag `@expected#none`, on its Scenario or Scenario Outline line, or once on the Feature or

@@ -54,6 +54,15 @@ public class ResponseSuggestionsTest {
     }
 
     @Test
+    public void keyWithBracketsIsQuotedInThePath() {
+        List<ResponseSuggestions.Finding> found =
+                find("{ \"fixings\": { \"FX:EURSGD@[BFIX]-1500-JP TYO\": [\"2026-01-02\"] } }", null, null);
+        assertEquals("fixings['FX:EURSGD@[BFIX]-1500-JP TYO'][0]", found.get(0).path());
+        assertTrue(ResponseSuggestions.has(Json.parse("{ \"fixings\": { \"FX:EURSGD@[BFIX]-1500-JP TYO\": [1] } }"),
+                "fixings.*[0]"));
+    }
+
+    @Test
     public void quoteEscapesRegexCharacters() {
         assertEquals("a\\.b\\(c\\)\\[d\\]\\*", ResponseSuggestions.quote("a.b(c)[d]*"));
     }

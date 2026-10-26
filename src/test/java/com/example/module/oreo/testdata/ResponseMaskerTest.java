@@ -1,15 +1,18 @@
 package com.example.module.oreo.testdata;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import net.javacrumbs.jsonunit.JsonAssert;
 import org.junit.Test;
 
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class ResponseMaskerTest {
 
@@ -76,6 +79,51 @@ public class ResponseMaskerTest {
     public void starPathCoversEveryElement() {
         String masked = ResponseMasker.mask("{\"a\":[{\"t\":\"x\"},{\"t\":\"y\"}]}", rules("a[*].t", "type"), "x");
         assertJson("{\"a\":[{\"t\":\"" + ANY_STRING + "\"},{\"t\":\"" + ANY_STRING + "\"}]}", masked);
+    }
+
+    private static final String FIXINGS = "{\"data\":{\"fixings\":{\"FX:EURSGD@[BFIX]-1500-JP TYO\":[\"2026-01-02\"],"
+            + "\"FX:EURUSD@[BFIX]-1500-JP TYO\":[\"2026-01-02\",\"2026-01-03\"]}}}";
+
+    @Test
+    public void starKeyCoversEveryValueOfAnObject() {
+        String masked = ResponseMasker.mask(FIXINGS, rules("data.fixings.*", "type"), "x");
+        assertJson("{\"data\":{\"fixings\":{\"FX:EURSGD@[BFIX]-1500-JP TYO\":\"" + ResponseMasker.ANY_ARRAY + "\","
+                + "\"FX:EURUSD@[BFIX]-1500-JP TYO\":\"" + ResponseMasker.ANY_ARRAY + "\"}}}", masked);
+    }
+
+    @Test
+    public void quotedKeyNamesAKeyWithBrackets() {
+        String masked = ResponseMasker.mask(FIXINGS, rules("data.fixings['FX:EURSGD@[BFIX]-1500-JP TYO']", "type"), "x");
+        assertJson("{\"data\":{\"fixings\":{\"FX:EURSGD@[BFIX]-1500-JP TYO\":\"" + ResponseMasker.ANY_ARRAY + "\","
+                + "\"FX:EURUSD@[BFIX]-1500-JP TYO\":[\"2026-01-02\",\"2026-01-03\"]}}}", masked);
+    }
+
+    @Test
+    public void quotedKeyThenIndex() {
+        String masked = ResponseMasker.mask(FIXINGS, rules("data.fixings['FX:EURUSD@[BFIX]-1500-JP TYO'][1]", "type"), "x");
+        JsonNode values = Json.parse(masked).at("/data/fixings/FX:EURUSD@[BFIX]-1500-JP TYO");
+        assertEquals("2026-01-02", values.get(0).asText());
+        assertEquals(ANY_STRING, values.get(1).asText());
+    }
+
+    @Test
+    public void pathsParseAndRenderBack() {
+        for (String path : List.of("data.trade.udf[*].value", "data.fixings.*", "[0].id", "a.b[2][*]",
+                "data.fixings['FX:EURSGD@[BFIX]-1500-JP TYO'].x", "data.fixings['a.b']")) {
+            assertEquals(path, ResponseMasker.render(ResponseMasker.parsePath(path, "x")));
+        }
+    }
+
+    @Test
+    public void malformedPathsFail() {
+        for (String path : List.of("a..b", "a.", "a[x]", "a['']", "a['b", "a.[0]", "a[BFIX]", "")) {
+            try {
+                ResponseMasker.parsePath(path, "x");
+                fail("expected a failure for " + path);
+            } catch (IllegalStateException e) {
+                assertTrue(e.getMessage(), e.getMessage().contains("rule path") || e.getMessage().contains("empty"));
+            }
+        }
     }
 
     @Test

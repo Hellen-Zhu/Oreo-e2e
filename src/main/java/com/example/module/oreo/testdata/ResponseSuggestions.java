@@ -69,8 +69,11 @@ public final class ResponseSuggestions {
 
     private static void walk(JsonNode node, JsonNode previous, String at, String request, List<Finding> out) {
         if (node.isObject()) {
-            node.properties().forEach(e -> walk(e.getValue(), previous == null ? null : previous.get(e.getKey()),
-                    at.isEmpty() ? e.getKey() : at + "." + e.getKey(), request, out));
+            node.properties().forEach(e -> {
+                String step = ResponseMasker.render(List.of(e.getKey()));
+                walk(e.getValue(), previous == null ? null : previous.get(e.getKey()),
+                        at.isEmpty() || step.startsWith("[") ? at + step : at + "." + step, request, out);
+            });
             return;
         }
         if (node.isArray()) {
@@ -209,6 +212,11 @@ public final class ResponseSuggestions {
         if (i == steps.size()) return true;
         Object step = steps.get(i);
         if (step instanceof String key) return node.isObject() && has(node.get(key), steps, i + 1);
+        if (ResponseMasker.isAnyKey(step)) {
+            if (!node.isObject()) return false;
+            for (JsonNode value : node) if (has(value, steps, i + 1)) return true;
+            return false;
+        }
         if (!node.isArray()) return false;
         if (ResponseMasker.isAny(step)) {
             for (JsonNode element : node) if (has(element, steps, i + 1)) return true;

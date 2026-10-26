@@ -161,7 +161,13 @@ final class ExpectedFileChecks {
         Object step = steps.get(i);
         if (step instanceof String key) {
             if (node.isObject() && node.has(key)) {
-                select(node.get(key), steps, i + 1, at.isEmpty() ? key : at + "." + key, out);
+                select(node.get(key), steps, i + 1, at + keyStep(at, key), out);
+            }
+        } else if (ResponseMasker.isAnyKey(step)) {
+            if (node.isObject()) {
+                for (String key : node.properties().stream().map(Map.Entry::getKey).toList()) {
+                    select(node.get(key), steps, i + 1, at + keyStep(at, key), out);
+                }
             }
         } else if (node.isArray()) {
             int from = ResponseMasker.isAny(step) ? 0 : (Integer) step;
@@ -170,6 +176,12 @@ final class ExpectedFileChecks {
                 select(node.get(n), steps, i + 1, at + "[" + n + "]", out);
             }
         }
+    }
+
+    /** {@code key} appended to the rendered path {@code at}: {@code .key}, or {@code ['key']} when it must be quoted. */
+    private static String keyStep(String at, String key) {
+        String step = ResponseMasker.render(List.of(key));
+        return at.isEmpty() || step.startsWith("[") ? step : "." + step;
     }
 
     private static void checkHit(String label, String rule, Hit hit, List<String> errors, List<String> warnings) {
@@ -258,22 +270,17 @@ final class ExpectedFileChecks {
             Object b = path.get(i);
             boolean index = (a instanceof Integer || ResponseMasker.isAny(a))
                     && (b instanceof Integer || ResponseMasker.isAny(b));
-            boolean same = a.equals(b) || (index && (ResponseMasker.isAny(a) || ResponseMasker.isAny(b)));
+            boolean key = (a instanceof String || ResponseMasker.isAnyKey(a))
+                    && (b instanceof String || ResponseMasker.isAnyKey(b));
+            boolean same = a.equals(b) || (index && (ResponseMasker.isAny(a) || ResponseMasker.isAny(b)))
+                    || (key && (ResponseMasker.isAnyKey(a) || ResponseMasker.isAnyKey(b)));
             if (!same) return false;
         }
         return true;
     }
 
     private static String render(List<Object> path) {
-        StringBuilder out = new StringBuilder();
-        for (Object step : path) {
-            if (step instanceof String key) {
-                out.append(out.length() == 0 ? "" : ".").append(key);
-            } else {
-                out.append('[').append(step).append(']');
-            }
-        }
-        return out.toString();
+        return ResponseMasker.render(path);
     }
 
     private static boolean isPlaceholder(JsonNode node) {
