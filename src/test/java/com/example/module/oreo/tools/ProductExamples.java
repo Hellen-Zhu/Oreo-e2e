@@ -131,7 +131,7 @@ final class ProductExamples {
         }
         for (Map.Entry<Path, String> rewrite : plan.rewrites().entrySet()) {
             try {
-                Files.write(rewrite.getKey(), rewrite.getValue().getBytes(StandardCharsets.UTF_8));
+                Files.writeString(rewrite.getKey(), rewrite.getValue(), StandardCharsets.UTF_8);
             } catch (IOException e) {
                 throw new UncheckedIOException("[ProductExamples] cannot write " + rewrite.getKey(), e);
             }

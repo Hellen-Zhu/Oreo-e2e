@@ -308,9 +308,9 @@ public final class ResponseMasker {
         StringBuilder out = new StringBuilder();
         for (Object step : path) {
             if (step instanceof String key) {
-                out.append(out.length() == 0 ? "" : ".").append(PLAIN_KEY.matcher(key).matches() ? key : "*");
+                out.append(out.isEmpty() ? "" : ".").append(PLAIN_KEY.matcher(key).matches() ? key : "*");
             } else if (isAnyKey(step)) {
-                out.append(out.length() == 0 ? "*" : ".*");
+                out.append(out.isEmpty() ? "*" : ".*");
             } else {
                 out.append('[').append(isAny(step) ? "*" : step).append(']');
             }

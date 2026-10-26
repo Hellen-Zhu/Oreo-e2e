@@ -110,14 +110,16 @@ final class Suggest {
             keepDeclared &= base.declaredIsGoodEnough(declared);
         }
         String common = ResponseSuggestions.commonBase(bases);
-        if (keepDeclared && !bases.isEmpty()) {
+        if (bases.isEmpty()) {
+            // reported above: no product has two recorded cases
+        } else if (keepDeclared) {
             out.append("  Keep the declared base: it is within 10% of the best for every product, and the plain case"
                     + " is the easier base to read a patch against.\n");
         } else if (bases.stream().noneMatch(ResponseSuggestions.Base::worthIt)) {
             out.append("  No base: leave expectedBase out (or null) and say why in _comment.\n");
         } else if (common != null) {
             out.append("  As data: \"defaults\": { \"expectedBase\": \"").append(common).append("\" }\n");
-        } else if (!bases.isEmpty()) {
+        } else {
             out.append("  The products differ: name each base in byProduct.<P>.expectedBase, or none.\n");
         }
         out.append("\nMask first, then the base: the base is measured on the recordings as they are."

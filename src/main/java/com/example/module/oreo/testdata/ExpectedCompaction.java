@@ -110,15 +110,6 @@ public final class ExpectedCompaction {
     private ExpectedCompaction() {}
 
     /**
-     * Plans the compaction of {@code <root>/<eventFile>/}; writes nothing.
-     *
-     * @param declaredBase the base case ID a case declares, {@code null} for none (e.g. {@code CaseData::expectedBase})
-     */
-    public static Plan plan(ExpectedResponses files, String eventFile, Function<CaseId, String> declaredBase) {
-        return plan(files, eventFile, declaredBase, id -> Map.of(), Shared.fromDisk(files));
-    }
-
-    /**
      * Plans the compaction of {@code <root>/<eventFile>/}; writes nothing (the shared parts it decides go to
      * {@code shared}, written by {@link #write(ExpectedResponses, Shared)}).
      *
@@ -173,7 +164,7 @@ public final class ExpectedCompaction {
             patch.put("_base", base);
             patch.set("_patch", ops);
             String patchText = Json.pretty(patch);
-            String fullText = Json.pretty(withReferences(own, fragments.get(id.raw()), shared, null, new ArrayList<>()));
+            String fullText = Json.pretty(withReferences(own, fragments.get(id.raw()), shared, null));
             if (patchText.length() < fullText.length()) {
                 entries.add(new Entry(id, old, patchText, "patch on " + base + ", " + ops.size() + " ops"));
             } else {
@@ -189,7 +180,7 @@ public final class ExpectedCompaction {
         List<String> notes = new ArrayList<>();
         JsonNode out;
         try {
-            out = withReferences(own, fragments, shared, notes, errors);
+            out = withReferences(own, fragments, shared, notes);
         } catch (RuntimeException e) {
             errors.add(id.raw() + ": " + e.getMessage());
             out = own;
@@ -203,7 +194,7 @@ public final class ExpectedCompaction {
      * {@code notes} {@code null}: only the text is wanted, nothing is recorded in {@code shared}.
      */
     private static JsonNode withReferences(JsonNode own, Map<String, String> fragments, Shared shared,
-                                           List<String> notes, List<String> errors) {
+                                           List<String> notes) {
         JsonNode out = own.deepCopy();
         if (fragments == null) return out;
         for (Map.Entry<String, String> fragment : fragments.entrySet()) {
