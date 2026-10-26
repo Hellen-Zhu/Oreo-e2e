@@ -1,0 +1,73 @@
+{
+  "version": "${json-unit.any-string}",
+  "tradeType": "Example.Finance.Tradeable.TRF",
+  "TRF": {
+    "underlyings": {
+      "ASSET": {
+        "Index": {
+          "assetClass": "FX",
+          "indexName": "USDJPY",
+          "fixingQualifier": "[BFIX]-1500-JP TYO"
+        }
+      }
+    },
+    "schedule": "${json-unit.ignore}",
+    "notionals": [
+      70000.0,
+      70000.0,
+      70000.0,
+      70000.0,
+      70000.0,
+      70000.0,
+      70000.0,
+      70000.0,
+      70000.0,
+      70000.0,
+      70000.0,
+      70000.0,
+      70000.0,
+      70000.0,
+      70000.0,
+      70000.0,
+      70000.0,
+      70000.0,
+      70000.0,
+      70000.0
+    ],
+    "targetCGain": {
+      "TD_BigFigure": {
+        "td_ty": "Full",
+        "td_bf": 500,
+        "td_firstPeriod": 0
+      }
+    },
+    "payoffDict": "${json-unit.ignore}",
+    "payoffs": [
+      "1",
+      "1",
+      "1",
+      "1",
+      "1",
+      "1",
+      "1",
+      "1",
+      "1",
+      "1",
+      "1",
+      "1",
+      "1",
+      "1",
+      "1",
+      "1",
+      "1",
+      "1",
+      "1",
+      "1"
+    ],
+    "delivery": {
+      "DD_Physical": {
+        "dd_roundings": "${json-unit.ignore}"
+      }
+    }
+  }
+}

@@ -14,15 +14,17 @@ public final class CaseData {
     private final CaseId id;
     private final ObjectNode request;
     private final Map<String, String> dynamicFields;
+    private final Map<String, String> sharedFragments;
     private final String expectedBase;
     private final String datFile;
     private final List<String> layers;
 
-    CaseData(CaseId id, ObjectNode request, Map<String, String> dynamicFields, String expectedBase, String datFile,
-             List<String> layers) {
+    CaseData(CaseId id, ObjectNode request, Map<String, String> dynamicFields, Map<String, String> sharedFragments,
+             String expectedBase, String datFile, List<String> layers) {
         this.id = id;
         this.request = request.deepCopy();
         this.dynamicFields = Collections.unmodifiableMap(new LinkedHashMap<>(dynamicFields));
+        this.sharedFragments = Collections.unmodifiableMap(new LinkedHashMap<>(sharedFragments));
         this.expectedBase = expectedBase;
         this.datFile = datFile;
         this.layers = List.copyOf(layers);
@@ -38,6 +40,12 @@ public final class CaseData {
 
     /** Path -> rule ({@code type}, {@code type-tree}, {@code regex:...}, {@code ignore}), API cases only. */
     public Map<String, String> dynamicFields() { return dynamicFields; }
+
+    /**
+     * Response path -> name of the shared part it is stored as ({@code data.trade.instrument} ->
+     * {@code instrument/FX_TRF}, {@code <product_type>} already replaced); see {@link SharedFragments}. API cases only.
+     */
+    public Map<String, String> sharedFragments() { return sharedFragments; }
 
     /**
      * The case whose expected file this case's file is a patch on ({@code <product_type>} already replaced);

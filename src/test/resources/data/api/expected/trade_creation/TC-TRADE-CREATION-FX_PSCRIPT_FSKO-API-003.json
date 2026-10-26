@@ -1,69 +1,46 @@
 {
-  "code": 200,
-  "status": "PENDING APPROVAL",
-  "msg": "${json-unit.regex}Submitted for checker approval. TaskId: CHK-.*",
-  "data": {
-    "trade": {
-      "id": "${json-unit.any-string}",
-      "basic": {
-        "dealDate": "${json-unit.any-string}",
-        "valueDate": "${json-unit.any-string}",
-        "tradeType": "FX_FSB",
-        "productId": "FX_FSB",
-        "currencyPair": "USDCNH",
-        "notionalAmount": "${json-unit.any-number}",
-        "notionalCurrency": "${json-unit.any-string}",
-        "rate": "${json-unit.any-number}",
-        "counterpartyName": "EXAMPLE COUNTERPARTY A",
-        "counterpartyFmId": "900000001",
-        "portfolioId": "EXAMPLE_PORTFOLIO_A",
-        "status": "Pending Approval Draft",
-        "eventStatus": "StepInFull",
-        "trader": "system",
-        "bankEntity": "${json-unit.any-string}",
-        "source": "OREO",
-        "ci": "${json-unit.any-number}",
-        "hardMargin": "${json-unit.any-number}",
-        "cva": "${json-unit.any-number}",
-        "fva": "${json-unit.any-number}",
-        "marketers": "${json-unit.ignore}",
-        "structuringInvolved": false,
-        "vmc": "${json-unit.any-number}",
-        "premiumAmount": "${json-unit.any-number}",
-        "premiumCurrency": "${json-unit.any-string}",
-        "premiumDate": "${json-unit.any-string}",
-        "version": "${json-unit.any-number}",
-        "direction": "Buy",
-        "udf": [
-          {
-            "key": "stepInType",
-            "value": "StepInFull",
-            "type": "Text"
-          },
-          {
-            "key": "oldCptyName",
-            "value": "EXAMPLE COUNTERPARTY B",
-            "type": "Text"
-          },
-          {
-            "key": "oldCptyFmId",
-            "value": "900000002",
-            "type": "Text"
-          },
-          {
-            "key": "novationDate",
-            "value": "${json-unit.any-string}",
-            "type": "Date"
-          }
-        ]
-      },
-      "instrument": "${json-unit.ignore}",
-      "trace": []
+  "_base": "TC-TRADE-CREATION-FX_PSCRIPT_FSKO-API-001",
+  "_patch": [
+    {
+      "op": "replace",
+      "path": "/data/trade/basic/notionalCurrency",
+      "value": "${json-unit.any-string}"
     },
-    "checkerContext": {
-      "taskId": "${json-unit.any-string}",
-      "submittedBy": "maker@example.com",
-      "eventType": "SUBMIT"
+    {
+      "op": "replace",
+      "path": "/data/trade/basic/eventStatus",
+      "value": "StepInFull"
+    },
+    {
+      "op": "add",
+      "path": "/data/trade/basic/udf",
+      "value": [
+        {
+          "key": "stepInType",
+          "value": "StepInFull",
+          "type": "Text"
+        },
+        {
+          "key": "oldCptyName",
+          "value": "EXAMPLE COUNTERPARTY B",
+          "type": "Text"
+        },
+        {
+          "key": "oldCptyFmId",
+          "value": "900000002",
+          "type": "Text"
+        },
+        {
+          "key": "novationDate",
+          "value": "${json-unit.any-string}",
+          "type": "Date"
+        }
+      ]
+    },
+    {
+      "op": "replace",
+      "path": "/data/trade/instrument",
+      "value": "${json-unit.ignore}"
     }
-  }
+  ]
 }

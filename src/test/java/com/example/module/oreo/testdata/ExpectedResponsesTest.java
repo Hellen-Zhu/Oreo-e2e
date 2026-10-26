@@ -1,5 +1,6 @@
 package com.example.module.oreo.testdata;
 
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import net.javacrumbs.jsonunit.JsonAssert;
 import org.junit.Before;
 import org.junit.Rule;
@@ -11,6 +12,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -158,5 +160,81 @@ public class ExpectedResponsesTest {
         expected.write(id, "{}");
         assertEquals(List.of("trade_creation"), expected.events());
         assertEquals(List.of(id, variant), expected.cases("trade_creation"));
+    }
+
+    // ── Shared parts ─────────────────────────────────────────────────────────
+
+    private static final String BASIC = "{\"status\":\"Live\",\"ccy\":\"USD\"}";
+
+    @Test
+    public void resolvesAReferenceWithItsOverrides() {
+        expected.shared().write("basic/FX_TRF", BASIC);
+        expected.write(id, "{\"trade\":{\"basic\":{\"_shared\":\"basic/FX_TRF\",\"status\":\"Draft\",\"udf\":[1]}}}");
+        assertEquals(Json.parse("{\"trade\":{\"basic\":{\"status\":\"Draft\",\"ccy\":\"USD\",\"udf\":[1]}}}"),
+                Json.parse(expected.resolve(id).orElseThrow().json()));
+    }
+
+    @Test
+    public void resolvesAPatchOnABaseWithAReference() {
+        expected.shared().write("basic/FX_TRF", BASIC);
+        expected.write(id, "{\"basic\":{\"_shared\":\"basic/FX_TRF\"}}");
+        expected.write(variant, patchOn(id.raw(), "[{\"op\":\"replace\",\"path\":\"/basic/ccy\",\"value\":\"EUR\"}]"));
+        assertEquals(Json.parse("{\"basic\":{\"status\":\"Live\",\"ccy\":\"EUR\"}}"),
+                Json.parse(expected.resolve(variant).orElseThrow().json()));
+    }
+
+    @Test
+    public void referenceWithoutItsFileSaysHowToFix() {
+        expected.write(id, "{\"basic\":{\"_shared\":\"basic/FX_TRF\"}}");
+        assertResolveFails(id, "basic/FX_TRF", "TestDataTool compact all");
+    }
+
+    @Test
+    public void sharedFolderIsNotAnEvent() {
+        expected.shared().write("basic/FX_TRF", BASIC);
+        expected.write(id, "{}");
+        assertEquals(List.of("trade_creation"), expected.events());
+        assertEquals(List.of("basic/FX_TRF"), expected.shared().names());
+    }
+
+    @Test
+    public void referenceHoldsOnlyTheKeysThatDiffer() {
+        ObjectNode shared = (ObjectNode) Json.parse(BASIC);
+        assertEquals(Json.parse("{\"_shared\":\"b\",\"status\":\"Draft\",\"udf\":[]}"), SharedFragments.reference("b",
+                shared, (ObjectNode) Json.parse("{\"status\":\"Draft\",\"ccy\":\"USD\",\"udf\":[]}")));
+        assertNull("a reference cannot remove a key",
+                SharedFragments.reference("b", shared, (ObjectNode) Json.parse("{\"status\":\"Live\"}")));
+    }
+
+    @Test
+    public void compactionWritesTheSharedPartAndTheReferences() {
+        expected.write(id, "{\"trade\":{\"id\":1,\"basic\":" + BASIC + "}}");
+        expected.write(variant, "{\"trade\":{\"id\":2,\"basic\":{\"status\":\"Draft\",\"ccy\":\"USD\"}}}");
+        expected.write(third, "{\"error\":\"no trade\"}");
+        ExpectedCompaction.Shared shared = ExpectedCompaction.Shared.fromDisk(expected);
+        ExpectedCompaction.Plan plan = ExpectedCompaction.plan(expected, "trade_creation", c -> null,
+                c -> Map.of("trade.basic", "basic/FX_TRF"), shared);
+        assertEquals(List.of(), plan.errors());
+        ExpectedCompaction.write(expected, shared);
+        ExpectedCompaction.write(expected, plan);
+
+        assertEquals(Json.parse(BASIC), expected.shared().read("basic/FX_TRF").orElseThrow());
+        assertEquals(Json.parse("{\"trade\":{\"id\":1,\"basic\":{\"_shared\":\"basic/FX_TRF\"}}}"),
+                Json.parse(expected.read(id).orElseThrow()));
+        assertEquals(Json.parse("{\"trade\":{\"id\":2,\"basic\":{\"_shared\":\"basic/FX_TRF\",\"status\":\"Draft\"}}}"),
+                Json.parse(expected.read(variant).orElseThrow()));
+        assertEquals(Json.parse("{\"error\":\"no trade\"}"), Json.parse(expected.read(third).orElseThrow()));
+        assertEquals(Json.parse("{\"trade\":{\"id\":2,\"basic\":{\"status\":\"Draft\",\"ccy\":\"USD\"}}}"),
+                Json.parse(expected.resolve(variant).orElseThrow().json()));
+    }
+
+    @Test
+    public void rebuildDeletesASharedPartNoCaseUses() {
+        expected.shared().write("basic/OLD", BASIC);
+        expected.write(id, "{}");
+        ExpectedCompaction.Shared shared = ExpectedCompaction.Shared.rebuild(expected);
+        ExpectedCompaction.plan(expected, "trade_creation", c -> null, c -> Map.of(), shared);
+        ExpectedCompaction.write(expected, shared);
+        assertEquals(List.of(), expected.shared().names());
     }
 }

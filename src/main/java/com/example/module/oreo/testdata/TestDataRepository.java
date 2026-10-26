@@ -30,12 +30,13 @@ import java.util.regex.Pattern;
 public final class TestDataRepository {
 
     private static final Set<String> COMMON_KEYS = Set.of("shared");
-    private static final Set<String> BLOCK_KEYS = Set.of("request", "dynamicFields");
+    private static final Set<String> BLOCK_KEYS = Set.of("request", "dynamicFields", "sharedFragments");
     private static final Set<String> EVENT_KEYS = Set.of("shared", "defaults", "byProduct", "cases");
-    private static final Set<String> LAYER_KEYS = Set.of("use", "request", "dynamicFields", "expectedBase",
-            "datFile");
-    private static final Set<String> ROW_KEYS = Set.of("id", "use", "request", "dynamicFields", "expectedBase",
-            "datFile", "byProduct");
+    private static final Set<String> LAYER_KEYS = Set.of("use", "request", "dynamicFields", "sharedFragments",
+            "expectedBase", "datFile");
+    private static final Set<String> ROW_KEYS = Set.of("id", "use", "request", "dynamicFields", "sharedFragments",
+            "expectedBase", "datFile", "byProduct");
+    private static final Pattern RESPONSE_PATH = Pattern.compile("[A-Za-z0-9_]+(\\.[A-Za-z0-9_]+)*");
     private static final Set<String> SETUP_KEYS = Set.of("extends", "request", "response");
     private static final Pattern SETUP_NAME = Pattern.compile("[a-z0-9][a-z0-9-]*");
 
@@ -124,8 +125,8 @@ public final class TestDataRepository {
     }
 
     /**
-     * Applies one layer: its {@code use} blocks in order, then its own {@code request}, {@code dynamicFields} and
-     * {@code expectedBase}.
+     * Applies one layer: its {@code use} blocks in order, then its own {@code request}, {@code dynamicFields},
+     * {@code sharedFragments} and {@code expectedBase}.
      */
     private static void apply(Merged merged, ObjectNode layer, String label, Map<String, JsonNode> shared,
                               String path) {
@@ -149,10 +150,11 @@ public final class TestDataRepository {
         merged.layers.add(uses.isEmpty() ? label : label + " (use " + String.join(", ", uses) + ")");
     }
 
-    /** The request, dynamic fields, expected base and dat file merged so far. */
+    /** The request, dynamic fields, shared fragments, expected base and dat file merged so far. */
     private static final class Merged {
         ObjectNode request = Json.MAPPER.createObjectNode();
         final Map<String, String> dynamicFields = new LinkedHashMap<>();
+        final Map<String, String> sharedFragments = new LinkedHashMap<>();
         String expectedBase;
         String datFile;
         String datFileFrom;
@@ -167,23 +169,45 @@ public final class TestDataRepository {
             if (req != null) {
                 request = JsonLayers.merge(request, (ObjectNode) req);
             }
-            JsonNode dyn = part.get("dynamicFields");
-            if (dyn == null) return;
-            if (dyn.isNull()) {
-                dynamicFields.clear();
+            mergeMap(dynamicFields, part.get("dynamicFields"));
+            mergeMap(sharedFragments, part.get("sharedFragments"));
+        }
+
+        /** {@code null} clears the map; a key with {@code null} removes that key; any other value is set. */
+        private static void mergeMap(Map<String, String> into, JsonNode layer) {
+            if (layer == null) return;
+            if (layer.isNull()) {
+                into.clear();
                 return;
             }
-            for (Map.Entry<String, JsonNode> rule : dyn.properties()) {
-                if (rule.getValue().isNull()) {
-                    dynamicFields.remove(rule.getKey());
+            for (Map.Entry<String, JsonNode> entry : layer.properties()) {
+                if (entry.getValue().isNull()) {
+                    into.remove(entry.getKey());
                 } else {
-                    dynamicFields.put(rule.getKey(), rule.getValue().asText());
+                    into.put(entry.getKey(), entry.getValue().asText());
                 }
             }
         }
 
         CaseData toCaseData(CaseId id) {
-            return new CaseData(id, request, dynamicFields, resolveBase(id), datFile, layers);
+            return new CaseData(id, request, dynamicFields, resolveFragments(id), resolveBase(id), datFile, layers);
+        }
+
+        /**
+         * The shared fragments, {@code <...>} replaced by the case's product; a name that needs a product is left out
+         * on a case without one.
+         */
+        private Map<String, String> resolveFragments(CaseId id) {
+            Map<String, String> out = new LinkedHashMap<>();
+            for (Map.Entry<String, String> entry : sharedFragments.entrySet()) {
+                String name = entry.getValue();
+                if (name.contains("<")) {
+                    if (id.product() == null) continue;
+                    name = name.replaceAll("<[^>]+>", id.product());
+                }
+                out.put(entry.getKey(), name);
+            }
+            return out;
         }
 
         /**
@@ -230,6 +254,7 @@ public final class TestDataRepository {
             checkKeys((ObjectNode) block.getValue(), BLOCK_KEYS, path, where);
             checkRequest(block.getValue(), path, where);
             checkDynamicFields(block.getValue(), path, where, channelDir);
+            checkSharedFragments(block.getValue(), path, where, channelDir);
         }
     }
 
@@ -319,6 +344,7 @@ public final class TestDataRepository {
         }
         checkRequest(layer, path, where);
         checkDynamicFields(layer, path, where, channelDir);
+        checkSharedFragments(layer, path, where, channelDir);
         checkExpectedBase(layer, path, where, id);
         checkDatFile(layer, path, where);
     }
@@ -378,6 +404,31 @@ public final class TestDataRepository {
             if (!rule.getValue().isTextual() && !rule.getValue().isNull()) {
                 throw error(path, where + ".dynamicFields." + rule.getKey(),
                         "a rule is a string (type, type-tree, regex:<pattern>, var:<name>, ignore) or null");
+            }
+        }
+    }
+
+    private static void checkSharedFragments(JsonNode part, String path, String where, String channelDir) {
+        JsonNode fragments = part.get("sharedFragments");
+        if (fragments == null) return;
+        if (!channelDir.equals("api")) {
+            throw error(path, where + ".sharedFragments",
+                    "sharedFragments exist in data/api/ only (UI has no recorded responses)");
+        }
+        if (fragments.isNull()) return;
+        if (!fragments.isObject()) {
+            throw error(path, where + ".sharedFragments", "must be an object of response path -> fragment name, or null");
+        }
+        for (Map.Entry<String, JsonNode> entry : fragments.properties()) {
+            String at = where + ".sharedFragments." + entry.getKey();
+            if (!RESPONSE_PATH.matcher(entry.getKey()).matches()) {
+                throw error(path, at, "the path is keys joined by '.' (data.trade.instrument), no array index");
+            }
+            JsonNode name = entry.getValue();
+            if (name.isNull()) continue;
+            if (!name.isTextual() || !SharedFragments.isName(name.asText().replaceAll("<[^>]+>", "P"))) {
+                throw error(path, at, "a fragment name is words of letters, digits, _ or - joined by /,"
+                        + " <product_type> for the case's product (instrument/<product_type>), or null");
             }
         }
     }

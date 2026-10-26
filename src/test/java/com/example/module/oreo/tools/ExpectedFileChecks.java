@@ -5,6 +5,7 @@ import com.example.module.oreo.testdata.ExpectedCompaction;
 import com.example.module.oreo.testdata.ExpectedResponses;
 import com.example.module.oreo.testdata.Json;
 import com.example.module.oreo.testdata.ResponseMasker;
+import com.example.module.oreo.testdata.SharedFragments;
 import com.example.module.oreo.testdata.TestData;
 import com.fasterxml.jackson.databind.JsonNode;
 
@@ -21,7 +22,7 @@ import java.util.stream.Stream;
 /**
  * The checks of {@code check} on the recorded API responses (sections 10.4, 10.5 and 10.7): every API case has its
  * expected file and every file its case, the {@code dynamicFields} rules agree with the files, the files are
- * compacted. {@link Checks} runs them and prints what they found.
+ * compacted (shared parts included). {@link Checks} runs them and prints what they found.
  */
 final class ExpectedFileChecks {
 
@@ -61,9 +62,11 @@ final class ExpectedFileChecks {
             }
         }
         Path root = data.resolve("api/expected");
+        Path sharedFolder = root.resolve(SharedFragments.FOLDER);
         if (Files.isDirectory(root)) {
             try (Stream<Path> walk = Files.walk(root)) {
-                for (Path file : walk.filter(p -> p.toString().endsWith(".json")).sorted().toList()) {
+                for (Path file : walk.filter(p -> p.toString().endsWith(".json") && !p.startsWith(sharedFolder))
+                        .sorted().toList()) {
                     if (!wanted.contains(file.toAbsolutePath().normalize())) {
                         result.errors.add(project.relativize(file) + " belongs to no API case of the feature files"
                                 + " that compares its response (a case tagged " + ExpectedResponses.NONE_TAG
@@ -120,17 +123,26 @@ final class ExpectedFileChecks {
 
     // ── 10.7 ─────────────────────────────────────────────────────────────────
 
+    /** Plans {@code compact all}: a file or shared part it would write, or a shared file it would delete, is reported. */
     void expectedFilesAreCompacted(Checks.Result result) {
         ExpectedResponses expected = ExpectedResponses.standard();
+        ExpectedCompaction.Shared shared = ExpectedCompaction.Shared.rebuild(expected);
         for (String event : expected.events()) {
             ExpectedCompaction.Plan plan = ExpectedCompaction.plan(expected, event,
-                    id -> TestData.forCase(id.raw()).expectedBase());
+                    id -> TestData.forCase(id.raw()).expectedBase(),
+                    id -> TestData.forCase(id.raw()).sharedFragments(), shared);
             result.errors.addAll(plan.errors());
             for (ExpectedCompaction.Entry entry : plan.entries()) {
                 if (entry.changed()) {
                     result.warnings.add(project.relativize(expected.fileFor(entry.id())) + ": " + entry.note());
                 }
             }
+        }
+        for (ExpectedCompaction.SharedEntry entry : shared.entries()) {
+            String file = project.relativize(expected.shared().fileFor(entry.name())).toString();
+            result.warnings.add(file + ": " + (entry.after() == null ? "no case uses it"
+                    : entry.before().isEmpty() ? "not written yet" : "differs from the first case that has it")
+                    + " (TestDataTool compact all)");
         }
     }
 

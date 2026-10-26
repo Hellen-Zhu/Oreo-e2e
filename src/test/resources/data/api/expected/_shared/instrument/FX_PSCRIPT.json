@@ -1,0 +1,45 @@
+{
+  "tradeType": "Example.Finance.Tradeable.PayoffScript",
+  "version": "V1",
+  "PayoffScript": {
+    "trdData": {
+      "DataRec": {
+        "pair1": "EURSGD",
+        "pair2": "EURUSD",
+        "fixingSource1": "EURSGD@[BFIX]-1500-JP TYO",
+        "fixingSource2": "EURUSD@[BFIX]-1500-JP TYO",
+        "notionalCcy": "USD",
+        "notionalAmount": 6937.5,
+        "meanAdjustment": true,
+        "fixingSched": {
+          "FS_SchedParams": {
+            "fs_anchorDate": "${json-unit.any-string}",
+            "fs_start": {
+              "SS_ByStartRelTenor": {
+                "ss_startTenor": "0D"
+              }
+            },
+            "fs_end": {
+              "SE_ByEndDate": {
+                "se_endDate": "${json-unit.any-string}",
+                "se_longStubEnd": false,
+                "se_endDelExp": "Expiry"
+              }
+            },
+            "fs_freqTenor": "1B",
+            "fs_extraExpiryCals": "",
+            "fs_customExpiryAdj": "NoAdjustment",
+            "fs_spotRulePair": "EURSGD",
+            "fs_extraSettleCals": ""
+          }
+        },
+        "payoffDetail": {
+          "Forward": {
+            "strike": 0.6425
+          }
+        }
+      }
+    },
+    "scriptName": "Example.Finance.Tradeable.PayoffScript.Ctrl.CorrOption"
+  }
+}

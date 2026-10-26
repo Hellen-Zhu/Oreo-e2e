@@ -84,6 +84,11 @@ When `defaults` has no rules (`api/trade_early_termination.json`), the negative 
 (`"expectedBase": "TC-TRADE-CREATION-<product_type>-API-001"`) and `TestDataTool compact <event>` turns the variants into
 patches. When the responses share nothing, leave it out and say why in `_comment`.
 
+**`sharedFragments`**: when the response holds a part another event returns too (the trade's `basic` and
+`instrument`), name the block `trade-response-parts` of `api/common.json` in `use`; the compaction keeps the part once
+per product in `expected/_shared/`. Mask its dynamic values with the same rules as the other events, or every unmasked
+value stays in the case's file as a key that differs. See `docs/test-data.md`, "Shared parts".
+
 A case whose evidence is the database or audit, not the response, carries `@expected#none` and has no expected file.
 
 ## 6. Check what you wrote

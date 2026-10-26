@@ -16,6 +16,8 @@ import java.util.stream.Stream;
  * Recorded API responses: {@code data/api/expected/<event>/<caseId>.json} in the source tree, so that a
  * recording survives {@code mvn clean} and shows in {@code git diff}. A file holds the response in full, or a
  * patch on a base case of the same folder: {@code {"_base": "<case ID>", "_patch": [<ops>]}} (see {@link JsonPatch}).
+ * A full file (a base included) may refer to shared parts in {@code _shared/} ({@link SharedFragments}); they are
+ * expanded when the file is resolved.
  */
 public final class ExpectedResponses {
 
@@ -31,9 +33,16 @@ public final class ExpectedResponses {
     private static final String UPDATE = "update";
 
     private final Path root;
+    private final SharedFragments shared;
 
     public ExpectedResponses(Path expectedRoot) {
         this.root = expectedRoot;
+        this.shared = new SharedFragments(expectedRoot);
+    }
+
+    /** The shared parts of these files ({@code <root>/_shared/}). */
+    public SharedFragments shared() {
+        return shared;
     }
 
     /** The files of this project: {@code <project>/src/test/resources/data/api/expected}. */
@@ -73,8 +82,8 @@ public final class ExpectedResponses {
     }
 
     /**
-     * The full form of the case's expected response: a full file as it is, a patch applied to its base's file.
-     * Empty only when the case has no file; a patch that cannot be resolved is an {@link IllegalStateException}
+     * The full form of the case's expected response: a full file as it is, a patch applied to its base's file;
+     * references to shared parts expanded. Empty only when the case has no file; a patch that cannot be resolved is an {@link IllegalStateException}
      * that says how to record the case again.
      */
     public Optional<Resolved> resolve(CaseId id) {
@@ -83,7 +92,7 @@ public final class ExpectedResponses {
         Path file = fileFor(id);
         JsonNode json = parse(text.get(), file);
         if (!isPatch(json)) {
-            return Optional.of(new Resolved(Json.pretty(json), file, null));
+            return Optional.of(new Resolved(Json.pretty(shared.expand(json, file)), file, null));
         }
         if (!json.get("_base").isTextual() || !json.get("_patch").isArray()) {
             throw new IllegalStateException("[ExpectedResponses] " + file
@@ -110,6 +119,7 @@ public final class ExpectedResponses {
             throw new IllegalStateException("[ExpectedResponses] " + file + " builds on " + base
                     + ", which is itself a patch. To fix: " + recordAgain(id));
         }
+        baseJson = shared.expand(baseJson, baseFile);
         JsonNode full;
         try {
             full = JsonPatch.apply(baseJson, json.get("_patch"), file.getFileName().toString());
@@ -135,11 +145,12 @@ public final class ExpectedResponses {
         }
     }
 
-    /** The event folders under the root, sorted; empty when there is no root yet. */
+    /** The event folders under the root, sorted ({@code _shared} is not one); empty when there is no root yet. */
     public List<String> events() {
         if (!Files.isDirectory(root)) return List.of();
         try (Stream<Path> list = Files.list(root)) {
-            return list.filter(Files::isDirectory).map(p -> p.getFileName().toString()).sorted().toList();
+            return list.filter(Files::isDirectory).map(p -> p.getFileName().toString())
+                    .filter(name -> !name.equals(SharedFragments.FOLDER)).sorted().toList();
         } catch (IOException e) {
             throw new UncheckedIOException("[ExpectedResponses] cannot list " + root, e);
         }

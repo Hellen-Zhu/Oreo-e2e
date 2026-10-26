@@ -65,7 +65,8 @@ with the columns `| case | dataset |` (`001`, `002` ...); each case is its own r
 - Layers, each optional, later wins: `defaults` -> `byProduct[P]` -> the case's row -> the row's `byProduct[P]`.
   A layer applies its `use` blocks in order, then its own `request` and `dynamicFields`. A case without a product
   gets `defaults` and its row only.
-- `use` names a block of `common.json` or of the event file's own `shared` (same shape: `request`, `dynamicFields`),
+- `use` names a block of `common.json` or of the event file's own `shared` (same shape: `request`, `dynamicFields`,
+  `sharedFragments`),
   for data of this event only. A name in both files is an error.
 - Objects merge key by key; arrays and values replace whole; `null` removes a key. `_comment` is a comment at any
   depth. To change one element of a list, give the whole list.
@@ -182,6 +183,42 @@ Re-record a base together with its variants. A base recorded alone can leave a v
 (an `add` on a key the base now has); that case then fails with an error naming the op. The way out is in the error:
 record the case again with `OREO_EXPECTED=update` (update mode does not read the file), then compact.
 
+## Shared parts
+
+Several events return the same part of a trade: creation and query both return `data.trade.basic` and
+`data.trade.instrument`. Each is kept once per product in `data/api/expected/_shared/<name>.json`, and an expected file
+refers to it at the place of the part, with only the keys that differ:
+
+```jsonc
+// expected/trade_creation/TC-TRADE-CREATION-FX_TRF-API-001.json
+"trade": { "basic": { "_shared": "basic/FX_TRF" }, "instrument": { "_shared": "instrument/FX_TRF" }, ... }
+// another event, the same trade in another state
+"basic": { "_shared": "basic/FX_TRF", "status": "Live" }
+```
+
+The event data declares which parts are shared, response path -> part name, in any layer; `<product_type>` becomes the
+case's product, a case without a product skips such an entry, and `null` removes one entry or the whole map. The block
+`trade-response-parts` of `api/common.json` declares the two trade parts; an event whose response holds `data.trade`
+names it in `use`:
+
+```jsonc
+"defaults": { "use": ["trade-basic", "trade-response-parts"], ... }
+```
+
+When the file is read, a reference becomes the shared part with the reference's keys replacing the part's keys of the
+same name; the case is compared with that full response, as before. The compaction writes both the shared files and
+the references, in a file kept in full (a patch on a base works on the base's full response):
+
+- a part with no file yet is taken from the first case that has it (events, then case IDs, in order);
+- a part that lacks a key of the shared one stays in full in the case's file (a reference cannot remove a key), as
+  does a part that is not an object (a whole-part placeholder);
+- `compact all` takes every part again from the first case that has it and deletes the shared files no case uses;
+  `compact <event>` keeps the shared files there are.
+
+A part looks the same in every event only when every event masks its dynamic values with the same rules
+(`dynamicFields`): an unmasked date in one event is a key that differs, kept in that event's files. Re-record a shared
+part's events together, then `compact all`.
+
 ## Commands
 
 The offline tool is normal test-source code in `src/test/java/com/example/module/oreo/tools/`, entry point
@@ -211,7 +248,7 @@ After deleting resource files, add `clean` before `process-test-classes` to remo
   is a warning), the product Outlines' `Examples` match the registry, every product with a capability has its dat
   file. Exit code 1 on a problem. Run it before committing a change to the data, the features or the registry.
 - `sync-examples`: writes the product Outlines' `Examples` from `ProductDatFiles` ("Products and capabilities").
-- `compact <event>` or `compact all`: the compaction of "Base and patch".
+- `compact <event>` or `compact all`: the compaction of "Base and patch" and "Shared parts".
 - `case TC-TRADE-CREATION-FX_PSCRIPT_TRF-API-002`: prints the merged data of one case: the applied layers, the dat
   file, the request, the `dynamicFields`, the `expectedBase`, the expected file (full, or patch on which base) and the
   expected response in full.

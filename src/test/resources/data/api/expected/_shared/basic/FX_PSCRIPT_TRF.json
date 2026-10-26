@@ -1,0 +1,36 @@
+{
+  "dealDate": "${json-unit.any-string}",
+  "valueDate": "${json-unit.any-string}",
+  "tradeType": "FX_PSCRIPT_TRF",
+  "productId": "FX_PSCRIPT_TRF",
+  "currencyPair": "${json-unit.any-string}",
+  "notionalAmount": "${json-unit.any-number}",
+  "notionalCurrency": "CNH",
+  "rate": "${json-unit.any-number}",
+  "counterpartyName": "EXAMPLE COUNTERPARTY A",
+  "counterpartyFmId": "900000001",
+  "portfolioId": "EXAMPLE_PORTFOLIO_A",
+  "status": "Pending Approval Draft",
+  "eventStatus": "${json-unit.any-string}",
+  "trader": "system",
+  "bankEntity": "LONDON",
+  "source": "OREO",
+  "ci": 0,
+  "hardMargin": 0,
+  "cva": 0,
+  "fva": 0,
+  "marketers": [
+    {
+      "marketerId": "system",
+      "revenueShare": 100.0,
+      "marketerType": "COVERAGE"
+    }
+  ],
+  "structuringInvolved": false,
+  "vmc": 0,
+  "premiumAmount": "${json-unit.any-number}",
+  "premiumCurrency": "USD",
+  "premiumDate": "${json-unit.any-string}",
+  "version": "${json-unit.any-number}",
+  "direction": "Sell"
+}

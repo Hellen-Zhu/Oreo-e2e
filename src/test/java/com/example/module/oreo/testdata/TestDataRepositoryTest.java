@@ -104,13 +104,29 @@ public class TestDataRepositoryTest {
                 { "defaults": { "datFile": "../FX_TRF.dat" } }""");
         write("api/clash_block.json", """
                 { "shared": { "base": { "request": { "basic": { "a": "9" } } } } }""");
-        // UI: flattening into ctx keys; dynamicFields and expectedBase are API only
+        // Shared response parts: a block declares them, a row adds or removes one
+        write("api/fragment_event.json", """
+                {
+                  "shared": { "parts": { "sharedFragments": {
+                    "data.trade.basic": "basic/<product_type>", "data.trade.instrument": "instrument/<product_type>" } } },
+                  "defaults": { "use": ["parts"] },
+                  "cases": [
+                    { "id": "TC-FRAGMENT-EVENT-<product_type>-API-002",
+                      "sharedFragments": { "data.trade.instrument": null, "data.trade.trace": "trace/common" } },
+                    { "id": "TC-FRAGMENT-EVENT-<product_type>-API-003", "sharedFragments": null }
+                  ]
+                }""");
+        write("api/bad_fragment.json", """
+                { "defaults": { "sharedFragments": { "data.trade.basic": "../basic" } } }""");
+        // UI: flattening into ctx keys; dynamicFields, expectedBase and sharedFragments are API only
         write("ui/flatten_event.json", """
                 { "defaults": { "request": { "basic": { "a": "1" }, "udf": [ { "k": "v" } ] } } }""");
         write("ui/ui_event.json", """
                 { "defaults": { "dynamicFields": { "x": "type" } } }""");
         write("ui/ui_base.json", """
                 { "defaults": { "expectedBase": "TC-UI-BASE-<product_type>-UI-001" } }""");
+        write("ui/ui_fragment.json", """
+                { "defaults": { "sharedFragments": { "data.trade.basic": "basic/<product_type>" } } }""");
         // Setup data
         write("setup/base-setup.json", """
                 { "request": { "basic": { "a": "1" } } }""");
@@ -257,6 +273,34 @@ public class TestDataRepositoryTest {
     @Test(expected = IllegalStateException.class)
     public void expectedBaseRejectedInUi() {
         repo.forCase("TC-UI-BASE-FX_TRF-UI-002");
+    }
+
+    @Test
+    public void sharedFragmentsFollowTheProduct() {
+        assertEquals(Map.of("data.trade.basic", "basic/FX_TRF", "data.trade.instrument", "instrument/FX_TRF"),
+                repo.forCase("TC-FRAGMENT-EVENT-FX_TRF-API-001").sharedFragments());
+    }
+
+    @Test
+    public void rowAddsAndRemovesSharedFragments() {
+        assertEquals(Map.of("data.trade.basic", "basic/FX_PSCRIPT", "data.trade.trace", "trace/common"),
+                repo.forCase("TC-FRAGMENT-EVENT-FX_PSCRIPT-API-002").sharedFragments());
+        assertEquals(Map.of(), repo.forCase("TC-FRAGMENT-EVENT-FX_TRF-API-003").sharedFragments());
+    }
+
+    @Test
+    public void caseWithoutProductSkipsProductFragments() {
+        assertEquals(Map.of(), repo.forCase("TC-FRAGMENT-EVENT-API-009").sharedFragments());
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void badFragmentNameIsAnError() {
+        repo.forCase("TC-BAD-FRAGMENT-FX_TRF-API-001");
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void sharedFragmentsRejectedInUi() {
+        repo.forCase("TC-UI-FRAGMENT-FX_TRF-UI-001");
     }
 
     @Test

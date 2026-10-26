@@ -53,6 +53,11 @@ final class Lookup {
             for (Map.Entry<String, String> rule : data.dynamicFields().entrySet()) {
                 out.append("  ").append(rule.getKey()).append(" = ").append(rule.getValue()).append('\n');
             }
+            out.append("sharedFragments:\n");
+            if (data.sharedFragments().isEmpty()) out.append("  (none)\n");
+            for (Map.Entry<String, String> fragment : data.sharedFragments().entrySet()) {
+                out.append("  ").append(fragment.getKey()).append(" -> ").append(fragment.getValue()).append('\n');
+            }
             out.append("expectedBase: ").append(data.expectedBase() == null ? "(none)" : data.expectedBase())
                     .append('\n');
             ExpectedResponses expected = ExpectedResponses.standard();

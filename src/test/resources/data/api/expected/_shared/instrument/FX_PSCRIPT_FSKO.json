@@ -1,0 +1,5 @@
+{
+  "tradeType": "Example.Finance.Tradeable.PayoffScript",
+  "PayoffScript": "${json-unit.ignore}",
+  "version": "${json-unit.any-string}"
+}

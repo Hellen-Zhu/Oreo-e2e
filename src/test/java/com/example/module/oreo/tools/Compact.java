@@ -3,6 +3,7 @@ package com.example.module.oreo.tools;
 import com.example.module.oreo.testdata.ExpectedCompaction;
 import com.example.module.oreo.testdata.ExpectedResponses;
 import com.example.module.oreo.testdata.ProjectPaths;
+import com.example.module.oreo.testdata.SharedFragments;
 import com.example.module.oreo.testdata.TestData;
 
 import java.io.IOException;
@@ -11,9 +12,11 @@ import java.util.List;
 
 /**
  * Compacts the recorded API responses (section 7.5 of the test data design): a variant's file becomes a patch on the
- * base case its data declares, a case without a base keeps its full response. Run after a recording, before the
- * review, for one event ({@code compact trade_creation}) or {@code all}. Nothing is written when any event has a
- * problem.
+ * base case its data declares, a case without a base keeps its full response; in a full response, the parts the data
+ * declares shared ({@code sharedFragments}) become references to {@code _shared/<name>.json}. Run after a recording,
+ * before the review, for one event ({@code compact trade_creation}) or {@code all}; {@code all} also takes every shared
+ * part again from the first case that has it and deletes the shared files no case uses. Nothing is written when any
+ * event has a problem.
  */
 final class Compact {
 
@@ -29,11 +32,14 @@ final class Compact {
             return 1;
         }
 
+        ExpectedCompaction.Shared shared = scope.equals("all")
+                ? ExpectedCompaction.Shared.rebuild(files) : ExpectedCompaction.Shared.fromDisk(files);
         List<ExpectedCompaction.Plan> plans = new ArrayList<>();
         List<String> errors = new ArrayList<>();
         for (String event : events) {
             ExpectedCompaction.Plan plan = ExpectedCompaction.plan(files, event,
-                    id -> TestData.forCase(id.raw()).expectedBase());
+                    id -> TestData.forCase(id.raw()).expectedBase(),
+                    id -> TestData.forCase(id.raw()).sharedFragments(), shared);
             plans.add(plan);
             plan.errors().forEach(e -> errors.add(event + ": " + e));
         }
@@ -44,6 +50,15 @@ final class Compact {
 
         StringBuilder out = new StringBuilder();
         int changed = 0;
+        List<ExpectedCompaction.SharedEntry> sharedEntries = shared.entries();
+        ExpectedCompaction.write(files, shared);
+        if (!sharedEntries.isEmpty()) out.append(SharedFragments.FOLDER).append(":\n");
+        for (ExpectedCompaction.SharedEntry entry : sharedEntries) {
+            out.append("  ").append(entry.name()).append(".json: ")
+                    .append(entry.after() == null ? "deleted (no case uses it)"
+                            : entry.before().isEmpty() ? "new" : "rewritten").append('\n');
+            changed++;
+        }
         for (ExpectedCompaction.Plan plan : plans) {
             ExpectedCompaction.write(files, plan);
             out.append(plan.eventFile()).append(":\n");

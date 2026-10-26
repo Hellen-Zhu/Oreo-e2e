@@ -41,6 +41,13 @@
         }
       },
       "dynamicFields": { "data.trade.basic.udf[3].value": "type" }
+    },
+    "trade-response-parts": {
+      "_comment": "Every trade API returns the trade's basic and instrument parts: TestDataTool compact keeps each once per product in expected/_shared/ and writes references to them (the keys that differ stay in the case's file). Name it in \"use\" of an event whose response holds data.trade",
+      "sharedFragments": {
+        "data.trade.basic": "basic/<product_type>",
+        "data.trade.instrument": "instrument/<product_type>"
+      }
     }
   }
 }

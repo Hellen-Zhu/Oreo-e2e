@@ -34,8 +34,8 @@ with `-Dexec.args=<command>`. The company Maven repository must supply `exec-mav
 |---|---|
 | `check` | All offline checks (next section). Exit code 1 on a problem |
 | `sync-examples` | Writes the `Examples` of every product Outline from `ProductDatFiles`: one line per Outline (`unchanged`, `add X`, `remove Y`, `reordered`, `reformatted`); nothing written when a feature file has a problem |
-| `compact <event>` or `compact all` | Turns the recorded responses of the variants into patches on their base; nothing written on a problem |
-| `case <case ID>` | Prints the merged data of one case: layers, dat file, request, `dynamicFields`, `expectedBase`, expected file and response |
+| `compact <event>` or `compact all` | Turns the recorded responses of the variants into patches on their base and the declared shared parts (`sharedFragments`) into references to `expected/_shared/`; `all` also rebuilds the shared files and deletes unused ones; nothing written on a problem |
+| `case <case ID>` | Prints the merged data of one case: layers, dat file, request, `dynamicFields`, `sharedFragments`, `expectedBase`, expected file and response |
 
 The imports of the files in `tools/` name the package of `ProductDatFiles` (`com.example.module.oreo.testdata` here): in the company copy, the project's own.
 
