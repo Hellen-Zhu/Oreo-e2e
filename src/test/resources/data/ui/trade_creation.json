@@ -1,5 +1,24 @@
 {
   "_comment": "features/ui/trading/trade_creation.feature. UI-001 has no row: it runs on the defaults.",
+  "shared": {
+    "trade-basic": {
+      "_comment": "New Trade form values; the flow takes the product from the case",
+      "request": {
+        "basic": {
+          "counterpartyFmId": "900000001",
+          "counterpartyName": "EXAMPLE COUNTERPARTY A",
+          "portfolioId": "EXAMPLE_PORTFOLIO_A",
+          "direction": "Buy"
+        }
+      }
+    },
+    "stepin": {
+      "_comment": "StepIn section of the New Trade form",
+      "request": {
+        "stepIn": { "oldCounterpartyName": "EXAMPLE COUNTERPARTY B" }
+      }
+    }
+  },
   "defaults": {
     "use": ["trade-basic"]
   },
