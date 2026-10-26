@@ -37,6 +37,7 @@ with `-Dexec.args=<command>`. The company Maven repository must supply `exec-mav
 | `compact <event>` or `compact all` | Turns the recorded responses of the variants into patches on their base and the declared shared parts (`sharedFragments`) into references to `expected/_shared/`; `all` also rebuilds the shared files and deletes unused ones; nothing written on a problem |
 | `suggest <event>` | Prints, from the event's recordings, the `dynamicFields` rules they need (values that look generated or changed since the committed recording) with the layer each belongs in, and the `expectedBase` that leaves the fewest characters; writes nothing |
 | `case <case ID>` | Prints the merged data of one case: layers, dat file, request, `dynamicFields`, `sharedFragments`, `expectedBase`, expected file and response |
+| `product <P>` | Prints each capability with the product Outlines that test it, their case IDs for `<P>` and whether their `Examples` have `<P>`, as a table QA answers row by row; writes nothing |
 
 The imports of the files in `tools/` name the package of `ProductDatFiles` (`com.example.module.oreo.testdata` here): in the company copy, the project's own.
 
@@ -59,7 +60,7 @@ One `[ok]` or `[FAIL]` line per check, its problems and `[warn]` lines below it:
 | Change | Run |
 |---|---|
 | Event or setup data, a row, `byProduct`, `use`, `datFile` | `check`; `case <ID>` to see what a case sends |
-| A product or capability in `ProductDatFiles`, a `@capability#` tag | `sync-examples`, review `git diff`, then `check`. A new product: the skill `onboarding-e2e-product` |
+| A product or capability in `ProductDatFiles`, a `@capability#` tag | `sync-examples`, review `git diff` (`product <P>` for the review of one product), then `check`. A new product: the skill `onboarding-e2e-product` |
 | API responses recorded (first run, or `OREO_EXPECTED=update`) | `suggest <event>`, add the rules you agree with and record again; then `compact <event>`, review `git diff`, then `check` |
 | Feature files | `check` |
 

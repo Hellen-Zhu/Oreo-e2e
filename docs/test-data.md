@@ -234,6 +234,7 @@ mvn -Ptest-data process-test-classes "-Dexec.args=sync-examples"
 mvn -Ptest-data process-test-classes "-Dexec.args=case TC-TRADE-CREATION-FX_TRF-API-001"
 mvn -Ptest-data process-test-classes "-Dexec.args=suggest trade_creation"
 mvn -Ptest-data process-test-classes "-Dexec.args=compact trade_creation"
+mvn -Ptest-data process-test-classes "-Dexec.args=product FX_TRF"
 ```
 
 The first command defaults to `check`. Each command first runs the six unit tests of the code that decides what a
@@ -256,6 +257,10 @@ After deleting resource files, add `clean` before `process-test-classes` to remo
 - `case TC-TRADE-CREATION-FX_PSCRIPT_TRF-API-002`: prints the merged data of one case: the applied layers, the dat
   file, the request, the `dynamicFields`, the `expectedBase`, the expected file (full, or patch on which base) and the
   expected response in full.
+- `product FX_TRF`: prints, without writing anything, one row per capability (in `ProductDatFiles` or not, how many
+  API and UI Outlines test it, an empty "QA: supported?" column), then every product Outline with the product's case
+  ID, its title, its feature file and whether its `Examples` have the product's row. A product not yet in the
+  registry is shown with every capability: the review table of onboarding.
 
 The unit tests stay out of a plain `mvn test` (the pipeline runs `OreoTest` only). They are JUnit 4, and the profile
 fails when none ran: should it report no tests (a JUnit Platform without the vintage engine), add
