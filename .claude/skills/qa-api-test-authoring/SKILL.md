@@ -74,9 +74,10 @@ repair round the failure output and `revisionInstructions`.
 ## Recorded responses (what the first run does)
 
 The first run of a new API case writes `data/api/expected/<event>/<case ID>.json` and fails once: expected, not a
-defect. After it: run again; a value that changed between runs gets a `dynamicFields` rule in the event file (`type`,
-`type-tree`, `regex:`, `var:`, `ignore` last), record again with `OREO_EXPECTED=update`, then
-`TestDataTool compact <event>`. Never mask a business message or value to make a case pass. The command reviews every
+defect. After it: `TestDataTool suggest <event>` lists the values that look generated and where each rule goes; run
+again for the values a pattern misses (a value that changed between runs); each dynamic value gets a `dynamicFields`
+rule in the event file (`type`, `type-tree`, `regex:`, `var:`, `ignore` last), record again with
+`OREO_EXPECTED=update`, then `TestDataTool compact <event>`. Never mask a business message or value to make a case pass. The command reviews every
 recording against the requirement before it is committed.
 
 ## Repair round

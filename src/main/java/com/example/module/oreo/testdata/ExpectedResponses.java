@@ -50,6 +50,11 @@ public final class ExpectedResponses {
         return new ExpectedResponses(ProjectPaths.projectRoot().resolve("src/test/resources/data/api/expected"));
     }
 
+    /** The folder of the event folders. */
+    public Path root() {
+        return root;
+    }
+
     public Path fileFor(CaseId id) {
         return root.resolve(id.eventFile()).resolve(id.raw() + ".json");
     }

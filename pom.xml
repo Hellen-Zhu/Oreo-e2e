@@ -179,6 +179,7 @@
                         <exclude>**/testdata/JsonPatchTest.java</exclude>
                         <exclude>**/testdata/TestDataRepositoryTest.java</exclude>
                         <exclude>**/testdata/JsonLayersTest.java</exclude>
+                        <exclude>**/testdata/ResponseSuggestionsTest.java</exclude>
                     </excludes>
                 </configuration>
             </plugin>

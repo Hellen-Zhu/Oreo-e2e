@@ -20,7 +20,7 @@ Read this before changing files. It holds the rules and the traps; the details l
   file, product, layer and row of the test data.
 - **Products are rows.** `Examples` of `@capability#` Outlines are written by `TestDataTool sync-examples` from
   `ProductDatFiles`; never by hand.
-- **The data checks are `mvn -Ptest-data process-test-classes`** (five unit tests, then `TestDataTool check`). There is
+- **The data checks are `mvn -Ptest-data process-test-classes`** (six unit tests, then `TestDataTool check`). There is
   no `TestDataValidationTest`, `CompactExpectedFiles` or `SyncProductExamples`: they became `TestDataTool` commands.
 
 ## 2. Where to look

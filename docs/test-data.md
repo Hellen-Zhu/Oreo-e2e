@@ -231,12 +231,13 @@ in PowerShell, macOS and Linux (each line is a separate operation):
 mvn -Ptest-data process-test-classes
 mvn -Ptest-data process-test-classes "-Dexec.args=sync-examples"
 mvn -Ptest-data process-test-classes "-Dexec.args=case TC-TRADE-CREATION-FX_TRF-API-001"
+mvn -Ptest-data process-test-classes "-Dexec.args=suggest trade_creation"
 mvn -Ptest-data process-test-classes "-Dexec.args=compact trade_creation"
 ```
 
-The first command defaults to `check`. Each command first runs the five unit tests of the code that decides what a
+The first command defaults to `check`. Each command first runs the six unit tests of the code that decides what a
 case sends and what its response is compared with (`ResponseMaskerTest`, `ExpectedResponsesTest`, `JsonPatchTest`,
-`TestDataRepositoryTest`, `JsonLayersTest`; their data is written in the tests themselves, none of it lives under
+`TestDataRepositoryTest`, `JsonLayersTest`, `ResponseSuggestionsTest`; their data is written in the tests themselves, none of it lives under
 `src/test/resources`): a failing one stops Maven before the tool reads any data. The commands stop before the
 `test` phase: they do not run Cucumber. A failed check fails Maven. Plain `mvn test` retains its existing behavior and does not activate
 this profile. The company Maven repository needs `org.codehaus.mojo:exec-maven-plugin:3.6.4`.
@@ -248,6 +249,8 @@ After deleting resource files, add `clean` before `process-test-classes` to remo
   is a warning), the product Outlines' `Examples` match the registry, every product with a capability has its dat
   file. Exit code 1 on a problem. Run it before committing a change to the data, the features or the registry.
 - `sync-examples`: writes the product Outlines' `Examples` from `ProductDatFiles` ("Products and capabilities").
+- `suggest <event>`: reads the event's recordings and prints, without writing anything, the `dynamicFields` rules
+  they need and the `expectedBase` that suits them ("Suggestions", below).
 - `compact <event>` or `compact all`: the compaction of "Base and patch" and "Shared parts".
 - `case TC-TRADE-CREATION-FX_PSCRIPT_TRF-API-002`: prints the merged data of one case: the applied layers, the dat
   file, the request, the `dynamicFields`, the `expectedBase`, the expected file (full, or patch on which base) and the
@@ -257,6 +260,30 @@ The unit tests stay out of a plain `mvn test` (the pipeline runs `OreoTest` only
 fails when none ran: should it report no tests (a JUnit Platform without the vintage engine), add
 `org.junit.vintage:junit-vintage-engine` in test scope. Change a rule of the data code together with its test.
 
+
+### Suggestions
+
+`suggest` is for the step between a recording and `compact`: the data is written by a person, from what it prints.
+
+1. **`dynamicFields`.** A plain value (not yet a placeholder) is reported when it looks generated: a date or
+   date-time, a UUID, an ID such as `CHK-12345` or `TRD0001234`, a hex trace ID, an epoch time (rule `type`), or a
+   text that holds one (rule `regex:` with the rest of the text kept literally, `.*` for the generated part). Stronger
+   evidence: a value that changed since the committed recording of the same case, whatever it looks like, so a
+   re-recording (`OREO_EXPECTED=update`, not committed) followed by `suggest` finds the values a pattern misses. Each
+   rule is placed in the narrowest layer that covers it: `defaults` when every case with the path has it and every
+   product has such a case, `byProduct.<P>` when every case of P has it, otherwise the case's row; an array index
+   found in several elements becomes `[*]`. Judge each: a date the request fixes (the note says when the request sends
+   the value) is not dynamic; the ID this scenario created is better `var:createdTradeId`; a value that differs per
+   product is data. A rejected case without a `defaults` path needs `"dynamicFields": null` in its row.
+2. **`expectedBase`.** Per product with two recorded cases or more, every case is tried as the base of the others,
+   each written as its patch or in full, whichever is shorter (as `compact` does), and the characters left are
+   counted; the declared base is shown beside the best. When the declared base is within 10% of the best for every
+   product it says to keep it (the plain case is the easier base to read a patch against); otherwise the best as
+   `defaults` (`TC-<EVENT>-<product_type>-API-<NNN>`) when every product's best has the same number, per product when
+   they differ, none when no patch is shorter than its full response.
+
+Mask first, then choose the base: the base is measured on the recordings as they are, and an unmasked date makes
+every variant differ from it.
 ## Maintenance
 
 | Task | What to change |

@@ -24,7 +24,7 @@ mvn -Ptest-data process-test-classes "-Dexec.args=compact trade_creation"
 
 Each line is a complete command. The first defaults to `check`; choose one command for the task.
 Maven compiles the project, copies test resources and supplies the test classpath automatically.
-Before the tool, the profile runs the five unit tests of the test data code (`src/test/java/.../testdata/*Test`;
+Before the tool, the profile runs the six unit tests of the test data code (`src/test/java/.../testdata/*Test`;
 their data files are written by the tests, into a temporary folder): a failing one stops Maven before the tool reads any data, and the tool's verdict
 is not to be trusted until they pass. Stopping at `process-test-classes` does not execute the Cucumber suite. Do
 not replace it with `test` or `verify` for a data-only operation. Below, `TestDataTool <command>` means this Maven invocation
@@ -35,6 +35,7 @@ with `-Dexec.args=<command>`. The company Maven repository must supply `exec-mav
 | `check` | All offline checks (next section). Exit code 1 on a problem |
 | `sync-examples` | Writes the `Examples` of every product Outline from `ProductDatFiles`: one line per Outline (`unchanged`, `add X`, `remove Y`, `reordered`, `reformatted`); nothing written when a feature file has a problem |
 | `compact <event>` or `compact all` | Turns the recorded responses of the variants into patches on their base and the declared shared parts (`sharedFragments`) into references to `expected/_shared/`; `all` also rebuilds the shared files and deletes unused ones; nothing written on a problem |
+| `suggest <event>` | Prints, from the event's recordings, the `dynamicFields` rules they need (values that look generated or changed since the committed recording) with the layer each belongs in, and the `expectedBase` that leaves the fewest characters; writes nothing |
 | `case <case ID>` | Prints the merged data of one case: layers, dat file, request, `dynamicFields`, `sharedFragments`, `expectedBase`, expected file and response |
 
 The imports of the files in `tools/` name the package of `ProductDatFiles` (`com.example.module.oreo.testdata` here): in the company copy, the project's own.
@@ -59,7 +60,7 @@ One `[ok]` or `[FAIL]` line per check, its problems and `[warn]` lines below it:
 |---|---|
 | Event or setup data, a row, `byProduct`, `use`, `datFile` | `check`; `case <ID>` to see what a case sends |
 | A product or capability in `ProductDatFiles`, a `@capability#` tag | `sync-examples`, review `git diff`, then `check`. A new product: the skill `onboarding-e2e-product` |
-| API responses recorded (first run, or `OREO_EXPECTED=update`) | `compact <event>`, review `git diff`, then `check` |
+| API responses recorded (first run, or `OREO_EXPECTED=update`) | `suggest <event>`, add the rules you agree with and record again; then `compact <event>`, review `git diff`, then `check` |
 | Feature files | `check` |
 
 ## Common mistakes
