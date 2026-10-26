@@ -158,22 +158,22 @@ flowchart LR
 
 <section id="write">
   <h2>/writebddfeatures：story → feature 文件</h2>
-  <p>输入是 story 文本或文件路径。这个仓库没有接 ADO，只给一个 ID 时会请你把 story 贴进来。</p>
+  <p>输入有四种：ADO User Story ID（<code>1234</code>、<code>#1234</code>、<code>ado:1234</code>）、workflow-state JSON 文件、story 文件、粘贴的 story 文本。ADO 模式要用公司 ai-tooling 的 <code>ado-agent</code>；本仓库没装时会直接说明，并改用文本或 JSON 输入，不会凭 ID 猜 story。</p>
   <ol class="steps">
-    <li><span class="n">1</span><div class="d"><div class="t">加载</div><p>确定 <code>storyId</code>；若 <code>.ai-sdlc/&lt;storyId&gt;/state.json</code> 显示已经写过 feature，先问要不要重来。</p></div></li>
+    <li><span class="n">1</span><div class="d"><div class="t">加载</div><p>ADO：<code>ado-agent</code> <code>FETCH_STORY</code>，工作项的 <code>bddFeatureFiles</code> 不为空就先问要不要重来。JSON：看 <code>lastCompletedStage</code>。文本/文件：看 <code>.ai-sdlc/&lt;storyId&gt;/state.json</code>。</p></div></li>
     <li><span class="n">2</span><div class="d"><div class="t">阶段 1：测试分层</div><p>调 <code>bdd-agent</code>（phase 1）→ skill <code>qa-layer-test-design</code>。产出测试点表和 JSON 产物 <code>test-layer-analysis.json</code>：每个 TP 一个层（<code>@api</code> 或 <code>@playwright</code>）、一组标签、产品范围、证据强度、风险。组件级的东西列为"交给 FE 仓库"，不在这里造 UI 用例。</p></div></li>
     <li class="gate"><span class="n">关口</span><div class="d"><div class="t">审批 1 <span class="pill gate">approve / revise / stop</span></div><p>revise 时只改你说的部分，其他 TP 编号和字段保持不变。</p></div></li>
     <li><span class="n">3</span><div class="d"><div class="t">阶段 2：写 feature 内容</div><p>调 <code>bdd-agent</code>（phase 2）→ skill <code>qa-bdd-feature-authoring</code>。决定文件名和路径（已有的命名优先）、create 还是 append、续编 case ID、生成步骤索引并优先复用现有步骤；所有产品共享的行为写成带 <code>@capability#</code> 的 Outline，Examples 只留表头。</p></div></li>
     <li class="gate"><span class="n">关口</span><div class="d"><div class="t">审批 2 <span class="pill gate">approve / revise / stop</span></div><p>你看到的就是将要写进文件的 Gherkin，外加命名依据、TP→场景映射、AC 覆盖、新步骤清单、缺口。</p></div></li>
     <li><span class="n">4</span><div class="d"><div class="t">写文件</div><p>command 自己写，只按审批过的内容；append 前再 grep 一次确认 case ID 没被占用。</p></div></li>
     <li><span class="n">5</span><div class="d"><div class="t">检查</div><p>公司电脑：<code>sync-examples</code> 填产品行，再跑 <code>mvn -Ptest-data process-test-classes</code>。新 API case 报 <code>no expected file</code> 是预期的，录制在下一条流水线里做。其他电脑：给出命令。</p></div></li>
-    <li><span class="n">6</span><div class="d"><div class="t">保存进度并总结</div><p>写 <code>state.json</code>（featureFiles、caseIds），下一步提示 <code>/codetestcases &lt;storyId&gt;</code>。不提交。</p></div></li>
+    <li><span class="n">6</span><div class="d"><div class="t">保存进度并总结</div><p>三种模式写同样的字段：<code>lastCompletedStage</code>、<code>bddFeatureFiles</code>、<code>tcTags</code>（这里存的是 case ID）。ADO 模式依次 <code>ADD_COMMENT</code>（覆盖摘要）、<code>UPDATE_TAGS</code>（加 <code>bdd-ready</code>）、<code>SAVE</code>；JSON 模式改原文件；文本模式写 <code>state.json</code>。下一步提示 <code>/codetestcases</code>。不提交。</p></div></li>
   </ol>
 </section>
 
 <section id="code">
   <h2>/codetestcases：feature → 能跑的 case</h2>
-  <p>输入是 storyId（读 <code>state.json</code>）或 feature 路径；没指定 case 时，取工作区里新加的 <code>[TC-...]</code> 场景。只实现、只运行这些 case，不碰整个文件。</p>
+  <p>输入是 ADO ID（<code>LOAD</code> + <code>FIND_BDD_FILE</code>）、JSON 文件、本地 storyId（读 <code>state.json</code>）或 feature 路径；已经 <code>passing</code> 会先问要不要重跑，结束时把 <code>e2eStatus</code>、<code>e2eRepairAttempts</code>、<code>e2eFiles</code> 写回（ADO 全部通过时再加一条评论）；没指定 case 时，取工作区里新加的 <code>[TC-...]</code> 场景。只实现、只运行这些 case，不碰整个文件。</p>
   <ol class="steps">
     <li><span class="n">1</span><div class="d"><div class="t">判断在哪台机器</div><p><code>qa.properties</code> 存在且 <code>mvn -v</code> 成功 → <span class="pill acc">company</span>，可以运行；否则 <span class="pill acc">offline</span>，所有 Maven 步骤改为给出命令。</p></div></li>
     <li><span class="n">2</span><div class="d"><div class="t">实现 + 校验</div><p>调 <code>test-agent</code>：按路径分给 <code>qa-api-test-authoring</code> 或 <code>qa-e2e-test-authoring</code>（先 API 后 UI），然后用 <code>qa-bdd-test-execution</code> 做 <code>check</code> 和 <code>dry-run --strict</code>，失败就在预算内（3 次）修。最后交回 <code>VALIDATION_HANDOFF</code>。</p></div></li>
@@ -263,7 +263,7 @@ flowchart LR
     <tbody>
       <tr><td><code>test-layer-analysis.json</code></td><td>qa-layer-test-design</td><td>阶段 2 的范围边界；修订时的唯一依据</td><td><code>.ai-sdlc/&lt;storyId&gt;/</code>（git 忽略）</td></tr>
       <tr><td>Feature 生成结果</td><td>qa-bdd-feature-authoring</td><td>审批 2；command 按它写文件</td><td>对话中</td></tr>
-      <tr><td><code>state.json</code></td><td>两个 command</td><td><code>/codetestcases &lt;storyId&gt;</code> 找文件和 case</td><td><code>.ai-sdlc/&lt;storyId&gt;/</code></td></tr>
+      <tr><td>workflow 状态</td><td>两个 command</td><td>判断是否已生成过；<code>/codetestcases</code> 找文件和 case</td><td>ADO 工作项（<code>ado-agent</code>）、JSON 文件，或本地 <code>.ai-sdlc/&lt;storyId&gt;/state.json</code></td></tr>
       <tr><td>Authoring 报告</td><td>API / E2E authoring</td><td>test-agent 汇总；你审阅</td><td>对话中</td></tr>
       <tr><td><code>VALIDATION_HANDOFF</code></td><td>test-agent</td><td>审批 3 展示的命令、要录制的 case、待办</td><td>对话中（JSON）</td></tr>
       <tr><td>执行报告</td><td>qa-bdd-test-execution</td><td>失败分流</td><td>对话中；失败细节在 <code>target/results/failed-scenarios-*.log</code></td></tr>
@@ -321,7 +321,7 @@ flowchart LR
       <tr><td>真实运行</td><td>校验后直接跑</td><td>先审批；新录制逐份对照需求复核</td></tr>
       <tr><td>修复</td><td>失败一律修</td><td>分四类，行为不符时停下</td></tr>
       <tr><td>步骤索引脚本</td><td>遇到第一个没有步骤的文件就退出；漏掉 <code>@And</code>；需要 bash 4</td><td>重写：每次生成到 <code>target/ai/</code>，含 <code>@And</code> 和 Java glue，Mac / Git Bash 都能跑</td></tr>
-      <tr><td>外部依赖</td><td>ado-agent、debug-agent、<code>/codeuserstory</code></td><td>story 用文本或文件输入，进度存在本地 <code>.ai-sdlc/</code></td></tr>
+      <tr><td>外部依赖</td><td>ado-agent、debug-agent、<code>/codeuserstory</code></td><td>保留 ADO 和 JSON 模式，操作名和字段与公司一致；另支持文本/文件输入。debug-agent 和 <code>/codeuserstory</code> 不在本仓库，失败由 <code>/codetestcases</code> 自己分类处理</td></tr>
     </tbody>
   </table></div>
 </section>

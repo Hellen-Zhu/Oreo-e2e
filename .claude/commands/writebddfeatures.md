@@ -1,6 +1,6 @@
 ---
 description: Turn one user story into approved test points and business-readable oreo-e2e feature files, with an approval gate after each phase
-argument-hint: <story file path | pasted story text>
+argument-hint: <ADO story ID | workflow-state JSON file | story file path | pasted story text>
 ---
 
 # Write BDD feature files
@@ -10,23 +10,33 @@ Rules: `CLAUDE.md`; the standards under `docs/standards/`.
 
 ## Input
 
-`$ARGUMENTS`:
+`$ARGUMENTS`, detected in this order:
 
-| Given | Do |
-|---|---|
-| A file path (`.md`, `.txt`, `.json`) | Read it |
-| Pasted story text | Use it |
-| Only a tracker ID | This repository has no tracker connection: ask for the story (title, ACs, and `solutionDesign` if there is one) as text or a file |
-| Nothing | Ask: "Paste the user story, or give the path of a file that has it." |
+| Mode | Detection | Story and workflow state come from |
+|---|---|---|
+| **ADO** | an ADO User Story ID: a pure number, `#1234` or `ado:1234` | `ado-agent` |
+| **JSON file** | a path that ends with `.json` (a workflow-state file, e.g. `./workflow-state/L001.json`) | the file |
+| **Story file** | any other path (`.md`, `.txt`) | the file; state in `.ai-sdlc/<storyId>/state.json` |
+| **Story text** | pasted text | the text; state in `.ai-sdlc/<storyId>/state.json` |
+| **Empty / invalid** | - | ask: "Give an ADO User Story ID (e.g. `#1234`), a workflow-state JSON file (e.g. `./workflow-state/L001.json`), or paste the story." |
 
-The story needs a title and acceptance criteria. Use its ID as `storyId`; when it has none, ask for a short one
-(letters, digits, `-`). Story text stays in the conversation and under `.ai-sdlc/` (git-ignored); never copy it into
-the repository.
+The story needs a title and acceptance criteria (and `solutionDesign` when there is one). `storyId` is the ADO ID,
+the file's story ID, or, when the text has none, a short ID you ask for (letters, digits, `-`). Story text stays in
+the conversation, in ADO or under `.ai-sdlc/` (git-ignored); never copy it into the repository.
 
-## Step 1 - Load
+**ADO mode needs `ado-agent`**, the company `ai-tooling` agent (`.claude/agents/ado-agent.md`). If it is not installed
+here, say "ado-agent is not available in this repository: paste the story or give a workflow-state JSON file" and
+continue in the mode of what the user gives; never guess the story from the ID.
 
-If `.ai-sdlc/<storyId>/state.json` exists and lists `featureFiles`, show them and ask "Feature files were already
-written for <storyId>. Run again? (yes/no)". No: stop.
+## Step 1 - Load workflow context
+
+- **ADO**: `ado-agent` (`FETCH_STORY`) for each story ID. If the story's `bddFeatureFiles` is non-empty, show them and
+  ask "BDD feature files already generated for #<id> (tag: bdd-ready): <files>. Run again? (yes/no)".
+- **JSON file**: read it. If `lastCompletedStage` is `writebddfeatures` or later, show its `bddFeatureFiles` and ask
+  "BDD feature files already generated for <storyId>: <files>. Run again? (yes/no)".
+- **Story file / text**: if `.ai-sdlc/<storyId>/state.json` exists and lists `bddFeatureFiles`, ask the same.
+
+No: stop. Yes: continue with Step 2.
 
 ## Step 2 - Phase 1: test layering
 
@@ -88,15 +98,25 @@ Use the skill `qa-bdd-test-execution` to decide `where`.
   written content with the user.
 - `offline`: give the same commands for the company machine.
 
-## Step 6 - Save state
+## Step 6 - Save workflow context
 
-Write `.ai-sdlc/<storyId>/state.json`:
+The same fields in every mode; append to existing arrays, never drop what an earlier run recorded:
 
 ```json
-{ "storyId": "<id>", "stage": "writebddfeatures", "featureFiles": ["..."], "caseIds": ["..."] }
+{
+  "lastCompletedStage": "writebddfeatures",
+  "bddFeatureFiles": ["<every feature file created or appended>"],
+  "tcTags": ["<the case IDs written>"]
+}
 ```
 
-Append to existing arrays; never drop what an earlier run recorded.
+`tcTags` keeps the company field name; in this project it holds the case IDs from the scenario names, which are not
+tags.
+
+- **ADO**: `ado-agent` (`ADD_COMMENT`) with the coverage summary of Step 7, then (`UPDATE_TAGS`) add `bdd-ready` to
+  `System.Tags`, then (`SAVE`) the fields above plus `branch` (the current branch).
+- **JSON file**: edit the source file: the fields above.
+- **Story file / text**: write `.ai-sdlc/<storyId>/state.json`: `storyId` and the fields above.
 
 ## Step 7 - Summary
 
@@ -104,4 +124,5 @@ Append to existing arrays; never drop what an earlier run recorded.
 - Totals: `@ADO#smoke` / `@ADO#regression`, `@ADO#positive` / `@ADO#negative`
 - Items for the FE repository, gaps, new steps the implementation must provide
 - Check result (or the commands to run)
-- Next: review `git diff`, then `/codetestcases <storyId>` to implement and run them. Nothing is committed.
+- Next: review `git diff`, then `/codetestcases <storyId>` (the ADO ID or the JSON file in those modes) to implement
+  and run them; `/writebddfeatures #<next-story-id>` for the next story. Nothing is committed.
