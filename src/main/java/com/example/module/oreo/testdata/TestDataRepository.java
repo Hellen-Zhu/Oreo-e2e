@@ -483,7 +483,7 @@ public final class TestDataRepository {
         if (parentName != null) {
             chain.add(name);
             parent = resolveSetup(parentName.asText(), chain);
-            chain.remove(chain.size() - 1);
+            chain.removeLast();
         }
         request = under(parent == null ? null : parent.requestNode(), request);
         response = under(parent == null ? null : parent.responseNode(), response);

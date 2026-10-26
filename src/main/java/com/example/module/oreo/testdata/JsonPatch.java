@@ -112,7 +112,7 @@ public final class JsonPatch {
         for (String token : tokens.subList(0, tokens.size() - 1)) {
             parent = child(parent, token, where);
         }
-        String last = tokens.get(tokens.size() - 1);
+        String last = tokens.getLast();
         if (parent instanceof ObjectNode object) {
             boolean exists = object.has(last);
             if (name.equals("add")) {

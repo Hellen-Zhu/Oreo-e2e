@@ -93,7 +93,7 @@ public record CaseId(String raw, String event, String product, String channel, S
         if (start == 0 || rowId.charAt(start - 1) != '-' || !rest.matches("-(API|UI)-\\d+")) {
             throw invalid(rowId, "the <...> placeholder must stand for the product, right before the channel");
         }
-        parse(rowId.substring(0, start) + products().get(0) + rest);
+        parse(rowId.substring(0, start) + products().getFirst() + rest);
     }
 
     /** {@code true} when {@code rowId} (as written in the feature) is this case's row. */

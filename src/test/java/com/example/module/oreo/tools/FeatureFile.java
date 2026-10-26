@@ -81,7 +81,7 @@ final class FeatureFile {
         String separator = body.contains("\r\n") ? "\r\n" : "\n";
         boolean finalNewline = body.endsWith("\n");
         List<String> lines = new ArrayList<>(Arrays.asList(body.split("\r?\n", -1)));
-        if (finalNewline) lines.remove(lines.size() - 1);
+        if (finalNewline) lines.removeLast();
         return new FeatureFile(file, bom, separator, finalNewline, List.copyOf(lines));
     }
 

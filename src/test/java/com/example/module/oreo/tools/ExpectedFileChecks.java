@@ -250,13 +250,13 @@ final class ExpectedFileChecks {
             node.properties().forEach(e -> {
                 at.add(e.getKey());
                 placeholdersWithoutRule(caseId, e.getValue(), at, rules, warnings);
-                at.remove(at.size() - 1);
+                at.removeLast();
             });
         } else if (node.isArray()) {
             for (int i = 0; i < node.size(); i++) {
                 at.add(i);
                 placeholdersWithoutRule(caseId, node.get(i), at, rules, warnings);
-                at.remove(at.size() - 1);
+                at.removeLast();
             }
         }
     }

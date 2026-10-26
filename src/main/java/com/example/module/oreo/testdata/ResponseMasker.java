@@ -292,7 +292,6 @@ public final class ResponseMasker {
                 throw badPath(path, caseLabel);
             }
         }
-        if (needKey) throw badPath(path, caseLabel);
         return steps;
     }
 
@@ -330,14 +329,14 @@ public final class ResponseMasker {
             if (node.isObject() && node.has(key)) {
                 at.add(key);
                 collect(node.get(key), steps, i + 1, at, out);
-                at.remove(at.size() - 1);
+                at.removeLast();
             }
         } else if (step == ANY_KEY) {
             if (node.isObject()) {
                 for (String key : List.copyOf(node.properties()).stream().map(Map.Entry::getKey).toList()) {
                     at.add(key);
                     collect(node.get(key), steps, i + 1, at, out);
-                    at.remove(at.size() - 1);
+                    at.removeLast();
                 }
             }
         } else if (node.isArray()) {
@@ -346,7 +345,7 @@ public final class ResponseMasker {
             for (int n = from; n < to; n++) {
                 at.add(n);
                 collect(node.get(n), steps, i + 1, at, out);
-                at.remove(at.size() - 1);
+                at.removeLast();
             }
         }
     }
@@ -370,7 +369,7 @@ public final class ResponseMasker {
             parent = step instanceof String key ? parent.get(key) : parent.get((Integer) step);
             if (parent == null) return root;
         }
-        Object last = path.get(path.size() - 1);
+        Object last = path.getLast();
         if (last instanceof String key && parent instanceof ObjectNode object && object.has(key)) {
             object.set(key, value);
         } else if (last instanceof Integer n && parent instanceof ArrayNode array && n < array.size()) {

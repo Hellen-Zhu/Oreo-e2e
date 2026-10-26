@@ -34,7 +34,7 @@ public class ResponseSuggestionsTest {
     public void textHoldingAnIdBecomesARegex() {
         List<ResponseSuggestions.Finding> found =
                 find("{ \"msg\": \"Submitted for checker approval. TaskId: CHK-123456\" }", null, null);
-        assertEquals("regex:Submitted for checker approval\\. TaskId: .*", found.get(0).rule());
+        assertEquals("regex:Submitted for checker approval\\. TaskId: .*", found.getFirst().rule());
     }
 
     @Test
@@ -42,22 +42,22 @@ public class ResponseSuggestionsTest {
         List<ResponseSuggestions.Finding> found =
                 find("{ \"rate\": 7.1234, \"status\": \"Live\" }", "{ \"rate\": 7.1301, \"status\": \"Live\" }", null);
         assertEquals(1, found.size());
-        assertEquals("rate", found.get(0).path());
-        assertTrue(found.get(0).reason(), found.get(0).reason().startsWith("changed since the committed recording"));
+        assertEquals("rate", found.getFirst().path());
+        assertTrue(found.getFirst().reason(), found.getFirst().reason().startsWith("changed since the committed recording"));
     }
 
     @Test
     public void dateTheRequestSendsIsFlaggedWithANote() {
         List<ResponseSuggestions.Finding> found =
                 find("{ \"maturity\": \"2027-01-15\" }", null, "{\"maturity\":\"2027-01-15\"}");
-        assertTrue(found.get(0).reason(), found.get(0).reason().contains("the request sends this value"));
+        assertTrue(found.getFirst().reason(), found.getFirst().reason().contains("the request sends this value"));
     }
 
     @Test
     public void keyWithBracketsBecomesStarInThePath() {
         List<ResponseSuggestions.Finding> found =
                 find("{ \"fixings\": { \"FX:EURSGD@[BFIX]-1500-JP TYO\": [\"2026-01-02\"] } }", null, null);
-        assertEquals("fixings.*[0]", found.get(0).path());
+        assertEquals("fixings.*[0]", found.getFirst().path());
         assertTrue(ResponseSuggestions.has(Json.parse("{ \"fixings\": { \"FX:EURSGD@[BFIX]-1500-JP TYO\": [1] } }"),
                 "fixings.*[0]"));
     }
@@ -105,7 +105,7 @@ public class ResponseSuggestionsTest {
         List<ResponseSuggestions.Base> bases = ResponseSuggestions.bases(responses);
         assertEquals(List.of("TC-EV-FX_PSCRIPT-API-001", "TC-EV-FX_TRF-API-001"),
                 bases.stream().map(ResponseSuggestions.Base::caseId).toList());
-        assertTrue(bases.get(0).worthIt());
+        assertTrue(bases.getFirst().worthIt());
         assertEquals("TC-EV-<product_type>-API-001", ResponseSuggestions.commonBase(bases));
     }
 
@@ -115,7 +115,7 @@ public class ResponseSuggestionsTest {
                 "TC-EV-FX_TRF-API-001", Json.parse("{\"a\":1}"),
                 "TC-EV-FX_TRF-API-002", Json.parse("{\"b\":2}"));
         List<ResponseSuggestions.Base> bases = ResponseSuggestions.bases(responses);
-        assertFalse(bases.get(0).worthIt());
+        assertFalse(bases.getFirst().worthIt());
         assertNull(ResponseSuggestions.commonBase(bases));
     }
 }

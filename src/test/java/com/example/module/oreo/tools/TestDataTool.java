@@ -75,7 +75,7 @@ public class TestDataTool {
         }
         if (!stale.isEmpty()) {
             throw new IllegalStateException("target/test-classes/data is not the same as src/test/resources/data ("
-                    + stale.size() + " file(s), the first " + stale.get(0) + "): run mvn -Ptest-data process-test-classes"
+                    + stale.size() + " file(s), the first " + stale.getFirst() + "): run mvn -Ptest-data process-test-classes"
                     + " again" + (removed ? "; a file removed from src stays in target until mvn clean" : ""));
         }
     }
