@@ -148,7 +148,9 @@ the tag, and `response matches current scenario` fails in it. Not on an `Example
 `var:<name>` records `"${var:<name>}"`, and only when the actual value is the variable's value; before each
 comparison the variable's value of that run is put in its place. It takes text, a number or a boolean, and a
 scenario that has not stored the variable fails. Example, a risk query by the trade of the case:
-`"dynamicFields": { "data.tradeId": "var:createdTradeId" }`.
+`"dynamicFields": { "data.tradeId": "var:createdTradeId" }`. Every field of the case's request is a variable too,
+named by its path in the request (as `${date:...}` resolved for this run): a date the response echoes is compared
+with the date sent, `"data.trade.basic.udf[3].value": "var:basic.udf[3].value"` (the StepIn novation date).
 
 ## Base and patch
 

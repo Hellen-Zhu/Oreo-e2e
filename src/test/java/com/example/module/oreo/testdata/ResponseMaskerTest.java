@@ -173,6 +173,21 @@ public class ResponseMaskerTest {
         assertJson("{\"data\":{\"tradeId\":\"${var:createdTradeId}\",\"n\":\"${var:count}\"}}", masked);
     }
 
+    @Test
+    public void varNamesARequestFieldByItsPath() {
+        String masked = ResponseMasker.mask("{\"udf\":[{\"value\":\"2026-10-26\"}]}",
+                rules("udf[0].value", "var:basic.udf[3].value"), vars("basic.udf[3].value", "2026-10-26"), "x");
+        assertJson("{\"udf\":[{\"value\":\"${var:basic.udf[3].value}\"}]}", masked);
+        String filled = ResponseMasker.fillVariables(masked, "{\"udf\":[{\"value\":\"2026-10-27\"}]}",
+                vars("basic.udf[3].value", "2026-10-27"), "x");
+        JsonAssert.assertJsonEquals(filled, "{\"udf\":[{\"value\":\"2026-10-27\"}]}");
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void varNameWithAnUnclosedIndexFails() {
+        ResponseMasker.mask("{\"v\":\"1\"}", rules("v", "var:basic.udf[3.value"), vars("basic.udf[3.value", "1"), "x");
+    }
+
     @Test(expected = IllegalStateException.class)
     public void varWithAnotherValueFails() {
         ResponseMasker.mask("{\"tradeId\":\"T2\"}", rules("tradeId", "var:createdTradeId"),

@@ -44,7 +44,8 @@ public final class ResponseMasker {
     public static final String VAR_START = "${var:";
 
     private static final Pattern PLAIN_KEY = Pattern.compile("[^.\\[\\]]+");
-    private static final Pattern VAR_NAME = Pattern.compile("[A-Za-z][A-Za-z0-9_.-]*");
+    /** A scenario variable: {@code createdTradeId}, or a request field by its path, {@code basic.udf[3].value}. */
+    private static final Pattern VAR_NAME = Pattern.compile("[A-Za-z](?:[A-Za-z0-9_.-]|\\[\\d+])*");
     private static final Pattern VAR = Pattern.compile("\\$\\{var:(" + VAR_NAME.pattern() + ")}");
     private static final Object ANY = new Object();
     private static final Object ANY_KEY = new Object();
@@ -140,7 +141,7 @@ public final class ResponseMasker {
             String name = rule.substring("var:".length());
             if (!VAR_NAME.matcher(name).matches()) {
                 throw new IllegalStateException("[ResponseMasker] " + where + ": a variable name is a letter, then"
-                        + " letters, digits, '_', '.' or '-'");
+                        + " letters, digits, '_', '.', '-' or [n]");
             }
             if (value.isContainerNode() || value.isNull()) {
                 throw new IllegalStateException("[ResponseMasker] " + where + ": var applies to text, a number or a"
