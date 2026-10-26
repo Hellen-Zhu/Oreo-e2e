@@ -3,6 +3,7 @@ package com.example.module.oreo.glue.api;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.example.module.oreo.testdata.TestData;
+import com.example.module.oreo.utils.RestApiUtil;
 import cucumber.api.Scenario;
 import cucumber.api.java.Before;
 import cucumber.api.java.en.Given;
@@ -50,6 +51,19 @@ public class ApiRequestSteps {
         ctx.set(varName, value);
         ctx.write("[stored] " + varName + " = " + value);
         log.info("[ApiRequestSteps] stored '{}' = '{}'", varName, value);
+    }
+
+    /**
+     * Sets the X-Request-Id header of the request being built to a new UUID and stores it as {@code requestId}, so a
+     * failure can be traced in the server logs. Called by {@code start a new api request as user '...'}.
+     *
+     * <pre>And set a new request id header</pre>
+     */
+    @Given("^set a new request id header$")
+    public void setNewRequestIdHeader() {
+        String requestId = RestApiUtil.setNewRequestId(ctx.helper());
+        ctx.set("requestId", requestId);
+        ctx.write("[request id] " + requestId);
     }
 
     @Given("^set path parameter '(.+)' from stored variable '(.+)'$")

@@ -67,6 +67,10 @@ Work down the list and stop at the first that fits:
   configuration, bodies from JSON.
 - An assertion never changes state. It may read evidence (an API read, a database query) when that evidence is what
   the requirement asks for.
+- Every request starts with `start a new api request as user '<user>'` (`api/common_api.snippet`), never with the
+  built-in `start building a new request` alone: it sets the headers every OREO API requires (`X-User-Id`, and
+  `X-Request-Id`, a new UUID per request, stored as `requestId`). A header all requests need goes there; Java requests
+  get the same headers from `RestApiUtil`.
 
 ### 3.3 Reuse provisioning and outcomes
 
@@ -126,7 +130,8 @@ Every element is registered in JSON and reached through it:
 | Capability | Where |
 |---|---|
 | REST service and context | `RestServiceResolver` |
-| Current-case / setup JSON as request, path parameters, task IDs, response extraction | `ApiRequestSteps` |
+| Current-case / setup JSON as request, path parameters, task IDs, response extraction, request ID header | `ApiRequestSteps` |
+| Request from Java (provisioning, hooks, cleanup) with the required headers | `RestApiUtil` |
 | Product, multipart and dat file requests | `TradeApiSteps` |
 | Recorded-response comparison, stored-variable and field assertions | `ApiResponseAssertionSteps` |
 | UI trade provisioning | `TradeProvisioningSteps` |

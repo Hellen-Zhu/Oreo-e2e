@@ -10,11 +10,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.file.Path;
+import java.util.UUID;
 
 public final class RestApiUtil {
 
     private static final Logger log = LoggerFactory.getLogger(RestApiUtil.class);
     private static final ObjectMapper API_MAPPER = new ObjectMapper();
+
+    /** Required on every OREO API request: a new UUID per request. */
+    public static final String REQUEST_ID_HEADER = "X-Request-Id";
 
     private RestApiUtil() {
         // Utility class
@@ -97,6 +101,7 @@ public final class RestApiUtil {
 
         helper.newRequest();
         helper.request().header("X-User-Id", userId);
+        setNewRequestId(helper);
         helper.request().multiPart(jsonPartName, jsonPartValue, "application/json");
         helper.request().multiPart(filePartName, filePath.toFile());
         helper.post(target);
@@ -107,10 +112,22 @@ public final class RestApiUtil {
     private static void prepareRequest(RequestResponseHelper helper, String userId, String jsonBody) {
         helper.newRequest();
         helper.request().header("X-User-Id", userId);
+        setNewRequestId(helper);
         helper.request().header("Content-Type", "application/json");
         if (jsonBody != null) {
             helper.request().body(jsonBody);
         }
+    }
+
+    /**
+     * Sets {@link #REQUEST_ID_HEADER} on the request being built to a new UUID and returns it. Call once per request,
+     * after {@code helper.newRequest()}; the snippet step {@code set a new request id header} calls it too.
+     */
+    public static String setNewRequestId(RequestResponseHelper helper) {
+        String requestId = UUID.randomUUID().toString();
+        helper.request().header(REQUEST_ID_HEADER, requestId);
+        log.info("[RestApiUtil] {}: {}", REQUEST_ID_HEADER, requestId);
+        return requestId;
     }
 
     private static String normalizeTarget(String pathOrUrl) {

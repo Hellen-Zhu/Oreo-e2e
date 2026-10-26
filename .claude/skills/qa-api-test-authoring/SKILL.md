@@ -64,7 +64,8 @@ repair round the failure output and `revisionInstructions`.
 4. **Snippets** (`snippet/api/<featureName>.snippet`, or `common_*.snippet` for cross-feature steps): sections
    `Build request / Make api call / Assertions`; HTTP only behind business steps; an assertion never changes state;
    ctx keys camelCase; reuse `ApiRequestSteps` (`build json request with body from current scenario ...`) instead of
-   new request builders.
+   new request builders. A builder that is still needed starts with `start a new api request as user '<user>'`, never
+   with `start building a new request` alone (it would miss the required headers).
 5. **Java** only for `NEW_STEP`: the domain's existing `*ApiSteps` class first; POJO, `RestServiceResolver.from(scenario)`
    in `@Before`, no `@Component`, no inheritance, no RestAssured / other HTTP clients, no `Thread.sleep()`, no
    credentials or URLs; `ctx.write()` for useful report values.

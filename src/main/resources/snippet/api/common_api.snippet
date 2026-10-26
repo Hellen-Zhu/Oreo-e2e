@@ -1,65 +1,59 @@
 # ── Build request ───────────────────────────────────────────────────
-@Given "^build json request with body from test data '([^']*)'$"
+@Given "^start a new api request as user '([^']*)'$"
     Given start building a new request
-    And set header 'X-User-Id' to 'maker@example.com'
+    And set header 'X-User-Id' to '$1'
+    And set a new request id header
+
+@Given "^build json request with body from test data '([^']*)'$"
+    Given start a new api request as user 'maker@example.com'
     And set the payload content type to 'application/json'
     And set request body from test data '$1'
 
 @Given "^build json request with body from test data '([^']*)' as user '([^']*)'$"
-    Given start building a new request
-    And set header 'X-User-Id' to '$2'
+    Given start a new api request as user '$2'
     And set the payload content type to 'application/json'
     And set request body from test data '$1'
 
 @Given "^build json request with body from current scenario$"
-    Given start building a new request
-    And set header 'X-User-Id' to 'maker@example.com'
+    Given start a new api request as user 'maker@example.com'
     And set the payload content type to 'application/json'
     And set request body from current scenario
 
 @Given "^build json request with body from current scenario as user '([^']*)'$"
-    Given start building a new request
-    And set header 'X-User-Id' to '$1'
+    Given start a new api request as user '$1'
     And set the payload content type to 'application/json'
     And set request body from current scenario
 
 @Given "^build request as user '([^']*)'$"
-    Given start building a new request
-    And set header 'X-User-Id' to '$1'
+    Given start a new api request as user '$1'
 
 @Given "^build json request with path parameter '([^']*)' from stored variable '([^']*)' as user '([^']*)'$"
-    Given start building a new request
-    And set header 'X-User-Id' to '$3'
+    Given start a new api request as user '$3'
     And set header 'Content-Type' to 'application/json'
     And set path parameter '$1' from stored variable '$2'
 
 @Given "^build json request from test data '([^']*)' with trade id from stored variable '([^']*)' as user '([^']*)'$"
-    Given start building a new request
-    And set header 'X-User-Id' to '$3'
+    Given start a new api request as user '$3'
     And set header 'Content-Type' to 'application/json'
     And set json request body from test data '$1' with trade id from stored variable '$2'
 
 @Given "^build json request from current scenario with trade id from stored variable '([^']*)' as user '([^']*)'$"
-    Given start building a new request
-    And set header 'X-User-Id' to '$2'
+    Given start a new api request as user '$2'
     And set header 'Content-Type' to 'application/json'
     And set json request body from current scenario with trade id from stored variable '$1'
 
 @Given "^build multipart request with parameter '([^']*)' from test data '([^']*)' for product '([^']*)' as user '([^']*)'$"
-    Given start building a new request
-    And set header 'X-User-Id' to '$4'
+    Given start a new api request as user '$4'
     And set multi-part form parameter '$1' for product '$3' from test data '$2'
     And set multi-part dat file for product '$3'
 
 @Given "^build multipart request with parameter '([^']*)' from current scenario for product '([^']*)' as user '([^']*)'$"
-    Given start building a new request
-    And set header 'X-User-Id' to '$3'
+    Given start a new api request as user '$3'
     And set multi-part form parameter '$1' for product '$2' from current scenario
     And set multi-part dat file for product '$2'
 
 @Given "^build json request from current scenario with task ids from stored variables '([^']*)' and '([^']*)' as user '([^']*)'$"
-    Given start building a new request
-    And set header 'X-User-Id' to '$3'
+    Given start a new api request as user '$3'
     And set header 'Content-Type' to 'application/json'
     And set json request body from current scenario with task ids from stored variables '$1' and '$2'
 
