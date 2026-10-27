@@ -89,7 +89,9 @@ measures every candidate base on the masked recordings.
 
 **`sharedFragments`**: when the response holds a part another event returns too (the trade's `basic` and
 `instrument`), name the block `trade-response-parts` of `api/common.json` in `use`; the compaction keeps the part once
-per product in `expected/_shared/`. Mask its dynamic values with the same rules as the other events, or every unmasked
+per product in `expected/_shared/`, taken from the events of `sharedSources` (`api/common.json`, `trade_creation`)
+before any other. An event whose part sits at another path (`data.basic`) declares its own `sharedFragments` with the
+same names. Mask its dynamic values with the same rules as the other events, or every unmasked
 value stays in the case's file as a key that differs. See `docs/test-data.md`, "Shared parts".
 
 A case whose evidence is the database or audit, not the response, carries `@expected#none` and has no expected file.

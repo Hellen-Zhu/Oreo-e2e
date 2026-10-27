@@ -29,7 +29,8 @@ import java.util.regex.Pattern;
  */
 public final class TestDataRepository {
 
-    private static final Set<String> COMMON_KEYS = Set.of("shared");
+    private static final Set<String> COMMON_KEYS = Set.of("shared", "sharedSources");
+    private static final Pattern EVENT_NAME = Pattern.compile("[a-z0-9]+(_[a-z0-9]+)*");
     private static final Set<String> BLOCK_KEYS = Set.of("request", "dynamicFields", "sharedFragments");
     private static final Set<String> EVENT_KEYS = Set.of("shared", "defaults", "byProduct", "cases");
     private static final Set<String> LAYER_KEYS = Set.of("use", "request", "dynamicFields", "sharedFragments",
@@ -242,6 +243,36 @@ public final class TestDataRepository {
     private void validateCommon(ObjectNode common, String path, String channelDir) {
         checkKeys(common, COMMON_KEYS, path, "");
         checkBlocks(common.get("shared"), path, channelDir);
+        JsonNode sources = common.get("sharedSources");
+        if (sources == null || sources.isNull()) return;
+        if (!channelDir.equals("api")) {
+            throw error(path, "sharedSources", "sharedSources exist in data/api/ only (UI has no recorded responses)");
+        }
+        if (!sources.isArray()) {
+            throw error(path, "sharedSources", "must be an array of event names (trade_creation), or null");
+        }
+        Set<String> seen = new HashSet<>();
+        for (JsonNode source : sources) {
+            if (!source.isTextual() || !EVENT_NAME.matcher(source.asText()).matches()) {
+                throw error(path, "sharedSources", "'" + source.asText() + "' is not an event name: the name of an"
+                        + " event file without .json, lower case, digits and _ (trade_creation)");
+            }
+            if (!seen.add(source.asText())) {
+                throw error(path, "sharedSources", source.asText() + " is listed twice");
+            }
+        }
+    }
+
+    /**
+     * The events {@code compact} takes the shared parts from first, in order ({@code sharedSources} of
+     * {@code <channelDir>/common.json}); empty when it names none.
+     */
+    public List<String> sharedSources(String channelDir) {
+        String path = root + channelDir + "/common.json";
+        Optional<ObjectNode> common = load(path, json -> validateCommon(json, path, channelDir));
+        List<String> out = new ArrayList<>();
+        common.ifPresent(c -> c.path("sharedSources").forEach(s -> out.add(s.asText())));
+        return List.copyOf(out);
     }
 
     /** The {@code shared} blocks of {@code common.json} or of an event file. */

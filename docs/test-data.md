@@ -210,11 +210,19 @@ When the file is read, a reference becomes the shared part with the reference's 
 same name; the case is compared with that full response, as before. The compaction writes both the shared files and
 the references, in a file kept in full (a patch on a base works on the base's full response):
 
-- a part with no file yet is taken from the first case that has it (events, then case IDs, in order);
+- a part with no file yet is taken from the first case that has it: first the events of `sharedSources`, in their
+  order, then the other events by name; case IDs in order within an event;
 - a part that lacks a key of the shared one stays in full in the case's file (a reference cannot remove a key), as
   does a part that is not an object (a whole-part placeholder);
 - `compact all` takes every part again from the first case that has it and deletes the shared files no case uses;
-  `compact <event>` keeps the shared files there are.
+  `compact <event>` keeps the shared files there are, and takes a missing one from the source events (whose own files
+  it does not rewrite).
+
+`sharedSources` in `api/common.json` names the events whose recordings are the shared parts, here
+`["trade_creation"]`: the other events (approval, amendment, query) refer to the parts creation recorded, with their
+own differences (`"version": 2`) beside the reference. Without it, the event first by name would give the parts. A
+source without recordings is skipped; an event whose path differs (`data.basic` without `trade`) declares its own
+`sharedFragments` with the same names.
 
 A part looks the same in every event only when every event masks its dynamic values with the same rules
 (`dynamicFields`): an unmasked date in one event is a key that differs, kept in that event's files. Re-record a shared

@@ -15,8 +15,10 @@ import java.util.List;
  * base case its data declares, a case without a base keeps its full response; in a full response, the parts the data
  * declares shared ({@code sharedFragments}) become references to {@code _shared/<name>.json}. Run after a recording,
  * before the review, for one event ({@code compact trade_creation}) or {@code all}; {@code all} also takes every shared
- * part again from the first case that has it and deletes the shared files no case uses. Nothing is written when any
- * event has a problem.
+ * part again from the first case that has it and deletes the shared files no case uses. The events of
+ * {@code sharedSources} ({@code api/common.json}) come first: their cases give the shared parts. For one event, a
+ * shared file that does not exist yet is taken from the source events too (their own files are not rewritten).
+ * Nothing is written when any event has a problem.
  */
 final class Compact {
 
@@ -26,16 +28,26 @@ final class Compact {
         TestDataTool.requireFreshData(ProjectPaths.projectRoot());
         ExpectedResponses files = ExpectedResponses.standard();
         List<String> known = files.events();
-        List<String> events = scope.equals("all") ? known : List.of(scope);
+        List<String> sources = TestData.sharedSources();
+        List<String> events = scope.equals("all") ? ExpectedCompaction.order(known, sources) : List.of(scope);
         if (!known.containsAll(events)) {
             System.out.println("compact " + scope + ": no such folder of expected files; known: " + known + " or all");
             return 1;
         }
+        List<String> seeds = scope.equals("all") ? List.of()
+                : ExpectedCompaction.order(known, sources).stream().filter(sources::contains)
+                        .filter(e -> !e.equals(scope)).toList();
 
         ExpectedCompaction.Shared shared = scope.equals("all")
                 ? ExpectedCompaction.Shared.rebuild(files) : ExpectedCompaction.Shared.fromDisk(files);
         List<ExpectedCompaction.Plan> plans = new ArrayList<>();
         List<String> errors = new ArrayList<>();
+        for (String seed : seeds) {
+            // planned for its shared parts only: a part missing from _shared/ is taken from the source event
+            ExpectedCompaction.plan(files, seed, id -> TestData.forCase(id.raw()).expectedBase(),
+                    id -> TestData.forCase(id.raw()).sharedFragments(), shared)
+                    .errors().forEach(e -> errors.add(seed + " (source of the shared parts): " + e));
+        }
         for (String event : events) {
             ExpectedCompaction.Plan plan = ExpectedCompaction.plan(files, event,
                     id -> TestData.forCase(id.raw()).expectedBase(),

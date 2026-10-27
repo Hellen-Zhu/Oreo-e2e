@@ -376,7 +376,7 @@ mvn -B test -Dtest=OreoTest "-Dcucumber.options=--name ^\[TC-TRADE-CREATION-FX_T
   "instrument": { "_shared": "instrument/FX_TRF" } } }</code></pre>
       <div class="say">
         <p>路径不一样的事件，比如 <code>trade_approval_rejection</code> 是 <code>data.basic</code>，少一层 <code>trade</code>，就在自己的 <code>sharedFragments</code> 里写自己的路径，名字用同一个。新产品不需要手动处理 <code>_shared</code>：第一次 compact 会从它的第一个录制 case 生成。</p>
-        <p><code>compact &lt;event&gt;</code> 和 <code>compact all</code> 的区别：只压一个事件时，已有的共享文件保持不动；<code>compact all</code> 会重建所有共享文件，每部分取第一个 case（事件按名字、case 按 ID 排序），没人引用的共享文件会删掉。所以<strong>共享文件生成之后才加的规则，要跑 <code>compact all</code></strong>，否则后来才 mask 的值还留在共享文件里，每个 case 都会多一个不同的 key。</p>
+        <p><code>compact &lt;event&gt;</code> 和 <code>compact all</code> 的区别：只压一个事件时，已有的共享文件保持不动；<code>compact all</code> 会重建所有共享文件，每部分取第一个 case，没人引用的共享文件会删掉。"第一个"的顺序是：先 <code>api/common.json</code> 里 <code>sharedSources</code> 列出的事件（现在是 <code>["trade_creation"]</code>），再按名字排其他事件，事件内按 case ID 排。所以基准永远是 trade creation 录下来的那份，amend、approve 只在引用旁边写自己不同的 key。所以<strong>共享文件生成之后才加的规则，要跑 <code>compact all</code></strong>，否则后来才 mask 的值还留在共享文件里，每个 case 都会多一个不同的 key。</p>
       </div>
       <div class="pit"><span class="tag">坑</span><strong>改基础 case，要连同它的变体一起重录。</strong>只重录了 <code>-API-001</code>，变体的 patch 可能对不上新的基础文件，变体会失败，报错里有 <code>The patch does not fit</code>。解决办法也写在报错里：用 update 模式把那个变体也重录一次（update 模式不读旧文件，所以不会被坏 patch 卡住），然后 compact。更省事的做法是一开始就按 <code>-API-\d+</code> 把整组一起录。</div>
       <div class="say">

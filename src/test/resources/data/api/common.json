@@ -1,5 +1,6 @@
 {
-  "_comment": "Shared blocks for data/api/ event files. Nothing here applies unless a file or row names the block in \"use\".",
+  "_comment": "Shared blocks for data/api/ event files. Nothing here applies unless a file or row names the block in \"use\". sharedSources: the events whose recordings give the shared response parts (expected/_shared/), before any other event's",
+  "sharedSources": ["trade_creation"],
   "shared": {
     "trade-response-parts": {
       "_comment": "Every trade API returns the trade's basic and instrument parts: TestDataTool compact keeps each once per product in expected/_shared/ and writes references to them (the keys that differ stay in the case's file). Name it in \"use\" of an event whose response holds data.trade",

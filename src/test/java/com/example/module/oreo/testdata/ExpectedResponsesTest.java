@@ -229,6 +229,27 @@ public class ExpectedResponsesTest {
     }
 
     @Test
+    public void rebuildTakesTheSharedPartFromTheSourceEventFirst() {
+        CaseId amendment = CaseId.parse("TC-TRADE-AMENDMENT-FX_TRF-API-001");
+        expected.write(amendment, "{\"data\":{\"basic\":{\"status\":\"Live\",\"ccy\":\"USD\",\"version\":2}}}");
+        expected.write(id, "{\"data\":{\"trade\":{\"basic\":{\"status\":\"Live\",\"ccy\":\"USD\",\"version\":1}}}}");
+        List<String> order = ExpectedCompaction.order(expected.events(), List.of("trade_creation", "no_recordings"));
+        assertEquals(List.of("trade_creation", "trade_amendment"), order);
+
+        ExpectedCompaction.Shared shared = ExpectedCompaction.Shared.rebuild(expected);
+        for (String event : order) {
+            ExpectedCompaction.write(expected, ExpectedCompaction.plan(expected, event, c -> null,
+                    c -> Map.of(event.equals("trade_creation") ? "data.trade.basic" : "data.basic", "basic/FX_TRF"),
+                    shared));
+        }
+        ExpectedCompaction.write(expected, shared);
+        assertEquals(Json.parse("{\"status\":\"Live\",\"ccy\":\"USD\",\"version\":1}"),
+                expected.shared().read("basic/FX_TRF").orElseThrow());
+        assertEquals(Json.parse("{\"data\":{\"basic\":{\"_shared\":\"basic/FX_TRF\",\"version\":2}}}"),
+                Json.parse(expected.read(amendment).orElseThrow()));
+    }
+
+    @Test
     public void rebuildDeletesASharedPartNoCaseUses() {
         expected.shared().write("basic/OLD", BASIC);
         expected.write(id, "{}");

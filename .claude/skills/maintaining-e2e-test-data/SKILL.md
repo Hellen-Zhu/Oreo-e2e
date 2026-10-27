@@ -36,7 +36,7 @@ not replace it with `test` or `verify` for a data-only operation. The commands b
 |---|---|
 | `check` | All offline checks (next section). Exit code 1 on a problem |
 | `sync-examples` | Writes the `Examples` of every product Outline from `ProductDatFiles`: one line per Outline (`unchanged`, `add X`, `remove Y`, `reordered`, `reformatted`); nothing written when a feature file has a problem |
-| `compact <event>` or `compact all` | Turns the recorded responses of the variants into patches on their base and the declared shared parts (`sharedFragments`) into references to `expected/_shared/`; `all` also rebuilds the shared files and deletes unused ones; nothing written on a problem |
+| `compact <event>` or `compact all` | Turns the recorded responses of the variants into patches on their base and the declared shared parts (`sharedFragments`) into references to `expected/_shared/`; `all` also rebuilds the shared files (from the `sharedSources` events of `api/common.json` first) and deletes unused ones; nothing written on a problem |
 | `suggest <event>` | Prints, from the event's recordings, the `dynamicFields` rules they need (values that look generated or changed since the committed recording) with the layer each belongs in, and the `expectedBase` that leaves the fewest characters; writes nothing |
 | `case <case ID>` | Prints the merged data of one case: layers, dat file, request, `dynamicFields`, `sharedFragments`, `expectedBase`, expected file and response |
 | `product <P>` | Prints each capability with the product Outlines that test it, their case IDs for `<P>` and whether their `Examples` have `<P>`, as a table QA answers row by row; writes nothing |

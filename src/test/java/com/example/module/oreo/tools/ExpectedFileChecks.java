@@ -127,7 +127,7 @@ final class ExpectedFileChecks {
     void expectedFilesAreCompacted(Checks.Result result) {
         ExpectedResponses expected = ExpectedResponses.standard();
         ExpectedCompaction.Shared shared = ExpectedCompaction.Shared.rebuild(expected);
-        for (String event : expected.events()) {
+        for (String event : ExpectedCompaction.order(expected.events(), TestData.sharedSources())) {
             ExpectedCompaction.Plan plan = ExpectedCompaction.plan(expected, event,
                     id -> TestData.forCase(id.raw()).expectedBase(),
                     id -> TestData.forCase(id.raw()).sharedFragments(), shared);
@@ -141,7 +141,8 @@ final class ExpectedFileChecks {
         for (ExpectedCompaction.SharedEntry entry : shared.entries()) {
             String file = project.relativize(expected.shared().fileFor(entry.name())).toString();
             result.warnings.add(file + ": " + (entry.after() == null ? "no case uses it"
-                    : entry.before().isEmpty() ? "not written yet" : "differs from the first case that has it")
+                    : entry.before().isEmpty() ? "not written yet"
+                    : "differs from the first case that has it, a case of sharedSources first")
                     + " (TestDataTool compact all)");
         }
     }

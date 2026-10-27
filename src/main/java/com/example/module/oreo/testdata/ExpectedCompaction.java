@@ -54,7 +54,8 @@ public final class ExpectedCompaction {
     /**
      * The shared parts of one compaction, across its events. {@link #fromDisk}: the files in {@code _shared/} are
      * kept, a missing one is taken from the first case that has the part. {@link #rebuild} ({@code compact all}): every
-     * part is taken again from the first case that has it, and a file no case uses any more is deleted.
+     * part is taken again from the first case that has it, and a file no case uses any more is deleted. "First" is in
+     * the order of {@link #order}: the source events ({@code sharedSources}) before the others.
      */
     public static final class Shared {
         private final SharedFragments disk;
@@ -108,6 +109,18 @@ public final class ExpectedCompaction {
     }
 
     private ExpectedCompaction() {}
+
+    /**
+     * {@code events} with the {@code sources} among them first, in the sources' order, then the others in their own
+     * order: the order in which a compaction meets the shared parts, so the first case that has a part is a case of a
+     * source event when one has it. A source without recordings is left out.
+     */
+    public static List<String> order(List<String> events, List<String> sources) {
+        List<String> out = new ArrayList<>();
+        for (String source : sources) if (events.contains(source)) out.add(source);
+        for (String event : events) if (!out.contains(event)) out.add(event);
+        return List.copyOf(out);
+    }
 
     /**
      * Plans the compaction of {@code <root>/<eventFile>/}; writes nothing (the shared parts it decides go to

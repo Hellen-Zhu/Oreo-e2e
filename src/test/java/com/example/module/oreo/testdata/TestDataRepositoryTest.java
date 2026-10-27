@@ -41,7 +41,8 @@ public class TestDataRepositoryTest {
     public static void writeFixtures() throws IOException {
         // Shared blocks
         write("api/common.json", """
-                { "shared": {
+                { "sharedSources": ["sample_event"],
+                  "shared": {
                     "base": { "request": { "basic": { "a": "1", "premium": 10 } } },
                     "extra": { "request": { "basic": { "udf": ["x"] } }, "dynamicFields": { "msg": "type" } } } }""");
         // Every layer
@@ -331,6 +332,20 @@ public class TestDataRepositoryTest {
     public void unknownDateIsALoadErrorNamingTheField() {
         assertFailsWith(() -> repo.forCase("TC-BAD-DATE-FX_TRF-API-001"),
                 "bad_date.json [defaults.request]", "trade.tradeDate", "${date:tomorrow}");
+    }
+
+    @Test
+    public void sharedSourcesAreReadFromTheApiCommonFile() {
+        assertEquals(List.of("sample_event"), repo.sharedSources("api"));
+    }
+
+    @Test
+    public void sharedSourceThatIsNotAnEventNameIsAnError() throws IOException {
+        Path file = TMP.getRoot().toPath().resolve("bad-sources/api/common.json");
+        Files.createDirectories(file.getParent());
+        Files.writeString(file, "{ \"sharedSources\": [\"Trade-Creation\"] }", StandardCharsets.UTF_8);
+        assertFailsWith(() -> new TestDataRepository("bad-sources/").sharedSources("api"),
+                "[sharedSources]", "Trade-Creation", "not an event name");
     }
 
     @Test
