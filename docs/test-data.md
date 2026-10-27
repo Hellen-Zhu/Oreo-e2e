@@ -216,7 +216,10 @@ the references, in a file kept in full (a patch on a base works on the base's fu
   does a part that is not an object (a whole-part placeholder);
 - `compact all` takes every part again from the first case that has it and deletes the shared files no case uses;
   `compact <event>` keeps the shared files there are, and takes a missing one from the source events (whose own files
-  it does not rewrite).
+  it does not rewrite);
+- `shared <case ID>` makes the parts of one chosen case the shared ones, for example after recording it again
+  because the API changed the part: `compact <event>` alone would keep the old part and leave every new key in
+  the case's file.
 
 `sharedSources` in `api/common.json` names the events whose recordings are the shared parts, here
 `["trade_creation"]`: the other events (approval, amendment, query) refer to the parts creation recorded, with their
@@ -243,6 +246,7 @@ mvn -Ptest-data process-test-classes "-Dexec.args=case TC-TRADE-CREATION-FX_TRF-
 mvn -Ptest-data process-test-classes "-Dexec.args=suggest trade_creation"
 mvn -Ptest-data process-test-classes "-Dexec.args=compact trade_creation"
 mvn -Ptest-data process-test-classes "-Dexec.args=product FX_TRF"
+mvn -Ptest-data process-test-classes "-Dexec.args=shared TC-TRADE-CREATION-FX_TRF-API-001"
 ```
 
 The first command defaults to `check`. Each command first runs the six unit tests of the code that decides what a
@@ -265,6 +269,11 @@ After deleting resource files, add `clean` before `process-test-classes` to remo
 - `case TC-TRADE-CREATION-FX_PSCRIPT_TRF-API-002`: prints the merged data of one case: the applied layers, the dat
   file, the request, the `dynamicFields`, the `expectedBase`, the expected file (full, or patch on which base) and the
   expected response in full.
+- `shared TC-TRADE-CREATION-FX_TRF-API-001` (or the path of its expected file): the shared parts the case declares
+  become what its file holds (resolved: base, patch and references applied), then every event is compacted again
+  against them, so every case still expects what it did; a case whose part now differs keeps the keys that differ
+  beside its reference, or its part in full when it lacks a key of the new part. A part the case holds as a
+  placeholder, not an object, is kept, and so are the parts it does not declare. Nothing is written on a problem.
 - `product FX_TRF`: prints, without writing anything, one row per capability (in `ProductDatFiles` or not, how many
   API and UI Outlines test it, an empty "QA: supported?" column), then every product Outline with the product's case
   ID, its title, its feature file and whether its `Examples` have the product's row. A product not yet in the

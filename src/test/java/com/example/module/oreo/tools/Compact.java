@@ -40,6 +40,15 @@ final class Compact {
 
         ExpectedCompaction.Shared shared = scope.equals("all")
                 ? ExpectedCompaction.Shared.rebuild(files) : ExpectedCompaction.Shared.fromDisk(files);
+        return planAndWrite(files, seeds, events, shared);
+    }
+
+    /**
+     * Plans {@code events} with {@code shared} (the {@code seeds} for their shared parts only) and, when nothing has a
+     * problem, writes the shared parts and the files that change and prints them; returns the number of problems.
+     */
+    static int planAndWrite(ExpectedResponses files, List<String> seeds, List<String> events,
+                            ExpectedCompaction.Shared shared) {
         List<ExpectedCompaction.Plan> plans = new ArrayList<>();
         List<String> errors = new ArrayList<>();
         for (String seed : seeds) {

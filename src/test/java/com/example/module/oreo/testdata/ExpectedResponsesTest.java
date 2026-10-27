@@ -1,5 +1,6 @@
 package com.example.module.oreo.testdata;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import net.javacrumbs.jsonunit.JsonAssert;
 import org.junit.Before;
@@ -246,6 +247,30 @@ public class ExpectedResponsesTest {
         assertEquals(Json.parse("{\"status\":\"Live\",\"ccy\":\"USD\",\"version\":1}"),
                 expected.shared().read("basic/FX_TRF").orElseThrow());
         assertEquals(Json.parse("{\"data\":{\"basic\":{\"_shared\":\"basic/FX_TRF\",\"version\":2}}}"),
+                Json.parse(expected.read(amendment).orElseThrow()));
+    }
+
+    @Test
+    public void partsGivenReplaceTheSharedOnesAndEveryCaseExpectsWhatItDid() {
+        CaseId amendment = CaseId.parse("TC-TRADE-AMENDMENT-FX_TRF-API-001");
+        expected.shared().write("basic/FX_TRF", "{\"status\":\"Live\",\"ccy\":\"USD\"}");
+        expected.write(id, "{\"data\":{\"trade\":{\"basic\":{\"_shared\":\"basic/FX_TRF\"}}}}");
+        expected.write(amendment, "{\"data\":{\"basic\":{\"status\":\"Live\",\"ccy\":\"USD\",\"version\":2}}}");
+        JsonNode creationBefore = Json.parse(expected.resolve(id).orElseThrow().json());
+
+        ObjectNode newPart = (ObjectNode) Json.parse("{\"status\":\"Live\",\"ccy\":\"USD\",\"version\":2}");
+        ExpectedCompaction.Shared shared =
+                ExpectedCompaction.Shared.withParts(expected, Map.of("basic/FX_TRF", newPart));
+        for (String event : List.of("trade_creation", "trade_amendment")) {
+            ExpectedCompaction.write(expected, ExpectedCompaction.plan(expected, event, c -> null,
+                    c -> Map.of(event.equals("trade_creation") ? "data.trade.basic" : "data.basic", "basic/FX_TRF"),
+                    shared));
+        }
+        ExpectedCompaction.write(expected, shared);
+        assertEquals(newPart, expected.shared().read("basic/FX_TRF").orElseThrow());
+        // creation lacks the new key: it cannot refer to the part any more and is kept in full, unchanged
+        assertEquals(creationBefore, Json.parse(expected.resolve(id).orElseThrow().json()));
+        assertEquals(Json.parse("{\"data\":{\"basic\":{\"_shared\":\"basic/FX_TRF\"}}}"),
                 Json.parse(expected.read(amendment).orElseThrow()));
     }
 

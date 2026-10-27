@@ -76,6 +76,13 @@ public final class ExpectedCompaction {
             return new Shared(files.shared(), true);
         }
 
+        /** The files in {@code _shared/} kept, except the {@code parts} given, which replace theirs. */
+        public static Shared withParts(ExpectedResponses files, Map<String, ObjectNode> parts) {
+            Shared shared = new Shared(files.shared(), false);
+            parts.forEach((name, part) -> shared.parts.put(name, part.deepCopy()));
+            return shared;
+        }
+
         /** The part to refer to, taking {@code candidate} when there is none yet. */
         ObjectNode part(String name, ObjectNode candidate) {
             used.add(name);
