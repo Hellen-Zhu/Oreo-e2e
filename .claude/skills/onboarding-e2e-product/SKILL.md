@@ -49,9 +49,9 @@ Coverage QA asks for that no Outline has (a capability no Outline carries, an ev
 One message, in the user's language, after section 2 and `sync-examples`; nothing is recorded or committed until QA
 answers. It holds:
 
-1. **Capabilities** (default: all). The tables `mvn -Ptest-data process-test-classes "-Dexec.args=product <P>"` prints: one row per capability with a
-   column QA fills in, then the Outlines it runs for `<P>` (case ID with `<P>`, title, feature file). QA answers
-   **supported / not supported, row by row**. A general "looks fine" is not an answer: ask again
+1. **Capabilities** (default: all). A table: capability, the Outlines it now runs for `<P>` (case ID with `<P>`,
+   title), from `git diff` of the feature files or `grep -rn -A1 "@capability#" src/test/resources/features`, with a
+   column QA fills in: **supported / not supported, row by row**. A general "looks fine" is not an answer: ask again
    for the rows still empty. A capability without its row answered stays a default: it is not recorded, run or
    committed. A capability covers all its Outlines, API and UI: a no for only some of them is a question for the user,
    not a registry line. The answer comes from the requirement or the BA.
@@ -74,8 +74,7 @@ The tool is `src/test/java/com/example/module/oreo/tools/TestDataTool.java`, doc
 
 `mvn -Ptest-data process-test-classes`. Expected before `sync-examples`: "the product Outlines' Examples match the registry" fails with one `add <P>` line per Outline of the product's capabilities. After it, until the recordings: only "every API case has its expected file" fails, one `no expected file` line per new API case. Any other problem (a product that is not in `ProductDatFiles`, a `byProduct` without a dat file, a `remove` line before QA took a capability off) is a mistake in section 2.
 
-`mvn -Ptest-data process-test-classes "-Dexec.args=case TC-TRADE-CREATION-<P>-API-001"` prints the merged request the case will send. `mvn -Ptest-data process-test-classes "-Dexec.args=product <P>"`
-prints the review table of section 3; after `sync-examples` its Examples column says `row` for every Outline.
+`mvn -Ptest-data process-test-classes "-Dexec.args=case TC-TRADE-CREATION-<P>-API-001"` prints the merged request the case will send.
 
 ## 5. Record the API responses (company machine, real system)
 

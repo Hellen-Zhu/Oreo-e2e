@@ -196,7 +196,7 @@ mvn -Ptest-data process-test-classes
 Runs the unit tests of the test data code, then `TestDataTool check`: data files load, every case resolves, every row
 has its scenario, expected files and rules agree, setup names exist, product `Examples` match the registry. Other
 commands: `"-Dexec.args=case <case ID>"` (what a case sends and is compared with), `"-Dexec.args=sync-examples"`,
-`"-Dexec.args=compact <event>|all"`, `"-Dexec.args=suggest <event>"`, `"-Dexec.args=product <P>"`. Usage: skill `maintaining-e2e-test-data`.
+`"-Dexec.args=compact <event>|all"`, `"-Dexec.args=suggest <event>"`, `"-Dexec.args=shared <case ID>"`. Usage: skill `maintaining-e2e-test-data`.
 
 ### 6.2 Against an environment
 

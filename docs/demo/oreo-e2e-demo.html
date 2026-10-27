@@ -268,17 +268,6 @@ FX_DCD(CREATE, EARLY_TERMINATION),                                 // 只支持�
           </tbody>
         </table>
       </div>
-      <div class="say">
-        <p>想看某一个产品到底会跑哪些 case，不用自己去 grep feature，用 <code>product</code> 命令。它先给一张按能力的表，每个能力在不在注册表、有几个 API 和 UI Outline，最后一列留给 QA 填"支持 / 不支持"；再列出每个 Outline 换成这个产品后的用例 ID、标题、所在文件，以及 Examples 里现在有没有这一行。还没注册的新产品也能跑，会列出全部能力。</p>
-      </div>
-<pre class="code"><code>mvn -Ptest-data process-test-classes "-Dexec.args=product FX_TRF"
-
-| Capability | Registry | Outlines    | QA: supported? |
-| create     | yes      | 4 API, 5 UI |                |
-| stepInFull | yes      | 1 API, 1 UI |                |
-...
-| Capability | Case ID                                  | Title | Feature | Examples |
-| create     | TC-TRADE-CREATION-FX_TRF-API-001         | ...   | ...     | row      |</code></pre>
       <div class="pit"><span class="tag">坑</span>想让某个产品暂时不跑某个事件，不要在 Examples 里把那一行注释掉，这会让工具和检查都失败。正确做法是在 <code>ProductDatFiles</code> 里把这个能力从产品上去掉，比如改成 <code>except(SUPPORT_CAPABILITY, CANCELLATION)</code>，再跑一次 sync-examples。</div>
       <div class="say">
         <p>负向用例和权限用例不带 <code>&lt;product_type&gt;</code>，也不打能力标签，sync-examples 不会碰它们。校验规则不随产品变化，用一个代表产品就够了。</p>
@@ -456,7 +445,7 @@ mvn -B test -Dtest=OreoTest "-Dcucumber.options=--name ^\[TC-TRADE-CREATION-FX_T
             <tr><td>1 · 要 dat</td><td>只问一件事：按产品 ID 命名的默认 dat 文件 <code>&lt;P&gt;.dat</code></td><td>—</td></tr>
             <tr><td>2 · 注册</td><td><code>ProductDatFiles</code> 加常量 <code>&lt;P&gt;(SUPPORT_CAPABILITY)</code>，默认全部能力；加 dat 文件；先不写 <code>byProduct</code></td><td>04</td></tr>
             <tr><td>3 · 同步</td><td><code>sync-examples</code>，看每个 Outline 的 <code>add &lt;P&gt;</code></td><td>04</td></tr>
-            <tr><td>4 · QA review</td><td>把 <code>product &lt;P&gt;</code> 的表给 QA，<strong>每个能力逐行</strong>答支持 / 不支持，再给出和默认值不同的数据；不支持的从常量上去掉，再 sync-examples，差异写进 <code>byProduct</code>，用 <code>case</code> 命令确认</td><td>03 · 04</td></tr>
+            <tr><td>4 · QA review</td><td>把能力表（能力、对应的 Outline 和用例 ID）给 QA，<strong>每个能力逐行</strong>答支持 / 不支持，再给出和默认值不同的数据；不支持的从常量上去掉，再 sync-examples，差异写进 <code>byProduct</code>，用 <code>case</code> 命令确认</td><td>03 · 04</td></tr>
             <tr><td>5 · 录制</td><td>只跑这个产品的 API case：录一次、<code>suggest</code> 看建议、跑第二次找漏掉的动态值、加规则、重录</td><td>05</td></tr>
             <tr><td>6 · 收尾</td><td><code>compact</code>（共享文件自动生成）、check 无问题、审 diff、提交</td><td>06 · 07</td></tr>
           </tbody>

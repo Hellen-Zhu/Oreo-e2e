@@ -34,13 +34,12 @@ final class ProductExamples {
      * One product Outline.
      *
      * @param file     its feature file, relative to the features root with {@code /}
-     * @param title    its name after the case ID
      * @param before   the products of its table now
      * @param after    the products of its capability
      * @param oldLines its table's lines now
      * @param newLines its table's lines as written from the registry
      */
-    record Entry(String file, String rowId, String title, Capability capability, List<String> before, List<String> after,
+    record Entry(String file, String rowId, Capability capability, List<String> before, List<String> after,
                  List<String> oldLines, List<String> newLines) {
 
         boolean changed() {
@@ -189,9 +188,7 @@ final class ProductExamples {
             errors.add(where + ": no product has capability " + capability.tagName() + " (ProductDatFiles)");
             return null;
         }
-        String name = feature.lines().get(block.line());
-        String title = name.substring(name.indexOf(']') + 1).strip();
-        return new Entry(file, block.rowId(), title, capability, table.column(PRODUCT_COLUMN), List.copyOf(products),
+        return new Entry(file, block.rowId(), capability, table.column(PRODUCT_COLUMN), List.copyOf(products),
                 oldLines, tableLines(table.indent(), products));
     }
 

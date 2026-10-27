@@ -21,7 +21,6 @@ mvn -Ptest-data process-test-classes "-Dexec.args=sync-examples"
 mvn -Ptest-data process-test-classes "-Dexec.args=case TC-TRADE-CREATION-FX_TRF-API-001"
 mvn -Ptest-data process-test-classes "-Dexec.args=compact trade_creation"
 mvn -Ptest-data process-test-classes "-Dexec.args=suggest trade_creation"
-mvn -Ptest-data process-test-classes "-Dexec.args=product FX_TRF"
 mvn -Ptest-data process-test-classes "-Dexec.args=shared TC-TRADE-CREATION-FX_TRF-API-001"
 ```
 
@@ -40,7 +39,6 @@ not replace it with `test` or `verify` for a data-only operation. The commands b
 | `compact <event>` or `compact all` | Turns the recorded responses of the variants into patches on their base and the declared shared parts (`sharedFragments`) into references to `expected/_shared/`; `all` also rebuilds the shared files (from the `sharedSources` events of `api/common.json` first) and deletes unused ones; nothing written on a problem |
 | `suggest <event>` | Prints, from the event's recordings, the `dynamicFields` rules they need (values that look generated or changed since the committed recording) with the layer each belongs in, and the `expectedBase` that leaves the fewest characters; writes nothing |
 | `case <case ID>` | Prints the merged data of one case: layers, dat file, request, `dynamicFields`, `sharedFragments`, `expectedBase`, expected file and response |
-| `product <P>` | Prints each capability with the product Outlines that test it, their case IDs for `<P>` and whether their `Examples` have `<P>`, as a table QA answers row by row; writes nothing |
 | `shared <case ID>` (or the path of its expected file) | Makes the shared parts the case declares (`sharedFragments`) what its recording holds, then compacts every event again against them: each case still expects what it expected, the keys that differ stay beside its reference. A part the case holds as a placeholder, not an object, is kept; nothing written on a problem |
 
 The imports of the files in `tools/` name the package of `ProductDatFiles` (`com.example.module.oreo.testdata` here): in the company copy, the project's own.
@@ -64,7 +62,7 @@ One `[ok]` or `[FAIL]` line per check, its problems and `[warn]` lines below it:
 | Change | Run (`-Dexec.args=` of the command above) |
 |---|---|
 | Event or setup data, a row, `byProduct`, `use`, `datFile` | `check`; `case <ID>` to see what a case sends |
-| A product or capability in `ProductDatFiles`, a `@capability#` tag | `sync-examples`, review `git diff` (`product <P>` for the review of one product), then `check`. A new product: the skill `onboarding-e2e-product` |
+| A product or capability in `ProductDatFiles`, a `@capability#` tag | `sync-examples`, review `git diff`, then `check`. A new product: the skill `onboarding-e2e-product` |
 | API responses recorded (first run, or `OREO_EXPECTED=update`) | `suggest <event>`, add the rules you agree with and record again; then `compact <event>`, review `git diff`, then `check` |
 | A shared part (`basic`, `instrument`) changed in the API on purpose | Record the case that should give it (`OREO_EXPECTED=update`), `shared <that case ID>`, review `git diff`, then `check` |
 | Feature files | `check` |
