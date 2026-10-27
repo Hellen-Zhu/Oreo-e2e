@@ -19,7 +19,8 @@ import java.util.stream.Stream;
  * compact &lt;event&gt;|all   turns the recorded responses of the variants into patches on their base
  * suggest &lt;event&gt;       suggests the dynamicFields rules and the expectedBase from the recordings
  * case &lt;case ID&gt;        prints the merged data of one case
- * shared &lt;case ID&gt;      takes the shared response parts from that case's recording, compacts every file again
+ * shared &lt;case ID&gt;      takes the shared response parts from that case's recording (&lt;product_type&gt;: every
+ *                       product's case), compacts every file again
  * </pre>
  * A problem throws an exception so Maven fails without terminating its JVM.
  */

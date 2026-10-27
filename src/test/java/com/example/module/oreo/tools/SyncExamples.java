@@ -25,11 +25,13 @@ final class SyncExamples {
         StringBuilder out = new StringBuilder();
         int changed = 0;
         for (ProductExamples.Entry entry : plan.entries()) {
+            if (!entry.changed()) continue;
             out.append(entry.file()).append(' ').append(entry.rowId()).append(": ").append(entry.note()).append('\n');
-            if (entry.changed()) changed++;
+            changed++;
         }
         plan.warnings().forEach(w -> out.append("[warn] ").append(w).append('\n'));
-        out.append(changed).append(" Outline(s) rewritten: review git diff, then commit.");
+        out.append(changed).append(" Outline(s) rewritten, ").append(plan.entries().size() - changed)
+                .append(" unchanged").append(changed == 0 ? "." : ": review git diff, then commit.");
         System.out.println(out);
         return 0;
     }

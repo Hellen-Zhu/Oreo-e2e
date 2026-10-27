@@ -32,7 +32,7 @@ carries that event's capability (`create`, `stepInFull`, `stepInPartial`, `cance
 Scenario Outline whose case ID has `<product_type>` carries one tag `@capability#<name>` next to its other tags, and its
 `Examples` is one table with the single column `product_type`: one row per product of that capability, in registry
 order. Nobody edits those rows; `mvn -Ptest-data process-test-classes "-Dexec.args=sync-examples"` writes them ("Commands", below).
-It prints one line per Outline (`unchanged`, `add X`, `remove Y`, `reordered`, `reformatted`) and writes nothing when a
+It prints one line per Outline it changes (`add X`, `remove Y`, `reordered`, `reformatted`), counts the unchanged ones, and writes nothing when a
 feature file has a problem: an Outline without a tag or with two, an unknown name, a tag anywhere else, a table other
 than one `product_type` column, a capability no product has. `TestDataTool check` fails on those problems and on
 every Outline the tool would change; a capability no Outline carries is only a warning.
@@ -246,6 +246,7 @@ mvn -Ptest-data process-test-classes "-Dexec.args=case TC-TRADE-CREATION-FX_TRF-
 mvn -Ptest-data process-test-classes "-Dexec.args=suggest trade_creation"
 mvn -Ptest-data process-test-classes "-Dexec.args=compact trade_creation"
 mvn -Ptest-data process-test-classes "-Dexec.args=shared TC-TRADE-CREATION-FX_TRF-API-001"
+mvn -Ptest-data process-test-classes "-Dexec.args=shared TC-TRADE-CREATION-<product_type>-API-001"
 ```
 
 The first command defaults to `check`. Each command first runs the six unit tests of the code that decides what a
@@ -264,11 +265,13 @@ After deleting resource files, add `clean` before `process-test-classes` to remo
 - `sync-examples`: writes the product Outlines' `Examples` from `ProductDatFiles` ("Products and capabilities").
 - `suggest <event>`: reads the event's recordings and prints, without writing anything, the `dynamicFields` rules
   they need and the `expectedBase` that suits them ("Suggestions", below).
-- `compact <event>` or `compact all`: the compaction of "Base and patch" and "Shared parts".
+- `compact <event>` or `compact all`: the compaction of "Base and patch" and "Shared parts". It lists the files it
+  rewrites, with their form, and counts the unchanged ones; `shared` reports the same way.
 - `case TC-TRADE-CREATION-FX_PSCRIPT_TRF-API-002`: prints the merged data of one case: the applied layers, the dat
   file, the request, the `dynamicFields`, the `expectedBase`, the expected file (full, or patch on which base) and the
   expected response in full.
-- `shared TC-TRADE-CREATION-FX_TRF-API-001` (or the path of its expected file): the shared parts the case declares
+- `shared TC-TRADE-CREATION-FX_TRF-API-001` (or the path of its expected file, or `TC-TRADE-CREATION-<product_type>-API-001`
+  for every product's case that has a recording): the shared parts the case declares
   become what its file holds (resolved: base, patch and references applied), then every event is compacted again
   against them, so every case still expects what it did; a case whose part now differs keeps the keys that differ
   beside its reference, or its part in full when it lacks a key of the new part. A part the case holds as a

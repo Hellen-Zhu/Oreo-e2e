@@ -71,6 +71,7 @@ final class Compact {
 
         StringBuilder out = new StringBuilder();
         int changed = 0;
+        int unchanged = 0;
         List<ExpectedCompaction.SharedEntry> sharedEntries = shared.entries();
         ExpectedCompaction.write(files, shared);
         if (!sharedEntries.isEmpty()) out.append(SharedFragments.FOLDER).append(":\n");
@@ -80,16 +81,21 @@ final class Compact {
                             : entry.before().isEmpty() ? "new" : "rewritten").append('\n');
             changed++;
         }
+        // only the files that change are listed: the others are counted
         for (ExpectedCompaction.Plan plan : plans) {
             ExpectedCompaction.write(files, plan);
+            List<ExpectedCompaction.Entry> rewritten = plan.entries().stream().filter(ExpectedCompaction.Entry::changed)
+                    .toList();
+            unchanged += plan.entries().size() - rewritten.size();
+            if (rewritten.isEmpty()) continue;
             out.append(plan.eventFile()).append(":\n");
-            for (ExpectedCompaction.Entry entry : plan.entries()) {
-                out.append("  ").append(entry.id().raw()).append(".json: ").append(entry.note())
-                        .append(entry.changed() ? "" : " (unchanged)").append('\n');
-                if (entry.changed()) changed++;
+            for (ExpectedCompaction.Entry entry : rewritten) {
+                out.append("  ").append(entry.id().raw()).append(".json: ").append(entry.note()).append('\n');
             }
+            changed += rewritten.size();
         }
-        out.append(changed).append(" file(s) rewritten: review git diff, then commit.");
+        out.append(changed).append(" file(s) rewritten, ").append(unchanged).append(" unchanged")
+                .append(changed == 0 ? "." : ": review git diff, then commit.");
         System.out.println(out);
         return 0;
     }

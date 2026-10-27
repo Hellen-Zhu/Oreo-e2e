@@ -251,7 +251,7 @@ FX_DCD(CREATE, EARLY_TERMINATION),                                 // 只支持�
       </div>
 <pre class="code"><code>mvn -Ptest-data process-test-classes "-Dexec.args=sync-examples"</code></pre>
       <div class="say">
-        <p>它对每个 Outline 打印一行：<code>unchanged</code> 没变化，<code>add X</code> 加了产品，<code>remove Y</code> 去掉了产品，<code>reordered</code> 调了顺序，<code>reformatted</code> 只调了格式。打印完看 <code>git diff</code>，提交。</p>
+        <p>它只列出有改动的 Outline，没变化的只给一个数量：<code>add X</code> 加了产品，<code>remove Y</code> 去掉了产品，<code>reordered</code> 调了顺序，<code>reformatted</code> 只调了格式。打印完看 <code>git diff</code>，提交。</p>
         <p>拿最近的一个真实变化举例：<code>FX_PSCRIPT_TRF</code> 原来不支持 cancellation、allocation、amendment 和 portfolio reassignment，现在改成支持全部能力。跑一次 sync-examples，就会在这几个事件的 Outline 上看到 <code>add FX_PSCRIPT_TRF</code>。这些新增的 case 还没有录制响应，下一节讲怎么录。</p>
         <p>sync-examples 有一个很重要的特点：<strong>只要任何一个 Feature 文件有问题，它一个字都不写</strong>，先把问题全部列出来。它会拒绝这些情况：</p>
       </div>
