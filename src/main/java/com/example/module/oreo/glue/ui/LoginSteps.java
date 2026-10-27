@@ -32,13 +32,4 @@ public class LoginSteps {
                     + " signed in, log out first (step 'user logs out and re-login').", e);
         }
     }
-
-    /**
-     * Confirms successful sign-in by waiting for the Trade Portal container to become visible.
-     * This avoids brittle coupling to specific post-login API calls.
-     */
-    @Given("^confirm login and wait for trade portal ready$")
-    public void confirmLoginAndWaitForTradePortalReady() {
-        ctx.clickAndWaitForResponse("login.submit", "/api/v1/blotter/trades", "POST");
-    }
 }

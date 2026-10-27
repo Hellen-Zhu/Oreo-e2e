@@ -121,6 +121,10 @@ Every element is registered in JSON and reached through it:
 - No `Thread.sleep()`. Wait with Playwright auto-wait, the eventual assertions of `CommonE2EAssertion`
   (`assert that '<element>' is eventually visible`, `... eventually has value '...'`; its timeout comes from the
   service configuration, default 50 s), or the response helpers (`ctx.clickAndWaitForResponse(...)`).
+- A page is ready when what the user sees is there: wait on its elements (`page trade portal is displayed`), not on
+  one of the requests it sends. The response helpers take the first matching response, so a retried or reordered
+  request fails the wait on a page that loaded; keep them for a response that is the result of the action (a save,
+  a refresh). The login waits for the trade portal and its New Today blotter, not for `blotter/trades`.
 - Form values are asserted with `eventually has value` (Playwright `hasValue`), not text content.
 - ctx keys are camelCase (`createdTradeId`). New reusable glue takes the key as a step parameter. Write useful values to
   the report with `ctx.write()`; never credentials, tokens or full sensitive payloads.

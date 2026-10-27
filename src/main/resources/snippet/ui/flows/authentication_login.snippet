@@ -3,6 +3,8 @@
 @Given "^login in application with email '([^']*)' and password '([^']*)'$"
     Given navigate to login page
     And page login signs in with email '$1' and password '$2'
+    And page trade portal is displayed
+    And page trade portal New Today Blotter view is visible
 
 @When "^maker is logged in to the trade portal$"
     When login in application with email 'maker@example.com' and password '<password not committed>'
