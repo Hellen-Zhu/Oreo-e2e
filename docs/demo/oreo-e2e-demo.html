@@ -107,7 +107,7 @@ body.script-only .cue, body.script-only pre.code, body.script-only .diagram, bod
 
 <div class="wrap">
   <nav class="rail" aria-label="讲解顺序">
-    <h2>讲解顺序 · 约 35 分钟</h2>
+    <h2>讲解顺序 · 约 38 分钟</h2>
     <ol>
       <li><a href="#s0"><span>开场：今天讲什么</span><span class="min">1′</span></a></li>
       <li><a href="#s1"><span>框架一页速览</span><span class="min">3′</span></a></li>
@@ -116,12 +116,12 @@ body.script-only .cue, body.script-only pre.code, body.script-only .diagram, bod
       <li><a href="#s3"><span>四层合并</span><span class="min">4′</span></a></li>
       <li><a href="#s4"><span>产品与 sync-examples</span><span class="min">5′</span></a></li>
       <li class="part">响应怎么录、怎么改</li>
-      <li><a href="#s5"><span>第一次录制</span><span class="min">4′</span></a></li>
-      <li><a href="#s6"><span>更新响应</span><span class="min">5′</span></a></li>
+      <li><a href="#s5"><span>第一次录制</span><span class="min">5′</span></a></li>
+      <li><a href="#s6"><span>更新响应</span><span class="min">6′</span></a></li>
       <li class="part">怎么守住质量</li>
       <li><a href="#s7"><span>离线检查</span><span class="min">3′</span></a></li>
       <li><a href="#s8"><span>常见问题排查</span><span class="min">4′</span></a></li>
-      <li><a href="#s9"><span>完整演练：上一个产品</span><span class="min">2′</span></a></li>
+      <li><a href="#s9"><span>完整演练：上一个产品</span><span class="min">3′</span></a></li>
       <li><a href="#s10"><span>Q&amp;A</span><span class="min">1′</span></a></li>
     </ol>
     <div class="rail-foot">
@@ -139,6 +139,7 @@ body.script-only .cue, body.script-only pre.code, body.script-only .diagram, bod
         <span>Feature 文件 <b>42</b></span>
         <span>场景 <b>130</b></span>
         <span>已录制响应 <b>52</b></span>
+        <span>共享片段 <b>7</b></span>
         <span>产品 <b>4</b></span>
         <span>离线检查项 <b>9</b></span>
       </div>
@@ -227,7 +228,7 @@ flowchart LR
   ]
 }</code></pre>
       <div class="say">
-        <p>另外几个常用能力：<code>use</code> 按名字引用 <code>common.json</code> 或本文件 <code>shared</code> 里的数据块；<code>${date:T+2}</code> 是今天往后两个日历日，运行时才填；<code>datFile</code> 选这个产品文件夹里的另一个 dat 文件，做产品变体。<code>basic.productId</code> 永远不用写，步骤会按产品自动填。</p>
+        <p>另外几个常用能力：<code>use</code> 按名字引用 <code>common.json</code> 或本文件 <code>shared</code> 里的数据块（两边同名会报错）。只有一个事件用的块放在它自己的 <code>shared</code> 里，比如 <code>trade-basic</code>、<code>stepin-full</code> 就在 <code>trade_creation.json</code>。每一层的 <code>use</code> 是<strong>叠加</strong>的，不是覆盖：<code>defaults</code> 用了一个块，某一行再 <code>use</code> 另一个，两个都生效，块先合并，再合并这一层自己写的值；<code>${date:T+2}</code> 是今天往后两个日历日，运行时才填；<code>datFile</code> 选这个产品文件夹里的另一个 dat 文件，做产品变体。<code>basic.productId</code> 永远不用写，步骤会按产品自动填。</p>
         <p>写完数据，怎么确认它合并出来是对的？用 <code>case</code> 命令，它会打印这个 case 用了哪几层、最终请求是什么、比对哪个期望文件。</p>
       </div>
 <pre class="code"><code>mvn -Ptest-data process-test-classes "-Dexec.args=case TC-TRADE-CREATION-FX_TRF-API-001"</code></pre>
@@ -267,6 +268,17 @@ FX_DCD(CREATE, EARLY_TERMINATION),                                 // 只支持�
           </tbody>
         </table>
       </div>
+      <div class="say">
+        <p>想看某一个产品到底会跑哪些 case，不用自己去 grep feature，用 <code>product</code> 命令。它先给一张按能力的表，每个能力在不在注册表、有几个 API 和 UI Outline，最后一列留给 QA 填"支持 / 不支持"；再列出每个 Outline 换成这个产品后的用例 ID、标题、所在文件，以及 Examples 里现在有没有这一行。还没注册的新产品也能跑，会列出全部能力。</p>
+      </div>
+<pre class="code"><code>mvn -Ptest-data process-test-classes "-Dexec.args=product FX_TRF"
+
+| Capability | Registry | Outlines    | QA: supported? |
+| create     | yes      | 4 API, 5 UI |                |
+| stepInFull | yes      | 1 API, 1 UI |                |
+...
+| Capability | Case ID                                  | Title | Feature | Examples |
+| create     | TC-TRADE-CREATION-FX_TRF-API-001         | ...   | ...     | row      |</code></pre>
       <div class="pit"><span class="tag">坑</span>想让某个产品暂时不跑某个事件，不要在 Examples 里把那一行注释掉，这会让工具和检查都失败。正确做法是在 <code>ProductDatFiles</code> 里把这个能力从产品上去掉，比如改成 <code>except(SUPPORT_CAPABILITY, CANCELLATION)</code>，再跑一次 sync-examples。</div>
       <div class="say">
         <p>负向用例和权限用例不带 <code>&lt;product_type&gt;</code>，也不打能力标签，sync-examples 不会碰它们。校验规则不随产品变化，用一个代表产品就够了。</p>
@@ -275,7 +287,7 @@ FX_DCD(CREATE, EARLY_TERMINATION),                                 // 只支持�
 
     <!-- 5 -->
     <section id="s5">
-      <div class="sec-head"><span class="sec-no">05</span><h2 class="sec">第一次录制</h2><span class="dur">4 分钟</span></div>
+      <div class="sec-head"><span class="sec-no">05</span><h2 class="sec">第一次录制</h2><span class="dur">5 分钟</span></div>
       <div class="say">
         <p>现在讲响应。每个 API case 结束时，会把<strong>整个响应</strong>和 <code>data/api/expected/&lt;事件&gt;/&lt;用例ID&gt;.json</code> 做严格比对，多一个字段、少一个字段、值变了，都会失败。</p>
         <p>期望文件不是手写的，是<strong>录出来的</strong>。一个新 case 第一次跑，文件不存在，框架会把真实响应录下来，然后<strong>故意失败一次</strong>，报错是 <code>Expected response recorded to ...: review it against the requirement, commit it, run again.</code>。这次失败是正常的，它在提醒你：先审查录下来的内容，再提交。</p>
@@ -297,15 +309,19 @@ FX_DCD(CREATE, EARLY_TERMINATION),                                 // 只支持�
         </table>
       </div>
       <div class="say">
-        <p>路径写法：key 用点连接，<code>[n]</code> 表示数组的某一个元素，<code>[*]</code> 表示所有元素，比如 <code>data.results[*].tradeId</code>。</p>
-        <p>规则要在录制之前配好，而且要写对：<strong>规则的路径在响应里不存在，录制会直接失败</strong>，报错结尾是 <code>not recorded</code>。regex 不匹配、var 的值对不上，也一样。所以新产品不要提前猜规则，先录一次，跑第二次，第二次失败在哪个值上，那个值就是动态的。</p>
+        <p>路径写法：key 用点连接，<code>[n]</code> 表示数组的某一个元素，<code>[*]</code> 表示所有元素，比如 <code>data.results[*].tradeId</code>；<code>*</code> 单独作为一个 key，表示对象的每一个值，比如 <code>"data.fixings.*": "type"</code>。像 <code>FX:EURSGD@[BFIX]-1500-JP TYO</code> 这种本身带点或方括号的 key 写不进路径，就用 <code>*</code> 匹配。</p>
+        <p>规则要在录制之前配好，而且要写对：<strong>规则的路径在响应里不存在，录制会直接失败</strong>，报错结尾是 <code>not recorded</code>。regex 不匹配、var 的值对不上，也一样。所以新产品不要提前猜规则，先录一次，再让工具给建议：</p>
+      </div>
+<pre class="code"><code>mvn -Ptest-data process-test-classes "-Dexec.args=suggest trade_creation"</code></pre>
+      <div class="say">
+        <p><code>suggest</code> 什么都不写，只打印两件事：一是哪些值看起来是生成的，比如 UUID、时间戳、和上一次提交的录制相比变了的值，建议用什么规则、放在哪一层（<code>defaults</code>、<code>byProduct</code> 还是某一行）；二是哪个 case 做基础 case 最省字符。每条建议都要人来判断，比如请求里固定的日期是数据，不是动态值。模式认不出来的，再跑第二次，第二次失败在哪个值上，那个值就是动态的。</p>
         <p>负向用例一般写 <code>"dynamicFields": null</code>，清掉继承来的规则，因为错误响应的结构和成功响应不同，继承来的路径在里面根本不存在。</p>
       </div>
     </section>
 
     <!-- 6 -->
     <section id="s6">
-      <div class="sec-head"><span class="sec-no">06</span><h2 class="sec">更新响应</h2><span class="dur">5 分钟</span></div>
+      <div class="sec-head"><span class="sec-no">06</span><h2 class="sec">更新响应</h2><span class="dur">6 分钟</span></div>
       <div class="say">
         <p>接口有意改了，比如加了一个字段，比对失败了，怎么办？失败信息里已经写好了下一步：<code>If the change is intended, run again with OREO_EXPECTED=update, compact ...</code>。但先要判断这是哪一种失败：</p>
       </div>
@@ -345,6 +361,23 @@ mvn -B test -Dtest=OreoTest "-Dcucumber.options=--name ^\[TC-TRADE-CREATION-FX_T
       <div class="say">
         <p>录制总是写完整的响应，<code>compact</code> 再把变体变成 patch。好处是：接口加了一个所有 case 都有的字段，diff 里只有基础文件变了，审查起来一目了然。压缩是安全的：有任何问题它一个文件都不写，跑第二次不会再有变化。</p>
       </div>
+      <h3 class="sub">跨事件共享的部分：_shared</h3>
+      <div class="say">
+        <p>还有一层去重：交易的 <code>basic</code> 和 <code>instrument</code> 在创建、查询、审批这些事件的响应里都会出现，而且对同一个产品基本一样。事件在数据里声明 <code>sharedFragments</code>，路径对应一个名字，常用的是 <code>api/common.json</code> 里的块 <code>trade-response-parts</code>。compact 时，这部分每个产品只存一份，放在 <code>expected/_shared/basic/&lt;P&gt;.json</code> 和 <code>instrument/&lt;P&gt;.json</code>，case 文件里只留一个引用，和共享文件不同的 key 就写在引用旁边，比如审批后 <code>version</code> 变成 2。</p>
+      </div>
+<pre class="code"><code>// api/common.json 里的块 trade-response-parts，事件在 defaults.use 里引用它
+"sharedFragments": {
+  "data.trade.basic": "basic/&lt;product_type&gt;",
+  "data.trade.instrument": "instrument/&lt;product_type&gt;" }
+
+// 压缩后的 case 文件
+"data": { "trade": {
+  "basic": { "_shared": "basic/FX_TRF", "version": 2 },
+  "instrument": { "_shared": "instrument/FX_TRF" } } }</code></pre>
+      <div class="say">
+        <p>路径不一样的事件，比如 <code>trade_approval_rejection</code> 是 <code>data.basic</code>，少一层 <code>trade</code>，就在自己的 <code>sharedFragments</code> 里写自己的路径，名字用同一个。新产品不需要手动处理 <code>_shared</code>：第一次 compact 会从它的第一个录制 case 生成。</p>
+        <p><code>compact &lt;event&gt;</code> 和 <code>compact all</code> 的区别：只压一个事件时，已有的共享文件保持不动；<code>compact all</code> 会重建所有共享文件，每部分取第一个 case（事件按名字、case 按 ID 排序），没人引用的共享文件会删掉。所以<strong>共享文件生成之后才加的规则，要跑 <code>compact all</code></strong>，否则后来才 mask 的值还留在共享文件里，每个 case 都会多一个不同的 key。</p>
+      </div>
       <div class="pit"><span class="tag">坑</span><strong>改基础 case，要连同它的变体一起重录。</strong>只重录了 <code>-API-001</code>，变体的 patch 可能对不上新的基础文件，变体会失败，报错里有 <code>The patch does not fit</code>。解决办法也写在报错里：用 update 模式把那个变体也重录一次（update 模式不读旧文件，所以不会被坏 patch 卡住），然后 compact。更省事的做法是一开始就按 <code>-API-\d+</code> 把整组一起录。</div>
       <div class="say">
         <p>最后一种情况：有些 API case 根本不比对响应，比如调完一串接口去查数据库的审计用例。给它打 <code>@expected#none</code>，就不需要期望文件；检查也不会再要求它有，留着旧文件反而会报错。</p>
@@ -359,7 +392,7 @@ mvn -B test -Dtest=OreoTest "-Dcucumber.options=--name ^\[TC-TRADE-CREATION-FX_T
       </div>
 <pre class="code"><code>mvn -Ptest-data process-test-classes</code></pre>
       <div class="say">
-        <p>它先跑五个单元测试，保证"合并数据"和"比对响应"这两段逻辑本身是对的；任何一个失败，后面就不跑了。然后依次做九项检查，每项输出 <code>[ok]</code> 或 <code>[FAIL]</code>，最后一行是 <code>No problem.</code> 或问题总数。</p>
+        <p>它先跑六个单元测试，保证"合并数据""比对响应"和"给建议"这几段逻辑本身是对的；任何一个失败，后面就不跑了。然后依次做九项检查，每项输出 <code>[ok]</code> 或 <code>[FAIL]</code>，最后一行是 <code>No problem.</code> 或问题总数。</p>
       </div>
       <div class="tbl">
         <table class="t">
@@ -370,7 +403,7 @@ mvn -B test -Dtest=OreoTest "-Dcucumber.options=--name ^\[TC-TRADE-CREATION-FX_T
             <tr><td>every row and event file has a feature</td><td>没有孤儿数据：每一行、每个文件都有对应的场景</td></tr>
             <tr><td>every API case has its expected file</td><td>每个 API case 都录了；每个期望文件都有对应的 case</td></tr>
             <tr><td>the rules agree with the expected files</td><td><code>dynamicFields</code> 规则和录制文件里的占位符一致</td></tr>
-            <tr><td>the expected files are compacted</td><td>有没有该压缩没压缩的（只是警告）</td></tr>
+            <tr><td>the expected files are compacted</td><td>有没有该压缩没压缩的，按 <code>compact all</code> 算，包括共享文件（只是警告）</td></tr>
             <tr><td>every setup name used exists</td><td>代码里用到的 setup 数据都有文件</td></tr>
             <tr><td>the product Outlines' Examples match the registry</td><td>Examples 和注册表一致，即 sync-examples 不会再改任何东西</td></tr>
             <tr><td>every product with a capability has its dat file</td><td>支持能力的产品都有 dat 文件</td></tr>
@@ -394,6 +427,8 @@ mvn -B test -Dtest=OreoTest "-Dcucumber.options=--name ^\[TC-TRADE-CREATION-FX_T
             <tr><td>比对失败，信息里有 <code>Expected file: ...</code></td><td>响应和录制不同</td><td>先判断：动态值 → 加规则；有意变化 → update 重录；否则是 bug</td></tr>
             <tr><td>录制失败，结尾是 <code>not recorded</code></td><td>规则路径不在响应里，或 regex / var 对不上</td><td>改规则；负向 case 用 <code>"dynamicFields": null</code></td></tr>
             <tr><td>只改了基础 case，变体失败：<code>The patch does not fit</code></td><td>变体的 patch 对不上新的基础文件</td><td>update 模式重录变体，再 compact</td></tr>
+            <tr><td>不知道该给哪些字段加规则</td><td>新录制，还没 mask</td><td>跑 <code>suggest &lt;event&gt;</code>，逐条判断后写进数据</td></tr>
+            <tr><td>check 警告没压缩，每个 case 都多出同一个 key</td><td>规则在共享文件生成之后才加，共享文件里还是原值</td><td><code>compact all</code>，看 diff</td></tr>
             <tr><td>check：<code>no expected file</code></td><td>case 还没录；或者它本就不比对响应</td><td>录制；或打 <code>@expected#none</code></td></tr>
             <tr><td>check：<code>belongs to no API case</code></td><td>case 删了或改了编号，旧期望文件还在</td><td>删掉旧文件</td></tr>
             <tr><td>check：Examples 不一致，列出 <code>add</code> / <code>remove</code></td><td>注册表或标签改了，没同步</td><td>跑 sync-examples，看 diff</td></tr>
@@ -410,7 +445,7 @@ mvn -B test -Dtest=OreoTest "-Dcucumber.options=--name ^\[TC-TRADE-CREATION-FX_T
 
     <!-- 9 -->
     <section id="s9">
-      <div class="sec-head"><span class="sec-no">09</span><h2 class="sec">完整演练：上一个产品</h2><span class="dur">2 分钟</span></div>
+      <div class="sec-head"><span class="sec-no">09</span><h2 class="sec">完整演练：上一个产品</h2><span class="dur">3 分钟</span></div>
       <div class="say">
         <p>把今天讲的串起来，上一个新产品就是这几步，每一步都用到了前面某一节：</p>
       </div>
@@ -418,18 +453,19 @@ mvn -B test -Dtest=OreoTest "-Dcucumber.options=--name ^\[TC-TRADE-CREATION-FX_T
         <table class="t">
           <thead><tr><th>步骤</th><th>做什么</th><th>对应</th></tr></thead>
           <tbody>
-            <tr><td>1 · 问清楚</td><td>产品 ID、支持哪些能力、默认 dat 文件、哪些值和默认不同</td><td>—</td></tr>
-            <tr><td>2 · 注册</td><td><code>ProductDatFiles</code> 加常量，加 dat 文件</td><td>04</td></tr>
+            <tr><td>1 · 要 dat</td><td>只问一件事：按产品 ID 命名的默认 dat 文件 <code>&lt;P&gt;.dat</code></td><td>—</td></tr>
+            <tr><td>2 · 注册</td><td><code>ProductDatFiles</code> 加常量 <code>&lt;P&gt;(SUPPORT_CAPABILITY)</code>，默认全部能力；加 dat 文件；先不写 <code>byProduct</code></td><td>04</td></tr>
             <tr><td>3 · 同步</td><td><code>sync-examples</code>，看每个 Outline 的 <code>add &lt;P&gt;</code></td><td>04</td></tr>
-            <tr><td>4 · 差异</td><td>只有和默认值不同的才写 <code>byProduct</code>，用 <code>case</code> 命令确认</td><td>03</td></tr>
-            <tr><td>5 · 录制</td><td>只跑这个产品的 API case：录一次、跑第二次找动态值、加规则、重录</td><td>05</td></tr>
-            <tr><td>6 · 收尾</td><td><code>compact</code>、check 无问题、审 diff、提交</td><td>06 · 07</td></tr>
+            <tr><td>4 · QA review</td><td>把 <code>product &lt;P&gt;</code> 的表给 QA，<strong>每个能力逐行</strong>答支持 / 不支持，再给出和默认值不同的数据；不支持的从常量上去掉，再 sync-examples，差异写进 <code>byProduct</code>，用 <code>case</code> 命令确认</td><td>03 · 04</td></tr>
+            <tr><td>5 · 录制</td><td>只跑这个产品的 API case：录一次、<code>suggest</code> 看建议、跑第二次找漏掉的动态值、加规则、重录</td><td>05</td></tr>
+            <tr><td>6 · 收尾</td><td><code>compact</code>（共享文件自动生成）、check 无问题、审 diff、提交</td><td>06 · 07</td></tr>
           </tbody>
         </table>
       </div>
 <pre class="code"><code># 只跑一个产品的所有 API case
 mvn -B test -Dtest=OreoTest "-Dcucumber.options=--name ^\[TC-[A-Z-]+-FX_NEW-API-\d+\].*$"</code></pre>
       <div class="say">
+        <p>QA review 之前，什么都不录、不跑、不提交。一句笼统的"看着没问题"不算回答，没答的那一行就再问一次。</p>
         <p>这套流程已经写成了 Claude 的 skill：<code>onboarding-e2e-product</code> 负责上新产品，<code>maintaining-e2e-test-data</code> 负责数据维护和这些命令。数据格式的完整说明在 <code>docs/test-data.md</code>。</p>
       </div>
     </section>
@@ -445,6 +481,7 @@ mvn -B test -Dtest=OreoTest "-Dcucumber.options=--name ^\[TC-[A-Z-]+-FX_NEW-API-
         <p>问：为什么数组不能追加，要整个写？答：追加要在每一层之间推算最终结果，容易出错；整体替换只看最后一层就知道发了什么。代价是偶尔要重复写几个元素。</p>
         <p>问：期望文件能不能手改一个值？答：不能。手改的值没有经过真实系统验证，下次重录也会被覆盖。改规则或重录。</p>
         <p>问：为什么 update 模式不做比对？答：它的用途就是覆盖旧文件；如果旧文件已经坏了，比如 patch 对不上，再去读它就永远录不进新的。</p>
+        <p>问：文档里写的 <code>TestDataTool compact</code> 能直接跑吗？答：不能。<code>TestDataTool</code> 只是 Maven 调用的类，命令都是 <code>mvn -Ptest-data process-test-classes "-Dexec.args=..."</code>，<code>exec.args</code> 就是要跑的子命令，不写默认是 <code>check</code>。</p>
         <p>问：本地能跑吗？答：离线检查和 <code>case</code> 命令不连测试环境，有公司 Maven 仓库就能跑；真正的用例要在公司环境，因为会连真实系统下单。</p>
       </div>
     </section>
