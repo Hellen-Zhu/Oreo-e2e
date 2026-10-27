@@ -165,7 +165,7 @@ UI setup data stay apart on purpose, so that an API case change never alters how
 
 - A product is an enum constant with its capabilities and `data/dat/<P>/<P>.dat`; a variant dat file is case data
   (`datFile`), never a new product.
-- Product Outlines' `Examples` are written by `TestDataTool sync-examples`, never by hand. To leave a product out, take
+- Product Outlines' `Examples` are written by `mvn -Ptest-data process-test-classes "-Dexec.args=sync-examples"`, never by hand. To leave a product out, take
   the capability off it in the registry.
 - Adding a product: skill `onboarding-e2e-product`.
 
@@ -177,7 +177,7 @@ UI setup data stay apart on purpose, so that an API case change never alters how
   becomes `${json-unit.any-array}`), `type-tree` (structure and leaf types), `regex:<p>`, `var:<name>` (equals a
   scenario variable), `ignore` (last resort). Mask only what is truly dynamic; never business messages.
 - Never edit an expected file by hand: change the rule, record again (`OREO_EXPECTED=update`), then
-  `TestDataTool compact <event>` turns variants into patches on their base.
+  `mvn -Ptest-data process-test-classes "-Dexec.args=compact <event>"` turns variants into patches on their base.
 - An API case that verifies other evidence (database, audit) instead of its response is tagged `@expected#none`; it has
   no expected file and `response matches current scenario` fails in it (`trade_audit`).
 
@@ -191,8 +191,8 @@ mvn -Ptest-data process-test-classes
 
 Runs the unit tests of the test data code, then `TestDataTool check`: data files load, every case resolves, every row
 has its scenario, expected files and rules agree, setup names exist, product `Examples` match the registry. Other
-commands: `"-Dexec.args=case <case ID>"` (what a case sends and is compared with), `sync-examples`,
-`compact <event>|all`. Usage: skill `maintaining-e2e-test-data`.
+commands: `"-Dexec.args=case <case ID>"` (what a case sends and is compared with), `"-Dexec.args=sync-examples"`,
+`"-Dexec.args=compact <event>|all"`, `"-Dexec.args=suggest <event>"`, `"-Dexec.args=product <P>"`. Usage: skill `maintaining-e2e-test-data`.
 
 ### 6.2 Against an environment
 

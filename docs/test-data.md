@@ -31,7 +31,7 @@ carries that event's capability (`create`, `stepInFull`, `stepInPartial`, `cance
 `fixings`). Each
 Scenario Outline whose case ID has `<product_type>` carries one tag `@capability#<name>` next to its other tags, and its
 `Examples` is one table with the single column `product_type`: one row per product of that capability, in registry
-order. Nobody edits those rows; `TestDataTool sync-examples` writes them ("Commands", below).
+order. Nobody edits those rows; `mvn -Ptest-data process-test-classes "-Dexec.args=sync-examples"` writes them ("Commands", below).
 It prints one line per Outline (`unchanged`, `add X`, `remove Y`, `reordered`, `reformatted`) and writes nothing when a
 feature file has a problem: an Outline without a tag or with two, an unknown name, a tag anywhere else, a table other
 than one `product_type` column, a capability no product has. `TestDataTool check` fails on those problems and on
@@ -174,7 +174,7 @@ A base has no base of its own.
 ```
 
 The case is compared strictly with the base's file plus the ops. Recording always writes the full response; the
-compaction, `TestDataTool compact trade_creation` ("Commands", below; `all` for every event), then turns the variants into
+compaction, `mvn -Ptest-data process-test-classes "-Dexec.args=compact trade_creation"` ("Commands", below; `compact all` for every event), then turns the variants into
 patches. Objects are compared key by key, arrays of the same length element by element, other arrays are replaced
 whole; a patch that is not shorter than the full response is not written. Any problem (a base without a file, a patch
 that does not apply) stops it before a file is written, and a second run changes nothing. Then review
@@ -294,11 +294,11 @@ every variant differ from it.
 
 | Task | What to change |
 |---|---|
-| New product | `ProductDatFiles` constant with its capabilities, and `data/dat/<P>/<P>.dat`; `TestDataTool sync-examples` writes it into the Outlines' Examples; `byProduct` only where its data or dynamic fields differ; run the API cases, compact, review the recorded files, commit (no base to declare: `defaults` covers every product). The skill `.claude/skills/onboarding-e2e-product` walks through it |
+| New product | `ProductDatFiles` constant with its capabilities, and `data/dat/<P>/<P>.dat`; `mvn -Ptest-data process-test-classes "-Dexec.args=sync-examples"` writes it into the Outlines' Examples; `byProduct` only where its data or dynamic fields differ; run the API cases, compact, review the recorded files, commit (no base to declare: `defaults` covers every product). The skill `.claude/skills/onboarding-e2e-product` walks through it |
 | New positive case | nothing when it runs on the defaults; otherwise a row with the feature's ID; after the recording, compact |
 | New negative case | a row with the `request` change and `"dynamicFields": null` |
 | New API case that checks the database, not the response | the tag `@expected#none` on it (or on its Feature); no expected file |
-| New event | `data/<channel>/<event>.json`, named after the feature file; shared blocks through `use`. For its Outlines with `<product_type>`: a `Capability` constant named as in the replay project's `framework/products.ts`, the tag `@capability#<name>` on them, the capability on the products that support it, then `TestDataTool sync-examples` |
+| New event | `data/<channel>/<event>.json`, named after the feature file; shared blocks through `use`. For its Outlines with `<product_type>`: a `Capability` constant named as in the replay project's `framework/products.ts`, the tag `@capability#<name>` on them, the capability on the products that support it, then `mvn -Ptest-data process-test-classes "-Dexec.args=sync-examples"` |
 | A field turns out dynamic | its rule in the event file (`defaults` or `byProduct`), then record again |
 | Change the default counterparty | `api/common.json`, `ui/common.json`, `setup/trade-create*.json` (three places, on purpose); record the API cases again |
 | New setup payload | `data/setup/<what-it-prepares>.json`, referenced by that name |

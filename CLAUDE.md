@@ -18,7 +18,7 @@ Read this before changing files. It holds the rules and the traps; the details l
   filter that proves the change.
 - **The case ID is in the scenario name** (`[TC-TRADE-CREATION-FX_TRF-API-001]`), never a tag; it selects the event
   file, product, layer and row of the test data.
-- **Products are rows.** `Examples` of `@capability#` Outlines are written by `TestDataTool sync-examples` from
+- **Products are rows.** `Examples` of `@capability#` Outlines are written by `mvn -Ptest-data process-test-classes "-Dexec.args=sync-examples"` from
   `ProductDatFiles`; never by hand.
 - **The data checks are `mvn -Ptest-data process-test-classes`** (six unit tests, then `TestDataTool check`). There is
   no `TestDataValidationTest`, `CompactExpectedFiles` or `SyncProductExamples`: they became `TestDataTool` commands.

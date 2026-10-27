@@ -57,7 +57,7 @@ writes traces to `target/traces` (`npx playwright show-trace <zip>`). Never comm
   `trade_creation`, product `FX_TRF`, layer API, case `001`. Before each scenario, `ScenarioLifecycleHooks` merges
   `defaults` → `byProduct[P]` → the case's row → the row's `byProduct[P]` and puts the request into the context.
 - **A product is a row, not a file.** Outlines over `<product_type>` carry a `@capability#<name>` tag; their
-  `Examples` are written from the registry `ProductDatFiles` by `TestDataTool sync-examples`. A new product is one
+  `Examples` are written from the registry `ProductDatFiles` by `mvn -Ptest-data process-test-classes "-Dexec.args=sync-examples"`. A new product is one
   registry constant and one dat file.
 - **API cases compare the whole response** with `data/api/expected/<event>/<caseId>.json`, masking run-dependent
   values by `dynamicFields` rules. A missing file is recorded on the first run.
