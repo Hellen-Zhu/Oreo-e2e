@@ -14,44 +14,23 @@ public class LoginSteps {
     @Before({"@playwright"})
     public void beforeScenario(Scenario scenario) { this.ctx = PlaywrightServiceResolver.from(scenario); }
 
+    /** Always opens /login, whatever the page shows, and waits for the login form. */
     @Given("^navigate to login page$")
     public void navigateToLoginPage() {
-        String currentUrl = ctx.service().getPage().url();
-        if (currentUrl != null && currentUrl.contains("/login")) {
-            waitForLoginForm(ctx.timeoutMillis());
-            return;
-        }
-
-        if (isLoginFormVisible(3000)) {
-            return;
-        }
-
+        String previousUrl = ctx.service().getPage().url();
         ctx.navigateToPath("/login");
         try {
-            waitForLoginForm(ctx.timeoutMillis());
+            ctx.service().getLocator("login.email").waitFor(
+                    new Locator.WaitForOptions()
+                            .setState(WaitForSelectorState.VISIBLE)
+                            .setTimeout(ctx.timeoutMillis())
+            );
         } catch (TimeoutError e) {
             // A signed-in session sends /login back to the portal: the form never shows
             throw new AssertionError("No login form within " + ctx.timeoutMillis() + " ms after opening /login"
-                    + " (was " + currentUrl + ", now " + ctx.service().getPage().url() + "). If a user is still"
+                    + " (was " + previousUrl + ", now " + ctx.service().getPage().url() + "). If a user is still"
                     + " signed in, log out first (step 'user logs out and re-login').", e);
         }
-    }
-
-    private boolean isLoginFormVisible(double timeoutMs) {
-        try {
-            waitForLoginForm(timeoutMs);
-            return true;
-        } catch (TimeoutError ignored) {
-            return false;
-        }
-    }
-
-    private void waitForLoginForm(double timeoutMs) {
-        ctx.service().getLocator("login.email").waitFor(
-                new Locator.WaitForOptions()
-                        .setState(WaitForSelectorState.VISIBLE)
-                        .setTimeout(timeoutMs)
-        );
     }
 
     /**
