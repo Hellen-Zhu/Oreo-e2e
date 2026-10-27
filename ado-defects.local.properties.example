@@ -1,0 +1,12 @@
+# Copy to ado-defects.local.properties (git-ignored) and fill in; used by the skill qa-defect-reporting.
+# Never commit the filled-in file: the project and the work item IDs are company data.
+
+# The ADO project of the Bugs and of their parent
+ado.project=
+# The parent work item (a Feature) every Bug is linked under
+ado.defect.parentId=
+# Optional; empty: the parent's area and iteration
+ado.defect.areaPath=
+ado.defect.iterationPath=
+# Tags on every Bug, ';'-separated
+ado.defect.tags=oreo-e2e;e2e-automation

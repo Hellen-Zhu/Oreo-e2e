@@ -81,7 +81,7 @@ Summary : run X, failures X, errors X, skipped X, Maven BUILD SUCCESS|FAILURE
 Log     : target/results/failed-scenarios-<timestamp>.log | none
 Cases   :
   - TC-...  passed | failed: <class> - <first error line>
-Next    : <what the caller should do: fix automation / record / ask about behavior / environment>
+Next    : <what the caller should do: fix automation / record / ask about behavior (a defect: qa-defect-reporting) / environment>
 ```
 
 For `where: offline`, the report is the commands in order with what each should show; nothing is claimed as run.

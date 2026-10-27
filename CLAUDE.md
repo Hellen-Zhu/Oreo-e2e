@@ -34,6 +34,7 @@ Read this before changing files. It holds the rules and the traps; the details l
 | Test data formats, recorded responses, the tool's commands | `docs/test-data.md` |
 | Change data, features, recordings or the registry | skill `maintaining-e2e-test-data` |
 | Add a product | skill `onboarding-e2e-product` |
+| Raise a defect a run found (ADO Bug) | skill `qa-defect-reporting`; settings in `ado-defects.local.properties` (git-ignored) |
 | Story → feature files, feature files → running cases | `/writebddfeatures`, `/codetestcases`; overview `docs/ai-workflow.md` |
 
 The executable truth is the code and the feature tree; when a document disagrees with them, trust the code and fix the

@@ -27,6 +27,7 @@ feature files ──/codetestcases──► test-agent ── qa-api-test-author
 | `qa-api-test-authoring` | skill | Case data, API snippets, API glue; `references/test-data-decisions.md` decides where every data value goes (also used by the UI skill) |
 | `qa-e2e-test-authoring` | skill | Flows / pages / components, element repository, UI data, UI glue |
 | `qa-bdd-test-execution` | skill | `check`, `dry-run`, `real-run`, `record`; per-case classification |
+| `qa-defect-reporting` | skill | A `behavior` failure the user calls a defect becomes an ADO Bug under the configured parent, through the Azure DevOps MCP server, after the user approves the draft |
 | `maintaining-e2e-test-data`, `onboarding-e2e-product` | skills | Test data tool; new products (unchanged) |
 
 **The rules live in one place**: `CLAUDE.md` and `docs/standards/*.md`. Skills hold the procedure, the inputs and the

@@ -85,7 +85,7 @@ Route each failed case by its class (the execution report gives it):
 |---|---|
 | `automation` | `test-agent` repair round with the failures; then Step 4 again for those cases |
 | `recording` | Step 4's recording flow |
-| `behavior` | Stop for that case: show expected (requirement) vs actual; the user decides whether it is a defect or a requirement question. Never change data, recordings or steps to match the system |
+| `behavior` | Stop for that case: show expected (requirement) vs actual; the user decides whether it is a defect or a requirement question. A defect: skill `qa-defect-reporting` drafts the ADO Bug and creates it on the user's approval. Never change data, recordings or steps to match the system |
 | `environment` | Stop: report it; nothing to fix in this repository |
 
 At most 3 repair rounds in total; then stop and summarize what still fails and why.
