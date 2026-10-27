@@ -27,7 +27,14 @@ public class LoginSteps {
         }
 
         ctx.navigateToPath("/login");
-        waitForLoginForm(ctx.timeoutMillis());
+        try {
+            waitForLoginForm(ctx.timeoutMillis());
+        } catch (TimeoutError e) {
+            // A signed-in session sends /login back to the portal: the form never shows
+            throw new AssertionError("No login form within " + ctx.timeoutMillis() + " ms after opening /login"
+                    + " (was " + currentUrl + ", now " + ctx.service().getPage().url() + "). If a user is still"
+                    + " signed in, log out first (step 'user logs out and re-login').", e);
+        }
     }
 
     private boolean isLoginFormVisible(double timeoutMs) {

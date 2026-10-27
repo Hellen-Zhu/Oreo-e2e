@@ -6,6 +6,7 @@ import com.microsoft.playwright.Page;
 import com.microsoft.playwright.Request;
 import com.microsoft.playwright.Response;
 import com.microsoft.playwright.Route;
+import com.microsoft.playwright.TimeoutError;
 import com.microsoft.playwright.assertions.LocatorAssertions;
 import com.microsoft.playwright.assertions.PlaywrightAssertions;
 import com.example.genie.model.GenieScenario;
@@ -16,11 +17,16 @@ import com.example.module.oreo.glue.ScenarioContext;
 import com.example.module.oreo.OreoModule;
 import com.example.module.oreo.OreoModuleConfiguration;
 import cucumber.api.Scenario;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Field;
 import java.util.regex.Pattern;
 
 public final class PlaywrightServiceResolver {
+
+    private static final Logger log = LoggerFactory.getLogger(PlaywrightServiceResolver.class);
+    private static final int BODY_IN_MESSAGE = 500;
 
     private PlaywrightServiceResolver() {
     }
@@ -230,16 +236,68 @@ public final class PlaywrightServiceResolver {
         }
 
         public void runAndWaitForResponse(Runnable action, String urlFragment, String httpMethod, double timeoutMs) {
-            Response response = service.getPage().waitForResponse(
-                    r -> r.url().contains(urlFragment) && r.request().method().equals(httpMethod),
-                    new Page.WaitForResponseOptions().setTimeout(timeoutMs),
-                    action
-            );
+            Response response = awaitResponse(action, urlFragment, httpMethod, timeoutMs);
             if (response.status() != 200) {
-                throw new AssertionError(
-                        "Expected " + httpMethod + " " + urlFragment + " to return 200 but got " + response.status() + "."
-                );
+                throw statusError(httpMethod + " " + urlFragment, "200", response);
             }
+        }
+
+        /**
+         * Runs {@code action} and returns the first response whose URL contains {@code urlFragment} and whose method
+         * is {@code httpMethod}. A timeout fails with what was awaited, how long, the page URL and whether the action
+         * itself finished (a click that never happened) or the response never came (a request not sent or not
+         * answered), instead of Playwright's bare "Timeout exceeded".
+         */
+        private Response awaitResponse(Runnable action, String urlFragment, String httpMethod, double timeoutMs) {
+            String awaited = httpMethod + " " + urlFragment;
+            log.info("[PlaywrightServiceResolver] waiting up to {} ms for {}", (long) timeoutMs, awaited);
+            boolean[] acted = {false};
+            long start = System.nanoTime();
+            Response response;
+            try {
+                response = service.getPage().waitForResponse(
+                        r -> r.url().contains(urlFragment) && r.request().method().equals(httpMethod),
+                        new Page.WaitForResponseOptions().setTimeout(timeoutMs),
+                        () -> {
+                            action.run();
+                            acted[0] = true;
+                        }
+                );
+            } catch (TimeoutError e) {
+                String message = (acted[0]
+                        ? "No response to " + awaited + " within " + (long) timeoutMs + " ms after the action: the"
+                                + " request was not sent or not answered (see the trace's Network tab)"
+                        : "The action before " + awaited + " did not finish within " + (long) timeoutMs + " ms: "
+                                + firstLine(e.getMessage()))
+                        + ". Page: " + service.getPage().url();
+                log.error("[PlaywrightServiceResolver] {}", message);
+                throw new AssertionError(message, e);
+            }
+            log.info("[PlaywrightServiceResolver] {} -> {} in {} ms ({})", awaited, response.status(),
+                    (System.nanoTime() - start) / 1_000_000, response.url());
+            return response;
+        }
+
+        private static AssertionError statusError(String awaited, String expectedStatus, Response response) {
+            String message = "Expected " + awaited + " to return " + expectedStatus + " but got " + response.status()
+                    + " from " + response.url() + ". Body: " + body(response);
+            log.error("[PlaywrightServiceResolver] {}", message);
+            return new AssertionError(message);
+        }
+
+        private static String body(Response response) {
+            try {
+                String text = response.text();
+                return text.length() > BODY_IN_MESSAGE ? text.substring(0, BODY_IN_MESSAGE) + "..." : text;
+            } catch (RuntimeException e) {
+                return "(not readable: " + firstLine(e.getMessage()) + ")";
+            }
+        }
+
+        private static String firstLine(String text) {
+            if (text == null) return "";
+            int end = text.indexOf('\n');
+            return end < 0 ? text : text.substring(0, end);
         }
 
         public void clickAndWaitForResponse(String locatorKey, String urlFragment, String httpMethod) {
@@ -322,15 +380,11 @@ public final class PlaywrightServiceResolver {
          * @return response body as a UTF-8 string
          */
         public String clickAndCaptureResponse(String locatorKey, String urlFragment, String httpMethod) {
-            Response response = service.getPage().waitForResponse(
-                    r -> r.url().contains(urlFragment) && r.request().method().equals(httpMethod),
-                    new Page.WaitForResponseOptions().setTimeout(timeoutMillis()),
-                    () -> service.getLocator(locatorKey).click()
-            );
+            Response response = awaitResponse(() -> service.getLocator(locatorKey).click(), urlFragment, httpMethod,
+                    timeoutMillis());
             int status = response.status();
             if (!(status == 200 || status == 201)) {
-                throw new AssertionError(
-                        "Expected " + httpMethod + " " + urlFragment + " to return 2xx but got " + status + ".");
+                throw statusError(httpMethod + " " + urlFragment, "2xx", response);
             }
             return response.text();
         }
@@ -349,16 +403,9 @@ public final class PlaywrightServiceResolver {
          * @return response body as a UTF-8 string
          */
         public String navigateAndCaptureResponse(String path, String urlFragment, String httpMethod) {
-            Response response = service.getPage().waitForResponse(
-                    r -> r.url().contains(urlFragment) && r.request().method().equals(httpMethod),
-                    new Page.WaitForResponseOptions().setTimeout(timeoutMillis()),
-                    () -> navigateToPath(path)
-
-            );
+            Response response = awaitResponse(() -> navigateToPath(path), urlFragment, httpMethod, timeoutMillis());
             if (response.status() != 200) {
-                throw new AssertionError(
-                        "Expected " + httpMethod + " " + urlFragment + " to return 200 but got " + response.status() + ".");
-
+                throw statusError(httpMethod + " " + urlFragment, "200", response);
             }
             return response.text();
         }
