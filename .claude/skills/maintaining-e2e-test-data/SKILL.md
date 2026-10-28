@@ -39,7 +39,7 @@ not replace it with `test` or `verify` for a data-only operation. The commands b
 | `compact <event>` or `compact all` | Turns the recorded responses of the variants into patches on their base and the declared shared parts (`sharedFragments`) into references to `expected/_shared/`; `all` also rebuilds the shared files (from the `sharedSources` events of `api/common.json` first) and deletes unused ones; nothing written on a problem |
 | `suggest <event>` | Prints, from the event's recordings, the `dynamicFields` rules they need (values that look generated or changed since the committed recording) with the layer each belongs in, and the `expectedBase` that leaves the fewest characters; writes nothing |
 | `case <case ID>` | Prints the merged data of one case: layers, dat file, request, `dynamicFields`, `sharedFragments`, `expectedBase`, expected file and response |
-| `shared <case ID>` (or the path of its expected file; `<product_type>` in the ID: every product's case with a recording) | Makes the shared parts the case declares (`sharedFragments`) what its recording holds, then compacts every event again against them: each case still expects what it expected, the keys that differ stay beside its reference. A part the case holds as a placeholder, not an object, is kept; nothing written on a problem |
+| `shared <case ID>` (or the path of its expected file; `<product_type>` in the ID: every product's case with a recording) | Makes the shared parts the case declares (`sharedFragments`) what its recording holds. Writes `_shared/` only: the other expected files are not touched, so the cases referring to a changed part expect the new one until they are recorded again and compacted. A part the case holds as a placeholder, not an object, is kept; nothing written on a problem |
 
 The imports of the files in `tools/` name the package of `ProductDatFiles` (`com.example.module.oreo.testdata` here): in the company copy, the project's own.
 
@@ -64,7 +64,7 @@ One `[ok]` or `[FAIL]` line per check, its problems and `[warn]` lines below it:
 | Event or setup data, a row, `byProduct`, `use`, `datFile` | `check`; `case <ID>` to see what a case sends |
 | A product or capability in `ProductDatFiles`, a `@capability#` tag | `sync-examples`, review `git diff`, then `check`. A new product: the skill `onboarding-e2e-product` |
 | API responses recorded (first run, or `OREO_EXPECTED=update`) | `suggest <event>`, add the rules you agree with and record again; then `compact <event>`, review `git diff`, then `check` |
-| A shared part (`basic`, `instrument`) changed in the API on purpose | Record the case that should give it (`OREO_EXPECTED=update`), `shared <that case ID>` (`TC-...-<product_type>-API-001` for every product), review `git diff`, then `check` |
+| A shared part (`basic`, `instrument`) changed in the API on purpose | Record the case that should give it (`OREO_EXPECTED=update`), `shared <that case ID>` (`TC-...-<product_type>-API-001` for every product), record the cases that refer to the part (`OREO_EXPECTED=update`), `compact <event>` (or `all`), review `git diff`, then `check` |
 | Feature files | `check` |
 
 ## Common mistakes

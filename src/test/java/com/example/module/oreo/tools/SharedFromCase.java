@@ -5,6 +5,7 @@ import com.example.module.oreo.testdata.ExpectedCompaction;
 import com.example.module.oreo.testdata.ExpectedResponses;
 import com.example.module.oreo.testdata.Json;
 import com.example.module.oreo.testdata.ProjectPaths;
+import com.example.module.oreo.testdata.SharedFragments;
 import com.example.module.oreo.testdata.TestData;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -20,10 +21,11 @@ import java.util.Map;
  * Takes the shared response parts ({@code _shared/<name>.json}) from the recorded response of one case, or of every
  * product's case of a case ID with {@code <product_type>}: each part the case declares ({@code sharedFragments})
  * becomes the shared part of its name, as the case's file has it (after a recording with
- * {@code OREO_EXPECTED=update}, the full new response). Every expected file is then compacted again against the new
- * parts, so each case still expects what it expected before: a case whose part differs keeps the keys that differ
- * beside its reference. Shared parts the case does not declare, or does not hold as an object (a whole-part
- * placeholder), are kept. Nothing is written when any event has a problem.
+ * {@code OREO_EXPECTED=update}, the full new response). Only the files in {@code _shared/} are written: the other
+ * expected files are left as they are, so a case that refers to a changed part now expects the new part. Record those
+ * cases again ({@code OREO_EXPECTED=update}), then {@code compact <event>} (or {@code all}) compacts them against the
+ * new parts. Shared parts the case does not declare, or does not hold as an object (a whole-part placeholder), are
+ * kept. Nothing is written when there is a problem.
  */
 final class SharedFromCase {
 
@@ -95,8 +97,21 @@ final class SharedFromCase {
             return 1;
         }
 
-        from.forEach((name, id) -> System.out.println("  " + name + " <- " + id));
-        List<String> events = ExpectedCompaction.order(files.events(), TestData.sharedSources());
-        return Compact.planAndWrite(files, List.of(), events, ExpectedCompaction.Shared.withParts(files, parts));
+        ExpectedCompaction.Shared shared = ExpectedCompaction.Shared.withParts(files, parts);
+        List<ExpectedCompaction.SharedEntry> changed = shared.entries();
+        ExpectedCompaction.write(files, shared);
+        StringBuilder out = new StringBuilder(SharedFragments.FOLDER).append(":\n");
+        for (Map.Entry<String, String> part : from.entrySet()) {
+            boolean rewritten = changed.stream().anyMatch(e -> e.name().equals(part.getKey()));
+            out.append("  ").append(part.getKey()).append(".json <- ").append(part.getValue())
+                    .append(rewritten ? "" : " (unchanged)").append('\n');
+        }
+        out.append(changed.size()).append(" shared file(s) rewritten; no expected file changed.");
+        if (!changed.isEmpty()) {
+            out.append(" Next: record the cases that use them (OREO_EXPECTED=update), then compact <event>"
+                    + " (or all) and review git diff.");
+        }
+        System.out.println(out);
+        return 0;
     }
 }

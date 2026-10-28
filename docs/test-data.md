@@ -219,7 +219,8 @@ the references, in a file kept in full (a patch on a base works on the base's fu
   it does not rewrite);
 - `shared <case ID>` makes the parts of one chosen case the shared ones, for example after recording it again
   because the API changed the part: `compact <event>` alone would keep the old part and leave every new key in
-  the case's file.
+  the case's file. It writes `_shared/` only; record the cases that refer to the part again, then `compact <event>`
+  compacts them against it.
 
 `sharedSources` in `api/common.json` names the events whose recordings are the shared parts, here
 `["trade_creation"]`: the other events (approval, amendment, query) refer to the parts creation recorded, with their
@@ -272,10 +273,11 @@ After deleting resource files, add `clean` before `process-test-classes` to remo
   expected response in full.
 - `shared TC-TRADE-CREATION-FX_TRF-API-001` (or the path of its expected file, or `TC-TRADE-CREATION-<product_type>-API-001`
   for every product's case that has a recording): the shared parts the case declares
-  become what its file holds (resolved: base, patch and references applied), then every event is compacted again
-  against them, so every case still expects what it did; a case whose part now differs keeps the keys that differ
-  beside its reference, or its part in full when it lacks a key of the new part. A part the case holds as a
-  placeholder, not an object, is kept, and so are the parts it does not declare. Nothing is written on a problem.
+  become what its file holds (resolved: base, patch and references applied). Only `_shared/` is written: every other
+  expected file stays as it is, so a case that refers to a changed part now expects the new one. Then record those
+  cases again (`OREO_EXPECTED=update`) and `compact <event>` (or `all`): their files are compacted against the new
+  parts, in the order of `sharedSources`. A part the case holds as a placeholder, not an object, is kept, and so are
+  the parts it does not declare. Nothing is written on a problem.
 
 The unit tests stay out of a plain `mvn test` (the pipeline runs `OreoTest` only). They are JUnit 4, and the profile
 fails when none ran: should it report no tests (a JUnit Platform without the vintage engine), add
