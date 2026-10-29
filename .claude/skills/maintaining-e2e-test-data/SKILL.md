@@ -1,6 +1,6 @@
 ---
 name: maintaining-e2e-test-data
-description: Use when the test data, feature files, recorded API responses or product registry of oreo-e2e change, before committing them - "check the test data", "what does case X send", "compact the expected files", "write the Examples", "a product or capability was added" - or when a data mistake got past mvn test.
+description: Use when the test data, feature files, recorded API responses or product registry of oreo-e2e change, before committing them - "check the test data", "what does case X send", "compact the expected files", "write the Examples", "a product or capability was added", "the API added a field to the response" - or when a data mistake got past mvn test.
 ---
 
 # Maintaining the test data (oreo-e2e)
@@ -64,6 +64,8 @@ One `[ok]` or `[FAIL]` line per check, its problems and `[warn]` lines below it:
 | Event or setup data, a row, `byProduct`, `use`, `datFile` | `check`; `case <ID>` to see what a case sends |
 | A product or capability in `ProductDatFiles`, a `@capability#` tag | `sync-examples`, review `git diff`, then `check`. A new product: the skill `onboarding-e2e-product` |
 | API responses recorded (first run, or `OREO_EXPECTED=update`) | `suggest <event>`, add the rules you agree with and record again; then `compact <event>`, review `git diff`, then `check` |
+| The API adds a field to every product's response | Decide from the requirement whether its value is fixed, dynamic or a scenario variable. A dynamic one gets its rule **before** recording, in the layer covering every case that returns it: `trade-response-parts` in `api/common.json` for `basic` / `instrument`, else the event's `defaults`, or the products' rows when only some return it (a rule whose path is missing fails the recording). Record every case that returns it (`OREO_EXPECTED=update` as an environment variable; events that share the part together), `suggest <event>`, then `compact all` (not `shared`), review `git diff` (one line per product in `_shared/` or the base files), then `check`. Details: "A new response field" in `docs/test-data.md` |
+| The API adds a field to every product's request | Its value in the `use` block or `defaults.request` (a differing product overrides it in its row), `check`, then record and compact as for a new response field |
 | A shared part (`basic`, `instrument`) changed in the API on purpose | Record the case that should give it (`OREO_EXPECTED=update`), `shared <that case ID>` (`TC-...-<product_type>-API-001` for every product), review `git diff`, then `check` |
 | Feature files | `check` |
 

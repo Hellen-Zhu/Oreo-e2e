@@ -315,5 +315,32 @@ every variant differ from it.
 | New API case that checks the database, not the response | the tag `@expected#none` on it (or on its Feature); no expected file |
 | New event | `data/<channel>/<event>.json`, named after the feature file; shared blocks through `use`. For its Outlines with `<product_type>`: a `Capability` constant named as in the replay project's `framework/products.ts`, the tag `@capability#<name>` on them, the capability on the products that support it, then `mvn -Ptest-data process-test-classes "-Dexec.args=sync-examples"` |
 | A field turns out dynamic | its rule in the event file (`defaults` or `byProduct`), then record again |
+| A new field in every product's response | "A new response field", below |
+| A new field in every product's request | its value in the block the event's rows `use` (`trade-basic`) or in `defaults.request`; a product whose value differs overrides it in its row; then record its responses as for a new response field |
 | Change the default counterparty | `api/common.json`, `ui/common.json`, `setup/trade-create*.json` (three places, on purpose); record the API cases again |
 | New setup payload | `data/setup/<what-it-prepares>.json`, referenced by that name |
+
+### A new response field
+
+The API adds a field to the response of every product (or of several events). Record it, never add it to the expected
+files by hand: the recording is what proves the system returns it.
+
+1. **Decide what the value is, from the requirement** (not from a recording): fixed (the same for every product, or
+   per product but the same on every run), dynamic (a timestamp, a generated ID), or the value of a scenario variable.
+2. **A dynamic value gets its rule before the recording**, in the layer that covers every case that returns the field:
+   - in `basic` or `instrument`: the block `trade-response-parts` of `api/common.json`, so every event that uses it
+     masks the shared part the same way (`"dynamicFields": { "data.trade.basic.<field>": "type" }`);
+   - in one event's response only: that event's `defaults.dynamicFields`;
+   - returned by some products only: their rows (`byProduct`), since a rule whose path is not in the response fails
+     the recording.
+
+   A fixed value needs no rule: it is compared exactly. A value equal to a scenario variable takes `var:<name>`.
+3. **Record every case that returns the field, events together** when the field is in a shared part:
+   `OREO_EXPECTED=update` as an environment variable, with the narrowest `--name` filter that covers them (the API
+   cases book real trades).
+4. `suggest <event>` for each recorded event: a value still reported as generated needs a rule; add it, record again.
+5. `compact all` (not `compact <event>`, and not `shared <case ID>`: the shared parts are taken again from the
+   `sharedSources` recordings, now with the field), then `check`.
+6. Review `git diff`: a field in a shared part adds one line to each product's `_shared/<part>/<P>.json` and leaves
+   the case files as they were; elsewhere, one line to each product's base file, the variants' patches unchanged. A
+   dynamic value shows as its placeholder, never as a real value.
