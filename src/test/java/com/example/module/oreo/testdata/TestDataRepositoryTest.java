@@ -117,15 +117,18 @@ public class TestDataRepositoryTest {
                     { "id": "TC-FRAGMENT-EVENT-<product_type>-API-003", "sharedFragments": null }
                   ]
                 }""");
-        // Rules written once against a shared part, each event placing the part at its own path
+        // Rules written once against a shared part; this event holds the parts at other paths and restates their names
         write("api/part_rules_event.json", """
                 {
-                  "shared": { "part-rules": { "dynamicFields": { "{basic}.dealDate": "type", "{instrument}": "type-tree" } } },
-                  "defaults": { "use": ["part-rules"], "sharedFragments": {
-                    "data.basic": "basic/<product_type>", "data.instrument": "instrument/<product_type>" } },
+                  "shared": { "response-parts": {
+                    "sharedFragments": {
+                      "data.trade.basic": "basic/<product_type>", "data.trade.instrument": "instrument/<product_type>" },
+                    "dynamicFields": { "{basic}.dealDate": "type", "{instrument}": "type-tree" } } },
+                  "defaults": { "use": ["response-parts"], "dynamicFields": { "data.id": "type" },
+                    "sharedFragments": { "data.basic": "basic/<product_type>", "data.instrument": "instrument/<product_type>" } },
                   "cases": [
-                    { "id": "TC-PART-RULES-EVENT-<product_type>-API-002", "sharedFragments": { "data.instrument": null } },
-                    { "id": "TC-PART-RULES-EVENT-<product_type>-API-003", "dynamicFields": { "{basic}": "type-tree" } }
+                    { "id": "TC-PART-RULES-EVENT-<product_type>-API-002", "sharedFragments": null },
+                    { "id": "TC-PART-RULES-EVENT-<product_type>-API-003", "sharedFragments": { "data.instrument": null } }
                   ]
                 }""");
         write("api/bad_part_rule.json", """
@@ -309,23 +312,21 @@ public class TestDataRepositoryTest {
 
     @Test
     public void ruleOnASharedPartTakesThePathTheEventGivesThePart() {
-        assertEquals(Map.of("data.basic.dealDate", "type", "data.instrument", "type-tree"),
+        assertEquals(Map.of("data.basic.dealDate", "type", "data.instrument", "type-tree", "data.id", "type"),
                 repo.forCase("TC-PART-RULES-EVENT-FX_TRF-API-001").dynamicFields());
     }
 
     @Test
-    public void ruleOnASharedPartTheCaseDoesNotDeclareIsAnError() {
-        try {
-            repo.forCase("TC-PART-RULES-EVENT-FX_TRF-API-002");
-            fail("expected an error");
-        } catch (IllegalStateException e) {
-            assertTrue(e.getMessage(), e.getMessage().contains("declares no shared part 'instrument'"));
-        }
+    public void partNamedAgainMovesToTheNewPath() {
+        assertEquals(Map.of("data.basic", "basic/FX_TRF", "data.instrument", "instrument/FX_TRF"),
+                repo.forCase("TC-PART-RULES-EVENT-FX_TRF-API-001").sharedFragments());
     }
 
     @Test
-    public void ruleOnAWholeSharedPart() {
-        assertEquals("type-tree", repo.forCase("TC-PART-RULES-EVENT-FX_TRF-API-003").dynamicFields().get("data.basic"));
+    public void caseWithoutThePartHasNoneOfItsRules() {
+        assertEquals(Map.of("data.id", "type"), repo.forCase("TC-PART-RULES-EVENT-FX_TRF-API-002").dynamicFields());
+        assertEquals(Map.of("data.basic.dealDate", "type", "data.id", "type"),
+                repo.forCase("TC-PART-RULES-EVENT-FX_TRF-API-003").dynamicFields());
     }
 
     @Test(expected = IllegalStateException.class)

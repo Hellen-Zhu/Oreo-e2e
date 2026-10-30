@@ -174,7 +174,20 @@ public final class TestDataRepository {
                 request = JsonLayers.merge(request, (ObjectNode) req);
             }
             mergeMap(dynamicFields, part.get("dynamicFields"));
-            mergeMap(sharedFragments, part.get("sharedFragments"));
+            mergeFragments(part.get("sharedFragments"));
+        }
+
+        /**
+         * As {@link #mergeMap}, except that a part named again moves: its path from an earlier layer is dropped, so an
+         * event whose response holds the part elsewhere ({@code data.basic}) restates the name, nothing else.
+         */
+        private void mergeFragments(JsonNode layer) {
+            if (layer != null && layer.isObject()) {
+                for (Map.Entry<String, JsonNode> entry : layer.properties()) {
+                    if (!entry.getValue().isNull()) sharedFragments.values().remove(entry.getValue().asText());
+                }
+            }
+            mergeMap(sharedFragments, layer);
         }
 
         /** {@code null} clears the map; a key with {@code null} removes that key; any other value is set. */
@@ -201,7 +214,8 @@ public final class TestDataRepository {
         /**
          * The dynamic fields, a path that starts at a shared part ({@code {basic}.dealDate}) made a response path
          * through the case's own {@code sharedFragments}: the path whose name is {@code basic} or starts with
-         * {@code basic/} ({@code data.trade.basic.dealDate} in one event, {@code data.basic.dealDate} in another).
+         * {@code basic/} ({@code data.trade.basic.dealDate} in one event, {@code data.basic.dealDate} in another). A
+         * case that does not declare the part ({@code "sharedFragments": null}) has none of its rules.
          */
         private Map<String, String> resolveRules(CaseId id, String eventPath) {
             Map<String, String> out = new LinkedHashMap<>();
@@ -213,11 +227,10 @@ public final class TestDataRepository {
                     List<String> at = sharedFragments.entrySet().stream()
                             .filter(f -> f.getValue().equals(name) || f.getValue().startsWith(name + "/"))
                             .map(Map.Entry::getKey).toList();
-                    if (at.size() != 1) {
-                        throw error(eventPath, "dynamicFields." + path, id.raw() + (at.isEmpty()
-                                ? " declares no shared part '" + name + "' (sharedFragments) for {" + name + "}"
-                                : " declares the shared part '" + name + "' at " + at + ": {" + name
-                                        + "} must stand for one path"));
+                    if (at.isEmpty()) continue;
+                    if (at.size() > 1) {
+                        throw error(eventPath, "dynamicFields." + path, id.raw() + " declares the shared part '"
+                                + name + "' at " + at + ": {" + name + "} must stand for one path");
                     }
                     path = at.get(0) + (part.group(2) == null ? "" : part.group(2));
                 }

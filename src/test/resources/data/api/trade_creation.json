@@ -44,7 +44,7 @@
     }
   },
   "defaults": {
-    "use": ["trade-basic", "trade-response-parts", "trade-part-rules"],
+    "use": ["trade-basic", "trade-response-parts"],
     "expectedBase": "TC-TRADE-CREATION-<product_type>-API-001",
     "dynamicFields": {
       "msg": "regex:Submitted for checker approval\\. TaskId: CHK-.*",

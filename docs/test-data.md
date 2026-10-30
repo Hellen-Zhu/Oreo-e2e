@@ -143,8 +143,9 @@ value of an object, for keys that change per product or that a path cannot name 
 A path may start at a shared part instead of the response root: `{basic}.dealDate`, or `{instrument}` for the whole
 part. The case's own `sharedFragments` say where the part is: the path whose name is `basic` or starts with `basic/`.
 One rule then serves events that place the part differently (`data.trade.basic.dealDate` in creation,
-`data.basic.dealDate` in an event without `trade`); the block `trade-part-rules` of `api/common.json` holds them. A
-case that uses such a rule without declaring the part, or declares it at two paths, is a load error. Never edit an expected file by hand: change the rule and record again.
+`data.basic.dealDate` in an event without `trade`); the block `trade-response-parts` of `api/common.json` holds them
+beside the parts. A case that does not declare the part (`"sharedFragments": null`, or the part's path `null`) has
+none of its rules; a part declared at two paths is a load error. Never edit an expected file by hand: change the rule and record again.
 
 An API case that never compares its response with a recording (`trade_audit`: it calls a series of APIs, then checks
 the database) carries the tag `@expected#none`, on its Scenario or Scenario Outline line, or once on the Feature or
@@ -205,15 +206,24 @@ refers to it at the place of the part, with only the keys that differ:
 
 The event data declares which parts are shared, response path -> part name, in any layer; `<product_type>` becomes the
 case's product, a case without a product skips such an entry, and `null` removes one entry or the whole map. The block
-`trade-response-parts` of `api/common.json` declares the two trade parts; an event whose response holds `data.trade`
-names it in `use`, with `trade-part-rules` (the parts' dynamic values, written against the part, "Recorded responses"):
+`trade-response-parts` of `api/common.json` declares the two trade parts and their dynamic values (written against
+the part, "Recorded responses"); every event whose response holds the parts names it in `use`:
 
 ```jsonc
-"defaults": { "use": ["trade-basic", "trade-response-parts", "trade-part-rules"], ... }
+"defaults": { "use": ["trade-basic", "trade-response-parts"], ... }
 ```
 
-An event whose response holds the parts elsewhere declares its own `sharedFragments` (`"data.basic": "basic/<product_type>"`)
-and uses `trade-part-rules` as well.
+An event whose response holds the parts elsewhere restates their names at its paths: a part named again in a later
+layer moves there, and its rules follow.
+
+```jsonc
+"defaults": { "use": ["trade-response-parts"],
+              "sharedFragments": { "data.basic": "basic/<product_type>", "data.instrument": "instrument/<product_type>" } }
+```
+
+A case whose response has no such part says `"sharedFragments": null`: nothing of it is shared, and none of its rules
+apply. A case whose response does hold the part keeps it declared (null only the part it lacks, as
+`"data.trade.instrument": null`), or its dynamic values are no longer masked.
 
 When the file is read, a reference becomes the shared part with the reference's keys replacing the part's keys of the
 same name; the case is compared with that full response, as before. The compaction writes both the shared files and
@@ -337,7 +347,7 @@ files by hand: the recording is what proves the system returns it.
 1. **Decide what the value is, from the requirement** (not from a recording): fixed (the same for every product, or
    per product but the same on every run), dynamic (a timestamp, a generated ID), or the value of a scenario variable.
 2. **A dynamic value gets its rule before the recording**, in the layer that covers every case that returns the field:
-   - in `basic` or `instrument`: the block `trade-part-rules` of `api/common.json`, written against the part
+   - in `basic` or `instrument`: the block `trade-response-parts` of `api/common.json`, written against the part
      (`"{basic}.<field>": "type"`), so every event that uses it masks the shared part the same way, wherever its
      response holds the part;
    - in one event's response only: that event's `defaults.dynamicFields`;
