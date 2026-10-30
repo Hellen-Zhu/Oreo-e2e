@@ -138,7 +138,13 @@ recorded:
 
 A path is keys joined by `.`, `[n]` for one array element, `[*]` for all. `*` as a key is every
 value of an object, for keys that change per product or that a path cannot name (`FX:EURSGD@[BFIX]-1500-JP TYO`):
-`"data.fixings.*": "type"` checks that each fixing is an array while every key stays in the file, compared exactly. A rule whose path is not in the response fails the recording. Never edit an expected file by hand: change the rule and record again.
+`"data.fixings.*": "type"` checks that each fixing is an array while every key stays in the file, compared exactly. A rule whose path is not in the response fails the recording.
+
+A path may start at a shared part instead of the response root: `{basic}.dealDate`, or `{instrument}` for the whole
+part. The case's own `sharedFragments` say where the part is: the path whose name is `basic` or starts with `basic/`.
+One rule then serves events that place the part differently (`data.trade.basic.dealDate` in creation,
+`data.basic.dealDate` in an event without `trade`); the block `trade-part-rules` of `api/common.json` holds them. A
+case that uses such a rule without declaring the part, or declares it at two paths, is a load error. Never edit an expected file by hand: change the rule and record again.
 
 An API case that never compares its response with a recording (`trade_audit`: it calls a series of APIs, then checks
 the database) carries the tag `@expected#none`, on its Scenario or Scenario Outline line, or once on the Feature or
@@ -200,11 +206,14 @@ refers to it at the place of the part, with only the keys that differ:
 The event data declares which parts are shared, response path -> part name, in any layer; `<product_type>` becomes the
 case's product, a case without a product skips such an entry, and `null` removes one entry or the whole map. The block
 `trade-response-parts` of `api/common.json` declares the two trade parts; an event whose response holds `data.trade`
-names it in `use`:
+names it in `use`, with `trade-part-rules` (the parts' dynamic values, written against the part, "Recorded responses"):
 
 ```jsonc
-"defaults": { "use": ["trade-basic", "trade-response-parts"], ... }
+"defaults": { "use": ["trade-basic", "trade-response-parts", "trade-part-rules"], ... }
 ```
+
+An event whose response holds the parts elsewhere declares its own `sharedFragments` (`"data.basic": "basic/<product_type>"`)
+and uses `trade-part-rules` as well.
 
 When the file is read, a reference becomes the shared part with the reference's keys replacing the part's keys of the
 same name; the case is compared with that full response, as before. The compaction writes both the shared files and
@@ -328,8 +337,9 @@ files by hand: the recording is what proves the system returns it.
 1. **Decide what the value is, from the requirement** (not from a recording): fixed (the same for every product, or
    per product but the same on every run), dynamic (a timestamp, a generated ID), or the value of a scenario variable.
 2. **A dynamic value gets its rule before the recording**, in the layer that covers every case that returns the field:
-   - in `basic` or `instrument`: the block `trade-response-parts` of `api/common.json`, so every event that uses it
-     masks the shared part the same way (`"dynamicFields": { "data.trade.basic.<field>": "type" }`);
+   - in `basic` or `instrument`: the block `trade-part-rules` of `api/common.json`, written against the part
+     (`"{basic}.<field>": "type"`), so every event that uses it masks the shared part the same way, wherever its
+     response holds the part;
    - in one event's response only: that event's `defaults.dynamicFields`;
    - returned by some products only: their rows (`byProduct`), since a rule whose path is not in the response fails
      the recording.

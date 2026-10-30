@@ -18,6 +18,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
@@ -38,6 +39,8 @@ public final class TestDataRepository {
     private static final Set<String> ROW_KEYS = Set.of("id", "use", "request", "dynamicFields", "sharedFragments",
             "expectedBase", "datFile", "byProduct");
     private static final Pattern RESPONSE_PATH = Pattern.compile("[A-Za-z0-9_]+(\\.[A-Za-z0-9_]+)*");
+    /** A rule path that starts at a shared part: {@code {basic}.dealDate}, {@code {instrument}} (the whole part). */
+    private static final Pattern PART_RULE = Pattern.compile("\\{([A-Za-z0-9_-]+)}([.\\[].*)?");
     private static final Set<String> SETUP_KEYS = Set.of("extends", "request", "response");
     private static final Pattern SETUP_NAME = Pattern.compile("[a-z0-9][a-z0-9-]*");
 
@@ -75,7 +78,7 @@ public final class TestDataRepository {
         Optional<ObjectNode> eventFile = eventFile(id, eventPath);
         Merged merged = new Merged();
         if (eventFile.isEmpty()) {
-            return merged.toCaseData(id);
+            return merged.toCaseData(id, eventPath);
         }
         ObjectNode event = eventFile.get();
         Map<String, JsonNode> shared = sharedBlocks(id.channelDir());
@@ -97,7 +100,7 @@ public final class TestDataRepository {
             }
         }
         checkDatFileExists(merged, id, eventPath);
-        return merged.toCaseData(id);
+        return merged.toCaseData(id, eventPath);
     }
 
     /** The {@code datFile} the layers chose is a file of the case's product (a case without a product: by its step). */
@@ -190,8 +193,37 @@ public final class TestDataRepository {
             }
         }
 
-        CaseData toCaseData(CaseId id) {
-            return new CaseData(id, request, dynamicFields, resolveFragments(id), resolveBase(id), datFile, layers);
+        CaseData toCaseData(CaseId id, String eventPath) {
+            return new CaseData(id, request, resolveRules(id, eventPath), resolveFragments(id), resolveBase(id),
+                    datFile, layers);
+        }
+
+        /**
+         * The dynamic fields, a path that starts at a shared part ({@code {basic}.dealDate}) made a response path
+         * through the case's own {@code sharedFragments}: the path whose name is {@code basic} or starts with
+         * {@code basic/} ({@code data.trade.basic.dealDate} in one event, {@code data.basic.dealDate} in another).
+         */
+        private Map<String, String> resolveRules(CaseId id, String eventPath) {
+            Map<String, String> out = new LinkedHashMap<>();
+            for (Map.Entry<String, String> rule : dynamicFields.entrySet()) {
+                String path = rule.getKey();
+                Matcher part = PART_RULE.matcher(path);
+                if (part.matches()) {
+                    String name = part.group(1);
+                    List<String> at = sharedFragments.entrySet().stream()
+                            .filter(f -> f.getValue().equals(name) || f.getValue().startsWith(name + "/"))
+                            .map(Map.Entry::getKey).toList();
+                    if (at.size() != 1) {
+                        throw error(eventPath, "dynamicFields." + path, id.raw() + (at.isEmpty()
+                                ? " declares no shared part '" + name + "' (sharedFragments) for {" + name + "}"
+                                : " declares the shared part '" + name + "' at " + at + ": {" + name
+                                        + "} must stand for one path"));
+                    }
+                    path = at.get(0) + (part.group(2) == null ? "" : part.group(2));
+                }
+                out.put(path, rule.getValue());
+            }
+            return out;
         }
 
         /**
@@ -432,6 +464,10 @@ public final class TestDataRepository {
             throw error(path, where + ".dynamicFields", "must be an object of path -> rule, or null");
         }
         for (Map.Entry<String, JsonNode> rule : dyn.properties()) {
+            if (rule.getKey().startsWith("{") && !PART_RULE.matcher(rule.getKey()).matches()) {
+                throw error(path, where + ".dynamicFields." + rule.getKey(),
+                        "a path that starts at a shared part is {<part>} then the path inside it ({basic}.dealDate)");
+            }
             if (!rule.getValue().isTextual() && !rule.getValue().isNull()) {
                 throw error(path, where + ".dynamicFields." + rule.getKey(),
                         "a rule is a string (type, type-tree, regex:<pattern>, var:<name>, ignore) or null");

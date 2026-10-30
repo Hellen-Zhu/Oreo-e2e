@@ -44,14 +44,11 @@
     }
   },
   "defaults": {
-    "use": ["trade-basic", "trade-response-parts"],
+    "use": ["trade-basic", "trade-response-parts", "trade-part-rules"],
     "expectedBase": "TC-TRADE-CREATION-<product_type>-API-001",
     "dynamicFields": {
       "msg": "regex:Submitted for checker approval\\. TaskId: CHK-.*",
       "data.trade.id": "type",
-      "data.trade.basic.dealDate": "type",
-      "data.trade.basic.valueDate": "type",
-      "data.trade.basic.premiumDate": "type",
       "data.checkerContext.taskId": "type"
     }
   },
