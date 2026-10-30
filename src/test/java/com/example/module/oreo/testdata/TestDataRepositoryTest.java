@@ -105,36 +105,42 @@ public class TestDataRepositoryTest {
                 { "defaults": { "datFile": "../FX_TRF.dat" } }""");
         write("api/clash_block.json", """
                 { "shared": { "base": { "request": { "basic": { "a": "9" } } } } }""");
-        // Shared response parts: a block declares them, a row adds or removes one
+        // Shared response parts: a block names them and their files, the event gives their paths, a row adds or removes one
         write("api/fragment_event.json", """
                 {
-                  "shared": { "parts": { "sharedFragments": {
-                    "data.trade.basic": "basic/<product_type>", "data.trade.instrument": "instrument/<product_type>" } } },
-                  "defaults": { "use": ["parts"] },
+                  "shared": {
+                    "parts": { "sharedFragments": { "basic": "basic/<product_type>", "instrument": "instrument/<product_type>" } },
+                    "trace-part": { "sharedFragments": { "trace": "trace/common" } } },
+                  "defaults": { "use": ["parts"],
+                    "sharedFragments": { "basic": "data.trade.basic", "instrument": "data.trade.instrument" } },
                   "cases": [
-                    { "id": "TC-FRAGMENT-EVENT-<product_type>-API-002",
-                      "sharedFragments": { "data.trade.instrument": null, "data.trade.trace": "trace/common" } },
+                    { "id": "TC-FRAGMENT-EVENT-<product_type>-API-002", "use": ["trace-part"],
+                      "sharedFragments": { "instrument": null, "trace": "data.trade.trace" } },
                     { "id": "TC-FRAGMENT-EVENT-<product_type>-API-003", "sharedFragments": null }
                   ]
                 }""");
-        // Rules written once against a shared part; this event holds the parts at other paths and restates their names
+        // Rules written once against a shared part; this event holds the parts without "trade"
         write("api/part_rules_event.json", """
                 {
                   "shared": { "response-parts": {
-                    "sharedFragments": {
-                      "data.trade.basic": "basic/<product_type>", "data.trade.instrument": "instrument/<product_type>" },
+                    "sharedFragments": { "basic": "basic/<product_type>", "instrument": "instrument/<product_type>" },
                     "dynamicFields": { "{basic}.dealDate": "type", "{instrument}": "type-tree" } } },
                   "defaults": { "use": ["response-parts"], "dynamicFields": { "data.id": "type" },
-                    "sharedFragments": { "data.basic": "basic/<product_type>", "data.instrument": "instrument/<product_type>" } },
+                    "sharedFragments": { "basic": "data.basic", "instrument": "data.instrument" } },
                   "cases": [
                     { "id": "TC-PART-RULES-EVENT-<product_type>-API-002", "sharedFragments": null },
-                    { "id": "TC-PART-RULES-EVENT-<product_type>-API-003", "sharedFragments": { "data.instrument": null } }
+                    { "id": "TC-PART-RULES-EVENT-<product_type>-API-003", "sharedFragments": { "instrument": null } }
                   ]
                 }""");
+        write("api/no_path_event.json", """
+                { "shared": { "parts": { "sharedFragments": { "basic": "basic/<product_type>" } } },
+                  "defaults": { "use": ["parts"] } }""");
+        write("api/path_key_event.json", """
+                { "defaults": { "sharedFragments": { "data.trade.basic": "basic/<product_type>" } } }""");
         write("api/bad_part_rule.json", """
                 { "defaults": { "dynamicFields": { "{basic.dealDate": "type" } } }""");
         write("api/bad_fragment.json", """
-                { "defaults": { "sharedFragments": { "data.trade.basic": "../basic" } } }""");
+                { "defaults": { "sharedFragments": { "basic": "../basic" } } }""");
         // UI: flattening into ctx keys; dynamicFields, expectedBase and sharedFragments are API only
         write("ui/flatten_event.json", """
                 { "defaults": { "request": { "basic": { "a": "1" }, "udf": [ { "k": "v" } ] } } }""");
@@ -143,7 +149,7 @@ public class TestDataRepositoryTest {
         write("ui/ui_base.json", """
                 { "defaults": { "expectedBase": "TC-UI-BASE-<product_type>-UI-001" } }""");
         write("ui/ui_fragment.json", """
-                { "defaults": { "sharedFragments": { "data.trade.basic": "basic/<product_type>" } } }""");
+                { "defaults": { "sharedFragments": { "basic": "basic/<product_type>" } } }""");
         // Setup data
         write("setup/base-setup.json", """
                 { "request": { "basic": { "a": "1" } } }""");
@@ -316,8 +322,18 @@ public class TestDataRepositoryTest {
                 repo.forCase("TC-PART-RULES-EVENT-FX_TRF-API-001").dynamicFields());
     }
 
+    @Test(expected = IllegalStateException.class)
+    public void partWithoutItsPathIsAnError() {
+        repo.forCase("TC-NO-PATH-EVENT-FX_TRF-API-001");
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void pathAsKeyIsAnError() {
+        repo.forCase("TC-PATH-KEY-EVENT-FX_TRF-API-001");
+    }
+
     @Test
-    public void partNamedAgainMovesToTheNewPath() {
+    public void partTakesThePathTheEventGives() {
         assertEquals(Map.of("data.basic", "basic/FX_TRF", "data.instrument", "instrument/FX_TRF"),
                 repo.forCase("TC-PART-RULES-EVENT-FX_TRF-API-001").sharedFragments());
     }

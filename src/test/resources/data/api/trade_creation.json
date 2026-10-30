@@ -45,6 +45,7 @@
   },
   "defaults": {
     "use": ["trade-basic", "trade-response-parts"],
+    "sharedFragments": { "basic": "data.trade.basic", "instrument": "data.trade.instrument" },
     "expectedBase": "TC-TRADE-CREATION-<product_type>-API-001",
     "dynamicFields": {
       "msg": "regex:Submitted for checker approval\\. TaskId: CHK-.*",

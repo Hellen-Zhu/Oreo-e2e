@@ -88,11 +88,12 @@ patches. When the responses share nothing, leave it out and say why in `_comment
 measures every candidate base on the masked recordings.
 
 **`sharedFragments`**: when the response holds a part another event returns too (the trade's `basic` and
-`instrument`), name the block `trade-response-parts` of `api/common.json` in `use`; the compaction keeps the part once
-per product in `expected/_shared/`, taken from the events of `sharedSources` (`api/common.json`, `trade_creation`)
-before any other. An event whose part sits at another path (`data.basic`) declares its own `sharedFragments` with the
-same names. Mask its dynamic values with the same rules as the other events, or every unmasked
-value stays in the case's file as a key that differs. See `docs/test-data.md`, "Shared parts".
+`instrument`), name the block `trade-response-parts` of `api/common.json` in `use` and give each part's path in this
+event's response: `"sharedFragments": { "basic": "data.trade.basic", "instrument": "data.trade.instrument" }` (or
+`data.basic` without `trade`). The block holds the parts' files and their dynamic values (`{basic}.dealDate`), which
+follow the path. The compaction keeps the part once per product in `expected/_shared/`, taken from the events of
+`sharedSources` (`api/common.json`, `trade_creation`) before any other. A case whose response has no such part (a
+rejected request) says `"sharedFragments": null`, and has none of the parts' rules. See `docs/test-data.md`, "Shared parts".
 
 A case whose evidence is the database or audit, not the response, carries `@expected#none` and has no expected file.
 

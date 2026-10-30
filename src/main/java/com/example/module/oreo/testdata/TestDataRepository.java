@@ -40,6 +40,7 @@ public final class TestDataRepository {
             "expectedBase", "datFile", "byProduct");
     private static final Pattern RESPONSE_PATH = Pattern.compile("[A-Za-z0-9_]+(\\.[A-Za-z0-9_]+)*");
     /** A rule path that starts at a shared part: {@code {basic}.dealDate}, {@code {instrument}} (the whole part). */
+    private static final Pattern PART_NAME = Pattern.compile("[A-Za-z0-9_-]+");
     private static final Pattern PART_RULE = Pattern.compile("\\{([A-Za-z0-9_-]+)}([.\\[].*)?");
     private static final Set<String> SETUP_KEYS = Set.of("extends", "request", "response");
     private static final Pattern SETUP_NAME = Pattern.compile("[a-z0-9][a-z0-9-]*");
@@ -158,7 +159,10 @@ public final class TestDataRepository {
     private static final class Merged {
         ObjectNode request = Json.MAPPER.createObjectNode();
         final Map<String, String> dynamicFields = new LinkedHashMap<>();
-        final Map<String, String> sharedFragments = new LinkedHashMap<>();
+        /** Shared part name -> its file ({@code basic/<product_type>}), from a block such as trade-response-parts. */
+        final Map<String, String> partFiles = new LinkedHashMap<>();
+        /** Shared part name -> where this event's response holds it ({@code data.trade.basic}). */
+        final Map<String, String> partPaths = new LinkedHashMap<>();
         String expectedBase;
         String datFile;
         String datFileFrom;
@@ -178,16 +182,27 @@ public final class TestDataRepository {
         }
 
         /**
-         * As {@link #mergeMap}, except that a part named again moves: its path from an earlier layer is dropped, so an
-         * event whose response holds the part elsewhere ({@code data.basic}) restates the name, nothing else.
+         * {@code sharedFragments}: part name -> its file (a value with {@code /}) or its path in the response (a
+         * value without). {@code null} drops every part, a name with {@code null} drops that part, file and path.
          */
         private void mergeFragments(JsonNode layer) {
-            if (layer != null && layer.isObject()) {
-                for (Map.Entry<String, JsonNode> entry : layer.properties()) {
-                    if (!entry.getValue().isNull()) sharedFragments.values().remove(entry.getValue().asText());
+            if (layer == null) return;
+            if (layer.isNull()) {
+                partFiles.clear();
+                partPaths.clear();
+                return;
+            }
+            for (Map.Entry<String, JsonNode> entry : layer.properties()) {
+                String name = entry.getKey();
+                if (entry.getValue().isNull()) {
+                    partFiles.remove(name);
+                    partPaths.remove(name);
+                } else if (entry.getValue().asText().contains("/")) {
+                    partFiles.put(name, entry.getValue().asText());
+                } else {
+                    partPaths.put(name, entry.getValue().asText());
                 }
             }
-            mergeMap(sharedFragments, layer);
         }
 
         /** {@code null} clears the map; a key with {@code null} removes that key; any other value is set. */
@@ -207,32 +222,36 @@ public final class TestDataRepository {
         }
 
         CaseData toCaseData(CaseId id, String eventPath) {
-            return new CaseData(id, request, resolveRules(id, eventPath), resolveFragments(id), resolveBase(id),
-                    datFile, layers);
+            for (String name : partFiles.keySet()) {
+                if (!partPaths.containsKey(name)) {
+                    throw error(eventPath, "sharedFragments." + name, id.raw() + " has the shared part '" + name
+                            + "' (" + partFiles.get(name) + ") but not its path in this event's response:"
+                            + " \"" + name + "\": \"data.trade." + name + "\", or null when the response has none");
+                }
+            }
+            for (String name : partPaths.keySet()) {
+                if (!partFiles.containsKey(name)) {
+                    throw error(eventPath, "sharedFragments." + name, id.raw() + " gives the path of '" + name
+                            + "', a part no block declares (\"" + name + "\": \"" + name + "/<product_type>\")");
+                }
+            }
+            return new CaseData(id, request, resolveRules(), resolveFragments(id), resolveBase(id), datFile, layers);
         }
 
         /**
          * The dynamic fields, a path that starts at a shared part ({@code {basic}.dealDate}) made a response path
-         * through the case's own {@code sharedFragments}: the path whose name is {@code basic} or starts with
-         * {@code basic/} ({@code data.trade.basic.dealDate} in one event, {@code data.basic.dealDate} in another). A
-         * case that does not declare the part ({@code "sharedFragments": null}) has none of its rules.
+         * with the part's path in this event ({@code data.trade.basic.dealDate}, {@code data.basic.dealDate}). A case
+         * without the part ({@code "sharedFragments": null}) has none of its rules.
          */
-        private Map<String, String> resolveRules(CaseId id, String eventPath) {
+        private Map<String, String> resolveRules() {
             Map<String, String> out = new LinkedHashMap<>();
             for (Map.Entry<String, String> rule : dynamicFields.entrySet()) {
                 String path = rule.getKey();
                 Matcher part = PART_RULE.matcher(path);
                 if (part.matches()) {
-                    String name = part.group(1);
-                    List<String> at = sharedFragments.entrySet().stream()
-                            .filter(f -> f.getValue().equals(name) || f.getValue().startsWith(name + "/"))
-                            .map(Map.Entry::getKey).toList();
-                    if (at.isEmpty()) continue;
-                    if (at.size() > 1) {
-                        throw error(eventPath, "dynamicFields." + path, id.raw() + " declares the shared part '"
-                                + name + "' at " + at + ": {" + name + "} must stand for one path");
-                    }
-                    path = at.get(0) + (part.group(2) == null ? "" : part.group(2));
+                    String at = partPaths.get(part.group(1));
+                    if (at == null) continue;
+                    path = at + (part.group(2) == null ? "" : part.group(2));
                 }
                 out.put(path, rule.getValue());
             }
@@ -240,18 +259,18 @@ public final class TestDataRepository {
         }
 
         /**
-         * The shared fragments, {@code <...>} replaced by the case's product; a name that needs a product is left out
-         * on a case without one.
+         * The shared fragments as response path -> file, {@code <...>} replaced by the case's product; a file that
+         * needs a product is left out on a case without one.
          */
         private Map<String, String> resolveFragments(CaseId id) {
             Map<String, String> out = new LinkedHashMap<>();
-            for (Map.Entry<String, String> entry : sharedFragments.entrySet()) {
-                String name = entry.getValue();
-                if (name.contains("<")) {
+            for (Map.Entry<String, String> entry : partFiles.entrySet()) {
+                String file = entry.getValue();
+                if (file.contains("<")) {
                     if (id.product() == null) continue;
-                    name = name.replaceAll("<[^>]+>", id.product());
+                    file = file.replaceAll("<[^>]+>", id.product());
                 }
-                out.put(entry.getKey(), name);
+                out.put(partPaths.get(entry.getKey()), file);
             }
             return out;
         }
@@ -497,18 +516,24 @@ public final class TestDataRepository {
         }
         if (fragments.isNull()) return;
         if (!fragments.isObject()) {
-            throw error(path, where + ".sharedFragments", "must be an object of response path -> fragment name, or null");
+            throw error(path, where + ".sharedFragments",
+                    "must be an object of part name -> its file (basic/<product_type>) or its path (data.trade.basic),"
+                            + " or null");
         }
         for (Map.Entry<String, JsonNode> entry : fragments.properties()) {
             String at = where + ".sharedFragments." + entry.getKey();
-            if (!RESPONSE_PATH.matcher(entry.getKey()).matches()) {
-                throw error(path, at, "the path is keys joined by '.' (data.trade.instrument), no array index");
+            if (!PART_NAME.matcher(entry.getKey()).matches()) {
+                throw error(path, at, "the key is the part's name (basic, instrument), not a path: \""
+                        + entry.getKey().replaceAll(".*\\.", "") + "\": \"" + entry.getKey() + "\"");
             }
-            JsonNode name = entry.getValue();
-            if (name.isNull()) continue;
-            if (!name.isTextual() || !SharedFragments.isName(name.asText().replaceAll("<[^>]+>", "P"))) {
-                throw error(path, at, "a fragment name is words of letters, digits, _ or - joined by /,"
-                        + " <product_type> for the case's product (instrument/<product_type>), or null");
+            JsonNode value = entry.getValue();
+            if (value.isNull()) continue;
+            String text = value.isTextual() ? value.asText() : "";
+            boolean file = text.contains("/") && SharedFragments.isName(text.replaceAll("<[^>]+>", "P"));
+            if (!file && !RESPONSE_PATH.matcher(text).matches()) {
+                throw error(path, at, "the value is the part's file, words of letters, digits, _ or - joined by /"
+                        + " with <product_type> for the case's product (basic/<product_type>), or its path in the"
+                        + " response, keys joined by '.' (data.trade.basic), or null");
             }
         }
     }

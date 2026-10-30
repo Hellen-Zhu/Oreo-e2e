@@ -141,11 +141,10 @@ value of an object, for keys that change per product or that a path cannot name 
 `"data.fixings.*": "type"` checks that each fixing is an array while every key stays in the file, compared exactly. A rule whose path is not in the response fails the recording.
 
 A path may start at a shared part instead of the response root: `{basic}.dealDate`, or `{instrument}` for the whole
-part. The case's own `sharedFragments` say where the part is: the path whose name is `basic` or starts with `basic/`.
-One rule then serves events that place the part differently (`data.trade.basic.dealDate` in creation,
-`data.basic.dealDate` in an event without `trade`); the block `trade-response-parts` of `api/common.json` holds them
-beside the parts. A case that does not declare the part (`"sharedFragments": null`, or the part's path `null`) has
-none of its rules; a part declared at two paths is a load error. Never edit an expected file by hand: change the rule and record again.
+part. It takes the part's path in the case's event (`sharedFragments`, "Shared parts"): `data.trade.basic.dealDate`
+in creation, `data.basic.dealDate` in an event without `trade`, from one rule. The block `trade-response-parts` of
+`api/common.json` holds them beside the parts. A case without the part (`"sharedFragments": null`, or the part `null`)
+has none of its rules. Never edit an expected file by hand: change the rule and record again.
 
 An API case that never compares its response with a recording (`trade_audit`: it calls a series of APIs, then checks
 the database) carries the tag `@expected#none`, on its Scenario or Scenario Outline line, or once on the Feature or
@@ -204,26 +203,29 @@ refers to it at the place of the part, with only the keys that differ:
 "basic": { "_shared": "basic/FX_TRF", "status": "Live" }
 ```
 
-The event data declares which parts are shared, response path -> part name, in any layer; `<product_type>` becomes the
-case's product, a case without a product skips such an entry, and `null` removes one entry or the whole map. The block
-`trade-response-parts` of `api/common.json` declares the two trade parts and their dynamic values (written against
-the part, "Recorded responses"); every event whose response holds the parts names it in `use`:
+`sharedFragments` maps a part's name to its file or to its path, in any layer: a value with `/` is the file
+(`expected/_shared/<file>.json`; `<product_type>` becomes the case's product, a case without a product does not share
+it), a value without is the path of the part in this event's response. The block `trade-response-parts` of
+`api/common.json` names the two trade parts, their files and their dynamic values (written against the part,
+"Recorded responses"); every event whose response holds them names the block in `use` and gives their paths:
 
 ```jsonc
-"defaults": { "use": ["trade-basic", "trade-response-parts"], ... }
-```
-
-An event whose response holds the parts elsewhere restates their names at its paths: a part named again in a later
-layer moves there, and its rules follow.
-
-```jsonc
+// api/common.json
+"trade-response-parts": {
+  "sharedFragments": { "basic": "basic/<product_type>", "instrument": "instrument/<product_type>" },
+  "dynamicFields": { "{basic}.dealDate": "type", "{basic}.valueDate": "type", "{basic}.premiumDate": "type" } }
+// trade_creation.json, trade_query.json
+"defaults": { "use": ["trade-basic", "trade-response-parts"],
+              "sharedFragments": { "basic": "data.trade.basic", "instrument": "data.trade.instrument" } }
+// trade_approval_rejection.json: the parts without "trade"
 "defaults": { "use": ["trade-response-parts"],
-              "sharedFragments": { "data.basic": "basic/<product_type>", "data.instrument": "instrument/<product_type>" } }
+              "sharedFragments": { "basic": "data.basic", "instrument": "data.instrument" } }
 ```
 
-A case whose response has no such part says `"sharedFragments": null`: nothing of it is shared, and none of its rules
-apply. A case whose response does hold the part keeps it declared (null only the part it lacks, as
-`"data.trade.instrument": null`), or its dynamic values are no longer masked.
+A part with a file and no path, or a path and no file, is a load error. `null` removes one part (`{ "instrument":
+null }`: file, path and rules) or every part (`"sharedFragments": null`): a case whose response does not hold the
+parts (a rejected request) says so, and none of their rules apply to it. A case whose response holds the part but
+should not share it nulls that part only; its other parts keep their rules.
 
 When the file is read, a reference becomes the shared part with the reference's keys replacing the part's keys of the
 same name; the case is compared with that full response, as before. The compaction writes both the shared files and
@@ -243,8 +245,8 @@ the references, in a file kept in full (a patch on a base works on the base's fu
 `sharedSources` in `api/common.json` names the events whose recordings are the shared parts, here
 `["trade_creation"]`: the other events (approval, amendment, query) refer to the parts creation recorded, with their
 own differences (`"version": 2`) beside the reference. Without it, the event first by name would give the parts. A
-source without recordings is skipped; an event whose path differs (`data.basic` without `trade`) declares its own
-`sharedFragments` with the same names.
+source without recordings is skipped; an event whose path differs (`data.basic` without `trade`) gives its own paths
+for the same names.
 
 A part looks the same in every event only when every event masks its dynamic values with the same rules
 (`dynamicFields`): an unmasked date in one event is a key that differs, kept in that event's files. Re-record a shared
