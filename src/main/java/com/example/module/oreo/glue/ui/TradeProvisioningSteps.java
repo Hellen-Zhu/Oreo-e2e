@@ -5,6 +5,7 @@ import com.example.genie.module.rest.service.RequestResponseHelper;
 import com.example.module.oreo.testdata.ProductDatFiles;
 import com.example.module.oreo.utils.RestApiUtil;
 import com.example.module.oreo.utils.TradeApiClient;
+import com.example.module.oreo.playwright.PlaywrightServiceResolver;
 import cucumber.api.java.Before;
 import cucumber.api.java.en.Given;
 import cucumber.api.Scenario;

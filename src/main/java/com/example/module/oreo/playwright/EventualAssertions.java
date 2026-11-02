@@ -1,4 +1,4 @@
-package com.example.module.oreo.glue.ui;
+package com.example.module.oreo.playwright;
 
 import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.assertions.LocatorAssertions;

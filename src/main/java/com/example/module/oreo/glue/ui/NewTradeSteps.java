@@ -1,6 +1,7 @@
 package com.example.module.oreo.glue.ui;
 
 import com.example.module.oreo.testdata.ProductDatFiles;
+import com.example.module.oreo.playwright.PlaywrightServiceResolver;
 import cucumber.api.Scenario;
 import cucumber.api.java.Before;
 import cucumber.api.java.en.When;

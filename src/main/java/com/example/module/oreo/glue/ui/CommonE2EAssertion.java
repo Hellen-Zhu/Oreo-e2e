@@ -2,6 +2,7 @@ package com.example.module.oreo.glue.ui;
 
 import com.microsoft.playwright.Locator;
 import com.example.genie.module.playwright.glue.transformer.LocatorTransformer;
+import com.example.module.oreo.playwright.PlaywrightServiceResolver;
 import cucumber.api.Scenario;
 import cucumber.api.Transform;
 import cucumber.api.java.Before;

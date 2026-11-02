@@ -1,4 +1,4 @@
-package com.example.module.oreo.glue.ui;
+package com.example.module.oreo.playwright;
 
 import com.microsoft.playwright.BrowserContext;
 import com.microsoft.playwright.Page;

@@ -5,6 +5,7 @@ import com.microsoft.playwright.assertions.LocatorAssertions;
 import com.microsoft.playwright.assertions.PlaywrightAssertions;
 import com.example.genie.module.rest.service.RequestResponseHelper;
 import com.example.module.oreo.utils.RestApiUtil;
+import com.example.module.oreo.playwright.PlaywrightServiceResolver;
 import cucumber.api.Scenario;
 import cucumber.api.java.Before;
 import cucumber.api.java.en.Given;

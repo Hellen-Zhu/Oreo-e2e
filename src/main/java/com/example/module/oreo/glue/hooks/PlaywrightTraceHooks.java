@@ -5,7 +5,7 @@ import com.microsoft.playwright.Tracing;
 import com.example.genie.model.GenieScenario;
 import com.example.module.oreo.OreoModule;
 import com.example.module.oreo.OreoModuleConfiguration;
-import com.example.module.oreo.glue.ui.PlaywrightServiceResolver;
+import com.example.module.oreo.playwright.PlaywrightServiceResolver;
 import cucumber.api.Scenario;
 import cucumber.api.java.After;
 import cucumber.api.java.Before;

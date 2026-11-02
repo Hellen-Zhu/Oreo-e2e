@@ -1,5 +1,6 @@
 package com.example.module.oreo.glue.ui;
 
+import com.example.module.oreo.playwright.PlaywrightServiceResolver;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.microsoft.playwright.Locator;
 import cucumber.api.Scenario;

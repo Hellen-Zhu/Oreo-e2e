@@ -2,6 +2,7 @@ package com.example.module.oreo.glue.ui;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.example.module.oreo.utils.TradeApiClient;
+import com.example.module.oreo.playwright.PlaywrightServiceResolver;
 import com.microsoft.playwright.Locator;
 import cucumber.api.Scenario;
 import cucumber.api.java.Before;

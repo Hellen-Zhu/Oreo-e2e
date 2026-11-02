@@ -97,6 +97,7 @@ Details: [docs/test-data.md](docs/test-data.md), "Recorded responses" and "Base 
 ```
 src/main/java/com/example/module/oreo/
   glue/hooks, glue/api, glue/ui       step definitions and hooks
+  playwright/                         the UI context of the steps (PlaywrightServiceResolver) and its helpers
   testdata/                           data loading, products (ProductDatFiles, Capability), recorded responses
 src/main/resources/snippet/
   api/, ui/{flows,pages,components}/  reusable step sequences

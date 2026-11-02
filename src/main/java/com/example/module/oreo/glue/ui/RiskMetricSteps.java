@@ -1,6 +1,7 @@
 package com.example.module.oreo.glue.ui;
 
 import com.example.module.oreo.testdata.TestData;
+import com.example.module.oreo.playwright.PlaywrightServiceResolver;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.Route;
 import cucumber.api.Scenario;
