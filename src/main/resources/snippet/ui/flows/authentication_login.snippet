@@ -6,17 +6,14 @@
     And page trade portal is displayed
     And page trade portal New Today Blotter view is visible
 
-@When "^maker is logged in to the trade portal$"
-    When login in application with email 'maker@example.com' and password '<password not committed>'
+@Given "^login in application as '([^']*)'$"
+    Given navigate to login page
+    And page login signs in as '$1'
+    And page trade portal is displayed
+    And page trade portal New Today Blotter view is visible
 
-@When "^checker is logged in to the trade portal$"
-    When login in application with email 'checker@example.com' and password '<password not committed>'
-
-@When "^admin is logged in to the trade portal$"
-    When login in application with email 'admin@example.com' and password '<password not committed>'
-
-@When "^user is logged in to the trade portal$"
-    When login in application with email 'user@example.com' and password '<password not committed>'
+@When "^(maker|checker|admin|user) is logged in to the trade portal$"
+    When login in application as '$1'
 
 @When "^user logs out and re-login$"
     When page user preference opens settings panel
