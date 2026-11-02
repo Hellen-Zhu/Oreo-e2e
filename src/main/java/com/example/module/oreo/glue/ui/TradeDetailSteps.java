@@ -31,7 +31,7 @@ public class TradeDetailSteps {
         log.info("[TradeDetailSteps] Confirming trade change confirmation; wait for /trades/{}/update?tradeAction=SUBMIT response", tradeId);
         ctx.clickAndWaitForResponse(
                 "trade_change_confirmation.confirm_btn",
-                tradeUpdateUrl(tradeId) + "?tradeAction=SUBMIT",
+                TradeApiClient.updatePath(tradeId) + "?tradeAction=SUBMIT",
                 "POST"
         );
     }
@@ -42,7 +42,7 @@ public class TradeDetailSteps {
         log.info("[TradeDetailSteps] Confirming trade change confirmation; wait for /trades/{}/update?tradeAction=SAVE response", tradeId);
         ctx.clickAndWaitForResponse(
                 "trade_change_confirmation.confirm_btn",
-                tradeUpdateUrl(tradeId) + "?tradeAction=SAVE",
+                TradeApiClient.updatePath(tradeId) + "?tradeAction=SAVE",
                 "POST"
         );
     }
@@ -59,9 +59,5 @@ public class TradeDetailSteps {
 
     private void clickUsingConfiguredRiskEngineModeForNewTrade(String ctxKey, String buttonLocator) {
         ctx.clickUsingRiskEngineMode(buttonLocator, TradeApiClient.calculateRiskPath(ctx.get(ctxKey)), "risk-calc-success-mock");
-    }
-
-    private static String tradeUpdateUrl(String tradeId) {
-        return "/api/v1" + TradeApiClient.updatePath(tradeId);
     }
 }
