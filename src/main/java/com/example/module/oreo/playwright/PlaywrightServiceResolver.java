@@ -42,6 +42,7 @@ public final class PlaywrightServiceResolver {
         private final GenieScenario genieScenario;
         private final PlaywrightService service;
         private final ElementLookup elements;
+        private final ElementActions actions;
         private final ResponseWaiter responses;
         private final RouteMocks mocks;
         private final EventualAssertions assertions;
@@ -51,6 +52,7 @@ public final class PlaywrightServiceResolver {
             this.genieScenario = genieScenario;
             this.service = service;
             this.elements = new ElementLookup(service);
+            this.actions = new ElementActions(service, this::timeoutMillis);
             this.responses = new ResponseWaiter(service, this::timeoutMillis);
             this.mocks = new RouteMocks(service, this::timeoutMillis);
             this.assertions = new EventualAssertions(this::timeoutMillis);
@@ -122,60 +124,19 @@ public final class PlaywrightServiceResolver {
             return ToastRecorder.attach(service.getPage(), genieScenario, elements.testIdSelector("toast.notification"));
         }
 
-        // ── UI primitives ──────────────────────────────────────────────
-
-        /**
-         * Fills a React-controlled {@code <input type="date">} via {@code pressSequentially} and
-         * a dispatched native {@code change} event, so React's synthetic onChange fires and any
-         * {@code hasChanges} state becomes true. Use this instead of {@code locator.fill()} for
-         * date inputs — {@code fill()} throws {@code Malformed value} at the Playwright layer
-         * because Playwright validates the value format against the input type before writing it.
-         *
-         * @param elementKey element repository key of the date input
-         * @param value      date string to type (format must match the input's expected format)
-         */
-        public void fillDateInput(String elementKey, String value) {
-            Locator input = service.getLocator(elementKey);
-            input.waitFor(new Locator.WaitForOptions()
-                    .setState(com.microsoft.playwright.options.WaitForSelectorState.VISIBLE)
-                    .setTimeout(timeoutMillis()));
-            Boolean disabled = (Boolean) input.evaluate("el => !!el.disabled");
-            if (Boolean.TRUE.equals(disabled)) {
-                throw new IllegalStateException("Element is disabled (read-only state).");
-            }
-            input.evaluate(
-                    "(el, v) => {" +
-                            "el.value = v;" +
-                            "el.dispatchEvent(new CustomEvent('ui-change', {" +
-                            "detail: { value: v }, bubbles: true, composed: true" +
-                            "}));" +
-                            "}",
-                    value
-            );
+        /** {@link #getLocatorWithParam} with the value of stored variable {@code ctxKey}, which the report shows. */
+        public Locator getLocatorFromStoredVariable(String name, String ctxKey) {
+            String value = get(ctxKey);
+            write("Dynamic value from scenario context variable '" + ctxKey + "' is: " + value);
+            return getLocatorWithParam(name, value);
         }
 
-        /**
-         * Clicks the option whose visible text matches {@code name},
-         * with configurable exact-match behaviour.
-         *
-         * @param name the visible label of the option to click
-         */
-        public void clickOption(String name) {
-            // UI WebKit: ui-dropdown-input renders sl-menu-item elements inside its shadow DOM.
-            // ui-dropdown-option elements exist in light DOM but have zero bounding rect and
-            // cannot be clicked directly. We must traverse the shadow DOM to find sl-menu-item.
-            Locator option = service().getPage().getByRole(
-                    com.microsoft.playwright.options.AriaRole.MENUITEM,
-                    new com.microsoft.playwright.Page.GetByRoleOptions()
-                            .setName(name)
-                            .setExact(true)
-            );
-
-            option.waitFor(new Locator.WaitForOptions()
-                    .setState(com.microsoft.playwright.options.WaitForSelectorState.VISIBLE)
-                    .setTimeout(timeoutMillis()));
-            option.click();
-        }
+        // ── Element actions (ElementActions) ───────────────────────────
+        public Locator innerInput(Locator element) { return ElementActions.innerInput(element); }
+        public Locator innerInput(String elementKey) { return innerInput(service.getLocator(elementKey)); }
+        public void waitForVisible(Locator element) { actions.waitForVisible(element); }
+        public void fillDateInput(String elementKey, String value) { actions.fillDateInput(elementKey, value); }
+        public void clickOption(String name) { actions.clickOption(name); }
 
         public void waitForFunction(String expression, Object arg) {
             waitForFunction(expression, arg, timeoutMillis());

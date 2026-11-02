@@ -147,9 +147,7 @@ final class ResponseWaiter {
 
     void fillInnerInputAndWaitForResponse(String locatorKey, String value, String urlFragment, String httpMethod) {
         runAndWaitForResponse(
-                () -> service.getLocator(locatorKey)
-                        .locator("input[part='input'], textarea[part='input']")
-                        .fill(value),
+                () -> ElementActions.innerInput(service.getLocator(locatorKey)).fill(value),
                 urlFragment,
                 httpMethod
         );

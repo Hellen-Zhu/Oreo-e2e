@@ -28,10 +28,8 @@ public class CommonE2EAssertion {
 
     @Then("^assert that element '([^']*)' with dynamic value from stored variable '([^']*)' is eventually visible$")
     public void assertDynamicElementEventuallyVisible(String locatorName,String dynamicCtxKey) {
-        String dynamicValue = ctx.get(dynamicCtxKey);
-        ctx.write("Dynamic value from scenario context variable '" + dynamicCtxKey + "' is: " + dynamicValue);
         log.debug("[CommonE2EAssertion] assert dynamic value Eventually Visible");
-        ctx.assertEventuallyVisible(ctx.getLocatorWithParam(locatorName, dynamicValue));
+        ctx.assertEventuallyVisible(ctx.getLocatorFromStoredVariable(locatorName, dynamicCtxKey));
     }
 
     @And("^assert that inner '([^']*)' property of '([^']*)' is eventually visible$")
@@ -56,10 +54,8 @@ public class CommonE2EAssertion {
 
     @Then("^assert that element '([^']*)' with dynamic value from stored variable '([^']*)' is eventually hidden$")
     public void assertDynamicElementEventuallyHidden(String locatorName,String dynamicCtxKey) {
-        String dynamicValue = ctx.get(dynamicCtxKey);
-        ctx.write("Dynamic value from scenario context variable '" + dynamicCtxKey + "' is: " + dynamicValue);
         log.debug("[CommonE2EAssertion] assert dynamic value Eventually Hidden");
-        ctx.assertEventuallyHidden(ctx.getLocatorWithParam(locatorName, dynamicValue));
+        ctx.assertEventuallyHidden(ctx.getLocatorFromStoredVariable(locatorName, dynamicCtxKey));
     }
 
     /**
@@ -176,9 +172,8 @@ public class CommonE2EAssertion {
             String locatorName,
             String dynamicValueCtxKey,
             String valueCtxKey) {
-        String dynamicValue = ctx.get(dynamicValueCtxKey);
         String expected = ctx.get(valueCtxKey);
-        Locator inputElement = ctx.getLocatorWithParam(locatorName, dynamicValue).locator(property);
+        Locator inputElement = ctx.getLocatorFromStoredVariable(locatorName, dynamicValueCtxKey).locator(property);
         ctx.assertHasValue(inputElement, expected);
     }
 }

@@ -107,8 +107,6 @@ public class AllocationSteps {
     }
 
     private void fillSubTradePercentage(Locator row, String percentage) {
-        row.locator("[data-testid='allocation-sub-trade-percentage-input']")
-                .locator("input[part='input'], textarea[part='input']")
-                .fill(percentage);
+        ctx.innerInput(row.locator("[data-testid='allocation-sub-trade-percentage-input']")).fill(percentage);
     }
 }

@@ -35,9 +35,7 @@ public class TradePortalSteps {
         // Resolve menu item from element repo — element name = trade_portal.row_action_{eventnamelowercase}
         String elementKey = "trade_portal.row_action_" + eventName.toLowerCase().replaceAll("\\s+", "");
         Locator menuItem = ctx.service().getLocator(elementKey);
-        menuItem.waitFor(new Locator.WaitForOptions()
-                .setState(WaitForSelectorState.VISIBLE)
-                .setTimeout(ctx.timeoutMillis()));
+        ctx.waitForVisible(menuItem);
         log.info("[TradePortalSteps] Action menu item '{}' (element='{}') confirmed visible for ctx['{}']='{}'.",
                 eventName, elementKey, ctxKey, ctx.get(ctxKey));
     }
@@ -86,9 +84,7 @@ public class TradePortalSteps {
     }
 
     private void fillBlotterSearchInput(String tradeId) {
-        ctx.service().getLocator("trade_portal.search_input")
-                .locator("input[part='input'], textarea[part='input']")
-                .fill(tradeId);
+        ctx.innerInput("trade_portal.search_input").fill(tradeId);
     }
 
     @Then("^blotter row '([^']*)' index (\\d+) column '([^']*)' is '([^']*)'$")
@@ -120,8 +116,7 @@ public class TradePortalSteps {
     @Then("^blotter '([^']*)' with dynamic value from stored variable '([^']*)' contains column '([^']*)'$")
     public void assertBlotterContainsColumn(String blotterElementName, String dynamicCtxKey, String colName) {
 
-        String dynamicValue = ctx.get(dynamicCtxKey);
-        Locator blotter = ctx.getLocatorWithParam(blotterElementName, dynamicValue);
+        Locator blotter = ctx.getLocatorFromStoredVariable(blotterElementName, dynamicCtxKey);
         log.info("[TradePortalSteps] Asserting Blotter '{}' contains column '{}'",
                 blotter, colName);
 
@@ -180,9 +175,7 @@ public class TradePortalSteps {
 
         matchedRow.scrollIntoViewIfNeeded();
 
-        matchedRow.waitFor(new Locator.WaitForOptions()
-                .setState(WaitForSelectorState.VISIBLE)
-                .setTimeout(ctx.timeoutMillis()));
+        ctx.waitForVisible(matchedRow);
 
         matchedRow.click(new Locator.ClickOptions().setButton(MouseButton.RIGHT));
     }
@@ -192,9 +185,7 @@ public class TradePortalSteps {
                 .getByRole(AriaRole.ROW)
                 .filter(new Locator.FilterOptions().setHasText(tradeId))
                 .first();
-        row.waitFor(new Locator.WaitForOptions()
-                .setState(WaitForSelectorState.VISIBLE)
-                .setTimeout(ctx.timeoutMillis()));
+        ctx.waitForVisible(row);
         row.scrollIntoViewIfNeeded();
 
         Locator.ClickOptions clickOptions = new Locator.ClickOptions();

@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.microsoft.playwright.Locator;
-import com.microsoft.playwright.options.WaitForSelectorState;
 import com.example.genie.module.database.glue.DatabaseGlue;
 import com.example.genie.module.rest.service.RequestResponseHelper;
 import com.example.module.oreo.testdata.TestData;
@@ -55,9 +54,7 @@ public class ComposeProductSteps {
     public void addEventOntoCanvas(String element) {
         Locator toolboxItem = ctx.service().getLocator(element);
         Locator dropArea = ctx.service().getLocator("product_edit.canvas_drop_area");
-        toolboxItem.waitFor(new Locator.WaitForOptions()
-                .setState(WaitForSelectorState.VISIBLE)
-                .setTimeout(ctx.timeoutMillis()));
+        ctx.waitForVisible(toolboxItem);
         toolboxItem.dragTo(dropArea);
     }
 

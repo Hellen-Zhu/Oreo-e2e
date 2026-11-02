@@ -2,7 +2,6 @@ package com.example.module.oreo.glue.ui;
 
 import com.example.module.oreo.playwright.PlaywrightServiceResolver;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.microsoft.playwright.Locator;
 import cucumber.api.Scenario;
 import cucumber.api.java.Before;
 import cucumber.api.java.en.And;
@@ -70,8 +69,7 @@ public class CommonE2EInteraction {
 
     @When("^type value '([^']*)' into '([^']*)'$")
     public void typeValueIntoInnerInput(String input, String elementKey) {
-        Locator innerInput = ctx.service().getLocator(elementKey).locator("input[part='input'], textarea[part='input']");
-        innerInput.fill(input);
+        ctx.innerInput(elementKey).fill(input);
     }
 
     @When("^type '([^']*)' from stored variable into '([^']*)'$")
@@ -85,8 +83,7 @@ public class CommonE2EInteraction {
     public void typeInnerValueFromStoredVariable(String ctxKey, String elementKey) {
         String value = ctx.get(ctxKey);
         ctx.write("Typing inner value from stored variable request: " + value);
-        Locator innerInput = ctx.service().getLocator(elementKey).locator("input[part='input'], textarea[part='input']");
-        innerInput.fill(value);
+        ctx.innerInput(elementKey).fill(value);
     }
 
     /**
@@ -108,12 +105,8 @@ public class CommonE2EInteraction {
     @When("^type inner value '([^']*)' from stored variable into '([^']*)' with dynamic value from stored variable '([^']*)'$")
     public void typeInnerValueFromStoredVariableWithDynamicValue(String ctxKey, String elementKey, String dynamicCtxKey) {
         String value = ctx.get(ctxKey);
-        String dynamicValue = ctx.get(dynamicCtxKey);
         ctx.write("Typing inner value from stored variable request: " + value);
-        ctx.write("Dynamic value from scenario context variable '" + dynamicCtxKey + "' is: " + dynamicValue);
-        Locator innerInput = ctx.getLocatorWithParam(elementKey, dynamicValue)
-                .locator("input[part='input'], textarea[part='input']");
-        innerInput.fill(value);
+        ctx.innerInput(ctx.getLocatorFromStoredVariable(elementKey, dynamicCtxKey)).fill(value);
     }
 
     @When("^click element '([^']*)' with dynamic value '([^']*)'$")
@@ -123,16 +116,12 @@ public class CommonE2EInteraction {
 
     @When("^click element '([^']*)' with dynamic value from stored variable '([^']*)'$")
     public void clickElementWithDynamicValueFromCtx(String locatorName, String ctxKey) {
-        String value = ctx.get(ctxKey);
-        ctx.write("Dynamic value from scenario context variable '" + ctxKey + "' is: " + value);
-        ctx.getLocatorWithParam(locatorName, value).click();
+        ctx.getLocatorFromStoredVariable(locatorName, ctxKey).click();
     }
 
     @When("^hover element '([^']*)' with dynamic value from stored variable '([^']*)'$")
     public void hoverElementWithDynamicValueFromCtx(String locatorName, String ctxKey) {
-        String value = ctx.get(ctxKey);
-        ctx.write("Dynamic value from scenario context variable '" + ctxKey + "' is: " + value);
-        ctx.getLocatorWithParam(locatorName, value).hover();
+        ctx.getLocatorFromStoredVariable(locatorName, ctxKey).hover();
     }
 
     @When("^click element '([^']*)' with dynamic value from stored variable '([^']*)' and wait for product page ready$")
