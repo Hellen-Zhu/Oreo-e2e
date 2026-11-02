@@ -35,15 +35,13 @@ public class CommonE2EAssertion {
     @And("^assert that inner '([^']*)' property of '([^']*)' is eventually visible$")
     public void assertInnerElementVisible(String innerSelector, @Transform(LocatorTransformer.class) Locator elementKey) {
         log.debug("[CommonE2EAssertion] assertInnerElementVisible: innerSelector={}, element={}", innerSelector, elementKey);
-        Locator innerElement = resolveInnerElement(elementKey, innerSelector);
-        ctx.assertEventuallyVisible(innerElement);
+        ctx.assertEventuallyVisible(elementKey.locator(innerSelector));
     }
 
     @And("^assert that inner '([^']*)' property of '([^']*)' is eventually hidden$")
     public void assertInnerElementHidden(String innerSelector, @Transform(LocatorTransformer.class) Locator elementKey) {
         log.debug("[CommonE2EAssertion] assertInnerElementHidden: innerSelector={}, element={}", innerSelector, elementKey);
-        Locator innerElement = resolveInnerElement(elementKey, innerSelector);
-        ctx.assertEventuallyHidden(innerElement);
+        ctx.assertEventuallyHidden(elementKey.locator(innerSelector));
     }
 
     @And("^assert that '(.+)' is eventually hidden$")
@@ -76,20 +74,15 @@ public class CommonE2EAssertion {
     @And("^assert that inner '([^']*)' property of '([^']*)' is eventually enabled$")
     public void assertInnerElementEnabled(String innerSelector, @Transform(LocatorTransformer.class) Locator elementKey) {
         log.debug("[CommonE2EAssertion] assertInnerElementEnabled: innerSelector={}, element={}", innerSelector, elementKey);
-        Locator innerElement = resolveInnerElement(elementKey, innerSelector);
-        ctx.assertEventuallyEnabled(innerElement);
+        ctx.assertEventuallyEnabled(elementKey.locator(innerSelector));
     }
 
     @And("^assert that inner '([^']*)' property of '([^']*)' is eventually disabled$")
     public void assertInnerElementDisabled(String innerSelector, @Transform(LocatorTransformer.class) Locator elementKey) {
         log.debug("[CommonE2EAssertion] assertInnerElementDisabled: innerSelector={}, element={}", innerSelector, elementKey);
-        Locator innerElement = resolveInnerElement(elementKey, innerSelector);
-        ctx.assertEventuallyDisabled(innerElement);
+        ctx.assertEventuallyDisabled(elementKey.locator(innerSelector));
     }
 
-    private Locator resolveInnerElement(Locator element, String innerSelector) {
-        return element.locator(innerSelector);
-    }
     /**
      * Asserts that the resolved element is eventually disabled.
      *
