@@ -1,17 +1,9 @@
 package com.example.module.oreo.glue.ui;
 
-import com.microsoft.playwright.Frame;
 import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.Request;
-import com.microsoft.playwright.Response;
-import com.microsoft.playwright.Route;
-import com.microsoft.playwright.TimeoutError;
-import com.microsoft.playwright.assertions.LocatorAssertions;
-import com.microsoft.playwright.assertions.PlaywrightAssertions;
 import com.example.genie.model.GenieScenario;
-import com.example.genie.module.playwright.core.PlaywrightElementRepository;
-import com.example.genie.module.playwright.core.PlaywrightLocatorWrapper;
 import com.example.genie.module.playwright.core.PlaywrightService;
 import com.example.module.oreo.glue.ScenarioContext;
 import com.example.module.oreo.OreoModule;
@@ -21,13 +13,9 @@ import cucumber.api.Scenario;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.lang.reflect.Field;
-import java.util.regex.Pattern;
-
 public final class PlaywrightServiceResolver {
 
     private static final Logger log = LoggerFactory.getLogger(PlaywrightServiceResolver.class);
-    private static final int BODY_IN_MESSAGE = 500;
 
     private PlaywrightServiceResolver() {
     }
@@ -53,11 +41,19 @@ public final class PlaywrightServiceResolver {
         private static final long DEFAULT_TIMEOUT_MILLIS = 50_000L;
         private final GenieScenario genieScenario;
         private final PlaywrightService service;
+        private final ElementLookup elements;
+        private final ResponseWaiter responses;
+        private final RouteMocks mocks;
+        private final EventualAssertions assertions;
 
         private Context(GenieScenario genieScenario, PlaywrightService service) {
             super(genieScenario);
             this.genieScenario = genieScenario;
             this.service = service;
+            this.elements = new ElementLookup(service);
+            this.responses = new ResponseWaiter(service, this::timeoutMillis);
+            this.mocks = new RouteMocks(service, this::timeoutMillis);
+            this.assertions = new EventualAssertions(this::timeoutMillis);
         }
 
         /**
@@ -114,24 +110,7 @@ public final class PlaywrightServiceResolver {
         }
 
         public Locator getLocatorWithParam(String name, String value) {
-            try {
-                PlaywrightElementRepository repo = elementRepository();
-
-                Field frameCtxField = PlaywrightService.class.getDeclaredField("pageFrameContexts");
-                frameCtxField.setAccessible(true);
-                // [shown in the photo as "/unchecked/"]
-                java.util.Map<Page, Frame> pageFrameContexts = (java.util.Map<Page, Frame>) frameCtxField.get(service);
-
-                Page currentPage = service.getPage();
-                Frame currentFrame = pageFrameContexts.get(currentPage);
-
-                PlaywrightLocatorWrapper wrapper = repo.lookup(name);
-                PlaywrightLocatorWrapper resolved = new PlaywrightLocatorWrapper(
-                        wrapper.getFindBy(), wrapper.getValue().replace("{0}", value));
-                return resolved.getLocator(currentPage, currentFrame);
-            } catch (ReflectiveOperationException e) {
-                throw new RuntimeException("getLocatorWithParam failed for: " + name, e);
-            }
+            return elements.getLocatorWithParam(name, value);
         }
 
         /**
@@ -140,30 +119,8 @@ public final class PlaywrightServiceResolver {
          * elements.
          */
         public ToastRecorder toastRecorder() {
-            return ToastRecorder.attach(service.getPage(), genieScenario, testIdSelector("toast.notification"));
+            return ToastRecorder.attach(service.getPage(), genieScenario, elements.testIdSelector("toast.notification"));
         }
-
-        /** The CSS selector of an element found by test id: {@code [data-testid="<value>"]}. */
-        private String testIdSelector(String name) {
-            PlaywrightLocatorWrapper element;
-            try {
-                element = elementRepository().lookup(name);
-            } catch (ReflectiveOperationException e) {
-                throw new RuntimeException("Element lookup failed for: " + name, e);
-            }
-            if (!String.valueOf(element.getFindBy()).replaceAll("[^A-Za-z]", "").equalsIgnoreCase("testId")) {
-                throw new IllegalStateException(
-                        "Element '" + name + "' must be found by testId, but is found by " + element.getFindBy());
-            }
-            return "[data-testid=\"" + element.getValue().replace("\\", "\\\\").replace("\"", "\\\"") + "\"]";
-        }
-
-        private PlaywrightElementRepository elementRepository() throws ReflectiveOperationException {
-            Field repoField = PlaywrightService.class.getDeclaredField("playwrightElementRepository");
-            repoField.setAccessible(true);
-            return (PlaywrightElementRepository) repoField.get(service);
-        }
-
 
         // ── UI primitives ──────────────────────────────────────────────
 
@@ -232,171 +189,47 @@ public final class PlaywrightServiceResolver {
             );
         }
 
+        // ── Actions that wait for a response (ResponseWaiter) ──────────
         public void runAndWaitForResponse(Runnable action, String urlFragment, String httpMethod) {
-            runAndWaitForResponse(action, urlFragment, httpMethod, timeoutMillis());
+            responses.runAndWaitForResponse(action, urlFragment, httpMethod);
         }
-
         public void runAndWaitForResponse(Runnable action, String urlFragment, String httpMethod, double timeoutMs) {
-            Response response = awaitResponse(action, urlFragment, httpMethod, timeoutMs);
-            if (response.status() != 200) {
-                throw statusError(httpMethod + " " + urlFragment, "200", response);
-            }
+            responses.runAndWaitForResponse(action, urlFragment, httpMethod, timeoutMs);
         }
-
-        /**
-         * Runs {@code action} and returns the first response whose URL contains {@code urlFragment} and whose method
-         * is {@code httpMethod}. A timeout fails with what was awaited, how long, the page URL and whether the action
-         * itself finished (a click that never happened) or the response never came (a request not sent or not
-         * answered), instead of Playwright's bare "Timeout exceeded".
-         */
-        private Response awaitResponse(Runnable action, String urlFragment, String httpMethod, double timeoutMs) {
-            String awaited = httpMethod + " " + urlFragment;
-            log.info("[PlaywrightServiceResolver] waiting up to {} ms for {}", (long) timeoutMs, awaited);
-            boolean[] acted = {false};
-            long start = System.nanoTime();
-            Response response;
-            try {
-                response = service.getPage().waitForResponse(
-                        r -> r.url().contains(urlFragment) && r.request().method().equals(httpMethod),
-                        new Page.WaitForResponseOptions().setTimeout(timeoutMs),
-                        () -> {
-                            action.run();
-                            acted[0] = true;
-                        }
-                );
-            } catch (TimeoutError e) {
-                String message = (acted[0]
-                        ? "No response to " + awaited + " within " + (long) timeoutMs + " ms after the action: the"
-                                + " request was not sent or not answered (see the trace's Network tab)"
-                        : "The action before " + awaited + " did not finish within " + (long) timeoutMs + " ms: "
-                                + firstLine(e.getMessage()))
-                        + ". Page: " + service.getPage().url();
-                log.error("[PlaywrightServiceResolver] {}", message);
-                throw new AssertionError(message, e);
-            }
-            log.info("[PlaywrightServiceResolver] {} -> {} in {} ms ({})", awaited, response.status(),
-                    (System.nanoTime() - start) / 1_000_000, response.url());
-            return response;
-        }
-
-        private static AssertionError statusError(String awaited, String expectedStatus, Response response) {
-            String message = "Expected " + awaited + " to return " + expectedStatus + " but got " + response.status()
-                    + " from " + response.url() + ". Body: " + body(response);
-            log.error("[PlaywrightServiceResolver] {}", message);
-            return new AssertionError(message);
-        }
-
-        private static String body(Response response) {
-            try {
-                String text = response.text();
-                return text.length() > BODY_IN_MESSAGE ? text.substring(0, BODY_IN_MESSAGE) + "..." : text;
-            } catch (RuntimeException e) {
-                return "(not readable: " + firstLine(e.getMessage()) + ")";
-            }
-        }
-
-        private static String firstLine(String text) {
-            if (text == null) return "";
-            int end = text.indexOf('\n');
-            return end < 0 ? text : text.substring(0, end);
-        }
-
         public void clickAndWaitForResponse(String locatorKey, String urlFragment, String httpMethod) {
-            runAndWaitForResponse(
-                    () -> service.getLocator(locatorKey).click(),
-                    urlFragment,
-                    httpMethod
-            );
+            responses.clickAndWaitForResponse(locatorKey, urlFragment, httpMethod);
         }
-
         public void clickAndWaitForResponse(String locatorKey, String urlFragment, String httpMethod, double timeoutMs) {
-            runAndWaitForResponse(
-                    () -> service.getLocator(locatorKey).click(),
-                    urlFragment,
-                    httpMethod,
-                    timeoutMs
-            );
+            responses.clickAndWaitForResponse(locatorKey, urlFragment, httpMethod, timeoutMs);
         }
-
         public void clickAndWaitForResponse(Locator locator, String urlFragment, String httpMethod) {
-            runAndWaitForResponse(
-                    locator::click,
-                    urlFragment,
-                    httpMethod
-            );
+            responses.clickAndWaitForResponse(locator, urlFragment, httpMethod);
         }
-
         public void doubleClickAndWaitForResponse(String locatorKey, String urlFragment, String httpMethod) {
-            runAndWaitForResponse(
-                    () -> service.getLocator(locatorKey).dblclick(),
-                    urlFragment,
-                    httpMethod
-            );
+            responses.doubleClickAndWaitForResponse(locatorKey, urlFragment, httpMethod);
         }
-
         public void fillAndWaitForResponse(String locatorKey, String value, String urlFragment, String httpMethod) {
-            runAndWaitForResponse(
-                    () -> service.getLocator(locatorKey).fill(value),
-                    urlFragment,
-                    httpMethod
-            );
+            responses.fillAndWaitForResponse(locatorKey, value, urlFragment, httpMethod);
         }
-
         public void fillAndWaitForResponse(Locator locator, String value, String urlFragment, String httpMethod) {
-            runAndWaitForResponse(
-                    () -> locator.fill(value),
-                    urlFragment,
-                    httpMethod
-            );
+            responses.fillAndWaitForResponse(locator, value, urlFragment, httpMethod);
         }
         public void fillInnerInputAndWaitForResponse(String locatorKey, String value, String urlFragment, String httpMethod) {
-            runAndWaitForResponse(
-                    () -> service.getLocator(locatorKey)
-                            .locator("input[part='input'], textarea[part='input']")
-                            .fill(value),
-                    urlFragment,
-                    httpMethod
-            );
+            responses.fillInnerInputAndWaitForResponse(locatorKey, value, urlFragment, httpMethod);
         }
         public void refreshAndWaitForResponse(String urlFragment, String httpMethod) {
-            runAndWaitForResponse(
-                    () -> service.getPage().reload(),
-                    urlFragment,
-                    httpMethod
-            );
+            responses.refreshAndWaitForResponse(urlFragment, httpMethod);
         }
-
-
-
-        /**
-         * Clicks {@code locatorKey}, waits for the specified API response, asserts HTTP 200,
-         * and returns the full response body as a string for snapshot comparison.
-         *
-         * <p>Identical contract to {@link #clickAndWaitForResponse} except the response body
-         * is returned instead of discarded — use this when callers need to diff before/after states.
-         *
-         * @param locatorKey  element repository key of the element to click
-         * @param urlFragment URL substring to match
-         * @param httpMethod  HTTP method to match
-         * @return response body as a UTF-8 string
-         */
         public String clickAndCaptureResponse(String locatorKey, String urlFragment, String httpMethod) {
-            Response response = awaitResponse(() -> service.getLocator(locatorKey).click(), urlFragment, httpMethod,
-                    timeoutMillis());
-            int status = response.status();
-            if (!(status == 200 || status == 201)) {
-                throw statusError(httpMethod + " " + urlFragment, "2xx", response);
-            }
-            return response.text();
+            return responses.clickAndCaptureResponse(locatorKey, urlFragment, httpMethod);
+        }
+        public Request clickAndCaptureRequest(String locatorKey, String urlFragment, String httpMethod) {
+            return responses.clickAndCaptureRequest(locatorKey, urlFragment, httpMethod);
         }
 
         /**
          * Navigates to {@code path} (relative to the configured base URL), waits for the
          * specified API response, asserts HTTP 200, and returns the response body.
-         *
-         * <p>Mirrors {@link #clickAndCaptureResponse} but wraps {@code page.navigate()} instead
-         * of a locator click — use when the API call is triggered by a page navigation rather
-         * than a UI interaction.
          *
          * @param path        path relative to base URL, e.g. {@code "/trade/TRD-001"}
          * @param urlFragment URL substring to match (e.g. {@code "/api/v1/trades/TRD-001"})
@@ -404,131 +237,27 @@ public final class PlaywrightServiceResolver {
          * @return response body as a UTF-8 string
          */
         public String navigateAndCaptureResponse(String path, String urlFragment, String httpMethod) {
-            Response response = awaitResponse(() -> navigateToPath(path), urlFragment, httpMethod, timeoutMillis());
-            if (response.status() != 200) {
-                throw statusError(httpMethod + " " + urlFragment, "200", response);
-            }
-            return response.text();
+            return responses.runAndCaptureResponse(() -> navigateToPath(path), urlFragment, httpMethod);
         }
 
-        public Request clickAndCaptureRequest(String locatorKey, String urlFragment, String httpMethod) {
-            return service.getPage().waitForRequest(
-                    r -> r.url().contains(urlFragment) && r.method().equals(httpMethod),
-                    new Page.WaitForRequestOptions().setTimeout(timeoutMillis()),
-                    () -> service.getLocator(locatorKey).click()
-            );
-        }
-
-        // ── Route: Mock ────────────────────────────────────────────────
-
-        /**
-         * Registers a mock route that intercepts every request whose URL contains
-         * {@code urlFragment} and fulfills it with {@code status} and a JSON body,
-         * without ever reaching the real backend.
-         *
-         * <p>Always pair with {@link #clearMockRoute(String)} after the interaction:
-         * <pre>
-         *   ctx.mockRoute("/api/v1/trades", 200, "{\"id\":\"TRD-999\"}");
-         *   ctx.clickAndWaitForResponse("btn-book", "/api/v1/trades", "POST");
-         *   ctx.clearMockRoute("/api/v1/trades");
-         * </pre>
-         *
-         * @param urlFragment  URL substring to intercept
-         * @param status       HTTP status code to return (e.g. {@code 200}, {@code 422})
-         * @param responseBody response body string (JSON recommended)
-         */
+        // ── Mock routes (RouteMocks) ───────────────────────────────────
         public void mockRoute(String urlFragment, int status, String responseBody) {
-            mockRoute(urlFragment, status, responseBody, "application/json");
+            mocks.mockRoute(urlFragment, status, responseBody);
         }
-
-        /**
-         * Registers a mock route that fulfills after {@code delayMillis}, allowing callers
-         * to simulate slow backend responses without blocking the route handler thread.
-         */
-        public void mockRouteWithDelay(String urlFragment, int status, String responseBody) {
-            mockRouteWithDelay(urlFragment, status, responseBody, "application/json");
-        }
-
-        /**
-         * Registers a mock route with an explicit {@code contentType}.
-         * @param contentType  value for the {@code Content-Type} header
-         */
         public void mockRoute(String urlFragment, int status, String responseBody, String contentType) {
-            service.getPage().route(
-                    "**" + urlFragment + "**",
-                    route -> route.fulfill(new Route.FulfillOptions()
-                            .setStatus(status)
-                            .setBody(responseBody)
-                            .setContentType(contentType))
-            );
+            mocks.mockRoute(urlFragment, status, responseBody, contentType);
         }
-
-        /**
-         * Registers a delayed mock route with an explicit {@code contentType}.
-         */
-        public void mockRouteWithDelay(String urlFragment, int status, String responseBody,
-                                       String contentType) {
-            service.getPage().route(
-                    "**" + urlFragment + "**",
-                    route -> Thread.ofVirtual().start(() -> {
-                        try {
-                            Thread.sleep(timeoutMillis());
-                        } catch (InterruptedException e) {
-                            Thread.currentThread().interrupt();
-                        }
-                        route.fulfill(new Route.FulfillOptions()
-                                .setStatus(status)
-                                .setBody(responseBody)
-                                .setContentType(contentType));
-                    })
-            );
+        public void mockRouteWithDelay(String urlFragment, int status, String responseBody) {
+            mocks.mockRouteWithDelay(urlFragment, status, responseBody);
         }
+        public void mockRouteWithDelay(String urlFragment, int status, String responseBody, String contentType) {
+            mocks.mockRouteWithDelay(urlFragment, status, responseBody, contentType);
+        }
+        public void clearMockRoute(String urlFragment) { mocks.clearMockRoute(urlFragment); }
 
-        /**
-         * Removes all mock routes registered for {@code urlFragment}.
-         *
-         * <p>Call this after each test interaction to prevent leaking mocks into
-         * subsequent scenarios.
-         *
-         * @param urlFragment URL substring passed to {@link #mockRoute}
-         */
-        public void clearMockRoute(String urlFragment) { service.getPage().unroute("**" + urlFragment + "**"); }
-
-        /**
-         * Convenience method: registers a mock route, clicks {@code locatorKey},
-         * waits for the mocked response to be received, then removes the mock.
-         *
-         * <p>Equivalent to calling {@link #mockRoute}, {@link #clickAndWaitForResponse},
-         * and {@link #clearMockRoute} in sequence:
-         * <pre>
-         *   // Error scenario — no round-trip to the real backend
-         *   ctx.clickWithMockedResponse("btn-book", "/api/v1/trades", "POST",
-         *           422, "{\"error\":\"Limit breached\"}");
-         *   ctx.assertEventuallyVisible(page.getByTestId("toast-error"));
-         * </pre>
-         *
-         * @param locatorKey   element repository key of the element to click
-         * @param urlFragment  URL substring to intercept and match
-         * @param httpMethod   HTTP method to match (e.g. {@code "POST"})
-         * @param status       HTTP status code the mock returns
-         * @param responseBody response body the mock returns (JSON)
-         */
         public void clickWithMockedResponse(String locatorKey, String urlFragment,
                                             String httpMethod, int status, String responseBody) {
-            mockRoute(urlFragment, status, responseBody);
-            try {
-                Response response = service.getPage().waitForResponse(
-                        r -> r.url().contains(urlFragment) && r.request().method().equals(httpMethod),
-                        new Page.WaitForResponseOptions().setTimeout(timeoutMillis()),
-                        () -> service.getLocator(locatorKey).click()
-                );
-                if (response.status() != status) {
-                    throw new AssertionError(
-                            "Mock returned unexpected status: expected " + status + " but got " + response.status());
-                }
-            } finally {
-                clearMockRoute(urlFragment);
-            }
+            mocks.clickWithMockedResponse(locatorKey, urlFragment, httpMethod, status, responseBody);
         }
 
         /**
@@ -557,106 +286,32 @@ public final class PlaywrightServiceResolver {
             }
         }
 
-        /**
-         * <p>Unlike the framework's synchronous {@code assert that 'x' is visible} step,
-         * this polls repeatedly until the condition is met or the timeout expires —
-         * safe for async UI transitions and animations.
-         *
-         * @param locator the element to assert
-         */
-        public void assertEventuallyVisible(Locator locator) { assertEventuallyVisible(locator, timeoutMillis()); }
-
+        // ── Assertions (EventualAssertions) ────────────────────────────
+        public void assertEventuallyVisible(Locator locator) { assertions.assertEventuallyVisible(locator); }
         public void assertEventuallyVisible(Locator locator, double timeoutMs) {
-            PlaywrightAssertions.assertThat(locator).isVisible(
-                    new LocatorAssertions.IsVisibleOptions().setTimeout(timeoutMs));
+            assertions.assertEventuallyVisible(locator, timeoutMs);
         }
-
-        /**
-         * Asserts that {@code locator} is eventually hidden (or detached), with
-         * Playwright's built-in polling (default timeout from {@code playwright.timeout}).
-         *
-         * <p>Unlike the framework's synchronous {@code assert that 'x' is not visible} step,
-         * this polls repeatedly until the element disappears or the timeout expires —
-         * safe for async UI transitions and animations.
-         *
-         * @param locator the element to assert
-         */
-        public void assertEventuallyHidden(Locator locator) { assertEventuallyHidden(locator, timeoutMillis()); }
-
+        public void assertEventuallyHidden(Locator locator) { assertions.assertEventuallyHidden(locator); }
         public void assertEventuallyHidden(Locator locator, double timeoutMs) {
-            PlaywrightAssertions.assertThat(locator).isHidden(
-                    new LocatorAssertions.IsHiddenOptions().setTimeout(timeoutMs));
+            assertions.assertEventuallyHidden(locator, timeoutMs);
         }
-
-        /**
-         * Asserts that {@code locator} is eventually enabled, with Playwright's
-         * built-in polling (default timeout from {@code playwright.timeout}).
-         *
-         * <p>Use this instead of the synchronous {@code element.isEnabled()} check
-         * when the element may be temporarily disabled during async operations
-         * (e.g. form submission in progress, data loading).
-         *
-         * @param locator the element to assert
-         */
-        public void assertEventuallyEnabled(Locator locator) { assertEventuallyEnabled(locator, timeoutMillis()); }
-
+        public void assertEventuallyEnabled(Locator locator) { assertions.assertEventuallyEnabled(locator); }
         public void assertEventuallyEnabled(Locator locator, double timeoutMs) {
-            PlaywrightAssertions.assertThat(locator).isEnabled(
-                    new LocatorAssertions.IsEnabledOptions().setTimeout(timeoutMs));
+            assertions.assertEventuallyEnabled(locator, timeoutMs);
         }
-
-        /**
-         * Asserts that {@code locator} is eventually disabled, with Playwright's
-         * built-in polling (default timeout from {@code playwright.timeout}).
-         *
-         * <p>Use this instead of the synchronous {@code !element.isEnabled()} check
-         * when the element may take time to become disabled after a UI state change
-         * (e.g. read-only mode applied asynchronously).
-         *
-         * @param locator the element to assert
-         */
-        public void assertEventuallyDisabled(Locator locator) { assertEventuallyDisabled(locator, timeoutMillis()); }
-
+        public void assertEventuallyDisabled(Locator locator) { assertions.assertEventuallyDisabled(locator); }
         public void assertEventuallyDisabled(Locator locator, double timeoutMs) {
-            PlaywrightAssertions.assertThat(locator).isDisabled(
-                    new LocatorAssertions.IsDisabledOptions().setTimeout(timeoutMs));
+            assertions.assertEventuallyDisabled(locator, timeoutMs);
         }
-
-        /**
-         * Polls until the element's text content contains {@code text}, or the
-         * configured timeout ({@code playwright.timeout}) expires.
-         *
-         * <p>Use this instead of the synchronous {@code assertElementContains} check
-         * when the element text may update asynchronously (e.g. after a page reload
-         * where Zustand hydrates from localStorage or DB in the background).
-         *
-         * @param locator the element to assert
-         * @param text    the substring expected in the element's text content
-         */
         public void assertEventuallyContains(Locator locator, String text) {
-            assertEventuallyContains(locator, text, timeoutMillis());
+            assertions.assertEventuallyContains(locator, text);
         }
-
         public void assertEventuallyContains(Locator locator, String text, double timeoutMs) {
-            if (text.startsWith("${json-unit.regex}")) {
-                String regex = text.substring("${json-unit.regex}".length());
-                PlaywrightAssertions.assertThat(locator).containsText(
-                        Pattern.compile(regex),
-                        new LocatorAssertions.ContainsTextOptions().setTimeout(timeoutMs));
-            } else {
-                PlaywrightAssertions.assertThat(locator).containsText(
-                        text,
-                        new LocatorAssertions.ContainsTextOptions().setTimeout(timeoutMs));
-            }
+            assertions.assertEventuallyContains(locator, text, timeoutMs);
         }
-
-        public void assertHasValue(Locator locator, String value) { assertHasValue(locator, value, timeoutMillis()); }
-
+        public void assertHasValue(Locator locator, String value) { assertions.assertHasValue(locator, value); }
         public void assertHasValue(Locator locator, String value, double timeoutMs) {
-            PlaywrightAssertions.assertThat(locator).hasValue(
-                    value,
-                    new LocatorAssertions.HasValueOptions().setTimeout(timeoutMs));
+            assertions.assertHasValue(locator, value, timeoutMs);
         }
-
     }
 }
