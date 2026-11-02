@@ -1,28 +1,20 @@
 package com.example.module.oreo.glue.ui;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.example.genie.module.rest.service.RequestResponseHelper;
 import com.example.module.oreo.testdata.ProductDatFiles;
-import com.example.module.oreo.testdata.TestData;
-import com.example.module.oreo.testdata.TradeRequests;
 import com.example.module.oreo.utils.RestApiUtil;
+import com.example.module.oreo.utils.TradeApiClient;
 import cucumber.api.java.Before;
 import cucumber.api.java.en.Given;
 import cucumber.api.Scenario;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.net.URL;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
 
 public class TradeProvisioningSteps {
 
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     private static final Logger log = LoggerFactory.getLogger(TradeProvisioningSteps.class);
     private RequestResponseHelper helper;
     private PlaywrightServiceResolver.Context ctx;
@@ -72,19 +64,19 @@ public class TradeProvisioningSteps {
     public void provisionDeadTrade(String product) throws Exception {
         provisionLiveTradeAs("createdTradeId", "createdTaskId", "trade-create", ProductDatFiles.valueOf(product));
         provisionLifecycleEvent("createdTradeId", "createdTaskId", "trade-cancellation");
-        approveTask(ctx.get("createdTaskId"), "checker@example.com");
+        TradeApiClient.approveTask(helper, ctx.get("createdTaskId"), "checker@example.com");
     }
 
     @Given("^a draft '([^']*)' trade is provisioned via playwright api$")
     public void provisionDraftTrade(String product) throws Exception {
         provisionLiveTradeAs("createdTradeId", "createdTaskId", "trade-create", ProductDatFiles.valueOf(product));
         provisionLifecycleEvent("createdTradeId", "createdTaskId", "trade-cancellation");
-        rejectTask(ctx.get("createdTaskId"), "checker@example.com");
+        TradeApiClient.rejectTask(helper, ctx.get("createdTaskId"), "checker@example.com");
     }
 
     @Given("^amendment for stored trade is submitted as maker via playwright api$")
     public void submitAmendmentForStoredTrade() {
-        submitAmendment("createdTradeId", "trade-amendment", "maker@example.com");
+        TradeApiClient.updateTrade(helper, ctx.get("createdTradeId"), "maker@example.com", "trade-amendment");
     }
 
     private void provisionLiveTradeAs(String tradeIdVar, String taskIdVar, String testDataKey, ProductDatFiles datFile) throws Exception {
@@ -93,7 +85,7 @@ public class TradeProvisioningSteps {
         submitTradeAsPendingApproval(tradeIdVar, taskIdVar, testDataKey, datFile);
         String taskId = ctx.get(taskIdVar);
         log.info("[TradeProvisioningSteps] Approving checker task for live trade: taskIdVar='{}', taskId='{}'", taskIdVar, taskId);
-        approveTask(taskId, "checker@example.com");
+        TradeApiClient.approveTask(helper, taskId, "checker@example.com");
         log.info("[TradeProvisioningSteps] Live trade provisioned successfully: tradeId='{}', taskId='{}'",
                 ctx.get(tradeIdVar), ctx.get(taskIdVar));
     }
@@ -118,7 +110,7 @@ public class TradeProvisioningSteps {
         log.info("[TradeProvisioningSteps] Provisioning lifecycle event: tradeIdVar='{}', tradeId='{}', taskIdVar='{}', testDataKey='{}'",
                 tradeIdVar, tradeId, taskIdVar, testDataKey);
 
-        JsonNode body = triggerEvent(List.of(tradeId), "maker@example.com", testDataKey);
+        JsonNode body = TradeApiClient.triggerEvent(helper, List.of(tradeId), "maker@example.com", testDataKey);
         String taskId = body.at("/data/results/0/checkerTaskId").asText();
 
         log.info("[TradeProvisioningSteps] Lifecycle event submitted: extracted checkerTaskId='{}'", taskId);
@@ -127,85 +119,9 @@ public class TradeProvisioningSteps {
     }
 
     private JsonNode submitTrade(String userId, String testDataKey, ProductDatFiles datFile) throws Exception {
-        // The setup body carries no product: it is set from the dat file's product
-        String tradeJson = TradeRequests.withProductId(TestData.setup(testDataKey).request(), datFile.name());
         // The case's dat file (datFile of its test data), else the product's default one
         String datPath = datFile.path(ctx.find("_tc.datFile"));
-        URL resource = getClass().getClassLoader().getResource(datPath);
-        if (resource == null) {
-            throw new AssertionError("[TradeProvisioningSteps] dat file '" + datPath + "' not found on classpath.");
-        }
-
-        log.info("[TradeProvisioningSteps] submitTrade: userId='{}', testDataKey='{}', datFile='{}', endpoint='{}'",
-                userId, testDataKey, datPath, "/trades/create?tradeAction=SUBMIT");
         ctx.write("[dat file] " + datPath);
-
-        Path datFilePath = Paths.get(resource.toURI());
-
-        JsonNode response = RestApiUtil.postMultipart(
-                helper,
-                "/trades/create?tradeAction=SUBMIT",
-                userId,
-                "trade",
-                tradeJson,
-                "datFile",
-                datFilePath
-        );
-
-        log.info("[TradeProvisioningSteps] submitTrade completed successfully for testDataKey='{}'", testDataKey);
-        return response;
-    }
-
-    private void submitAmendment(String tradeIdVar, String testDataKey, String userId) {
-        String tradeId = ctx.get(tradeIdVar);
-        String payload = TestData.setup(testDataKey).request();
-
-        log.info("[TradeProvisioningSteps] submitAmendment: tradeIdVar='{}', tradeId='{}', testDataKey='{}', userId='{}', endpoint='{}'",
-                tradeIdVar, tradeId, testDataKey, userId, "/trades/" + tradeId + "/update");
-
-        RestApiUtil.post(helper, "/trades/" + tradeId + "/update", userId, payload);
-
-        log.info("[TradeProvisioningSteps] submitAmendment completed for tradeId='{}'", tradeId);
-    }
-
-    private JsonNode triggerEvent(List<String> tradeIds, String userId, String testDataKey) throws Exception {
-        String raw = TestData.setup(testDataKey).request();
-        ObjectNode body = (ObjectNode) OBJECT_MAPPER.readTree(raw);
-        ArrayNode arr = OBJECT_MAPPER.createArrayNode();
-        tradeIds.forEach(arr::add);
-        body.set("tradeIds", arr);
-
-        log.info("[TradeProvisioningSteps] triggerEvent: tradeIds='{}', userId='{}', testDataKey='{}', endpoint='{}'",
-                tradeIds, userId, testDataKey, "/trades/trigger-event");
-
-        JsonNode response = RestApiUtil.post(
-                helper,
-                "/trades/trigger-event",
-                userId,
-                OBJECT_MAPPER.writeValueAsString(body)
-        );
-
-        log.info("[TradeProvisioningSteps] triggerEvent completed for tradeIds='{}'", tradeIds);
-        return response;
-    }
-
-    private JsonNode approveTask(String taskId, String userId) {
-        log.info("[TradeProvisioningSteps] approveTask: taskId='{}', userId='{}', endpoint='{}'",
-                taskId, userId, "/checker/tasks/" + taskId + "/approve");
-
-        JsonNode response = RestApiUtil.post(helper, "/checker/tasks/" + taskId + "/approve", userId);
-
-        log.info("[TradeProvisioningSteps] approveTask completed: taskId='{}'", taskId);
-        return response;
-    }
-
-    private JsonNode rejectTask(String taskId, String userId) {
-        log.info("[TradeProvisioningSteps] rejectTask: taskId='{}', userId='{}', endpoint='{}'",
-                taskId, userId, "/checker/tasks/" + taskId + "/reject");
-
-        JsonNode response = RestApiUtil.post(helper, "/checker/tasks/" + taskId + "/reject", userId);
-
-        log.info("[TradeProvisioningSteps] rejectTask completed: taskId='{}'", taskId);
-        return response;
+        return TradeApiClient.submitTrade(helper, userId, testDataKey, datFile, datPath);
     }
 }

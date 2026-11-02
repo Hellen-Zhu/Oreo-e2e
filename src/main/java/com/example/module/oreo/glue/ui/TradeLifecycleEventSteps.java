@@ -2,6 +2,7 @@ package com.example.module.oreo.glue.ui;
 
 import com.example.module.oreo.OreoModuleConfiguration;
 import com.example.module.oreo.testdata.TestData;
+import com.example.module.oreo.utils.TradeApiClient;
 import cucumber.api.Scenario;
 import cucumber.api.java.Before;
 import cucumber.api.java.en.When;
@@ -32,41 +33,10 @@ public class TradeLifecycleEventSteps {
 
     @When("^click amend using configured risk engine mode for trade stored as '([^']*)' from trade details page$")
     public void clickAmendUsingConfiguredRiskEngineModeFromTradeDetails(String ctxKey) {
-        switch (resolveRiskEngineMode()) {
-            case MOCK:
-                clickAmendAndMockSuccessfulRiskCalculationFromTradeDetails(ctxKey);
-                return;
-            case REAL:
-                clickAmendAndWaitForRealRiskCalculationFromTradeDetails(ctxKey);
-                return;
-            default:
-                throw new IllegalStateException("Unhandled risk engine mode");
-        }
+        clickUsingConfiguredRiskEngineMode("trade_detail.amend_btn",
+                TradeApiClient.calculateRiskPath(ctx.get(ctxKey)), "risk-calc-success-mock");
     }
 
-    @When("^click amend and wait for real risk calculation response for trade stored as '([^']*)' from trade details page$")
-    public void clickAmendAndWaitForRealRiskCalculationFromTradeDetails(String ctxKey) {
-        String tradeId = ctx.get(ctxKey);
-        ctx.runAndWaitForResponse(
-                () -> ctx.service().getLocator("trade_detail.amend_btn").click(),
-                tradeRiskCalculationUrl(tradeId),
-                "POST"
-        );
-    }
-
-    @When("^click amend and mock successful risk calculation for trade stored as '([^']*)' from trade details page$")
-    public void clickAmendAndMockSuccessfulRiskCalculationFromTradeDetails(String ctxKey) {
-        String tradeId = ctx.get(ctxKey);
-        String responseBody = TestData.setup("risk-calc-success-mock").response();
-        String urlFragment = tradeRiskCalculationUrl(tradeId);
-        ctx.clickWithMockedResponse(
-                "trade_detail.amend_btn",
-                urlFragment,
-                "POST",
-                200,
-                responseBody
-        );
-    }
     /**
      * Clicks the Confirm button in the TradeChangeConfirmation dialog and waits for
      * {@code POST /trades/{tradeId}/update} to complete.
@@ -75,7 +45,7 @@ public class TradeLifecycleEventSteps {
     public void clickAmendmentConfirmAndWaitForUpdate(String ctxKey) {
         String tradeId = ctx.get(ctxKey);
         log.info("[TradeLifecycleEventSteps] Clicking amendment confirm and waiting for update for trade='{}'", tradeId);
-        ctx.clickAndWaitForResponse("trade_change_confirmation.confirm_btn", "/trades/" + tradeId + "/update", "POST");
+        ctx.clickAndWaitForResponse("trade_change_confirmation.confirm_btn", TradeApiClient.updatePath(tradeId), "POST");
     }
 
     @When("^confirm checker action on trade detail and wait for page ready$")
@@ -94,81 +64,16 @@ public class TradeLifecycleEventSteps {
      */
     @When("^confirm dynamic action form using configured risk engine mode for trade stored as '([^']*)'$")
     public void confirmDynamicActionFormUsingConfiguredRiskEngineMode(String ctxKey) {
-        switch (resolveRiskEngineMode()) {
-            case MOCK:
-                clickSaveAndMockSuccessfulRiskCalculationResponseForEvent(ctxKey);
-                return;
-            case REAL:
-                confirmDynamicActionFormAndWaitForRealRiskCalculationResponse(ctxKey);
-                return;
-            default:
-                throw new IllegalStateException("Unhandled risk engine mode");
-        }
+        clickUsingConfiguredRiskEngineMode("dynamic_action.confirm_btn",
+                TradeApiClient.calculateRiskPath(ctx.get(ctxKey)), "risk-calc-success-mock");
     }
-
-    @When("^confirm dynamic action form and wait for real risk calculation response for trade stored as '([^']*)'$")
-    public void confirmDynamicActionFormAndWaitForRealRiskCalculationResponse(String ctxKey) {
-        String tradeId = ctx.get(ctxKey);
-        ctx.runAndWaitForResponse(
-                () -> ctx.service().getLocator("dynamic_action.confirm_btn").click(),
-                tradeRiskCalculationUrl(tradeId),
-                "POST"
-        );
-    }
-
-    @When("^confirm dynamic action form and mock successful risk calculation response for trade stored as '([^']*)'$")
-    public void clickSaveAndMockSuccessfulRiskCalculationResponseForEvent(String ctxKey) {
-        String tradeId = ctx.get(ctxKey);
-        String responseBody = TestData.setup("risk-calc-success-mock").response();
-        String urlFragment = tradeRiskCalculationUrl(tradeId);
-        ctx.clickWithMockedResponse(
-                "dynamic_action.confirm_btn",
-                urlFragment,
-                "POST",
-                200,
-                responseBody
-        );
-    }
-
 
     @When("^confirm dynamic action form using configured partial risk engine mode for trade stored as '([^']*)'$")
     public void confirmDynamicActionFormUsingConfiguredPartialRiskEngineMode(String ctxKey) {
-        switch (resolveRiskEngineMode()) {
-            case MOCK:
-                clickSaveAndMockSuccessfulPartialRiskCalculationResponseForEvent(ctxKey);
-                return;
-            case REAL:
-                confirmDynamicActionFormAndWaitForRealPartialRiskCalculationResponse(ctxKey);
-                return;
-            default:
-                throw new IllegalStateException("Unhandled risk engine mode");
-        }
+        clickUsingConfiguredRiskEngineMode("dynamic_action.confirm_btn",
+                TradeApiClient.calculatePartialRiskPath(ctx.get(ctxKey)), "risk-calc-partial-success-mock");
     }
 
-    @When("^confirm dynamic action form and wait for real partial risk calculation response for trade stored as '([^']*)'$")
-    public void confirmDynamicActionFormAndWaitForRealPartialRiskCalculationResponse(String ctxKey) {
-        String tradeId = ctx.get(ctxKey);
-        ctx.runAndWaitForResponse(
-                () -> ctx.service().getLocator("dynamic_action.confirm_btn").click(),
-                tradePartialRiskCalculationUrl(tradeId),
-                "POST"
-        );
-    }
-
-    @When("^confirm dynamic action form and mock successful partial risk calculation response for trade stored as '([^']*)'$")
-    public void clickSaveAndMockSuccessfulPartialRiskCalculationResponseForEvent(String ctxKey) {
-        String tradeId = ctx.get(ctxKey);
-        String responseBody = TestData.setup("risk-calc-partial-success-mock").response();
-        String urlFragment = tradePartialRiskCalculationUrl(tradeId);
-        log.info("[TradeLifecycleEventSteps] Mocking successful partial risk calculation response for trade='{}' with response body '{}'", tradeId, responseBody);
-        ctx.clickWithMockedResponse(
-                "dynamic_action.confirm_btn",
-                urlFragment,
-                "POST",
-                200,
-                responseBody
-        );
-    }
     /**
      * Clicks Confirm & Save in the TradeChangeConfirmation dialog and waits for the
      * trigger-event POST to complete. Used by any lifecycle event routed through
@@ -177,7 +82,7 @@ public class TradeLifecycleEventSteps {
     @When("^confirm lifecycle event trade change and wait for page ready$")
     public void confirmLifecycleEventTradeChangeAndWait() {
         log.info("[TradeLifecycleEventSteps] Confirming trade change confirmation; waiting for trigger-event response");
-        ctx.clickAndWaitForResponse("trade_change_confirmation.confirm_btn", "/trades/trigger-event", "POST");
+        ctx.clickAndWaitForResponse("trade_change_confirmation.confirm_btn", TradeApiClient.TRIGGER_EVENT_PATH, "POST");
     }
 
     /**
@@ -190,19 +95,27 @@ public class TradeLifecycleEventSteps {
         log.info("[TradeLifecycleEventSteps] Confirming trade change confirmation; capturing trigger-event response as '{}'", responseCtxKey);
         String responseBody = ctx.clickAndCaptureResponse(
                 "trade_change_confirmation.confirm_btn",
-                "/trades/trigger-event",
+                TradeApiClient.TRIGGER_EVENT_PATH,
                 "POST"
         );
         ctx.set(responseCtxKey, responseBody);
     }
 
 
-    private OreoModuleConfiguration.Mode resolveRiskEngineMode() { return ctx.riskEngineMode(); }
-
-
-    private String tradeRiskCalculationUrl(String tradeId) { return "/trades/" + tradeId + "/calculate-risk"; }
-
-    private String tradePartialRiskCalculationUrl(String tradeId) {
-        return "/trades/" + tradeId + "/calculate-partial-novation-risk";
+    /** Clicks the element: REAL waits for the risk calculation, MOCK answers it with the setup file's response. */
+    private void clickUsingConfiguredRiskEngineMode(String elementKey, String riskUrl, String mockSetup) {
+        OreoModuleConfiguration.Mode mode = ctx.riskEngineMode();
+        log.info("[TradeLifecycleEventSteps] Clicking '{}' using configured risk engine mode='{}', url='{}'",
+                elementKey, mode, riskUrl);
+        switch (mode) {
+            case MOCK:
+                ctx.clickWithMockedResponse(elementKey, riskUrl, "POST", 200, TestData.setup(mockSetup).response());
+                return;
+            case REAL:
+                ctx.runAndWaitForResponse(() -> ctx.service().getLocator(elementKey).click(), riskUrl, "POST");
+                return;
+            default:
+                throw new IllegalStateException("Unhandled risk engine mode: " + mode);
+        }
     }
 }

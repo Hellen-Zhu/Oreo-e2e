@@ -2,6 +2,7 @@ package com.example.module.oreo.glue.ui;
 
 import com.example.module.oreo.OreoModuleConfiguration;
 import com.example.module.oreo.testdata.TestData;
+import com.example.module.oreo.utils.TradeApiClient;
 import cucumber.api.Scenario;
 import cucumber.api.java.Before;
 import cucumber.api.java.en.When;
@@ -31,7 +32,7 @@ public class TradeCancellationSteps {
     @When("^confirm cancel trade and wait for page ready$")
     public void confirmCancelTradeAndWait() {
         log.info("[TradeCancellationSteps] Clicking cancel trade confirm button and waiting for trades reload");
-        ctx.clickAndWaitForResponse("trade_change_confirmation.confirm_btn", "/trades/trigger-event", "POST");
+        ctx.clickAndWaitForResponse("trade_change_confirmation.confirm_btn", TradeApiClient.TRIGGER_EVENT_PATH, "POST");
     }
 
     /**
@@ -77,7 +78,7 @@ public class TradeCancellationSteps {
         String tradeId = ctx.get(ctxKey);
         ctx.runAndWaitForResponse(
                 () -> ctx.service().getLocator(elementKey).click(),
-                tradeRiskCalculationUrl(tradeId),
+                TradeApiClient.calculateRiskPath(tradeId),
                 "POST"
         );
     }
@@ -85,7 +86,7 @@ public class TradeCancellationSteps {
     public void confirmCancellationFormAndMockSuccessfulRiskCalculationResponse(String elementKey, String ctxKey) {
         String tradeId = ctx.get(ctxKey);
         String responseBody = TestData.setup("risk-calc-success-mock").response();
-        String urlFragment = tradeRiskCalculationUrl(tradeId);
+        String urlFragment = TradeApiClient.calculateRiskPath(tradeId);
         ctx.clickWithMockedResponse(
                 elementKey,
                 urlFragment,
@@ -101,15 +102,10 @@ public class TradeCancellationSteps {
     @When("^confirm cancellation from trade detail and wait for page ready$")
     public void confirmCancellationFromTradeDetailAndWait() {
         log.info("[TradeCancellationSteps] Confirming cancel dialog on trade detail and waiting for trigger-event response");
-        ctx.clickAndWaitForResponse("trade_detail.cancel_dialog_confirm_btn", "/trades/trigger-event", "POST");
+        ctx.clickAndWaitForResponse("trade_detail.cancel_dialog_confirm_btn", TradeApiClient.TRIGGER_EVENT_PATH, "POST");
     }
 
     private OreoModuleConfiguration.Mode resolveRiskEngineMode() {
         return ctx.riskEngineMode();
-    }
-
-
-    private String tradeRiskCalculationUrl(String tradeId) {
-        return "/trades/" + tradeId + "/calculate-risk";
     }
 }

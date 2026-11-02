@@ -1,6 +1,7 @@
 package com.example.module.oreo.glue.ui;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.example.module.oreo.utils.TradeApiClient;
 import com.microsoft.playwright.Locator;
 import cucumber.api.Scenario;
 import cucumber.api.java.Before;
@@ -32,7 +33,7 @@ public class AllocationSteps {
     @When("^user confirms allocation and waits for allocation response$")
     public void confirmAllocationAndWaitForResponse() {
         ctx.clickAndCaptureResponse(
-                "trade_change_confirmation.confirm_btn", "/trades/trigger-event", "POST");
+                "trade_change_confirmation.confirm_btn", TradeApiClient.TRIGGER_EVENT_PATH, "POST");
         log.info("[AllocationSteps] Allocation confirmed — POST /trades/trigger-event completed.");
     }
 
