@@ -20,7 +20,7 @@ public class CommonE2EAssertion {
     @Before({"@playwright"})
     public void beforeScenario(Scenario scenario) { this.ctx = PlaywrightServiceResolver.from(scenario); }
 
-    @Then("^assert that '(.+)' is eventually visible$")
+    @Then("^assert that '([^']*)' is eventually visible$")
     public void assertEventuallyVisible(@Transform(LocatorTransformer.class) Locator element) {
         log.debug("[CommonE2EAssertion] assertEventuallyVisible");
         ctx.assertEventuallyVisible(element);
@@ -44,7 +44,7 @@ public class CommonE2EAssertion {
         ctx.assertEventuallyHidden(elementKey.locator(innerSelector));
     }
 
-    @And("^assert that '(.+)' is eventually hidden$")
+    @And("^assert that '([^']*)' is eventually hidden$")
     public void assertEventuallyHidden(@Transform(LocatorTransformer.class) Locator element) {
         log.debug("[CommonE2EAssertion] assertEventuallyHidden");
         ctx.assertEventuallyHidden(element);
@@ -65,7 +65,7 @@ public class CommonE2EAssertion {
      *
      * @param element locator resolved from element repository by {@code LocatorTransformer}
      */
-    @And("^assert that '(.+)' is eventually enabled$")
+    @And("^assert that '([^']*)' is eventually enabled$")
     public void assertEventuallyEnabled(@Transform(LocatorTransformer.class) Locator element) {
         log.debug("[CommonE2EAssertion] assertEventuallyEnabled");
         ctx.assertEventuallyEnabled(element);
@@ -92,27 +92,27 @@ public class CommonE2EAssertion {
      *
      * @param element locator resolved from element repository by {@code LocatorTransformer}
      */
-    @And("^assert that '(.+)' is eventually disabled$")
+    @And("^assert that '([^']*)' is eventually disabled$")
     public void assertEventuallyDisabled(@Transform(LocatorTransformer.class) Locator element) {
         log.debug("[CommonE2EAssertion] assertEventuallyDisabled");
         ctx.assertEventuallyDisabled(element);
     }
 
-    @Then("^assert that '(.+)' eventually contains '(.+)'$")
+    @Then("^assert that '([^']*)' eventually contains '([^']*)'$")
     public void assertEventuallyContains(
             @Transform(LocatorTransformer.class) Locator element, String text) {
         log.debug("[CommonE2EAssertion] assertEventuallyContains: {}", text);
         ctx.assertEventuallyContains(element, text);
     }
 
-    @Then("^assert that '(.+)' eventually contains inner '(.+)' property value as '(.+)'$")
+    @Then("^assert that '([^']*)' eventually contains inner '([^']*)' property value as '([^']*)'$")
     public void assertEventuallyContainsInnerValue(
             @Transform(LocatorTransformer.class) Locator element, String property, String text) {
         Locator inputElement = element.locator(property);
         ctx.assertEventuallyContains(inputElement, text);
     }
 
-    @Then("^assert that '(.+)' eventually contains from stored variable '(.+)'$")
+    @Then("^assert that '([^']*)' eventually contains from stored variable '([^']*)'$")
     public void assertEventuallyContainsFromVariable(
             @Transform(LocatorTransformer.class) Locator element, String ctxKey) {
         String expected = ctx.get(ctxKey);
@@ -120,7 +120,7 @@ public class CommonE2EAssertion {
         ctx.assertEventuallyContains(element, expected);
     }
 
-    @Then("^assert that '(.+)' eventually contains inner '(.+)' property value from stored variable '(.+)'$")
+    @Then("^assert that '([^']*)' eventually contains inner '([^']*)' property value from stored variable '([^']*)'$")
     public void assertEventuallyContainsInnerValueFromVariable(
             @Transform(LocatorTransformer.class) Locator element, String property, String ctxKey) {
         String expected = ctx.get(ctxKey);
@@ -128,14 +128,14 @@ public class CommonE2EAssertion {
         ctx.assertEventuallyContains(inputElement, expected);
     }
 
-    @Then("^assert that '(.+)' eventually has value '(.+)'$")
+    @Then("^assert that '([^']*)' eventually has value '([^']*)'$")
     public void assertEventuallyHasValue(
             @Transform(LocatorTransformer.class) Locator element, String value) {
         log.debug("[CommonE2EAssertion] assertEventuallyHasValue: {}", value);
         ctx.assertHasValue(element, value);
     }
 
-    @Then("^assert that '(.+)' eventually has value from stored variable '(.+)'$")
+    @Then("^assert that '([^']*)' eventually has value from stored variable '([^']*)'$")
     public void assertEventuallyHasValueFromVariable(
             @Transform(LocatorTransformer.class) Locator element, String ctxKey) {
         String expected = ctx.get(ctxKey);
@@ -143,7 +143,7 @@ public class CommonE2EAssertion {
         ctx.assertHasValue(element, expected);
     }
 
-    @Then("^assert that '(.+)' eventually has inner '(.+)' property value as '(.+)'$")
+    @Then("^assert that '([^']*)' eventually has inner '([^']*)' property value as '([^']*)'$")
     public void assertEventuallyHasInnerValue(
             @Transform(LocatorTransformer.class) Locator element, String property,  String value) {
         log.debug("[CommonE2EAssertion] assertEventuallyHasValue: {}", value);
@@ -151,7 +151,7 @@ public class CommonE2EAssertion {
         ctx.assertHasValue(inputElement, value);
     }
 
-    @Then("^assert that '(.+)' eventually has inner '(.+)' property value from stored variable '(.+)'$")
+    @Then("^assert that '([^']*)' eventually has inner '([^']*)' property value from stored variable '([^']*)'$")
     public void assertEventuallyHasInnerValueFromVariable(
             @Transform(LocatorTransformer.class) Locator element, String property, String ctxKey) {
         String expected = ctx.get(ctxKey);

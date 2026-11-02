@@ -34,18 +34,18 @@ public class ApiResponseAssertionSteps {
         this.scenario = scenario;
     }
 
-    @Then("^response body contains a key '(.+)' as '(.+)'$")
+    @Then("^response body contains a key '([^']*)' as '([^']*)'$")
     public void responseBodyContainsKeyAs(String jsonPath, String expectedLiteral) {
         assertResponseFieldEquals(jsonPath, expectedLiteral);
     }
 
-    @Then("^response body contains a key '(.+)' with stored variable '(.+)'$")
+    @Then("^response body contains a key '([^']*)' with stored variable '([^']*)'$")
     public void responseBodyContainsKeyWithStoredVariable(String jsonPath, String varName) {
         String expected = ctx.get(varName);
         assertResponseFieldEquals(jsonPath, expected);
     }
 
-    @Then("^response body contains a non-empty value at key '(.+)'$")
+    @Then("^response body contains a non-empty value at key '([^']*)'$")
     public void responseBodyContainsNonEmptyValueAtKey(String jsonPath) {
         Object value = ctx.helper().response().extract().path(jsonPath);
         if (value == null) {
@@ -67,7 +67,7 @@ public class ApiResponseAssertionSteps {
         log.info("[ApiResponseAssertionSteps] asserted '{}' resolves to a non-empty value", jsonPath);
     }
 
-    @Then("^response body contains an element in '(.+)' with key '(.+)' with stored variable '(.+)'$")
+    @Then("^response body contains an element in '([^']*)' with key '([^']*)' with stored variable '([^']*)'$")
     public void responseBodyContainsElementInArrayWithKeyFromStoredVariable(String arrayPath, String key, String varName) {
         String expected = ctx.get(varName);
         assertResponseArrayContainsElementWithKey(arrayPath, key, expected);

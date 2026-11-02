@@ -34,7 +34,7 @@ public class CommonHelpers {
                 ctxKey, value, days, pattern);
     }
 
-    @Given("^a dynamic timestamp with prefix '(.+)' is generated and stored as '(.+)'$")
+    @Given("^a dynamic timestamp with prefix '([^']*)' is generated and stored as '([^']*)'$")
     public void generatePrefixedTimestamp(String prefix, String key) {
         String ts = DateUtil.format(DateUtil.now(), "MMddHHmmss");
         String value = prefix + "-" + ts;

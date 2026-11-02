@@ -25,24 +25,24 @@ public class CommonE2EInteraction {
      *
      * <pre>Given store literal value 'NON-EXISTENT' as 'nonExistentTradeId'</pre>
      */
-    @When("^store e2e variable value '(.+)' as '(.+)'$")
+    @When("^store e2e variable value '([^']*)' as '([^']*)'$")
     public void storeE2EVariableValue(String value, String varName) {
         ctx.set(varName, value);
         ctx.write("Stored E2E variable " + varName + " = " + value);
         log.info("[CommonE2EInteraction] stored '{}' = '{}'", varName, value);
     }
 
-    @And("^click option '(.+)'$")
+    @And("^click option '([^']*)'$")
     public void clickOption(String name) { ctx.clickOption(name); }
 
-    @And("^click option from stored variable '(.+)'$")
+    @And("^click option from stored variable '([^']*)'$")
     public void clickOptionFromCtx(String ctxKey) {
         String option = ctx.get(ctxKey);
         ctx.write("Option from scenario context variable '" + ctxKey + "' is: " + option);
         ctx.clickOption(option);
     }
 
-    @When("^store e2e response field '(.+)' from stored variable '([^']*)' as '([^']*)'$")
+    @When("^store e2e response field '([^']*)' from stored variable '([^']*)' as '([^']*)'$")
     public void storeResponseFieldFromStoredVariable(String jsonPath, String responseCtxKey, String targetVarName) {
         String responseBody = ctx.get(responseCtxKey);
         try {

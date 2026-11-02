@@ -21,7 +21,7 @@ public class TradeApiSteps {
         this.ctx = RestServiceResolver.from(scenario);
     }
 
-    @Given("^set multi-part form parameter '(.+)' for product '([^']*)' from test data '([^']*)'$")
+    @Given("^set multi-part form parameter '([^']*)' for product '([^']*)' from test data '([^']*)'$")
     public void setMultiPartFormParameterFromTestData(String partName, String product, String key) {
         String requestWithProductId = setBasicProductId(TestData.setup(key).request(), product, key);
         ctx.helper().request().multiPart(partName, requestWithProductId, "application/json");
@@ -32,7 +32,7 @@ public class TradeApiSteps {
      *
      * <pre>And set multi-part form parameter 'trade' from current scenario</pre>
      */
-    @Given("^set multi-part form parameter '(.+)' for product '([^']*)' from current scenario$")
+    @Given("^set multi-part form parameter '([^']*)' for product '([^']*)' from current scenario$")
     public void setMultiPartFormParameterFromCurrentScenario(String partName, String product) {
         String requestBody = ctx.find("_tc.request");
         if (requestBody == null) {

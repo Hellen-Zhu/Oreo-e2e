@@ -30,7 +30,7 @@ public class ApiRequestSteps {
      *
      * <pre>Given store response field 'data.id' as 'reasonId'</pre>
      */
-    @Given("^store response field '(.+)' as '(.+)'$")
+    @Given("^store response field '([^']*)' as '([^']*)'$")
     public void storeResponseField(String jsonPath, String varName) {
         Object value = ctx.helper().response().extract().path(jsonPath);
         if (value == null) {
@@ -48,7 +48,7 @@ public class ApiRequestSteps {
      *
      * <pre>Given store api variable value 'NON-EXISTENT' as 'nonExistentTradeId'</pre>
      */
-    @Given("^store api variable value '(.+)' as '(.+)'$")
+    @Given("^store api variable value '([^']*)' as '([^']*)'$")
     public void storeLiteralValue(String value, String varName) {
         ctx.set(varName, value);
         ctx.write("[stored] " + varName + " = " + value);
@@ -77,23 +77,23 @@ public class ApiRequestSteps {
         ctx.write("[request id] " + requestId);
     }
 
-    @Given("^set path parameter '(.+)' from stored variable '(.+)'$")
+    @Given("^set path parameter '([^']*)' from stored variable '([^']*)'$")
     public void setPathParamFromStoredVariable(String paramName, String varName) {
         String value = ctx.get(varName);
         setPathParam(paramName, value, "stored variable '" + varName + "'");
     }
 
-    @Given("^set path parameter '(.+)' to '(.+)'$")
+    @Given("^set path parameter '([^']*)' to '([^']*)'$")
     public void setPathParamToValue(String paramName, String value) {
         setPathParam(paramName, value, "literal value");
     }
 
-    @Given("^set query parameter '(.+)' as '(.+)'$")
+    @Given("^set query parameter '([^']*)' as '([^']*)'$")
     public void setQueryParamAsValue(String paramName, String value) {
         setQueryParam(paramName, value, "literal value");
     }
 
-    @Given("^set query parameter '(.+)' from stored variable '(.+)'$")
+    @Given("^set query parameter '([^']*)' from stored variable '([^']*)'$")
     public void setQueryParamFromStoredVariable(String paramName, String varName) {
         String value = ctx.get(varName);
         setQueryParam(paramName, value, "stored variable '" + varName + "'");
@@ -105,7 +105,7 @@ public class ApiRequestSteps {
      *
      * <pre>Given set query token 'tradeId' from stored variable 'createdTradeId'</pre>
      */
-    @Given("^set query token '(.+)' from stored variable '(.+)'$")
+    @Given("^set query token '([^']*)' from stored variable '([^']*)'$")
     public void setQueryTokenFromStoredVariable(String tokenName, String varName) {
         String value = ctx.get(varName);
         ctx.set("queryToken." + tokenName, value);
