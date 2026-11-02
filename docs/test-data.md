@@ -268,11 +268,13 @@ mvn -Ptest-data process-test-classes "-Dexec.args=suggest trade_creation"
 mvn -Ptest-data process-test-classes "-Dexec.args=compact trade_creation"
 mvn -Ptest-data process-test-classes "-Dexec.args=shared TC-TRADE-CREATION-FX_TRF-API-001"
 mvn -Ptest-data process-test-classes "-Dexec.args=shared TC-TRADE-CREATION-<product_type>-API-001"
+mvn -Ptest-data process-test-classes "-Dexec.args=unused-steps"
 ```
 
-The first command defaults to `check`. Each command first runs the six unit tests of the code that decides what a
+The first command defaults to `check`. Each command first runs the seven unit tests of the code that decides what a
 case sends and what its response is compared with (`ResponseMaskerTest`, `ExpectedResponsesTest`, `JsonPatchTest`,
-`TestDataRepositoryTest`, `JsonLayersTest`, `ResponseSuggestionsTest`; their data is written in the tests themselves, none of it lives under
+`TestDataRepositoryTest`, `JsonLayersTest`, `ResponseSuggestionsTest`, `UnusedStepsTest`; their data is written in the
+tests themselves, none of it lives under
 `src/test/resources`): a failing one stops Maven before the tool reads any data. The commands stop before the
 `test` phase: they do not run Cucumber. A failed check fails Maven. Plain `mvn test` retains its existing behavior and does not activate
 this profile. The company Maven repository needs `org.codehaus.mojo:exec-maven-plugin:3.6.4`.
@@ -284,6 +286,10 @@ After deleting resource files, add `clean` before `process-test-classes` to remo
   is a warning), the product Outlines' `Examples` match the registry, every product with a capability has its dat
   file. Exit code 1 on a problem. Run it before committing a change to the data, the features or the registry.
 - `sync-examples`: writes the product Outlines' `Examples` from `ProductDatFiles` ("Products and capabilities").
+- `unused-steps`: lists the snippets and Java steps no feature reaches, walking from the feature steps through the
+  snippet bodies, and the steps nothing here defines (Genie's built-ins, or a step that is missing). It writes nothing
+  and never fails. A Java step marked `[method called from Java]` is used by its method: only the annotation is unused.
+  Run it on the company copy before deleting anything: the public copy has fewer features and fewer steps.
 - `suggest <event>`: reads the event's recordings and prints, without writing anything, the `dynamicFields` rules
   they need and the `expectedBase` that suits them ("Suggestions", below).
 - `compact <event>` or `compact all`: the compaction of "Base and patch" and "Shared parts". It lists the files it

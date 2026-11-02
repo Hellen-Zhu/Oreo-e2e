@@ -26,7 +26,7 @@ mvn -Ptest-data process-test-classes "-Dexec.args=shared TC-TRADE-CREATION-FX_TR
 
 Each line is a complete command. The first defaults to `check`; choose one command for the task.
 Maven compiles the project, copies test resources and supplies the test classpath automatically.
-Before the tool, the profile runs the six unit tests of the test data code (`src/test/java/.../testdata/*Test`;
+Before the tool, the profile runs the seven unit tests of the test data code (`src/test/java/.../testdata/*Test`;
 their data files are written by the tests, into a temporary folder): a failing one stops Maven before the tool reads any data, and the tool's verdict
 is not to be trusted until they pass. Stopping at `process-test-classes` does not execute the Cucumber suite. Do
 not replace it with `test` or `verify` for a data-only operation. The commands below are the value of `-Dexec.args`

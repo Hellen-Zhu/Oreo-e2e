@@ -227,6 +227,7 @@
                                 <configuration>
                                     <includes>
                                         <include>**/testdata/*Test.java</include>
+                                        <include>**/tools/*Test.java</include>
                                     </includes>
                                     <excludes combine.self="override">
                                         <exclude>**/*$*</exclude>
