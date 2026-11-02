@@ -10,7 +10,8 @@ Read this before changing files. It holds the rules and the traps; the details l
   scope or reading an empty run as a pass.
 - **Select with `-Dcucumber.options`** (`"--tags ..."`, `"--name ^\[TC-...\].*$"`). Never `-Dcucumber.filter.*`: not
   supported here, possibly ignored silently, running everything.
-- **The environment is `qa.properties`** (`@GenieOptions`); `genie.properties` holds shared defaults (Edge, headless,
+- **The environment is `qa.properties`** (`@GenieOptions`), or the file of `-Dgenie.properties=./src/test/resources/<env>.properties`
+  (dev, sit, qa, uat, pt); `genie.properties` holds shared defaults (Edge, headless,
   trace mode, risk engine mode, element paths).
 - **Features run in parallel**: 3 at a time, in separate JVMs. A scenario may not depend on another or on shared mutable
   state (a fixed trade, portfolio or user setting another feature changes).
