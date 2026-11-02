@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.example.genie.model.GenieScenario;
 import com.example.genie.module.rest.RestModule;
 import com.example.genie.module.rest.service.RequestResponseHelper;
+import com.example.module.oreo.config.TestUser;
 import cucumber.api.Scenario;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,6 +20,8 @@ public final class RestApiUtil {
 
     /** Required on every OREO API request: a new UUID per request. */
     public static final String REQUEST_ID_HEADER = "X-Request-Id";
+    /** The acting user of an OREO API request: an e-mail. */
+    public static final String USER_HEADER = "X-User-Id";
 
     private RestApiUtil() {
         // Utility class
@@ -100,7 +103,7 @@ public final class RestApiUtil {
                 target, userId, jsonPartName, filePartName, filePath);
 
         helper.newRequest();
-        helper.request().header("X-User-Id", userId);
+        setUserHeader(helper, userId);
         setNewRequestId(helper);
         helper.request().multiPart(jsonPartName, jsonPartValue, "application/json");
         helper.request().multiPart(filePartName, filePath.toFile());
@@ -111,12 +114,22 @@ public final class RestApiUtil {
 
     private static void prepareRequest(RequestResponseHelper helper, String userId, String jsonBody) {
         helper.newRequest();
-        helper.request().header("X-User-Id", userId);
+        setUserHeader(helper, userId);
         setNewRequestId(helper);
         helper.request().header("Content-Type", "application/json");
         if (jsonBody != null) {
             helper.request().body(jsonBody);
         }
+    }
+
+    /**
+     * Sets {@link #USER_HEADER} on the request being built and returns its value: the e-mail of a {@link TestUser}
+     * role ({@code maker}), or an e-mail as given. The snippet step {@code set the user header for '...'} calls it too.
+     */
+    public static String setUserHeader(RequestResponseHelper helper, String roleOrEmail) {
+        String userId = TestUser.userId(roleOrEmail);
+        helper.request().header(USER_HEADER, userId);
+        return userId;
     }
 
     /**

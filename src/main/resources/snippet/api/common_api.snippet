@@ -1,7 +1,7 @@
 # ── Build request ───────────────────────────────────────────────────
 @Given "^start a new api request as user '([^']*)'$"
     Given start building a new request
-    And set header 'X-User-Id' to '$1'
+    And set the user header for '$1'
     And set a new request id header
 
 @Given "^build json request with body from test data '([^']*)'$"

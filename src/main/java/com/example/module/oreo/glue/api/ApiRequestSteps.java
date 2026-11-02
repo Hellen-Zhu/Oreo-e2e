@@ -65,6 +65,18 @@ public class ApiRequestSteps {
     }
 
     /**
+     * Sets the X-User-Id header of the request being built to the e-mail of a role ({@code maker}, {@code checker},
+     * {@code admin}, {@code user}; see {@code TestUser}) or to an e-mail as given. Called by
+     * {@code start a new api request as user '...'}.
+     *
+     * <pre>And set the user header for 'checker'</pre>
+     */
+    @Given("^set the user header for '([^']*)'$")
+    public void setUserHeader(String roleOrEmail) {
+        ctx.write("[user] " + RestApiUtil.setUserHeader(ctx.helper(), roleOrEmail));
+    }
+
+    /**
      * Sets the X-Request-Id header of the request being built to a new UUID and stores it as {@code requestId}, so a
      * failure can be traced in the server logs. Called by {@code start a new api request as user '...'}.
      *
