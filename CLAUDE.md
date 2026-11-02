@@ -61,7 +61,8 @@ Stop at the first that fits:
 | Locator | `src/test/resources/elements/{pages,components}/*.json` |
 | Request body | `data/{api,ui}/<event>.json` (case), `data/setup/<name>.json` (preconditions) |
 | Product, its dat file, its capabilities | `ProductDatFiles` + `data/dat/<P>/<P>.dat` |
-| Address, account, mode | the properties files, never code or features; accounts by role through `config/TestUser` |
+| Address, mode | the properties files, never code or features |
+| Account | its role and e-mail in `config/TestUser` (the same in every environment); its password only from `-D`, an environment variable or `users.local.properties` |
 
 Trade preconditions already exist; reuse them instead of inlining create + approve (headers and context keys get
 lost): `a live|draft|dead '<product_type>' trade is created via api`, `a '<product_type>' trade is submitted to
