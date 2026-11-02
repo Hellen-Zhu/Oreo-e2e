@@ -26,7 +26,7 @@ public class NewTradeSteps {
     /** The case's dat file ({@code datFile} of its test data), else the product's default one. */
     @When("^upload '([^']*)' dat file$")
     public void uploadDatFile(String productType) {
-        uploadDatFile(ProductDatFiles.valueOf(productType).path(ctx.find("_tc.datFile")));
+        uploadDatFileByPath(ProductDatFiles.valueOf(productType).path(ctx.find("_tc.datFile")));
     }
 
     @When("^click save using configured risk engine mode for new trade creation$")
@@ -57,7 +57,7 @@ public class NewTradeSteps {
 
     // ── Private helpers ─────────────────────────────────────────────
 
-    private void uploadDatFile(String relativeFilePath) {
+    private void uploadDatFileByPath(String relativeFilePath) {
         URL resource = getClass().getClassLoader().getResource(relativeFilePath);
         if (resource == null) {
             throw new AssertionError(
