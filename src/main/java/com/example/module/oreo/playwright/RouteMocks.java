@@ -48,6 +48,14 @@ final class RouteMocks {
         mockRouteWithDelay(urlFragment, status, responseBody, "application/json");
     }
 
+    /** Registers a mock route that fulfills with a JSON body after {@code delayMs}. */
+    void mockRouteWithDelay(String urlFragment, int status, String responseBody, long delayMs) {
+        service.getPage().route(
+                "**" + urlFragment + "**",
+                route -> fulfillAfter(route, status, responseBody, "application/json", delayMs)
+        );
+    }
+
     /**
      * Registers a mock route with an explicit {@code contentType}.
      * @param contentType  value for the {@code Content-Type} header
@@ -69,18 +77,23 @@ final class RouteMocks {
                                    String contentType) {
         service.getPage().route(
                 "**" + urlFragment + "**",
-                route -> Thread.ofVirtual().start(() -> {
-                    try {
-                        Thread.sleep(timeoutMillis());
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                    }
-                    route.fulfill(new Route.FulfillOptions()
-                            .setStatus(status)
-                            .setBody(responseBody)
-                            .setContentType(contentType));
-                })
+                route -> fulfillAfter(route, status, responseBody, contentType, timeoutMillis())
         );
+    }
+
+    /** Fulfills on a virtual thread, so that the other routes are not held up. */
+    private static void fulfillAfter(Route route, int status, String responseBody, String contentType, long delayMs) {
+        Thread.ofVirtual().start(() -> {
+            try {
+                Thread.sleep(delayMs);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+            route.fulfill(new Route.FulfillOptions()
+                    .setStatus(status)
+                    .setBody(responseBody)
+                    .setContentType(contentType));
+        });
     }
 
     /**

@@ -250,6 +250,9 @@ public final class PlaywrightServiceResolver {
         public void mockRouteWithDelay(String urlFragment, int status, String responseBody) {
             mocks.mockRouteWithDelay(urlFragment, status, responseBody);
         }
+        public void mockRouteWithDelay(String urlFragment, int status, String responseBody, long delayMs) {
+            mocks.mockRouteWithDelay(urlFragment, status, responseBody, delayMs);
+        }
         public void mockRouteWithDelay(String urlFragment, int status, String responseBody, String contentType) {
             mocks.mockRouteWithDelay(urlFragment, status, responseBody, contentType);
         }
