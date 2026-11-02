@@ -1,7 +1,5 @@
 package com.example.module.oreo.glue.ui;
 
-import com.example.module.oreo.OreoModuleConfiguration;
-import com.example.module.oreo.testdata.TestData;
 import com.example.module.oreo.utils.TradeApiClient;
 import cucumber.api.Scenario;
 import cucumber.api.java.Before;
@@ -33,7 +31,7 @@ public class TradeLifecycleEventSteps {
 
     @When("^click amend using configured risk engine mode for trade stored as '([^']*)' from trade details page$")
     public void clickAmendUsingConfiguredRiskEngineModeFromTradeDetails(String ctxKey) {
-        clickUsingConfiguredRiskEngineMode("trade_detail.amend_btn",
+        ctx.clickUsingRiskEngineMode("trade_detail.amend_btn",
                 TradeApiClient.calculateRiskPath(ctx.get(ctxKey)), "risk-calc-success-mock");
     }
 
@@ -64,13 +62,13 @@ public class TradeLifecycleEventSteps {
      */
     @When("^confirm dynamic action form using configured risk engine mode for trade stored as '([^']*)'$")
     public void confirmDynamicActionFormUsingConfiguredRiskEngineMode(String ctxKey) {
-        clickUsingConfiguredRiskEngineMode("dynamic_action.confirm_btn",
+        ctx.clickUsingRiskEngineMode("dynamic_action.confirm_btn",
                 TradeApiClient.calculateRiskPath(ctx.get(ctxKey)), "risk-calc-success-mock");
     }
 
     @When("^confirm dynamic action form using configured partial risk engine mode for trade stored as '([^']*)'$")
     public void confirmDynamicActionFormUsingConfiguredPartialRiskEngineMode(String ctxKey) {
-        clickUsingConfiguredRiskEngineMode("dynamic_action.confirm_btn",
+        ctx.clickUsingRiskEngineMode("dynamic_action.confirm_btn",
                 TradeApiClient.calculatePartialRiskPath(ctx.get(ctxKey)), "risk-calc-partial-success-mock");
     }
 
@@ -99,23 +97,5 @@ public class TradeLifecycleEventSteps {
                 "POST"
         );
         ctx.set(responseCtxKey, responseBody);
-    }
-
-
-    /** Clicks the element: REAL waits for the risk calculation, MOCK answers it with the setup file's response. */
-    private void clickUsingConfiguredRiskEngineMode(String elementKey, String riskUrl, String mockSetup) {
-        OreoModuleConfiguration.Mode mode = ctx.riskEngineMode();
-        log.info("[TradeLifecycleEventSteps] Clicking '{}' using configured risk engine mode='{}', url='{}'",
-                elementKey, mode, riskUrl);
-        switch (mode) {
-            case MOCK:
-                ctx.clickWithMockedResponse(elementKey, riskUrl, "POST", 200, TestData.setup(mockSetup).response());
-                return;
-            case REAL:
-                ctx.runAndWaitForResponse(() -> ctx.service().getLocator(elementKey).click(), riskUrl, "POST");
-                return;
-            default:
-                throw new IllegalStateException("Unhandled risk engine mode: " + mode);
-        }
     }
 }

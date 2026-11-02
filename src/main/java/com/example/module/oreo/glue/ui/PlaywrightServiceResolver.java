@@ -16,6 +16,7 @@ import com.example.genie.module.playwright.core.PlaywrightService;
 import com.example.module.oreo.glue.ScenarioContext;
 import com.example.module.oreo.OreoModule;
 import com.example.module.oreo.OreoModuleConfiguration;
+import com.example.module.oreo.testdata.TestData;
 import cucumber.api.Scenario;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -527,6 +528,32 @@ public final class PlaywrightServiceResolver {
                 }
             } finally {
                 clearMockRoute(urlFragment);
+            }
+        }
+
+        /**
+         * Clicks {@code locatorKey} and waits for the risk calculation {@code POST riskUrl}: REAL lets the risk engine
+         * answer, MOCK answers with the response of setup file {@code mockSetup}.
+         */
+        public void clickUsingRiskEngineMode(String locatorKey, String riskUrl, String mockSetup) {
+            OreoModuleConfiguration.Mode mode = riskEngineMode();
+            log.info("[PlaywrightServiceResolver] clicking '{}' using configured risk engine mode='{}', url='{}'",
+                    locatorKey, mode, riskUrl);
+            Runnable click = () -> service.getLocator(locatorKey).click();
+            switch (mode) {
+                case MOCK:
+                    mockRoute(riskUrl, 200, TestData.setup(mockSetup).response());
+                    try {
+                        runAndWaitForResponse(click, riskUrl, "POST");
+                    } finally {
+                        clearMockRoute(riskUrl);
+                    }
+                    return;
+                case REAL:
+                    runAndWaitForResponse(click, riskUrl, "POST");
+                    return;
+                default:
+                    throw new IllegalStateException("Unhandled risk engine mode: " + mode);
             }
         }
 

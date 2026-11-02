@@ -1,7 +1,5 @@
 package com.example.module.oreo.glue.ui;
 
-import com.example.module.oreo.OreoModuleConfiguration;
-import com.example.module.oreo.testdata.TestData;
 import com.example.module.oreo.utils.TradeApiClient;
 import cucumber.api.Scenario;
 import cucumber.api.java.Before;
@@ -48,53 +46,16 @@ public class TradeCancellationSteps {
 
     @When("^trigger cancellation for trade using configured risk engine mode from trade portal for trade stored as '([^']*)'$")
     public void confirmCancellationFromPortalUsingConfiguredRiskEngineMode(String ctxKey) {
-        switch (resolveRiskEngineMode()) {
-            case MOCK:
-                confirmCancellationFormAndMockSuccessfulRiskCalculationResponse("trade_portal.row_action_cancel", ctxKey);
-                return;
-            case REAL:
-                confirmCancellationFormAndWaitForRealRiskCalculationResponse("trade_portal.row_action_cancel", ctxKey);
-                return;
-            default:
-                throw new IllegalStateException("Unhandled risk engine mode");
-        }
+        ctx.clickUsingRiskEngineMode("trade_portal.row_action_cancel",
+                TradeApiClient.calculateRiskPath(ctx.get(ctxKey)), "risk-calc-success-mock");
     }
 
     @When("^trigger cancellation for trade using configured risk engine mode from trade detail page for trade stored as '([^']*)'$")
     public void confirmCancellationFromDetailsUsingConfiguredRiskEngineMode(String ctxKey) {
-        switch (resolveRiskEngineMode()) {
-            case MOCK:
-                confirmCancellationFormAndMockSuccessfulRiskCalculationResponse("trade_detail.cancel_btn", ctxKey);
-                return;
-            case REAL:
-                confirmCancellationFormAndWaitForRealRiskCalculationResponse("trade_detail.cancel_btn", ctxKey);
-                return;
-            default:
-                throw new IllegalStateException("Unhandled risk engine mode");
-        }
+        ctx.clickUsingRiskEngineMode("trade_detail.cancel_btn",
+                TradeApiClient.calculateRiskPath(ctx.get(ctxKey)), "risk-calc-success-mock");
     }
 
-    public void confirmCancellationFormAndWaitForRealRiskCalculationResponse(String elementKey, String ctxKey) {
-        String tradeId = ctx.get(ctxKey);
-        ctx.runAndWaitForResponse(
-                () -> ctx.service().getLocator(elementKey).click(),
-                TradeApiClient.calculateRiskPath(tradeId),
-                "POST"
-        );
-    }
-
-    public void confirmCancellationFormAndMockSuccessfulRiskCalculationResponse(String elementKey, String ctxKey) {
-        String tradeId = ctx.get(ctxKey);
-        String responseBody = TestData.setup("risk-calc-success-mock").response();
-        String urlFragment = TradeApiClient.calculateRiskPath(tradeId);
-        ctx.clickWithMockedResponse(
-                elementKey,
-                urlFragment,
-                "POST",
-                200,
-                responseBody
-        );
-    }
     /**
      * Confirms the cancellation dialog on the Trade Detail page and waits for the trigger-event
      * API call to complete before returning.
@@ -103,9 +64,5 @@ public class TradeCancellationSteps {
     public void confirmCancellationFromTradeDetailAndWait() {
         log.info("[TradeCancellationSteps] Confirming cancel dialog on trade detail and waiting for trigger-event response");
         ctx.clickAndWaitForResponse("trade_detail.cancel_dialog_confirm_btn", TradeApiClient.TRIGGER_EVENT_PATH, "POST");
-    }
-
-    private OreoModuleConfiguration.Mode resolveRiskEngineMode() {
-        return ctx.riskEngineMode();
     }
 }

@@ -1,8 +1,6 @@
 package com.example.module.oreo.glue.ui;
 
-import com.example.module.oreo.OreoModuleConfiguration;
 import com.example.module.oreo.testdata.ProductDatFiles;
-import com.example.module.oreo.testdata.TestData;
 import cucumber.api.Scenario;
 import cucumber.api.java.Before;
 import cucumber.api.java.en.When;
@@ -33,53 +31,13 @@ public class NewTradeSteps {
 
     @When("^click save using configured risk engine mode for new trade creation$")
     public void clickSaveUsingConfiguredRiskEngineModeForNewTrade() {
-        clickUsingConfiguredRiskEngineModeForNewTrade("new_trade.save_btn");
+        ctx.clickUsingRiskEngineMode("new_trade.save_btn", NEW_TRADE_RISK_URL, "risk-calc-success-mock");
     }
 
     @When("^click book using configured risk engine mode for new trade creation$")
     public void clickBookUsingConfiguredRiskEngineModeForNewTrade() {
-        clickUsingConfiguredRiskEngineModeForNewTrade("new_trade.book_btn");
+        ctx.clickUsingRiskEngineMode("new_trade.book_btn", NEW_TRADE_RISK_URL, "risk-calc-success-mock");
     }
-
-    private void clickUsingConfiguredRiskEngineModeForNewTrade(String buttonLocator) {
-        OreoModuleConfiguration.Mode mode = ctx.riskEngineMode();
-
-        log.info("[NewTradeSteps] Clicking '{}' using configured risk engine mode='{}'", buttonLocator, mode);
-
-        switch (mode) {
-            case MOCK:
-                clickSaveAndMockSuccessfulRiskCalculationResponseForNewTrade(buttonLocator);
-                return;
-            case REAL:
-                clickSaveAndWaitForRealRiskCalculationResponseForNewTrade(buttonLocator);
-                return;
-            default:
-                throw new IllegalStateException("Unhandled risk engine mode: " + mode);
-        }
-    }
-
-    private void clickSaveAndWaitForRealRiskCalculationResponseForNewTrade(String buttonLocator) {
-        ctx.runAndWaitForResponse(
-                () -> ctx.service().getLocator(buttonLocator).click(),
-                NEW_TRADE_RISK_URL,
-                "POST"
-        );
-    }
-
-    private void clickSaveAndMockSuccessfulRiskCalculationResponseForNewTrade(String buttonLocator) {
-        String responseBody = TestData.setup("risk-calc-success-mock").response();
-        ctx.mockRoute(NEW_TRADE_RISK_URL, 200, responseBody);
-        try {
-            ctx.runAndWaitForResponse(
-                    () -> ctx.service().getLocator(buttonLocator).click(),
-                    NEW_TRADE_RISK_URL,
-                    "POST"
-            );
-        } finally {
-            ctx.clearMockRoute(NEW_TRADE_RISK_URL);
-        }
-    }
-
 
     @When("^confirm new trade and wait for page ready$")
     public void waitForNewTradeCreatedReady() {
