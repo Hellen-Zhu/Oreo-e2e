@@ -26,6 +26,12 @@ public class TradeProvisioningSteps {
         this.helper = RestApiUtil.helperFromScenario(scenario);
     }
 
+    @Given("^a draft new '([^']*)' trade is provisioned via playwright api$")
+    public void provisionPendingDraftTrade(String product) throws Exception {
+        saveTradeAsDraft("createdTradeId", "createdTaskId", "trade-create",
+                ProductDatFiles.valueOf(product));
+    }
+
     @Given("^a draft pending approval '([^']*)' trade is provisioned via playwright api$")
     public void provisionPendingTrade(String product) throws Exception {
         submitTradeAsPendingApproval("createdTradeId", "createdTaskId", "trade-create",
@@ -61,23 +67,28 @@ public class TradeProvisioningSteps {
         provisionLifecycleEvent("createdTradeId2", "createdTaskId2", "trade-cancellation");
     }
 
-    @Given("^a dead '([^']*)' trade is provisioned via playwright api$")
-    public void provisionDeadTrade(String product) throws Exception {
+    @Given("^a pending approval amendment '([^']*)' trade is provisioned via playwright api$")
+    public void provisionTradeAmendment(String product) throws Exception {
+        provisionLiveTradeAs("createdTradeId", "createdTaskId", "trade-create", ProductDatFiles.valueOf(product));
+        TradeApiClient.updateTrade(helper, ctx.get("createdTradeId"), "maker@example.com", "trade-amendment");
+    }
+
+    @Given("^a pending approval cancellation '([^']*)' trade is provisioned via playwright api$")
+    public void provisionTradeCancellation(String product) throws Exception {
         provisionLiveTradeAs("createdTradeId", "createdTaskId", "trade-create", ProductDatFiles.valueOf(product));
         provisionLifecycleEvent("createdTradeId", "createdTaskId", "trade-cancellation");
+    }
+
+    @Given("^a dead '([^']*)' trade is provisioned via playwright api$")
+    public void provisionDeadTrade(String product) throws Exception {
+        provisionTradeCancellation(product);
         TradeApiClient.approveTask(helper, ctx.get("createdTaskId"), "checker@example.com");
     }
 
-    @Given("^a draft '([^']*)' trade is provisioned via playwright api$")
+    @Given("^a rejected draft '([^']*)' trade is provisioned via playwright api$")
     public void provisionDraftTrade(String product) throws Exception {
-        provisionLiveTradeAs("createdTradeId", "createdTaskId", "trade-create", ProductDatFiles.valueOf(product));
-        provisionLifecycleEvent("createdTradeId", "createdTaskId", "trade-cancellation");
+        provisionTradeCancellation(product);
         TradeApiClient.rejectTask(helper, ctx.get("createdTaskId"), "checker@example.com");
-    }
-
-    @Given("^amendment for stored trade is submitted as maker via playwright api$")
-    public void submitAmendmentForStoredTrade() {
-        TradeApiClient.updateTrade(helper, ctx.get("createdTradeId"), "maker@example.com", "trade-amendment");
     }
 
     private void provisionLiveTradeAs(String tradeIdVar, String taskIdVar, String testDataKey, ProductDatFiles datFile) throws Exception {
@@ -89,6 +100,21 @@ public class TradeProvisioningSteps {
         TradeApiClient.approveTask(helper, taskId, "checker@example.com");
         log.info("[TradeProvisioningSteps] Live trade provisioned successfully: tradeId='{}', taskId='{}'",
                 ctx.get(tradeIdVar), ctx.get(taskIdVar));
+    }
+
+    private void saveTradeAsDraft(String tradeIdVar, String taskIdVar, String testDataKey, ProductDatFiles datFile) throws Exception {
+        log.info("[TradeProvisioningSteps] Submitting trade as draft: tradeIdVar='{}', taskIdVar='{}', testDataKey='{}', datFile='{}'",
+                tradeIdVar, taskIdVar, testDataKey, datFile);
+
+        JsonNode body = TradeApiClient.saveTrade(helper, "maker@example.com", testDataKey, datFile, datFile.path());
+        String tradeId = body.at("/data/trade/id").asText();
+        String taskId = body.at("/data/checkerContext/taskId").asText();
+
+        log.info("[TradeProvisioningSteps] Trade saved: extracted tradeId='{}', taskId='{}'", tradeId, taskId);
+
+        ctx.set(tradeIdVar, tradeId);
+        ctx.write("Trade created with id: " + tradeId);
+        ctx.set(taskIdVar, taskId);
     }
 
     private void submitTradeAsPendingApproval(String tradeIdVar, String taskIdVar, String testDataKey, ProductDatFiles datFile) throws Exception {

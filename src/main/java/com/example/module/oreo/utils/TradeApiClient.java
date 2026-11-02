@@ -28,6 +28,7 @@ public final class TradeApiClient {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     public static final String SUBMIT_TRADE_PATH = "/trades/create?tradeAction=SUBMIT";
+    public static final String SAVE_TRADE_PATH = "/trades/create?tradeAction=SAVE";
     public static final String TRIGGER_EVENT_PATH = "/trades/trigger-event";
 
     private TradeApiClient() {
@@ -49,14 +50,26 @@ public final class TradeApiClient {
     /** Submits the setup body {@code testDataKey} for {@code product} with the dat file at classpath {@code datPath}. */
     public static JsonNode submitTrade(RequestResponseHelper helper, String userId, String testDataKey,
                                        ProductDatFiles product, String datPath) throws URISyntaxException {
+        return createTrade(helper, SUBMIT_TRADE_PATH, userId, testDataKey, product, datPath);
+    }
+
+    /** Saves the setup body {@code testDataKey} as a draft of {@code product}. */
+    public static JsonNode saveTrade(RequestResponseHelper helper, String userId, String testDataKey,
+                                     ProductDatFiles product, String datPath) throws URISyntaxException {
+        return createTrade(helper, SAVE_TRADE_PATH, userId, testDataKey, product, datPath);
+    }
+
+    private static JsonNode createTrade(RequestResponseHelper helper, String path, String userId, String testDataKey,
+                                        ProductDatFiles product, String datPath) throws URISyntaxException {
         // The setup body carries no product: it is set from the dat file's product
         String tradeJson = TradeRequests.withProductId(TestData.setup(testDataKey).request(), product.name());
         URL resource = TradeApiClient.class.getClassLoader().getResource(datPath);
         if (resource == null) {
             throw new AssertionError("[TradeApiClient] dat file '" + datPath + "' not found on classpath.");
         }
-        log.info("[TradeApiClient] submitTrade: userId='{}', testDataKey='{}', datFile='{}'", userId, testDataKey, datPath);
-        return RestApiUtil.postMultipart(helper, SUBMIT_TRADE_PATH, userId, "trade", tradeJson, "datFile",
+        log.info("[TradeApiClient] createTrade: path='{}', userId='{}', testDataKey='{}', datFile='{}'",
+                path, userId, testDataKey, datPath);
+        return RestApiUtil.postMultipart(helper, path, userId, "trade", tradeJson, "datFile",
                 Paths.get(resource.toURI()));
     }
 
