@@ -1,5 +1,6 @@
 package com.example.module.oreo.glue.ui;
 
+import com.example.module.oreo.utils.OreoEndpoints;
 import com.example.module.oreo.utils.TradeApiClient;
 import com.example.module.oreo.playwright.PlaywrightServiceResolver;
 import cucumber.api.Scenario;
@@ -50,7 +51,7 @@ public class TradeLifecycleEventSteps {
     @When("^confirm checker action on trade detail and wait for page ready$")
     public void confirmCheckerActionAndWait() {
         log.info("[TradeLifecycleEventSteps] Confirming checker action on trade detail; waiting for /checker/tasks/ response");
-        ctx.clickAndWaitForResponse("trade_detail.checker_confirm_btn", "/checker/tasks/", "POST");
+        ctx.clickAndWaitForResponse("trade_detail.checker_confirm_btn", OreoEndpoints.CHECKER_TASKS_PATH, "POST");
     }
 
     // ── Lifecycle event steps ───────────────────────────────────────

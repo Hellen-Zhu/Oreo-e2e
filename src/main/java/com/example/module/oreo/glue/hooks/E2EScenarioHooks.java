@@ -2,6 +2,7 @@ package com.example.module.oreo.glue.hooks;
 
 import com.example.genie.module.rest.service.RequestResponseHelper;
 import com.example.module.oreo.testdata.TestData;
+import com.example.module.oreo.utils.OreoEndpoints;
 import com.example.module.oreo.utils.RestApiUtil;
 import cucumber.api.Scenario;
 import cucumber.api.java.Before;
@@ -18,7 +19,7 @@ public class E2EScenarioHooks {
         RequestResponseHelper helper = RestApiUtil.helperFromScenario(scenario);
         String payload = TestData.setup("user-preference-defaults").request();
 
-        RestApiUtil.put(helper, "/uc/api/user-preferences", "maker@example.com", payload);
-        RestApiUtil.put(helper, "/uc/api/user-preferences", "checker@example.com", payload);
+        RestApiUtil.put(helper, OreoEndpoints.USER_PREFERENCES, "maker@example.com", payload);
+        RestApiUtil.put(helper, OreoEndpoints.USER_PREFERENCES, "checker@example.com", payload);
     }
 }

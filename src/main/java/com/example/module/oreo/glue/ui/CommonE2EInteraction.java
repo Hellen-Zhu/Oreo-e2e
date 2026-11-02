@@ -1,5 +1,6 @@
 package com.example.module.oreo.glue.ui;
 
+import com.example.module.oreo.utils.OreoEndpoints;
 import com.example.module.oreo.playwright.PlaywrightServiceResolver;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.microsoft.playwright.Locator;
@@ -140,9 +141,9 @@ public class CommonE2EInteraction {
             String locatorName, String ctxKey) {
         String value = ctx.get(ctxKey);
         ctx.write("Dynamic value from scenario context variable '" + ctxKey + "' is: " + value);
-        ctx.clickAndWaitForResponse(ctx.getLocatorWithParam(locatorName, value), "/api/v1/products/productId/" + value, "GET");
+        ctx.clickAndWaitForResponse(ctx.getLocatorWithParam(locatorName, value), OreoEndpoints.API_PREFIX + OreoEndpoints.productByProductIdPath(value), "GET");
     }
 
     @When("^atomic refresh webpage and wait for page ready$")
-    public void refreshWebpageAndWaitForTradesApi() { ctx.refreshAndWaitForResponse("/api/v1/blotter/trades", "POST"); }
+    public void refreshWebpageAndWaitForTradesApi() { ctx.refreshAndWaitForResponse(OreoEndpoints.BLOTTER_TRADES, "POST"); }
 }

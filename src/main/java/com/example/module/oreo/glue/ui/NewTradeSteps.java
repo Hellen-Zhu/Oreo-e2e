@@ -1,6 +1,7 @@
 package com.example.module.oreo.glue.ui;
 
 import com.example.module.oreo.testdata.ProductDatFiles;
+import com.example.module.oreo.utils.OreoEndpoints;
 import com.example.module.oreo.playwright.PlaywrightServiceResolver;
 import cucumber.api.Scenario;
 import cucumber.api.java.Before;
@@ -15,6 +16,7 @@ import java.nio.file.Paths;
 public class NewTradeSteps {
 
     private static final String NEW_TRADE_RISK_URL = "/trades/calculate-risk-for-new";
+    private static final String CREATE_TRADE_URL = OreoEndpoints.API_PREFIX + "/trades/create";
 
     private PlaywrightServiceResolver.Context ctx;
     private static final Logger log = LoggerFactory.getLogger(NewTradeSteps.class);
@@ -42,7 +44,7 @@ public class NewTradeSteps {
 
     @When("^confirm new trade and wait for page ready$")
     public void waitForNewTradeCreatedReady() {
-        ctx.clickAndWaitForResponse("trade_change_confirmation.confirm_btn", "/api/v1/blotter/trades", "POST");
+        ctx.clickAndWaitForResponse("trade_change_confirmation.confirm_btn", OreoEndpoints.BLOTTER_TRADES, "POST");
     }
 
     @When("^confirm new trade creation and capture response as '([^']*)'$")
@@ -50,7 +52,7 @@ public class NewTradeSteps {
         log.info("[NewTradeSteps] Confirming trade change confirmation; capturing /trades/create response as '{}'", responseCtxKey);
         String responseBody = ctx.clickAndCaptureResponse(
                 "trade_change_confirmation.confirm_btn",
-                "/api/v1/trades/create",
+                CREATE_TRADE_URL,
                 "POST"
         );
         ctx.set(responseCtxKey, responseBody);

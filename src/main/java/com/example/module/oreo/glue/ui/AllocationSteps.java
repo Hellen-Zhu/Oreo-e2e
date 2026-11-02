@@ -1,6 +1,7 @@
 package com.example.module.oreo.glue.ui;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.example.module.oreo.utils.OreoEndpoints;
 import com.example.module.oreo.utils.TradeApiClient;
 import com.example.module.oreo.playwright.PlaywrightServiceResolver;
 import com.microsoft.playwright.Locator;
@@ -50,7 +51,7 @@ public class AllocationSteps {
     @When("^capture trades snapshot as '([^']*)'$")
     public void captureTradesSnapshot(String ctxKey) {
         String tradesJson = ctx.clickAndCaptureResponse(
-                "trade_portal.refresh_btn", "/api/v1/blotter/trades", "POST");
+                "trade_portal.refresh_btn", OreoEndpoints.BLOTTER_TRADES, "POST");
         ctx.set(ctxKey, tradesJson);
         log.info("[AllocationSteps] Trades snapshot captured as '{}'.", ctxKey);
     }
