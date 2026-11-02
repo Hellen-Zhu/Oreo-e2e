@@ -19,28 +19,28 @@
 # ── Build request ───────────────────────────────────────────────────
 @Given "^maker have valid data for blotter creation$"
     Given store dynamic api timestamp with prefix 'TC-API-Blotter' as 'blotterName'
-    And build json request with body from current scenario at json path 'name' from stored variable 'blotterName' as user 'maker@example.com'
+    And build json request with body from current scenario at json path 'name' from stored variable 'blotterName' as user 'maker'
 
 @Given "^user have valid data to import the blotter$"
-    Given build request as user 'user@example.com'
+    Given build request as user 'user'
     And set path parameter 'marketplaceBlotterId' from stored variable 'newMarketplaceBlotterId'
 
 @Given "^maker have invalid data to import the blotter$"
-    Given build request as user 'maker@example.com'
+    Given build request as user 'maker'
     And set path parameter 'marketplaceBlotterId' from stored variable 'newBlotterId'
 
 @Given "^maker have valid data to publish the blotter$"
-    Given build request as user 'maker@example.com'
+    Given build request as user 'maker'
     And set path parameter 'blotterId' from stored variable 'newBlotterId'
 
 @Given "^maker have valid data to update blotter$"
-    And build json request with body from current scenario at json path 'name' from stored variable 'blotterName' as user 'maker@example.com'
+    And build json request with body from current scenario at json path 'name' from stored variable 'blotterName' as user 'maker'
     And set path parameter 'blotterId' from stored variable 'newBlotterId'
 @Given "^maker is ready to query blotter list$"
-    Given build request as user 'maker@example.com'
+    Given build request as user 'maker'
 
 @Given "^maker have a marketplace blotter to import$"
-    Given build request as user 'maker@example.com'
+    Given build request as user 'maker'
     And set path parameter 'marketplaceBlotterId' from stored variable 'newMarketplaceBlotterId'
 
 # ── Make API call ───────────────────────────────────────────────────
@@ -72,12 +72,12 @@
     And attach the response body to the report
 
 @When "^maker retrieves all available trade blotters$"
-    Given build request as user 'maker@example.com'
+    Given build request as user 'maker'
     When get from path '/uc/blotters'
     And attach the response body to the report
 
 @When "^maker retrieves all available public trade blotters$"
-    Given build request as user 'maker@example.com'
+    Given build request as user 'maker'
     When get from path '/uc/marketplace/blotters'
     And attach the response body to the report
 

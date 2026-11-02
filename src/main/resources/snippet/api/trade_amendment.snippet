@@ -8,7 +8,7 @@
 
 @Given "^a live '([^']*)' trade with a pending Amendment exists$"
     Given a live '$1' trade is created via api
-    Given build json request with path parameter 'tradeId' from stored variable 'createdTradeId' as user 'maker@example.com'
+    Given build json request with path parameter 'tradeId' from stored variable 'createdTradeId' as user 'maker'
     And set request body from test data 'trade-amendment'
     When post to path '/trades/{tradeId}/update'
     Then response status code is '200'
@@ -18,17 +18,17 @@
 # ── Build request ───────────────────────────────────────────────────
 
 @When "^maker has valid data for Trade Amendment$"
-    Given build json request with path parameter 'tradeId' from stored variable 'createdTradeId' as user 'maker@example.com'
+    Given build json request with path parameter 'tradeId' from stored variable 'createdTradeId' as user 'maker'
     And set request body from current scenario
 
 @When "^checker has valid data for amendment approval$"
-    Given build json request with path parameter 'taskId' from stored variable 'createdAmendTaskId' as user 'checker@example.com'
+    Given build json request with path parameter 'taskId' from stored variable 'createdAmendTaskId' as user 'checker'
 
 @When "^checker has valid data for amendment rejection$"
-    Given build json request with path parameter 'taskId' from stored variable 'createdAmendTaskId' as user 'checker@example.com'
+    Given build json request with path parameter 'taskId' from stored variable 'createdAmendTaskId' as user 'checker'
 
 @When "^maker has valid data for amendment approval$"
-    Given build json request with path parameter 'taskId' from stored variable 'createdAmendTaskId' as user 'maker@example.com'
+    Given build json request with path parameter 'taskId' from stored variable 'createdAmendTaskId' as user 'maker'
 
 # ── Make api call ───────────────────────────────────────────────────
 

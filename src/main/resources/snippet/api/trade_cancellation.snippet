@@ -1,7 +1,7 @@
 # ── Provisioning ────────────────────────────────────────────────────
 
 @Given "^maker submit triggers a Cancellation event and task stored as '([^']*)'$"
-    Given build json request from test data 'trade-cancellation' with trade id from stored variable 'createdTradeId' as user 'maker@example.com'
+    Given build json request from test data 'trade-cancellation' with trade id from stored variable 'createdTradeId' as user 'maker'
     When post to path '/trades/trigger-event'
     Then response status code is '200'
     And store response field 'data.results[0].checkerTaskId' as '$1'
@@ -12,7 +12,7 @@
 
 @Given "^a '([^']*)' trade with pending cancellation is created with trade stored as '([^']*)' and task stored as '([^']*)'$"
     Given a live '$1' trade is created via api with trade stored as '$2' and task stored as '$3'
-    And build json request from test data 'trade-cancellation' with trade id from stored variable '$2' as user 'maker@example.com'
+    And build json request from test data 'trade-cancellation' with trade id from stored variable '$2' as user 'maker'
     When post to path '/trades/trigger-event'
     Then response status code is '200'
     And store response field 'data.results[0].checkerTaskId' as '$3'
@@ -26,25 +26,25 @@
 
 # ── Build request ───────────────────────────────────────────────────
 @When "^checker has invalid Cancellation data for a non-existent trade$"
-    Given build json request with body from current scenario as user 'checker@example.com'
+    Given build json request with body from current scenario as user 'checker'
 
 @When "^maker has valid data for Cancellation event$"
-    Given build json request from current scenario with trade id from stored variable 'createdTradeId' as user 'maker@example.com'
+    Given build json request from current scenario with trade id from stored variable 'createdTradeId' as user 'maker'
 
 @When "^checker has valid data for Cancellation event$"
-    Given build json request from current scenario with trade id from stored variable 'createdTradeId' as user 'checker@example.com'
+    Given build json request from current scenario with trade id from stored variable 'createdTradeId' as user 'checker'
 
 @When "^checker has valid data for cancellation approval$"
-    Given build json request with path parameter 'taskId' from stored variable 'createdTaskId' as user 'checker@example.com'
+    Given build json request with path parameter 'taskId' from stored variable 'createdTaskId' as user 'checker'
 
 @When "^checker has valid data for cancellation rejection$"
-    Given build json request with path parameter 'taskId' from stored variable 'createdTaskId' as user 'checker@example.com'
+    Given build json request with path parameter 'taskId' from stored variable 'createdTaskId' as user 'checker'
 
 @When "^maker has valid data for cancellation approval$"
-    Given build json request with path parameter 'taskId' from stored variable 'createdTaskId' as user 'maker@example.com'
+    Given build json request with path parameter 'taskId' from stored variable 'createdTaskId' as user 'maker'
 
 @When "^checker has valid data for bulk cancellation approval$"
-    Given build json request from current scenario with task ids from stored variables 'createdTaskId1' and 'createdTaskId2' as user 'checker@example.com'
+    Given build json request from current scenario with task ids from stored variables 'createdTaskId1' and 'createdTaskId2' as user 'checker'
 
 # ── Make api call ───────────────────────────────────────────────────
 

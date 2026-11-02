@@ -2,20 +2,20 @@
 
 # ── Make api call ───────────────────────────────────────────────────
 @When "^retrieves all active marketers$"
-    Given build request as user 'maker@example.com'
+    Given build request as user 'maker'
     When get from path '/refdata/marketers/active'
     And attach the response body to the report
 
 @When "^retrieves the marketer by an existing id$"
-    When get '/refdata/marketers/{id}' with path parameter 'id' from stored variable 'marketerId' as user 'maker@example.com'
+    When get '/refdata/marketers/{id}' with path parameter 'id' from stored variable 'marketerId' as user 'maker'
     And attach the response body to the report
 
 @When "^retrieves the marketer by a non-existing id$"
-    When get '/refdata/marketers/{id}' with path parameter 'id' from stored variable 'marketerId' as user 'maker@example.com'
+    When get '/refdata/marketers/{id}' with path parameter 'id' from stored variable 'marketerId' as user 'maker'
     And attach the response body to the report
 
 @When "^searches marketers by keyword$"
-    Given build request as user 'maker@example.com'
+    Given build request as user 'maker'
     And set query parameter 'keyword' from stored variable 'marketerKeyword'
     When get from path '/refdata/marketers/search'
     And attach the response body to the report

@@ -6,6 +6,7 @@ import com.example.module.oreo.utils.CleanupTestDataUtil;
 import com.example.module.oreo.utils.RestApiUtil;
 import com.example.module.oreo.testdata.TestData;
 import com.example.module.oreo.playwright.PlaywrightServiceResolver;
+import com.example.module.oreo.config.TestUser;
 import cucumber.api.Scenario;
 import cucumber.api.java.After;
 import cucumber.api.java.Before;
@@ -17,7 +18,6 @@ import org.slf4j.LoggerFactory;
 public class BlotterSteps {
 
     private static final Logger log = LoggerFactory.getLogger(BlotterSteps.class);
-    private static final String PORTAL_USER = "admin@example.com";
 
     private PlaywrightServiceResolver.Context ctx;
     private RequestResponseHelper helper;
@@ -31,10 +31,10 @@ public class BlotterSteps {
     @After(value = "@playwright and @ADO#trade_blotter", order = 2)
     public void deleteBlotterAfterTest() {
         String blotterId = ctx.find("newBlotterId");
-        CleanupTestDataUtil.deleteBlotter(helper, blotterId, PORTAL_USER);
+        CleanupTestDataUtil.deleteBlotter(helper, blotterId, TestUser.ADMIN.email());
 
         String importedId = ctx.find("importedBlotterId");
-        CleanupTestDataUtil.deleteBlotter(helper, importedId, "user@example.com");
+        CleanupTestDataUtil.deleteBlotter(helper, importedId, TestUser.USER.email());
     }
 
     @Given("^a blotter named '([^']*)' is provisioned via playwright api$")
@@ -44,7 +44,7 @@ public class BlotterSteps {
         String createRequest = TestData.setup("trade-blotter").request()
                 .replace("${blotterName}", blotterName);
         log.info("[NewBlotterSteps] Provisioning a blotter with name '{}' and request '{}' via playwright api", blotterName, createRequest);
-        JsonNode createResponse = RestApiUtil.post(helper, "/uc/blotters/create", PORTAL_USER, createRequest);
+        JsonNode createResponse = RestApiUtil.post(helper, "/uc/blotters/create", TestUser.ADMIN.email(), createRequest);
 
         String id = requiredText(createResponse, "/data/id");
         String name = requiredText(createResponse, "/data/name");
@@ -61,7 +61,7 @@ public class BlotterSteps {
         String createRequest = TestData.setup("trade-blotter-public").request()
                 .replace("${blotterName}", blotterName);
         log.info("[NewBlotterSteps] Provisioning a public blotter with name '{}' and request '{}' via playwright api", blotterName, createRequest);
-        JsonNode createResponse = RestApiUtil.post(helper, "/uc/blotters/create", PORTAL_USER, createRequest);
+        JsonNode createResponse = RestApiUtil.post(helper, "/uc/blotters/create", TestUser.ADMIN.email(), createRequest);
 
         String id = requiredText(createResponse, "/data/id");
         String publishedId = requiredText(createResponse, "/data/publishedId");

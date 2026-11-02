@@ -1,7 +1,7 @@
 # ── Query ───────────────────────────────────────────────────────────
 
 @When "^maker retrieves online fixings for the trade$"
-    When get '/trades/{id}/fixings/online' with path parameter 'id' from stored variable 'createdTradeId' as user 'maker@example.com'
+    When get '/trades/{id}/fixings/online' with path parameter 'id' from stored variable 'createdTradeId' as user 'maker'
     And attach the response body to the report
 
 @Given "^fixing data is prepared$"

@@ -1,6 +1,6 @@
 # ── Make API call ───────────────────────────────────────────────────
 @When "^triggers reference data sync$"
-    Given build json request with body from current scenario as user 'maker@example.com'
+    Given build json request with body from current scenario as user 'maker'
     When post to path '/ops/refdata/sync'
     And attach the response body to the report
 

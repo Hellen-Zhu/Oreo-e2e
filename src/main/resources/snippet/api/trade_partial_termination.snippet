@@ -1,13 +1,13 @@
 # ── Build request ───────────────────────────────────────────────────
 
 @When "^maker has valid data for PartialTermination event$"
-    Given build json request from current scenario with trade id from stored variable 'createdTradeId' as user 'maker@example.com'
+    Given build json request from current scenario with trade id from stored variable 'createdTradeId' as user 'maker'
 
 @When "^maker has invalid data with unknown amount filed for PartialTermination event$"
-    Given build json request from current scenario with trade id from stored variable 'createdTradeId' as user 'maker@example.com'
+    Given build json request from current scenario with trade id from stored variable 'createdTradeId' as user 'maker'
 
 @When "^maker has invalid data with newNotional exceeds the original notional for PartialTermination event$"
-    Given build json request from current scenario with trade id from stored variable 'createdTradeId' as user 'maker@example.com'
+    Given build json request from current scenario with trade id from stored variable 'createdTradeId' as user 'maker'
 
 # ── Make api call ───────────────────────────────────────────────────
 

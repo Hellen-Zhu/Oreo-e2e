@@ -1,6 +1,6 @@
 # ── Make api call ───────────────────────────────────────────────────
 @When "^retrieves Cortex formula configurations for product '([^']*)'$"
-    Given build request as user 'maker@example.com'
+    Given build request as user 'maker'
     When get from path '/products/$1/cortex-formulas'
     And attach the response body to the report
 

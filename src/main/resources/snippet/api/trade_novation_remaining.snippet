@@ -2,13 +2,13 @@
 
 # ── Build requests ──────────────────────────────────────────────────
 @When "^maker has valid data for NovationRemaining event$"
-    Given build json request from current scenario with trade id from stored variable 'createdTradeId' as user 'maker@example.com'
+    Given build json request from current scenario with trade id from stored variable 'createdTradeId' as user 'maker'
 
 @When "^maker has invalid data with a non-existent trade for NovationRemaining event$"
-    Given build json request with body from current scenario as user 'maker@example.com'
+    Given build json request with body from current scenario as user 'maker'
 
 @When "^maker has invalid data with missing remaining notional for NovationRemaining event$"
-    Given build json request from current scenario with trade id from stored variable 'createdTradeId' as user 'maker@example.com'
+    Given build json request from current scenario with trade id from stored variable 'createdTradeId' as user 'maker'
     And attach the request body to the report
 
 @When "^performs the NovationRemaining event via api$"

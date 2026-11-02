@@ -1,6 +1,6 @@
 # ── Make API call ───────────────────────────────────────────────────
 @When "^retrieves available product ids$"
-    Given build request as user 'maker@example.com'
+    Given build request as user 'maker'
     When get from path '/refdata/productIds'
     And attach the response body to the report
 

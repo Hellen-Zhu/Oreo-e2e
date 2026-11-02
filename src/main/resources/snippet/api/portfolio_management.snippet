@@ -3,14 +3,14 @@
 # ── Make API calls ───────────────────────────────────────────────────
 
 @When "^retrieves portfolios with paging parameters$"
-    Given build request as user 'maker@example.com'
+    Given build request as user 'maker'
     And set query parameter 'page' from stored variable 'page'
     And set query parameter 'size' from stored variable 'size'
     When get from path '/refdata/portfolios'
     And attach the response body to the report
 
 @When "^searches portfolios by keyword$"
-    Given build request as user 'maker@example.com'
+    Given build request as user 'maker'
     And set query parameter 'keyword' from stored variable 'keyword'
     And set query parameter 'page' from stored variable 'page'
     And set query parameter 'size' from stored variable 'size'
@@ -18,7 +18,7 @@
     And attach the response body to the report
 
 @When "^retrieves portfolio detail by id$"
-    Given build request as user 'maker@example.com'
+    Given build request as user 'maker'
     And set path parameter 'id' from stored variable 'portfolioId'
     When get from path '/refdata/portfolios/{id}'
     And attach the response body to the report

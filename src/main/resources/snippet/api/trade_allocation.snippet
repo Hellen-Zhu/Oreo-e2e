@@ -2,7 +2,7 @@
 
 @Given "^a trade is allocated with 2-way equal split via api$"
     Given a live 'FX_TRF' trade is created via api
-    And build json request from test data 'allocation-create' with trade id from stored variable 'createdTradeId' as user 'maker@example.com'
+    And build json request from test data 'allocation-create' with trade id from stored variable 'createdTradeId' as user 'maker'
     When post to path '/trades/trigger-event'
     Then response status code is '200'
     And store response field 'data.results[0].tradeId' as 'allocatedParentTradeId'
@@ -10,28 +10,28 @@
 
 # ── Build request ───────────────────────────────────────────────────
 @When "^maker has valid data for 2-way equal Allocation event$"
-    Given build json request from current scenario with trade id from stored variable 'createdTradeId' as user 'maker@example.com'
+    Given build json request from current scenario with trade id from stored variable 'createdTradeId' as user 'maker'
 
 @When "^maker has valid data for 3-way unequal Allocation event$"
-    Given build json request from current scenario with trade id from stored variable 'createdTradeId' as user 'maker@example.com'
+    Given build json request from current scenario with trade id from stored variable 'createdTradeId' as user 'maker'
 
 @When "^maker has invalid data with notional amounts not summing to parent trade for Allocation event$"
-    Given build json request from current scenario with trade id from stored variable 'createdTradeId' as user 'maker@example.com'
+    Given build json request from current scenario with trade id from stored variable 'createdTradeId' as user 'maker'
 
 @When "^maker has invalid data with an empty sub-trade list for Allocation event$"
-    Given build json request from current scenario with trade id from stored variable 'createdTradeId' as user 'maker@example.com'
+    Given build json request from current scenario with trade id from stored variable 'createdTradeId' as user 'maker'
 
 @When "^maker has invalid data with notional exceeding the parent trade value$"
-    Given build json request from current scenario with trade id from stored variable 'createdTradeId' as user 'maker@example.com'
+    Given build json request from current scenario with trade id from stored variable 'createdTradeId' as user 'maker'
 
 @When "^maker has invalid data with mismatched sub-trade array lengths$"
-    Given build json request from current scenario with trade id from stored variable 'createdTradeId' as user 'maker@example.com'
+    Given build json request from current scenario with trade id from stored variable 'createdTradeId' as user 'maker'
 
 @When "^maker has invalid data for a non-existent trade$"
-    Given build json request with body from current scenario as user 'maker@example.com'
+    Given build json request with body from current scenario as user 'maker'
 
 @When "^maker has invalid data with the already-allocated trade$"
-    Given build json request from current scenario with trade id from stored variable 'allocatedParentTradeId' as user 'maker@example.com'
+    Given build json request from current scenario with trade id from stored variable 'allocatedParentTradeId' as user 'maker'
 
 
 # ── Make api call ───────────────────────────────────────────────────

@@ -2,13 +2,13 @@
 
 # Product param must match a ProductDatFiles enum name: FX_TRF | FX_PSCRIPT that match a .dat test data file name
 @Given "^maker has valid data for '([^']*)' (?:New|StepIn Partial|StepIn Full) trade submission$"
-    Given build multipart request with parameter 'trade' from current scenario for product '$1' as user 'maker@example.com'
+    Given build multipart request with parameter 'trade' from current scenario for product '$1' as user 'maker'
 
 @Given "^checker has valid data for '([^']*)' (?:New|StepIn Partial|StepIn Full) trade submission$"
-    Given build multipart request with parameter 'trade' from current scenario for product '$1' as user 'checker@example.com'
+    Given build multipart request with parameter 'trade' from current scenario for product '$1' as user 'checker'
 
 @Given "^maker has invalid '([^']*)' data for '([^']*)' (?:New|StepIn Partial|StepIn Full) trade submission$"
-    Given build multipart request with parameter 'trade' from current scenario for product '$2' as user 'maker@example.com'
+    Given build multipart request with parameter 'trade' from current scenario for product '$2' as user 'maker'
 
 
 # ── Make api call ───────────────────────────────────────────────────

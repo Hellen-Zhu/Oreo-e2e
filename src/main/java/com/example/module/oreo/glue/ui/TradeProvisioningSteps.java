@@ -6,6 +6,7 @@ import com.example.module.oreo.testdata.ProductDatFiles;
 import com.example.module.oreo.utils.RestApiUtil;
 import com.example.module.oreo.utils.TradeApiClient;
 import com.example.module.oreo.playwright.PlaywrightServiceResolver;
+import com.example.module.oreo.config.TestUser;
 import cucumber.api.java.Before;
 import cucumber.api.java.en.Given;
 import cucumber.api.Scenario;
@@ -70,7 +71,7 @@ public class TradeProvisioningSteps {
     @Given("^a pending approval amendment '([^']*)' trade is provisioned via playwright api$")
     public void provisionTradeAmendment(String product) throws Exception {
         provisionLiveTradeAs("createdTradeId", "createdTaskId", "trade-create", ProductDatFiles.valueOf(product));
-        TradeApiClient.updateTrade(helper, ctx.get("createdTradeId"), "maker@example.com", "trade-amendment");
+        TradeApiClient.updateTrade(helper, ctx.get("createdTradeId"), TestUser.MAKER.email(), "trade-amendment");
     }
 
     @Given("^a pending approval cancellation '([^']*)' trade is provisioned via playwright api$")
@@ -82,13 +83,13 @@ public class TradeProvisioningSteps {
     @Given("^a dead '([^']*)' trade is provisioned via playwright api$")
     public void provisionDeadTrade(String product) throws Exception {
         provisionTradeCancellation(product);
-        TradeApiClient.approveTask(helper, ctx.get("createdTaskId"), "checker@example.com");
+        TradeApiClient.approveTask(helper, ctx.get("createdTaskId"), TestUser.CHECKER.email());
     }
 
     @Given("^a rejected draft '([^']*)' trade is provisioned via playwright api$")
     public void provisionDraftTrade(String product) throws Exception {
         provisionTradeCancellation(product);
-        TradeApiClient.rejectTask(helper, ctx.get("createdTaskId"), "checker@example.com");
+        TradeApiClient.rejectTask(helper, ctx.get("createdTaskId"), TestUser.CHECKER.email());
     }
 
     private void provisionLiveTradeAs(String tradeIdVar, String taskIdVar, String testDataKey, ProductDatFiles datFile) throws Exception {
@@ -97,7 +98,7 @@ public class TradeProvisioningSteps {
         submitTradeAsPendingApproval(tradeIdVar, taskIdVar, testDataKey, datFile);
         String taskId = ctx.get(taskIdVar);
         log.info("[TradeProvisioningSteps] Approving checker task for live trade: taskIdVar='{}', taskId='{}'", taskIdVar, taskId);
-        TradeApiClient.approveTask(helper, taskId, "checker@example.com");
+        TradeApiClient.approveTask(helper, taskId, TestUser.CHECKER.email());
         log.info("[TradeProvisioningSteps] Live trade provisioned successfully: tradeId='{}', taskId='{}'",
                 ctx.get(tradeIdVar), ctx.get(taskIdVar));
     }
@@ -106,7 +107,7 @@ public class TradeProvisioningSteps {
         log.info("[TradeProvisioningSteps] Submitting trade as draft: tradeIdVar='{}', taskIdVar='{}', testDataKey='{}', datFile='{}'",
                 tradeIdVar, taskIdVar, testDataKey, datFile);
 
-        JsonNode body = TradeApiClient.saveTrade(helper, "maker@example.com", testDataKey, datFile, datFile.path());
+        JsonNode body = TradeApiClient.saveTrade(helper, TestUser.MAKER.email(), testDataKey, datFile, datFile.path());
         String tradeId = body.at("/data/trade/id").asText();
         String taskId = body.at("/data/checkerContext/taskId").asText();
 
@@ -121,7 +122,7 @@ public class TradeProvisioningSteps {
         log.info("[TradeProvisioningSteps] Submitting trade as pending approval: tradeIdVar='{}', taskIdVar='{}', testDataKey='{}', datFile='{}'",
                 tradeIdVar, taskIdVar, testDataKey, datFile);
 
-        JsonNode body = submitTrade("maker@example.com", testDataKey, datFile);
+        JsonNode body = submitTrade(TestUser.MAKER.email(), testDataKey, datFile);
         String tradeId = body.at("/data/trade/id").asText();
         String taskId = body.at("/data/checkerContext/taskId").asText();
 
@@ -137,7 +138,7 @@ public class TradeProvisioningSteps {
         log.info("[TradeProvisioningSteps] Provisioning lifecycle event: tradeIdVar='{}', tradeId='{}', taskIdVar='{}', testDataKey='{}'",
                 tradeIdVar, tradeId, taskIdVar, testDataKey);
 
-        JsonNode body = TradeApiClient.triggerEvent(helper, List.of(tradeId), "maker@example.com", testDataKey);
+        JsonNode body = TradeApiClient.triggerEvent(helper, List.of(tradeId), TestUser.MAKER.email(), testDataKey);
         String taskId = body.at("/data/results/0/checkerTaskId").asText();
 
         log.info("[TradeProvisioningSteps] Lifecycle event submitted: extracted checkerTaskId='{}'", taskId);

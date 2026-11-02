@@ -3,6 +3,7 @@ package com.example.module.oreo.glue.api;
 import com.example.genie.module.rest.service.RequestResponseHelper;
 import com.example.module.oreo.utils.RestApiUtil;
 import com.example.module.oreo.utils.CleanupTestDataUtil;
+import com.example.module.oreo.config.TestUser;
 import cucumber.api.Scenario;
 import cucumber.api.java.After;
 import cucumber.api.java.Before;
@@ -21,9 +22,9 @@ public class BlotterApiSteps {
     @After(value = "@api and @ADO#trade_blotter", order = 2)
     public void deleteBlotterAfterTest() {
         String blotterId = ctx.find("newBlotterId");
-        CleanupTestDataUtil.deleteBlotter(helper, blotterId, "maker@example.com");
+        CleanupTestDataUtil.deleteBlotter(helper, blotterId, TestUser.MAKER.email());
 
         String importedId = ctx.find("importedBlotterId");
-        CleanupTestDataUtil.deleteBlotter(helper, importedId, "user@example.com");
+        CleanupTestDataUtil.deleteBlotter(helper, importedId, TestUser.USER.email());
     }
 }

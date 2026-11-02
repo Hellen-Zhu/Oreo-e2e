@@ -6,25 +6,25 @@
     Given checker reject a trade by stored taskId 'createdTaskId'
 
 @Given "^checker approve a trade by stored taskId '([^']*)'$"
-    Given build json request with path parameter 'taskId' from stored variable '$1' as user 'checker@example.com'
+    Given build json request with path parameter 'taskId' from stored variable '$1' as user 'checker'
     When post to path '/checker/tasks/{taskId}/approve'
     Then response status code is '200'
 
 @Given "^checker reject a trade by stored taskId '([^']*)'$"
-    Given build json request with path parameter 'taskId' from stored variable '$1' as user 'checker@example.com'
+    Given build json request with path parameter 'taskId' from stored variable '$1' as user 'checker'
     When post to path '/checker/tasks/{taskId}/reject'
     Then response status code is '200'
 
 # ── Build request ───────────────────────────────────────────────────
 
 @When "^checker has valid data for trade creation approval$"
-    Given build json request with path parameter 'taskId' from stored variable 'createdTaskId' as user 'checker@example.com'
+    Given build json request with path parameter 'taskId' from stored variable 'createdTaskId' as user 'checker'
 
 @When "^checker has valid data for trade creation rejection$"
-    Given build json request with path parameter 'taskId' from stored variable 'createdTaskId' as user 'checker@example.com'
+    Given build json request with path parameter 'taskId' from stored variable 'createdTaskId' as user 'checker'
 
 @When "^maker has valid data for trade creation self-approval$"
-    Given build json request with path parameter 'taskId' from stored variable 'createdTaskId' as user 'maker@example.com'
+    Given build json request with path parameter 'taskId' from stored variable 'createdTaskId' as user 'maker'
 
 
 # ── Make api call ───────────────────────────────────────────────────

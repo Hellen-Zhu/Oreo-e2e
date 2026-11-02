@@ -10,6 +10,7 @@ import com.example.module.oreo.testdata.TestData;
 import com.example.module.oreo.utils.CleanupTestDataUtil;
 import com.example.module.oreo.utils.RestApiUtil;
 import com.example.module.oreo.playwright.PlaywrightServiceResolver;
+import com.example.module.oreo.config.TestUser;
 import cucumber.api.Scenario;
 import cucumber.api.java.After;
 import cucumber.api.java.Before;
@@ -60,9 +61,9 @@ public class ComposeProductSteps {
 
     @Given("^a product is provisioned via playwright api$")
     public void provisionProduct() {
-        JsonNode body = createProduct("product-create", "maker@example.com");
+        JsonNode body = createProduct("product-create", TestUser.MAKER.email());
         String productId = body.at("/data/productId").asText();
-        JsonNode getProductResponse = RestApiUtil.get(helper, "/products/productId/" + productId, "maker@example.com");
+        JsonNode getProductResponse = RestApiUtil.get(helper, "/products/productId/" + productId, TestUser.MAKER.email());
         String entityId = getProductResponse.path("data").path("id").asText();
         ctx.set("CreatedProductEntityId", entityId);
         ctx.set("createdProductId", productId);
@@ -97,7 +98,7 @@ public class ComposeProductSteps {
         String productId = ctx.get("createdProductId");
         String productEntityId = ctx.get("CreatedProductEntityId");
 
-        JsonNode productResponse = RestApiUtil.get(helper, "/products/productId/" + productId, "maker@example.com");
+        JsonNode productResponse = RestApiUtil.get(helper, "/products/productId/" + productId, TestUser.MAKER.email());
         JsonNode currentProductData = productResponse.path("data");
         if (currentProductData == null || currentProductData.isMissingNode() || currentProductData.isNull()) {
             throw new AssertionError("Failed to load product data for productId: " + productId
@@ -117,7 +118,7 @@ public class ComposeProductSteps {
             updateBody.put("id", productEntityId);
             updateBody.put("productId", productId);
             updateBody.set("productEventConfigurations", initialEventConfigurations.deepCopy());
-            RestApiUtil.post(helper, "/products/" + productEntityId + "/update", "maker@example.com", OBJECT_MAPPER.writeValueAsString(updateBody));
+            RestApiUtil.post(helper, "/products/" + productEntityId + "/update", TestUser.MAKER.email(), OBJECT_MAPPER.writeValueAsString(updateBody));
 
             ctx.refreshAndWaitForResponse("/api/v1/products/" + productId, "GET");
         } catch (Exception e) {
