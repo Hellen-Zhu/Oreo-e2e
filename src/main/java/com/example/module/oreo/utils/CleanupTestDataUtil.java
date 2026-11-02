@@ -40,7 +40,7 @@ public final class CleanupTestDataUtil {
             return;
         }
 
-        String path = OreoEndpoints.blotterPath(blotterId) + "?deletePublishedCopy=true";
+        String path = "/uc/blotters/" + blotterId + "?deletePublishedCopy=true";
         try {
             RestApiUtil.delete(helper, path, user);
             log.info("[CleanupTestDataUtil] Deleted blotter successfully. blotterId={}", blotterId);

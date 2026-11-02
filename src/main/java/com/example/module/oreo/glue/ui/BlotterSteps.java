@@ -3,7 +3,6 @@ package com.example.module.oreo.glue.ui;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.example.genie.module.rest.service.RequestResponseHelper;
 import com.example.module.oreo.utils.CleanupTestDataUtil;
-import com.example.module.oreo.utils.OreoEndpoints;
 import com.example.module.oreo.utils.RestApiUtil;
 import com.example.module.oreo.testdata.TestData;
 import com.example.module.oreo.playwright.PlaywrightServiceResolver;
@@ -19,7 +18,6 @@ public class BlotterSteps {
 
     private static final Logger log = LoggerFactory.getLogger(BlotterSteps.class);
     private static final String PORTAL_USER = "admin@example.com";
-    private static final String CREATE_BLOTTER_PATH = "/uc/blotters/create";
 
     private PlaywrightServiceResolver.Context ctx;
     private RequestResponseHelper helper;
@@ -46,7 +44,7 @@ public class BlotterSteps {
         String createRequest = TestData.setup("trade-blotter").request()
                 .replace("${blotterName}", blotterName);
         log.info("[NewBlotterSteps] Provisioning a blotter with name '{}' and request '{}' via playwright api", blotterName, createRequest);
-        JsonNode createResponse = RestApiUtil.post(helper, CREATE_BLOTTER_PATH, PORTAL_USER, createRequest);
+        JsonNode createResponse = RestApiUtil.post(helper, "/uc/blotters/create", PORTAL_USER, createRequest);
 
         String id = requiredText(createResponse, "/data/id");
         String name = requiredText(createResponse, "/data/name");
@@ -63,7 +61,7 @@ public class BlotterSteps {
         String createRequest = TestData.setup("trade-blotter-public").request()
                 .replace("${blotterName}", blotterName);
         log.info("[NewBlotterSteps] Provisioning a public blotter with name '{}' and request '{}' via playwright api", blotterName, createRequest);
-        JsonNode createResponse = RestApiUtil.post(helper, CREATE_BLOTTER_PATH, PORTAL_USER, createRequest);
+        JsonNode createResponse = RestApiUtil.post(helper, "/uc/blotters/create", PORTAL_USER, createRequest);
 
         String id = requiredText(createResponse, "/data/id");
         String publishedId = requiredText(createResponse, "/data/publishedId");
@@ -80,7 +78,7 @@ public class BlotterSteps {
         log.info("[NewBlotterSteps] Confirming new blotter creation; capturing /blotters/create response as '{}'", responseCtxKey);
         String responseBody = ctx.clickAndCaptureResponse(
                 "custom_blotter_dialog.confirm_btn",
-                CREATE_BLOTTER_PATH,
+                "/uc/blotters/create",
                 "POST"
         );
         ctx.set(responseCtxKey, responseBody);
@@ -93,7 +91,7 @@ public class BlotterSteps {
         log.info("[NewBlotterSteps] Confirming blotter import response as '{}'", responseCtxKey);
         String responseBody = ctx.clickAndCaptureResponse(
                 "blotter_marketplace_dialog.import_btn",
-                OreoEndpoints.blotterPath(blotterId) + "/import",
+                "/uc/blotters/" + blotterId+ "/import",
                 "POST"
         );
         ctx.set(responseCtxKey, responseBody);

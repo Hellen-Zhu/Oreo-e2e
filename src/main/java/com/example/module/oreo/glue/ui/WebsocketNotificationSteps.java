@@ -22,7 +22,6 @@ import java.util.regex.Pattern;
  */
 public class WebsocketNotificationSteps {
 
-    private static final String READ_ALL_NOTIFICATIONS_PATH = "/notifications/read-all";
     private static final String NOTIFICATION_UNREAD_BADGE_BASELINE_CTX_KEY = "wsNotificationUnreadBadgeBaseline";
     private static final String NO_UNREAD_BADGE_VALUE = "0";
     private static final Pattern POSITIVE_UNREAD_BADGE_PATTERN = Pattern.compile("^[1-9]\\d*$");
@@ -40,7 +39,7 @@ public class WebsocketNotificationSteps {
     /** Marks checker notifications as read through RestApiUtil endpoint call. */
     @Given("^checker marks all notifications as read via api$")
     public void markAllNotificationsAsReadForChecker() {
-        RestApiUtil.post(helper, READ_ALL_NOTIFICATIONS_PATH, "checker@example.com");
+        RestApiUtil.post(helper, "/notifications/read-all", "checker@example.com");
     }
 
     /** Captures baseline unread badge value before triggering checker action. */

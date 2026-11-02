@@ -91,11 +91,11 @@ public final class TradeApiClient {
 
     public static JsonNode approveTask(RequestResponseHelper helper, String taskId, String userId) {
         log.info("[TradeApiClient] approveTask: taskId='{}', userId='{}'", taskId, userId);
-        return RestApiUtil.post(helper, OreoEndpoints.CHECKER_TASKS_PATH + taskId + "/approve", userId);
+        return RestApiUtil.post(helper, "/checker/tasks/" + taskId + "/approve", userId);
     }
 
     public static JsonNode rejectTask(RequestResponseHelper helper, String taskId, String userId) {
         log.info("[TradeApiClient] rejectTask: taskId='{}', userId='{}'", taskId, userId);
-        return RestApiUtil.post(helper, OreoEndpoints.CHECKER_TASKS_PATH + taskId + "/reject", userId);
+        return RestApiUtil.post(helper, "/checker/tasks/" + taskId + "/reject", userId);
     }
 }

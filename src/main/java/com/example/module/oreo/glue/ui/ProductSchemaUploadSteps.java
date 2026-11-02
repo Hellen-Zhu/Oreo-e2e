@@ -27,7 +27,6 @@ import java.util.regex.Pattern;
 public class ProductSchemaUploadSteps {
 
     private static final Logger log = LoggerFactory.getLogger(ProductSchemaUploadSteps.class);
-    private static final String SCHEMA_PARSE_URL = "/products/schema/parse";
     private static final Pattern PRODUCT_EDIT_URL_PATTERN = Pattern.compile(".*/product/([^/]+)/edit(?:[?#].*)?$");
 
     private PlaywrightServiceResolver.Context ctx;
@@ -86,7 +85,7 @@ public class ProductSchemaUploadSteps {
 
     @When("^schema preview is requested and completed$")
     public void schemaPreviewIsRequestedAndCompleted() {
-        ctx.clickAndWaitForResponse("schema_upload.preview_btn", SCHEMA_PARSE_URL, "POST");
+        ctx.clickAndWaitForResponse("schema_upload.preview_btn", "/products/schema/parse", "POST");
     }
 
     @Then("^current product identifier is captured from edit url when available$")

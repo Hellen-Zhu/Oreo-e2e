@@ -1,6 +1,5 @@
 package com.example.module.oreo.glue.ui;
 
-import com.example.module.oreo.utils.OreoEndpoints;
 import com.example.module.oreo.utils.TradeApiClient;
 import com.example.module.oreo.playwright.PlaywrightServiceResolver;
 import cucumber.api.Scenario;
@@ -63,6 +62,6 @@ public class TradeDetailSteps {
     }
 
     private static String tradeUpdateUrl(String tradeId) {
-        return OreoEndpoints.API_PREFIX + TradeApiClient.updatePath(tradeId);
+        return "/api/v1" + TradeApiClient.updatePath(tradeId);
     }
 }

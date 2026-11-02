@@ -13,7 +13,6 @@ import cucumber.api.java.en.When;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.example.module.oreo.utils.DateUtil;
-import com.example.module.oreo.utils.OreoEndpoints;
 import com.example.module.oreo.playwright.PlaywrightServiceResolver;
 
 import java.util.List;
@@ -21,7 +20,6 @@ import java.util.List;
 public class TradePortalSteps {
 
     private static final Logger log = LoggerFactory.getLogger(TradePortalSteps.class);
-    private static final String TRADE_URL_PREFIX = OreoEndpoints.API_PREFIX + "/trades/";
 
     private PlaywrightServiceResolver.Context ctx;
 
@@ -47,18 +45,18 @@ public class TradePortalSteps {
     @When("^navigate to trade detail and wait for page ready for stored variable '([^']*)'$")
     public void navigateToTradeDetail(String ctxKey) {
         String tradeId = ctx.get(ctxKey);
-        ctx.clickAndWaitForResponse("trade_portal.row_action_view_details", TRADE_URL_PREFIX + tradeId, "GET");
+        ctx.clickAndWaitForResponse("trade_portal.row_action_view_details", "/api/v1/trades/" + tradeId, "GET");
     }
 
     @When("^double click to navigate to trade detail and wait for page ready for stored variable '([^']*)'$")
     public void doubleClickToViewTradeDetail(String ctxKey) {
         String tradeId = ctx.get(ctxKey);
-        ctx.doubleClickAndWaitForResponse("trade_portal.all_trades_blotter_row", TRADE_URL_PREFIX + tradeId, "GET");
+        ctx.doubleClickAndWaitForResponse("trade_portal.all_trades_blotter_row", "/api/v1/trades/" + tradeId, "GET");
     }
 
     @When("^refresh trade blotter and wait for page ready$")
     public void refreshTradeBlotterPage() {
-        ctx.clickAndWaitForResponse("trade_portal.refresh_btn", OreoEndpoints.BLOTTER_TRADES, "POST");
+        ctx.clickAndWaitForResponse("trade_portal.refresh_btn", "/api/v1/blotter/trades", "POST");
     }
 
 

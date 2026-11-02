@@ -1,7 +1,6 @@
 package com.example.module.oreo.glue.ui;
 
 import com.example.genie.module.rest.service.RequestResponseHelper;
-import com.example.module.oreo.utils.OreoEndpoints;
 import com.example.module.oreo.utils.RestApiUtil;
 import com.example.module.oreo.testdata.TestData;
 import cucumber.api.Scenario;
@@ -19,6 +18,6 @@ public class UserPreferenceSteps {
     @Given("^atomic user preferences are set to application defaults$")
     public void setUserPreferencesToDefaults() {
         String payload = TestData.setup("user-preference-defaults").request();
-        RestApiUtil.put(helper, OreoEndpoints.USER_PREFERENCES, "user@example.com", payload);
+        RestApiUtil.put(helper, "/uc/api/user-preferences", "user@example.com", payload);
     }
 }
