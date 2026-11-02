@@ -1,8 +1,7 @@
-package com.example.module.oreo.utils;
+package com.example.module.oreo.config;
 
 import com.example.genie.model.GenieScenario;
 import com.example.module.oreo.OreoModule;
-import com.example.module.oreo.OreoModuleConfiguration;
 import cucumber.api.Scenario;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

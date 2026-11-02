@@ -1,4 +1,4 @@
-package com.example.module.oreo;
+package com.example.module.oreo.config;
 
 import com.example.genie.module.GenieModule;
 import com.example.genie.module.configuration.BaseGenieModuleConfiguration;

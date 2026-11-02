@@ -2,8 +2,8 @@ package com.example.module.oreo.glue.hooks;
 
 import com.microsoft.playwright.BrowserContext;
 import com.microsoft.playwright.Tracing;
-import com.example.module.oreo.utils.OreoConfigurationResolver;
-import com.example.module.oreo.OreoModuleConfiguration;
+import com.example.module.oreo.config.OreoConfigurationResolver;
+import com.example.module.oreo.config.OreoModuleConfiguration;
 import com.example.module.oreo.playwright.PlaywrightServiceResolver;
 import cucumber.api.Scenario;
 import cucumber.api.java.After;

@@ -8,6 +8,7 @@ import com.example.genie.module.rest.RestModule;
 import com.example.genie.module.spring.SpringModule;
 import com.example.genie.module.sql.SqlModule;
 import com.example.genie.type.TopologicalSortable;
+import com.example.module.oreo.config.OreoModuleConfiguration;
 import java.util.ArrayList;
 import java.util.List;
 
