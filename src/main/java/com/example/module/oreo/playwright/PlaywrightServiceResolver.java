@@ -6,7 +6,7 @@ import com.microsoft.playwright.Request;
 import com.example.genie.model.GenieScenario;
 import com.example.genie.module.playwright.core.PlaywrightService;
 import com.example.module.oreo.glue.ScenarioContext;
-import com.example.module.oreo.OreoConfigurationResolver;
+import com.example.module.oreo.utils.OreoConfigurationResolver;
 import com.example.module.oreo.OreoModuleConfiguration;
 import com.example.module.oreo.testdata.TestData;
 import cucumber.api.Scenario;
