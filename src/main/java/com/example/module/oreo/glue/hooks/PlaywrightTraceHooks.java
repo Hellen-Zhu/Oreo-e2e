@@ -2,8 +2,7 @@ package com.example.module.oreo.glue.hooks;
 
 import com.microsoft.playwright.BrowserContext;
 import com.microsoft.playwright.Tracing;
-import com.example.genie.model.GenieScenario;
-import com.example.module.oreo.OreoModule;
+import com.example.module.oreo.OreoConfigurationResolver;
 import com.example.module.oreo.OreoModuleConfiguration;
 import com.example.module.oreo.playwright.PlaywrightServiceResolver;
 import cucumber.api.Scenario;
@@ -18,7 +17,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Locale;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -32,8 +30,6 @@ import java.util.concurrent.atomic.AtomicLong;
 public class PlaywrightTraceHooks {
 
     private static final Logger log = LoggerFactory.getLogger(PlaywrightTraceHooks.class);
-    private static final String TRACE_MODE_PROPERTY = "playwright.trace.mode";
-    private static final String TRACE_ENABLED_PROPERTY = "playwright.trace.enabled";
     private static final DateTimeFormatter TRACE_TIMESTAMP =
             DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss-SSS");
     private static final AtomicLong TRACE_SEQUENCE = new AtomicLong();
@@ -46,7 +42,7 @@ public class PlaywrightTraceHooks {
      */
     @Before(value = "@playwright", order = 3)
     public void startTrace(Scenario scenario) {
-        OreoModuleConfiguration.TraceMode mode = configuredTraceMode(scenario);
+        OreoModuleConfiguration.TraceMode mode = OreoConfigurationResolver.traceMode(scenario);
         if (mode == OreoModuleConfiguration.TraceMode.OFF) {
             return;
         }
@@ -102,42 +98,6 @@ public class PlaywrightTraceHooks {
         } finally {
             traceSession.remove();
         }
-    }
-
-    private static OreoModuleConfiguration.TraceMode configuredTraceMode(Scenario scenario) {
-        String modeOverride = System.getProperty(TRACE_MODE_PROPERTY);
-        if (modeOverride != null && !modeOverride.isBlank()) {
-            try {
-                return OreoModuleConfiguration.TraceMode.valueOf(
-                        modeOverride.trim().toUpperCase(Locale.ROOT).replace('-', '_'));
-            } catch (IllegalArgumentException e) {
-                log.warn("[PlaywrightTraceHooks] Invalid {}='{}'. Using retain-on-failure.",
-                        TRACE_MODE_PROPERTY, modeOverride);
-                return OreoModuleConfiguration.TraceMode.RETAIN_ON_FAILURE;
-            }
-        }
-
-        String enabledOverride = System.getProperty(TRACE_ENABLED_PROPERTY);
-        if (enabledOverride != null && !enabledOverride.isBlank()) {
-            return Boolean.parseBoolean(enabledOverride)
-                    ? OreoModuleConfiguration.TraceMode.ON
-                    : OreoModuleConfiguration.TraceMode.OFF;
-        }
-
-        try {
-            OreoModule module = ((GenieScenario) scenario).getRuntime().getModule(OreoModule.class);
-            if (module != null) {
-                OreoModuleConfiguration.TraceMode configuredMode =
-                        module.getConfiguration().PLAYWRIGHT_TRACE_MODE.getValue();
-                if (configuredMode != null) {
-                    return configuredMode;
-                }
-            }
-        } catch (RuntimeException e) {
-            log.warn("[PlaywrightTraceHooks] Could not read oreo.playwright.trace.mode: {}",
-                    e.getMessage());
-        }
-        return OreoModuleConfiguration.TraceMode.RETAIN_ON_FAILURE;
     }
 
     private static Path tracePath(Scenario scenario) {

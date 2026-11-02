@@ -6,7 +6,7 @@ import com.microsoft.playwright.Request;
 import com.example.genie.model.GenieScenario;
 import com.example.genie.module.playwright.core.PlaywrightService;
 import com.example.module.oreo.glue.ScenarioContext;
-import com.example.module.oreo.OreoModule;
+import com.example.module.oreo.OreoConfigurationResolver;
 import com.example.module.oreo.OreoModuleConfiguration;
 import com.example.module.oreo.testdata.TestData;
 import cucumber.api.Scenario;
@@ -67,16 +67,7 @@ public final class PlaywrightServiceResolver {
          * Returns the configured risk engine mode, allowing a scenario attribute to override it.
          */
         public OreoModuleConfiguration.Mode riskEngineMode() {
-            String scenarioMode = find("risk.engine.mode");
-            if (scenarioMode != null && !scenarioMode.isBlank()) {
-                return OreoModuleConfiguration.Mode.from(scenarioMode);
-            }
-
-            OreoModule module = genieScenario.getRuntime().getModule(OreoModule.class);
-            if (module == null) {
-                throw new IllegalStateException("OreoModule is not active in the current Genie runtime");
-            }
-            return module.getConfiguration().RISK_ENGINE_MODE.getValue();
+            return OreoConfigurationResolver.riskEngineMode(genieScenario);
         }
 
         /**
