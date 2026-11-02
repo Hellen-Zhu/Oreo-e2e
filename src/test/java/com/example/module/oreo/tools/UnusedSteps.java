@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -24,7 +25,9 @@ import java.util.stream.Stream;
  * Lists the snippets and Java steps no feature reaches ({@code unused-steps}); writes nothing and never fails. It
  * walks from the steps of the feature files: a step marks every definition it matches, and a snippet's body, with the
  * captured values in place of {@code $1}, is walked in turn. So a snippet that only an unused snippet calls is unused
- * too. A Java step whose method other Java code calls is marked: only its annotation is unused.
+ * too: the report names those callers, as such a step does appear in snippet files, and lists the steps nothing calls
+ * first, the ones to delete first. A Java step whose method other Java code calls is marked: only its annotation is
+ * unused.
  */
 final class UnusedSteps {
 
@@ -69,17 +72,11 @@ final class UnusedSteps {
         }
 
         Report report = analyze(definitions, roots);
-        List<Definition> snippets = report.unused().stream().filter(d -> d.method() == null).toList();
-        List<Definition> steps = report.unused().stream().filter(d -> d.method() != null).toList();
         System.out.println("unused-steps: " + definitions.size() + " definitions, walked from " + roots.size()
                 + " feature steps");
-        System.out.println("Unused snippets (" + snippets.size() + "):");
-        snippets.forEach(d -> System.out.println("  " + d.file() + ":" + d.line() + "  " + d.pattern()));
-        System.out.println("Unused Java steps (" + steps.size() + "):");
-        for (Definition step : steps) {
-            System.out.println("  " + step.file() + ":" + step.line() + "  " + step.method() + "  " + step.pattern()
-                    + (calledFromJava(step.method(), java.values()) ? "  [method called from Java]" : ""));
-        }
+        Map<Definition, List<Definition>> callers = callers(report.unused());
+        print("Unused, nothing calls them, delete these first", report.unused(), callers, false, java.values());
+        print("Unused, only the unused snippets after <- call them", report.unused(), callers, true, java.values());
         System.out.println("Steps with no definition here, Genie built-ins or missing (" + report.undefined().size() + "):");
         report.undefined().forEach(step -> System.out.println("  " + step));
         return 0;
@@ -105,6 +102,36 @@ final class UnusedSteps {
         }
         List<Definition> unused = definitions.stream().filter(d -> !used.contains(d)).toList();
         return new Report(unused, undefined);
+    }
+
+    /** For each unused definition, the other unused snippets whose body calls it. */
+    static Map<Definition, List<Definition>> callers(List<Definition> unused) {
+        Map<Definition, List<Definition>> callers = new LinkedHashMap<>();
+        for (Definition definition : unused) {
+            callers.put(definition, unused.stream()
+                    .filter(caller -> caller != definition)
+                    .filter(caller -> caller.body().stream().anyMatch(line -> definition.pattern().matcher(line).find()))
+                    .toList());
+        }
+        return callers;
+    }
+
+    private static void print(String title, List<Definition> unused, Map<Definition, List<Definition>> callers,
+                              boolean called, Iterable<String> java) {
+        List<Definition> listed = unused.stream().filter(d -> callers.get(d).isEmpty() != called).toList();
+        System.out.println(title + " (" + listed.size() + "):");
+        for (Definition definition : listed) {
+            StringBuilder line = new StringBuilder("  " + definition.file() + ":" + definition.line() + "  ");
+            if (definition.method() != null) line.append(definition.method()).append("  ");
+            line.append(definition.pattern());
+            if (definition.method() != null && calledFromJava(definition.method(), java)) {
+                line.append("  [method called from Java]");
+            }
+            for (Definition caller : callers.get(definition)) {
+                line.append("  <- ").append(caller.file()).append(":").append(caller.line());
+            }
+            System.out.println(line);
+        }
     }
 
     private static String withCaptures(String line, Matcher matcher) {

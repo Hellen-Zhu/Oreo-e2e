@@ -288,7 +288,9 @@ After deleting resource files, add `clean` before `process-test-classes` to remo
 - `sync-examples`: writes the product Outlines' `Examples` from `ProductDatFiles` ("Products and capabilities").
 - `unused-steps`: lists the snippets and Java steps no feature reaches, walking from the feature steps through the
   snippet bodies, and the steps nothing here defines (Genie's built-ins, or a step that is missing). It writes nothing
-  and never fails. A Java step marked `[method called from Java]` is used by its method: only the annotation is unused.
+  and never fails. It lists first what nothing calls, then what only unused snippets call, with those callers after
+  `<-`: such a step is called in a snippet file, but no feature reaches that snippet, so delete the first list, then
+  run it again. A Java step marked `[method called from Java]` is used by its method: only the annotation is unused.
   Run it on the company copy before deleting anything: the public copy has fewer features and fewer steps.
 - `suggest <event>`: reads the event's recordings and prints, without writing anything, the `dynamicFields` rules
   they need and the `expectedBase` that suits them ("Suggestions", below).

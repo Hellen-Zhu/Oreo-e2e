@@ -4,6 +4,7 @@ import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
@@ -54,6 +55,16 @@ public class UnusedStepsTest {
         UnusedSteps.Report report = UnusedSteps.analyze(definitions(), List.of("user books 'book'"));
         assertEquals(List.of("a.snippet:4", "Steps.java:5", "Steps.java:9", "Steps.java:10"), names(report));
         assertEquals(Set.of(), report.undefined());
+    }
+
+    @Test
+    public void namesTheUnusedSnippetsThatCallAnUnusedStep() {
+        UnusedSteps.Report report = UnusedSteps.analyze(definitions(), List.of("user books 'book'"));
+        Map<UnusedSteps.Definition, List<UnusedSteps.Definition>> callers = UnusedSteps.callers(report.unused());
+        UnusedSteps.Definition dead = report.unused().get(0);
+        UnusedSteps.Definition step = report.unused().get(1);
+        assertEquals(List.of(), callers.get(dead));
+        assertEquals(List.of(dead), callers.get(step));
     }
 
     @Test
