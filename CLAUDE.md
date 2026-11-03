@@ -47,7 +47,7 @@ Stop at the first that fits:
 
 1. An existing flow, page, component or API snippet expresses it → reuse it.
 2. A Genie built-in does it → use it inside a snippet.
-3. Existing glue does it (`glue/api`, `glue/ui`, `glue/common`) → call it from a snippet.
+3. Existing glue does it (`glue/api`, `glue/ui`) → call it from a snippet.
 4. Compose a new snippet from the above.
 5. Only then new Java, for one capability none of the above has.
 

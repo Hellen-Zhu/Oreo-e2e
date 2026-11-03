@@ -3,6 +3,7 @@ package com.example.module.oreo.glue.api;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.example.module.oreo.config.TestUser;
 import com.example.module.oreo.testdata.SetupData;
 import com.example.module.oreo.testdata.TestData;
 import com.example.module.oreo.utils.DateUtil;
@@ -74,6 +75,20 @@ public class ApiRequestSteps {
     @Given("^set the user header for '([^']*)'$")
     public void setUserHeader(String roleOrEmail) {
         ctx.write("[user] " + RestApiUtil.setUserHeader(ctx.helper(), roleOrEmail));
+    }
+
+    /**
+     * Stores the e-mail of a role as a scenario variable, so SQL can reference it as {@code \${name}}; the e-mail is
+     * the one of the environment the run uses.
+     *
+     * <pre>And store the e-mail of user 'maker' as 'blotterUserEmail'</pre>
+     */
+    @Given("^store the e-mail of user '([^']*)' as '([^']*)'$")
+    public void storeUserEmail(String role, String varName) {
+        String email = TestUser.of(role).email();
+        ctx.set(varName, email);
+        ctx.write("[stored] " + varName + " = " + email);
+        log.info("[ApiRequestSteps] stored '{}' = '{}'", varName, email);
     }
 
     /**
