@@ -21,7 +21,6 @@ import java.util.List;
 public class TradePortalSteps {
 
     private static final Logger log = LoggerFactory.getLogger(TradePortalSteps.class);
-    private static final long CELL_POLL_INTERVAL_MILLIS = 200L;
 
     private PlaywrightServiceResolver.Context ctx;
 
@@ -145,10 +144,7 @@ public class TradePortalSteps {
 
     // ── Private helpers ─────────────────────────────────────────────
 
-    /**
-     * Resolves the nth row's cell and asserts its trimmed text eventually equals {@code expectedValue}: the row of a
-     * trade can still show its previous status while the blotter catches up with an event.
-     */
+    /** Resolves the nth row's cell and asserts its trimmed text equals {@code expectedValue}. */
     private void assertCell(String rowTestId, int rowIndex, String colName, String expectedValue) {
         String cellSelector = colName.contains(".")
                 ? "td[data-col='" + colName + "']"
@@ -160,32 +156,19 @@ public class TradePortalSteps {
         cell.waitFor(new Locator.WaitForOptions()
                 .setState(WaitForSelectorState.ATTACHED)
                 .setTimeout(ctx.timeoutMillis()));
-        long start = System.currentTimeMillis();
-        long deadline = start + ctx.timeoutMillis();
-        String actualValue = readCell(cell);
-        while (!expectedValue.equals(actualValue) && System.currentTimeMillis() < deadline) {
-            // Not Thread.sleep: lets Playwright process the page's updates while waiting
-            ctx.service().getPage().waitForTimeout(CELL_POLL_INTERVAL_MILLIS);
-            actualValue = readCell(cell);
-        }
-        long waitedMillis = System.currentTimeMillis() - start;
-        ctx.write(String.format("Blotter cell actual value = '%s' (after %d ms)", actualValue, waitedMillis));
-        log.info("[TradePortalSteps] Blotter[{}][{}][{}] actual = '{}' after {} ms",
-                rowTestId, rowIndex, colName, actualValue, waitedMillis);
-        if (!expectedValue.equals(actualValue)) {
-            throw new AssertionError(String.format(
-                    "[TradePortalSteps] blotter row '%s' index %d column '%s': expected '%s' but got '%s'"
-                            + " after waiting %d ms",
-                    rowTestId, rowIndex, colName, expectedValue, actualValue, waitedMillis));
-        }
-    }
-
-    /** The cell's text; an ui-badge renders it as a DOM property (badge.label), not as DOM content. */
-    private static String readCell(Locator cell) {
-        return (String) cell.evaluate(
+        // ui-badge renders text as a DOM property (badge.label), not as DOM content.
+        // Use JS evaluate to read the property when an ui-badge is present.
+        String actualValue = (String) cell.evaluate(
                 "el => { const badge = el.querySelector('ui-badge'); " +
                         "const span = el.querySelector('span'); " +
                         "return badge ? badge.label : span ? span.textContent.trim() : el.textContent.trim(); }");
+        ctx.write(String.format("Blotter cell actual value = '%s'", actualValue));
+        log.info("[TradePortalSteps] Blotter[{}][{}][{}] actual = '{}'", rowTestId, rowIndex, colName, actualValue);
+        if (!expectedValue.equals(actualValue)) {
+            throw new AssertionError(String.format(
+                    "[TradePortalSteps] blotter row '%s' index %d column '%s': expected '%s' but got '%s'",
+                    rowTestId, rowIndex, colName, expectedValue, actualValue));
+        }
     }
 
     /**
