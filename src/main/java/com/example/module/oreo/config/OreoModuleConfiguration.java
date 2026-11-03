@@ -27,10 +27,16 @@ public final class OreoModuleConfiguration extends BaseGenieModuleConfiguration 
     );
 
     /** The e-mail of each {@link TestUser}: {@code oreo.user.<role>.email}, set in genie.properties. */
-    public final ConfigurationDescriptor<String> MAKER_EMAIL = userEmail(TestUser.MAKER);
-    public final ConfigurationDescriptor<String> CHECKER_EMAIL = userEmail(TestUser.CHECKER);
-    public final ConfigurationDescriptor<String> ADMIN_EMAIL = userEmail(TestUser.ADMIN);
-    public final ConfigurationDescriptor<String> USER_EMAIL = userEmail(TestUser.USER);
+    public final ConfigurationDescriptor<String> MAKER_EMAIL = userSetting(TestUser.MAKER, "email");
+    public final ConfigurationDescriptor<String> CHECKER_EMAIL = userSetting(TestUser.CHECKER, "email");
+    public final ConfigurationDescriptor<String> ADMIN_EMAIL = userSetting(TestUser.ADMIN, "email");
+    public final ConfigurationDescriptor<String> USER_EMAIL = userSetting(TestUser.USER, "email");
+
+    /** The password of each {@link TestUser}: {@code oreo.user.<role>.password}, set in genie.properties. */
+    public final ConfigurationDescriptor<String> MAKER_PASSWORD = userSetting(TestUser.MAKER, "password");
+    public final ConfigurationDescriptor<String> CHECKER_PASSWORD = userSetting(TestUser.CHECKER, "password");
+    public final ConfigurationDescriptor<String> ADMIN_PASSWORD = userSetting(TestUser.ADMIN, "password");
+    public final ConfigurationDescriptor<String> USER_PASSWORD = userSetting(TestUser.USER, "password");
 
     public OreoModuleConfiguration(GenieModule genieModule) {
         super(genieModule);
@@ -40,6 +46,10 @@ public final class OreoModuleConfiguration extends BaseGenieModuleConfiguration 
         addDescriptor(CHECKER_EMAIL);
         addDescriptor(ADMIN_EMAIL);
         addDescriptor(USER_EMAIL);
+        addDescriptor(MAKER_PASSWORD);
+        addDescriptor(CHECKER_PASSWORD);
+        addDescriptor(ADMIN_PASSWORD);
+        addDescriptor(USER_PASSWORD);
     }
 
     /** The configured e-mail of a user, blank when none is set. */
@@ -53,12 +63,23 @@ public final class OreoModuleConfiguration extends BaseGenieModuleConfiguration 
         return descriptor.getValue();
     }
 
-    private ConfigurationDescriptor<String> userEmail(TestUser user) {
+    /** The configured password of a user, blank when none is set. */
+    public String password(TestUser user) {
+        ConfigurationDescriptor<String> descriptor = switch (user) {
+            case MAKER -> MAKER_PASSWORD;
+            case CHECKER -> CHECKER_PASSWORD;
+            case ADMIN -> ADMIN_PASSWORD;
+            case USER -> USER_PASSWORD;
+        };
+        return descriptor.getValue();
+    }
+
+    private ConfigurationDescriptor<String> userSetting(TestUser user, String setting) {
         return new DefaultConfigurationDescriptor<>(
                 getGenieModule(),
-                "user." + user.role() + ".email",
+                "user." + user.role() + "." + setting,
                 "",
-                "E-mail of the " + user.role() + " test user: its X-User-Id and UI login.",
+                "The " + setting + " of the " + user.role() + " test user.",
                 ValueConverter.STRING
         );
     }

@@ -1,14 +1,6 @@
 package com.example.module.oreo.config;
 
-import com.example.module.oreo.testdata.ProjectPaths;
-
-import java.io.IOException;
-import java.io.Reader;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.Locale;
-import java.util.Properties;
 
 /**
  * The accounts the suite acts as. Features, snippets and Java name a role ({@code maker}); its e-mail is the
@@ -17,9 +9,8 @@ import java.util.Properties;
  *   <li>e-mail: {@code oreo.user.<role>.email} of {@link OreoModuleConfiguration}, loaded by Genie like
  *       {@code oreo.risk.engine.mode}: genie.properties holds the default, an environment file overrides it. A hook
  *       hands the configuration over before each scenario ({@link #configure})</li>
- *   <li>password {@code test.user.<role>.password}: {@code -D}, else the environment variable
- *       {@code OREO_USER_<ROLE>_PASSWORD}, else {@code users.local.properties} in the project folder (git-ignored);
- *       never a committed file; the same in every environment</li>
+ *   <li>password: {@code -Doreo.user.<role>.password}, else {@code oreo.user.<role>.password} of the same
+ *       configuration (genie.properties)</li>
  * </ul>
  */
 public enum TestUser {
@@ -28,9 +19,7 @@ public enum TestUser {
     ADMIN,
     USER;
 
-    static final String LOCAL_FILE = "users.local.properties";
     private static volatile OreoModuleConfiguration configuration;
-    private static Properties local;
 
     /** Called before each scenario with the configuration Genie loaded for the run. */
     public static void configure(OreoModuleConfiguration loaded) {
@@ -42,12 +31,7 @@ public enum TestUser {
     }
 
     public String email() {
-        OreoModuleConfiguration loaded = configuration;
-        if (loaded == null) {
-            throw new IllegalStateException("[TestUser] no configuration yet: the e-mails are read once a scenario"
-                    + " has started");
-        }
-        String value = loaded.email(this);
+        String value = loaded().email(this);
         if (blank(value)) {
             throw new IllegalStateException("[TestUser] no e-mail for " + role() + ": set oreo.user." + role()
                     + ".email in genie.properties or the environment file");
@@ -56,15 +40,12 @@ public enum TestUser {
     }
 
     public String password() {
-        String key = "test.user." + role() + ".password";
-        String env = "OREO_USER_" + name() + "_PASSWORD";
+        String key = "oreo.user." + role() + ".password";
         String value = System.getProperty(key);
-        if (blank(value)) value = System.getenv(env);
-        if (blank(value)) value = local().getProperty(key);
+        if (blank(value)) value = loaded().password(this);
         if (blank(value)) {
-            throw new IllegalStateException("[TestUser] no password for " + role() + ": set -D" + key
-                    + ", the environment variable " + env + " or " + key + " in " + LOCAL_FILE
-                    + " (git-ignored); never in a committed file");
+            throw new IllegalStateException("[TestUser] no password for " + role() + ": set " + key
+                    + " in genie.properties or pass -D" + key);
         }
         return value;
     }
@@ -88,19 +69,12 @@ public enum TestUser {
         return value == null || value.isBlank();
     }
 
-    /** Read once per JVM, only when a password is not given otherwise, so a run with -D needs no project folder. */
-    private static synchronized Properties local() {
-        if (local == null) {
-            local = new Properties();
-            Path file = ProjectPaths.projectRoot().resolve(LOCAL_FILE);
-            if (Files.isRegularFile(file)) {
-                try (Reader in = Files.newBufferedReader(file, StandardCharsets.UTF_8)) {
-                    local.load(in);
-                } catch (IOException e) {
-                    throw new IllegalStateException("[TestUser] cannot read " + file + ": " + e.getMessage(), e);
-                }
-            }
+    private static OreoModuleConfiguration loaded() {
+        OreoModuleConfiguration loaded = configuration;
+        if (loaded == null) {
+            throw new IllegalStateException("[TestUser] no configuration yet: the users are read once a scenario"
+                    + " has started");
         }
-        return local;
+        return loaded;
     }
 }

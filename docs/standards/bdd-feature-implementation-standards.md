@@ -74,8 +74,8 @@ Work down the list and stop at the first that fits:
 - `<user>` is a role: `maker`, `checker`, `admin` or `user` (`config/TestUser`), never an e-mail. The e-mails are
   `oreo.user.<role>.email` (`OreoModuleConfiguration`, like `oreo.risk.engine.mode`): a default in `genie.properties`,
   overridden in an environment file; Java uses `TestUser.MAKER.email()`. The UI signs in with
-  `<role> is logged in to the trade portal`; passwords come only from `-Dtest.user.<role>.password`,
-  `OREO_USER_<ROLE>_PASSWORD` or the git-ignored `users.local.properties`.
+  `<role> is logged in to the trade portal`; its password is `oreo.user.<role>.password` in `genie.properties`
+  (the same in every environment), overridden by `-Doreo.user.<role>.password`.
 
 ### 3.3 Reuse provisioning and outcomes
 
