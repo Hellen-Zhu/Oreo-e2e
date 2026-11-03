@@ -29,11 +29,16 @@ public final class OreoConfigurationResolver {
             return OreoModuleConfiguration.Mode.from(scenarioMode);
         }
 
+        return configuration(scenario).RISK_ENGINE_MODE.getValue();
+    }
+
+    /** The configuration Genie loaded for the run: genie.properties, overridden by the environment file. */
+    public static OreoModuleConfiguration configuration(GenieScenario scenario) {
         OreoModule module = scenario.getRuntime().getModule(OreoModule.class);
         if (module == null) {
             throw new IllegalStateException("OreoModule is not active in the current Genie runtime");
         }
-        return module.getConfiguration().RISK_ENGINE_MODE.getValue();
+        return module.getConfiguration();
     }
 
     /**

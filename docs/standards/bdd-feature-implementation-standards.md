@@ -72,8 +72,8 @@ Work down the list and stop at the first that fits:
   `X-Request-Id`, a new UUID per request, stored as `requestId`). A header all requests need goes there; Java requests
   get the same headers from `RestApiUtil`.
 - `<user>` is a role: `maker`, `checker`, `admin` or `user` (`config/TestUser`), never an e-mail. The e-mails are
-  `test.user.<role>.email` in the environment file (the one `-Dgenie.properties` names, else `qa.properties`) or
-  `genie.properties`; Java uses `TestUser.MAKER.email()`. The UI signs in with
+  `oreo.user.<role>.email` (`OreoModuleConfiguration`, like `oreo.risk.engine.mode`): a default in `genie.properties`,
+  overridden in an environment file; Java uses `TestUser.MAKER.email()`. The UI signs in with
   `<role> is logged in to the trade portal`; passwords come only from `-Dtest.user.<role>.password`,
   `OREO_USER_<ROLE>_PASSWORD` or the git-ignored `users.local.properties`.
 

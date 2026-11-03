@@ -26,10 +26,41 @@ public final class OreoModuleConfiguration extends BaseGenieModuleConfiguration 
             ValueConverter.createEnum(TraceMode.class)
     );
 
+    /** The e-mail of each {@link TestUser}: {@code oreo.user.<role>.email}, set in genie.properties. */
+    public final ConfigurationDescriptor<String> MAKER_EMAIL = userEmail(TestUser.MAKER);
+    public final ConfigurationDescriptor<String> CHECKER_EMAIL = userEmail(TestUser.CHECKER);
+    public final ConfigurationDescriptor<String> ADMIN_EMAIL = userEmail(TestUser.ADMIN);
+    public final ConfigurationDescriptor<String> USER_EMAIL = userEmail(TestUser.USER);
+
     public OreoModuleConfiguration(GenieModule genieModule) {
         super(genieModule);
         addDescriptor(RISK_ENGINE_MODE);
         addDescriptor(PLAYWRIGHT_TRACE_MODE);
+        addDescriptor(MAKER_EMAIL);
+        addDescriptor(CHECKER_EMAIL);
+        addDescriptor(ADMIN_EMAIL);
+        addDescriptor(USER_EMAIL);
+    }
+
+    /** The configured e-mail of a user, blank when none is set. */
+    public String email(TestUser user) {
+        ConfigurationDescriptor<String> descriptor = switch (user) {
+            case MAKER -> MAKER_EMAIL;
+            case CHECKER -> CHECKER_EMAIL;
+            case ADMIN -> ADMIN_EMAIL;
+            case USER -> USER_EMAIL;
+        };
+        return descriptor.getValue();
+    }
+
+    private ConfigurationDescriptor<String> userEmail(TestUser user) {
+        return new DefaultConfigurationDescriptor<>(
+                getGenieModule(),
+                "user." + user.role() + ".email",
+                "",
+                "E-mail of the " + user.role() + " test user: its X-User-Id and UI login.",
+                ValueConverter.STRING
+        );
     }
 
 

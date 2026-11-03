@@ -1,6 +1,8 @@
 package com.example.module.oreo.glue.hooks;
 
 import com.example.genie.model.GenieScenario;
+import com.example.module.oreo.config.OreoConfigurationResolver;
+import com.example.module.oreo.config.TestUser;
 import com.example.module.oreo.testdata.CaseData;
 import com.example.module.oreo.testdata.CaseId;
 import com.example.module.oreo.testdata.Json;
@@ -65,6 +67,12 @@ public class ScenarioLifecycleHooks {
         log.info("========================================");
         log.info("[SCENARIO BEGIN] {} | Start: {}", scenario.getName(), DateUtil.format(scenarioStartTime));
         log.info("========================================");
+    }
+
+    /** Gives {@link TestUser} the configuration Genie loaded, before any hook or step asks for an e-mail. */
+    @Before(order = 0)
+    public void configureTestUsers(Scenario scenario) {
+        TestUser.configure(OreoConfigurationResolver.configuration((GenieScenario) scenario));
     }
 
     // -------------------------------------------------------------------------
