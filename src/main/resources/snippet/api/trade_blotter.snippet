@@ -114,8 +114,13 @@
 @Then "^all blotters are retrieved successfully$"
     Then the 'blotter' should be 'retrieved' successfully
 
-@Then "^all configured blotters are returned with a total count of '([^']*)'$"
-    And response body contains an element 'data' of size $1
+# The database count minus the returned count: 0 when every blotter of the role and the default ones are returned.
+@Then "^every blotter of (maker|checker|admin|user) in the database is returned$"
+    When store response field 'data.size()' as 'returnedBlotterCount'
+    And store the e-mail of user '$1' as 'blotterUserEmail'
+    And execute sql query:
+      | SELECT COUNT(*) - \${returnedBlotterCount} AS difference FROM uc_user_blotter WHERE user_id IN ('default', '\${blotterUserEmail}') |
+    Then assert query result is 0
 
 @Then "^all configured public blotters are returned with a total count of '([^']*)'$"
     And response body contains an element 'data' of size $1

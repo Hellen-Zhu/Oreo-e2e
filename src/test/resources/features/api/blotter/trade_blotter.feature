@@ -46,14 +46,10 @@ Feature: Trade Blotter API
     Then marketplace blotter was updated successfully
 
   @ADO#positive @ADO#regression
-  Scenario Outline: [TC-TRADE-BLOTTER-API-007] Should able to retrieve all blotters with correct total count
+  Scenario: [TC-TRADE-BLOTTER-API-007] Should able to retrieve all blotters with correct total count
     When maker retrieves all available trade blotters
     Then all blotters are retrieved successfully
-    And all configured blotters are returned with a total count of '<count>'
-
-    Examples:
-      #@sql|SELECT COUNT(*) AS count FROM uc_user_blotter WHERE user_id in ('default','maker@example.com')|
-      | count |
+    And every blotter of maker in the database is returned
 
   @ADO#positive @ADO#regression
   Scenario Outline: [TC-TRADE-BLOTTER-API-008] Should able to retrieve all public blotters with correct total count
