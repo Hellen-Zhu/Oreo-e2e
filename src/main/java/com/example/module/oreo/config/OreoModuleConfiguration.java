@@ -10,12 +10,12 @@ import java.util.Locale;
 
 public final class OreoModuleConfiguration extends BaseGenieModuleConfiguration {
 
-    public final ConfigurationDescriptor<Mode> RISK_ENGINE_MODE = new DefaultConfigurationDescriptor<>(
+    public final ConfigurationDescriptor<RiskEngineMode> RISK_ENGINE_MODE = new DefaultConfigurationDescriptor<>(
             getGenieModule(),
             "risk.engine.mode",
-            Mode.REAL,
+            RiskEngineMode.REAL,
             "Risk engine mode. Use MOCK to call mock APIs.",
-            ValueConverter.createEnum(Mode.class)
+            ValueConverter.createEnum(RiskEngineMode.class)
     );
 
     public final ConfigurationDescriptor<TraceMode> PLAYWRIGHT_TRACE_MODE = new DefaultConfigurationDescriptor<>(
@@ -127,11 +127,11 @@ public final class OreoModuleConfiguration extends BaseGenieModuleConfiguration 
     }
 
 
-    public enum Mode {
+    public enum RiskEngineMode {
         MOCK,
         REAL;
 
-        public static Mode from(String rawValue) {
+        public static RiskEngineMode from(String rawValue) {
             String normalized = rawValue == null ? "" : rawValue.trim().toUpperCase(Locale.ROOT);
             return switch (normalized) {
                 case "MOCK" -> MOCK;

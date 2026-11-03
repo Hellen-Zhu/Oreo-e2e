@@ -23,10 +23,10 @@ public final class OreoConfigurationResolver {
     }
 
     /** The risk engine mode, allowing a scenario attribute to override the configured one. */
-    public static OreoModuleConfiguration.Mode riskEngineMode(GenieScenario scenario) {
+    public static OreoModuleConfiguration.RiskEngineMode riskEngineMode(GenieScenario scenario) {
         String scenarioMode = scenario.getAttribute(RISK_ENGINE_MODE_ATTRIBUTE);
         if (scenarioMode != null && !scenarioMode.isBlank()) {
-            return OreoModuleConfiguration.Mode.from(scenarioMode);
+            return OreoModuleConfiguration.RiskEngineMode.from(scenarioMode);
         }
 
         return configuration(scenario).RISK_ENGINE_MODE.getValue();

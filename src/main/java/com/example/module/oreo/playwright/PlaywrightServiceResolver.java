@@ -66,7 +66,7 @@ public final class PlaywrightServiceResolver {
         /**
          * Returns the configured risk engine mode, allowing a scenario attribute to override it.
          */
-        public OreoModuleConfiguration.Mode riskEngineMode() {
+        public OreoModuleConfiguration.RiskEngineMode riskEngineMode() {
             return OreoConfigurationResolver.riskEngineMode(genieScenario);
         }
 
@@ -217,7 +217,7 @@ public final class PlaywrightServiceResolver {
          * answer, MOCK answers with the response of setup file {@code mockSetup}.
          */
         public void clickUsingRiskEngineMode(String locatorKey, String riskUrl, String mockSetup) {
-            OreoModuleConfiguration.Mode mode = riskEngineMode();
+            OreoModuleConfiguration.RiskEngineMode mode = riskEngineMode();
             log.info("[PlaywrightServiceResolver] clicking '{}' using configured risk engine mode='{}', url='{}'",
                     locatorKey, mode, riskUrl);
             Runnable click = () -> service.getLocator(locatorKey).click();
