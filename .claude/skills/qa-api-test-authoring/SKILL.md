@@ -21,7 +21,7 @@ repair round the failure output and `revisionInstructions`.
 ## Boundary
 
 - Change only oreo-e2e test assets: `src/test/resources/data/`, `src/main/resources/snippet/api/`,
-  `src/main/java/.../glue/api/` (last resort). Never the feature's business wording, never FE / BE code.
+  `src/main/java/.../glue/api/` or `glue/common/` (last resort). Never the feature's business wording, never FE / BE code.
 - A feature step whose meaning is wrong or unimplementable is reported back, not rewritten.
 - Never create or edit `data/api/expected/` files, `Examples` rows or `ProductDatFiles` here: recordings come from a
   run, rows from `sync-examples`, products from the onboarding skill.

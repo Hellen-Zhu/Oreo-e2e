@@ -46,6 +46,7 @@ Work down the list and stop at the first that fits:
 | A page's atomic action / assertion | `snippet/ui/pages/<page>_page.snippet` |
 | Behavior of a dialog, toast or panel used on several pages | `snippet/ui/components/<component>_component.snippet` |
 | An API business action / assertion | `snippet/api/<feature or common_*>.snippet` |
+| Java glue both layers call (no REST helper, no browser) | `glue/common/` |
 
 ## 3. Snippets
 
@@ -145,6 +146,7 @@ Every element is registered in JSON and reached through it:
 | Recorded-response comparison, stored-variable and field assertions | `ApiResponseAssertionSteps` |
 | UI trade provisioning | `TradeProvisioningSteps` |
 | Dynamic elements, inputs, eventual assertions | `CommonE2EInteraction`, `CommonE2EAssertion` |
+| A role's e-mail as a scenario variable (for SQL), in @api and @playwright snippets | `glue/common/TestUserSteps` |
 | Response wait / capture, mocked routes, parameterized locators | `PlaywrightServiceResolver.Context` |
 
 A new domain starts from these. When no existing snippet, glue or data contract fits, report the gap before

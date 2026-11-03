@@ -19,7 +19,7 @@ From `test-agent`: the feature file, the case IDs to implement (only the new or 
 ## Boundary
 
 - Change only oreo-e2e test assets: `snippet/ui/{flows,pages,components}/`, `src/test/resources/elements/`,
-  `data/ui/`, `data/setup/`, `glue/ui/` (last resort). Never the feature's business wording, never FE / BE code.
+  `data/ui/`, `data/setup/`, `glue/ui/` or `glue/common/` (last resort). Never the feature's business wording, never FE / BE code.
 - A `@playwright` scenario never calls `snippet/api/`. Its preconditions use the UI provisioning steps
   (`a Live '<product_type>' trade exists in the blotter` ..., `flows/common_trade_action.snippet`).
 
