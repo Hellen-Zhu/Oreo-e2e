@@ -26,17 +26,69 @@ public final class OreoModuleConfiguration extends BaseGenieModuleConfiguration 
             ValueConverter.createEnum(TraceMode.class)
     );
 
-    /** The e-mail of each {@link TestUser}: {@code oreo.user.<role>.email}, set in genie.properties. */
-    public final ConfigurationDescriptor<String> MAKER_EMAIL = userSetting(TestUser.MAKER, "email");
-    public final ConfigurationDescriptor<String> CHECKER_EMAIL = userSetting(TestUser.CHECKER, "email");
-    public final ConfigurationDescriptor<String> ADMIN_EMAIL = userSetting(TestUser.ADMIN, "email");
-    public final ConfigurationDescriptor<String> USER_EMAIL = userSetting(TestUser.USER, "email");
+    public final ConfigurationDescriptor<String> MAKER_EMAIL = new DefaultConfigurationDescriptor<>(
+            getGenieModule(),
+            "user.maker.email",
+            "",
+            "E-mail of the maker test user: its X-User-Id and UI login.",
+            ValueConverter.STRING
+    );
 
-    /** The password of each {@link TestUser}: {@code oreo.user.<role>.password}, set in genie.properties. */
-    public final ConfigurationDescriptor<String> MAKER_PASSWORD = userSetting(TestUser.MAKER, "password");
-    public final ConfigurationDescriptor<String> CHECKER_PASSWORD = userSetting(TestUser.CHECKER, "password");
-    public final ConfigurationDescriptor<String> ADMIN_PASSWORD = userSetting(TestUser.ADMIN, "password");
-    public final ConfigurationDescriptor<String> USER_PASSWORD = userSetting(TestUser.USER, "password");
+    public final ConfigurationDescriptor<String> CHECKER_EMAIL = new DefaultConfigurationDescriptor<>(
+            getGenieModule(),
+            "user.checker.email",
+            "",
+            "E-mail of the checker test user: its X-User-Id and UI login.",
+            ValueConverter.STRING
+    );
+
+    public final ConfigurationDescriptor<String> ADMIN_EMAIL = new DefaultConfigurationDescriptor<>(
+            getGenieModule(),
+            "user.admin.email",
+            "",
+            "E-mail of the admin test user: its X-User-Id and UI login.",
+            ValueConverter.STRING
+    );
+
+    public final ConfigurationDescriptor<String> USER_EMAIL = new DefaultConfigurationDescriptor<>(
+            getGenieModule(),
+            "user.user.email",
+            "",
+            "E-mail of the user test user: its X-User-Id and UI login.",
+            ValueConverter.STRING
+    );
+
+    public final ConfigurationDescriptor<String> MAKER_PASSWORD = new DefaultConfigurationDescriptor<>(
+            getGenieModule(),
+            "user.maker.password",
+            "",
+            "Password of the maker test user: its UI login. -Doreo.user.maker.password overrides it.",
+            ValueConverter.STRING
+    );
+
+    public final ConfigurationDescriptor<String> CHECKER_PASSWORD = new DefaultConfigurationDescriptor<>(
+            getGenieModule(),
+            "user.checker.password",
+            "",
+            "Password of the checker test user: its UI login. -Doreo.user.checker.password overrides it.",
+            ValueConverter.STRING
+    );
+
+    public final ConfigurationDescriptor<String> ADMIN_PASSWORD = new DefaultConfigurationDescriptor<>(
+            getGenieModule(),
+            "user.admin.password",
+            "",
+            "Password of the admin test user: its UI login. -Doreo.user.admin.password overrides it.",
+            ValueConverter.STRING
+    );
+
+    public final ConfigurationDescriptor<String> USER_PASSWORD = new DefaultConfigurationDescriptor<>(
+            getGenieModule(),
+            "user.user.password",
+            "",
+            "Password of the user test user: its UI login. -Doreo.user.user.password overrides it.",
+            ValueConverter.STRING
+    );
 
     public OreoModuleConfiguration(GenieModule genieModule) {
         super(genieModule);
@@ -72,16 +124,6 @@ public final class OreoModuleConfiguration extends BaseGenieModuleConfiguration 
             case USER -> USER_PASSWORD;
         };
         return descriptor.getValue();
-    }
-
-    private ConfigurationDescriptor<String> userSetting(TestUser user, String setting) {
-        return new DefaultConfigurationDescriptor<>(
-                getGenieModule(),
-                "user." + user.role() + "." + setting,
-                "",
-                "The " + setting + " of the " + user.role() + " test user.",
-                ValueConverter.STRING
-        );
     }
 
 
