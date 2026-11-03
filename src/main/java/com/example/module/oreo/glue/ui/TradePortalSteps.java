@@ -5,6 +5,7 @@ import com.microsoft.playwright.options.AriaRole;
 import com.microsoft.playwright.options.KeyboardModifier;
 import com.microsoft.playwright.options.MouseButton;
 import com.microsoft.playwright.options.WaitForSelectorState;
+import com.microsoft.playwright.assertions.LocatorAssertions;
 import com.microsoft.playwright.assertions.PlaywrightAssertions;
 import cucumber.api.Scenario;
 import cucumber.api.java.Before;
@@ -83,8 +84,15 @@ public class TradePortalSteps {
         fillBlotterSearchInput(tradeId);
     }
 
+    /**
+     * Fills the search and waits until the blotter has filtered: the first row is the searched trade. The row
+     * assertions read row 0 once, so returning before the filter applies would read another trade.
+     */
     private void fillBlotterSearchInput(String tradeId) {
         ctx.innerInput("trade_portal.search_input").fill(tradeId);
+        Locator firstRow = ctx.service().getLocator("trade_portal.all_trades_blotter_row").first();
+        PlaywrightAssertions.assertThat(firstRow).containsText(tradeId,
+                new LocatorAssertions.ContainsTextOptions().setTimeout(ctx.timeoutMillis()));
     }
 
     @Then("^blotter row '([^']*)' index (\\d+) column '([^']*)' is '([^']*)'$")
