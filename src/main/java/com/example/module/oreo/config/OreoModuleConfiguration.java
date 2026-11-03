@@ -102,28 +102,6 @@ public final class OreoModuleConfiguration extends BaseGenieModuleConfiguration 
         addDescriptor(USER_PASSWORD);
     }
 
-    /** The configured e-mail of a user, blank when none is set. */
-    public String email(TestUser user) {
-        ConfigurationDescriptor<String> descriptor = switch (user) {
-            case MAKER -> MAKER_EMAIL;
-            case CHECKER -> CHECKER_EMAIL;
-            case ADMIN -> ADMIN_EMAIL;
-            case USER -> USER_EMAIL;
-        };
-        return descriptor.getValue();
-    }
-
-    /** The configured password of a user, blank when none is set. */
-    public String password(TestUser user) {
-        ConfigurationDescriptor<String> descriptor = switch (user) {
-            case MAKER -> MAKER_PASSWORD;
-            case CHECKER -> CHECKER_PASSWORD;
-            case ADMIN -> ADMIN_PASSWORD;
-            case USER -> USER_PASSWORD;
-        };
-        return descriptor.getValue();
-    }
-
     public enum RiskEngineMode {
         MOCK,
         REAL

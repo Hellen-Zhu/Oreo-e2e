@@ -1,6 +1,9 @@
 package com.example.module.oreo.config;
 
+import com.example.genie.module.configuration.ConfigurationDescriptor;
+
 import java.util.Locale;
+import java.util.function.Function;
 
 /**
  * The accounts the suite acts as. Features, snippets and Java name a role ({@code maker}); its e-mail is the
@@ -14,12 +17,22 @@ import java.util.Locale;
  * </ul>
  */
 public enum TestUser {
-    MAKER,
-    CHECKER,
-    ADMIN,
-    USER;
+    MAKER(c -> c.MAKER_EMAIL, c -> c.MAKER_PASSWORD),
+    CHECKER(c -> c.CHECKER_EMAIL, c -> c.CHECKER_PASSWORD),
+    ADMIN(c -> c.ADMIN_EMAIL, c -> c.ADMIN_PASSWORD),
+    USER(c -> c.USER_EMAIL, c -> c.USER_PASSWORD);
 
     private static volatile OreoModuleConfiguration configuration;
+
+    /** The descriptors of this role, looked up in the configuration a hook hands over. */
+    private final Function<OreoModuleConfiguration, ConfigurationDescriptor<String>> email;
+    private final Function<OreoModuleConfiguration, ConfigurationDescriptor<String>> password;
+
+    TestUser(Function<OreoModuleConfiguration, ConfigurationDescriptor<String>> email,
+             Function<OreoModuleConfiguration, ConfigurationDescriptor<String>> password) {
+        this.email = email;
+        this.password = password;
+    }
 
     /** Called before each scenario with the configuration Genie loaded for the run. */
     public static void configure(OreoModuleConfiguration loaded) {
@@ -31,7 +44,7 @@ public enum TestUser {
     }
 
     public String email() {
-        String value = loaded().email(this);
+        String value = email.apply(loaded()).getValue();
         if (blank(value)) {
             throw new IllegalStateException("[TestUser] no e-mail for " + role() + ": set oreo.user." + role()
                     + ".email in genie.properties or the environment file");
@@ -42,7 +55,7 @@ public enum TestUser {
     public String password() {
         String key = "oreo.user." + role() + ".password";
         String value = System.getProperty(key);
-        if (blank(value)) value = loaded().password(this);
+        if (blank(value)) value = password.apply(loaded()).getValue();
         if (blank(value)) {
             throw new IllegalStateException("[TestUser] no password for " + role() + ": set " + key
                     + " in genie.properties or pass -D" + key);
