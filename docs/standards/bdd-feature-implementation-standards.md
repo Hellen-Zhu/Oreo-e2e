@@ -131,6 +131,10 @@ Every element is registered in JSON and reached through it:
   request fails the wait on a page that loaded; keep them for a response that is the result of the action (a save,
   a refresh). The login waits for the trade portal and its New Today blotter, not for `blotter/trades`.
 - Form values are asserted with `eventually has value` (Playwright `hasValue`), not text content.
+- Glue waits and asserts through `PlaywrightServiceResolver.Context` (`ctx.assertEventuallyContains(...)`,
+  `ctx.waitForVisible(...)`, ...), never with `PlaywrightAssertions` or `Locator.waitFor` options itself. Playwright
+  calls and their timeout live in the `playwright` package; a missing one is added there (`EventualAssertions`,
+  `ElementActions`) and exposed on the Context, then used by the step.
 - ctx keys are camelCase (`createdTradeId`). New reusable glue takes the key as a step parameter. Write useful values to
   the report with `ctx.write()`; never credentials, tokens or full sensitive payloads.
 
@@ -253,11 +257,13 @@ mvn -B test -Dtest=OreoTest "-Dcucumber.options=--name ^\[TC-TRADE-CREATION-FX_T
 | Java wrapper around a built-in (click, fill, text, visible, URL, wait) | Built-in in a snippet |
 | Selector hard-coded in Java, test ID built from runtime values | Element repository, parameterized locator |
 | `Thread.sleep()`, direct RestAssured, glue `@Component` or inheritance | Auto-wait / eventual assertion / response wait; Genie helpers; POJO + resolver |
+| `PlaywrightAssertions` or `Locator.waitFor` options in glue | A Context method backed by the `playwright` package |
 | State change inside an assertion | Separate action and assertion |
 | Two rows matching one case, a duplicated setup name, an unregistered product | One row with `byProduct`; reuse setup; register the product first |
 | Hand-edited expected file or `Examples` row | Record + compact; `sync-examples` |
 | `@TC-...` tag, feature-level suite/polarity tag, removing `@wip` to force a run | Case ID in the scenario name; scenario-level tags |
 
-**Legacy.** Existing code still has UI primitive wrappers, direct JsonPath/RestAssured, two `Thread.sleep` calls,
+**Legacy.** Existing code still has UI primitive wrappers, direct JsonPath/RestAssured, direct Playwright assertions
+and waits in glue, two `Thread.sleep` calls,
 locator-bearing flows, mixed-phase snippets, fixed provisioning keys and older wording. They are exceptions, not
 templates; do not extend them, and do not refactor them as a side effect of a test change.

@@ -76,6 +76,8 @@ Never in new work:
 - A `@playwright` scenario calling an API snippet (use the UI provisioning steps).
 - A Java wrapper around a built-in UI step, or a selector hard-coded in Java.
 - `Thread.sleep()`, direct RestAssured, `@Component` on glue, or glue inheritance.
+- `PlaywrightAssertions` or `Locator.waitFor` options in glue: wait and assert through a
+  `PlaywrightServiceResolver.Context` method, added in the `playwright` package when missing.
 - A hand-edited expected file or `Examples` row (record + compact; `sync-examples`).
 - Two rows matching one case, a duplicated setup name or case ID, an unregistered product.
 - A `@TC-...` tag, a feature-level suite or polarity tag, or removing `@wip` to force a run.

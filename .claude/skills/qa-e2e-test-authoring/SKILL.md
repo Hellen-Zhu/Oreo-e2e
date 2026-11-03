@@ -75,6 +75,8 @@ From `test-agent`: the feature file, the case IDs to implement (only the new or 
    (`assert that '<element>' is eventually visible / hidden / enabled / disabled`, `... eventually has value '...'`),
    Playwright auto-wait, or the response helpers (`ctx.clickAndWaitForResponse(...)`) for server-driven refreshes.
    A page being ready (after login, after navigation) is an element becoming visible, never a request it sends.
+   Java glue waits through the Context (`ctx.assertEventuallyContains(...)`, `ctx.waitForVisible(...)`), never with
+   `PlaywrightAssertions` or `Locator.waitFor` options; a missing wait goes into the `playwright` package first.
 6. **Data**: follow `.claude/skills/qa-api-test-authoring/references/test-data-decisions.md` sections 1-4 (UI data
    has no `dynamicFields`, `expectedBase` or recordings). The hook flattens the case's `request` into ctx, and a flow
    reads it by path: `defaults.request.earlyTermination.amount` in `data/ui/trade_early_termination.json` is read as
