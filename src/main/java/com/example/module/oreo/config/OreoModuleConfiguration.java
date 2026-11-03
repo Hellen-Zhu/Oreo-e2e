@@ -6,8 +6,6 @@ import com.example.genie.module.configuration.ConfigurationDescriptor;
 import com.example.genie.module.configuration.DefaultConfigurationDescriptor;
 import com.example.genie.type.ValueConverter;
 
-import java.util.Locale;
-
 public final class OreoModuleConfiguration extends BaseGenieModuleConfiguration {
 
     public final ConfigurationDescriptor<RiskEngineMode> RISK_ENGINE_MODE = new DefaultConfigurationDescriptor<>(
@@ -126,21 +124,9 @@ public final class OreoModuleConfiguration extends BaseGenieModuleConfiguration 
         return descriptor.getValue();
     }
 
-
     public enum RiskEngineMode {
         MOCK,
-        REAL;
-
-        public static RiskEngineMode from(String rawValue) {
-            String normalized = rawValue == null ? "" : rawValue.trim().toUpperCase(Locale.ROOT);
-            return switch (normalized) {
-                case "MOCK" -> MOCK;
-                case "REAL" -> REAL;
-                default -> throw new IllegalArgumentException(
-                        "Unsupported risk.engine.mode value '" + rawValue + "'. Expected one of: MOCK, REAL."
-                );
-            };
-        }
+        REAL
     }
 
     public enum TraceMode {

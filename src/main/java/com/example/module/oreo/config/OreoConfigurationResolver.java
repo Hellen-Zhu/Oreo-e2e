@@ -26,7 +26,12 @@ public final class OreoConfigurationResolver {
     public static OreoModuleConfiguration.RiskEngineMode riskEngineMode(GenieScenario scenario) {
         String scenarioMode = scenario.getAttribute(RISK_ENGINE_MODE_ATTRIBUTE);
         if (scenarioMode != null && !scenarioMode.isBlank()) {
-            return OreoModuleConfiguration.RiskEngineMode.from(scenarioMode);
+            try {
+                return OreoModuleConfiguration.RiskEngineMode.valueOf(scenarioMode.trim().toUpperCase(Locale.ROOT));
+            } catch (IllegalArgumentException e) {
+                throw new IllegalArgumentException("Unsupported " + RISK_ENGINE_MODE_ATTRIBUTE + " value '"
+                        + scenarioMode + "'. Expected one of: MOCK, REAL.", e);
+            }
         }
 
         return configuration(scenario).RISK_ENGINE_MODE.getValue();
