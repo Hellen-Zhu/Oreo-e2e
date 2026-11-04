@@ -39,35 +39,50 @@ final class ResponseWaiter {
     }
 
     /**
-     * Runs {@code action} and returns the first response whose URL contains {@code urlFragment} and whose method
-     * is {@code httpMethod}. A timeout fails with what was awaited, how long, the page URL and whether the action
-     * itself finished (a click that never happened) or the response never came (a request not sent or not
-     * answered), instead of Playwright's bare "Timeout exceeded".
+     * Runs {@code action} and returns the response to the first request it sends whose URL contains
+     * {@code urlFragment} and whose method is {@code httpMethod}, once its body has arrived. A matching request
+     * already in flight before the action is not taken for it, and the wait does not end at the response headers.
+     * A timeout fails with what was awaited, how long, the page URL and whether the action itself finished (a click
+     * that never happened), the request was not sent, or it was not answered, instead of Playwright's bare
+     * "Timeout exceeded".
      */
     private Response awaitResponse(Runnable action, String urlFragment, String httpMethod, double timeoutMs) {
         String awaited = httpMethod + " " + urlFragment;
         log.info("[ResponseWaiter] waiting up to {} ms for {}", (long) timeoutMs, awaited);
         boolean[] acted = {false};
+        Request[] sent = {null};
         long start = System.nanoTime();
         Response response;
         try {
             response = service.getPage().waitForResponse(
-                    r -> r.url().contains(urlFragment) && r.request().method().equals(httpMethod),
+                    r -> sent[0] != null && r.request() == sent[0],
                     new Page.WaitForResponseOptions().setTimeout(timeoutMs),
-                    () -> {
-                        action.run();
-                        acted[0] = true;
-                    }
+                    () -> sent[0] = service.getPage().waitForRequest(
+                            r -> r.url().contains(urlFragment) && r.method().equals(httpMethod),
+                            new Page.WaitForRequestOptions().setTimeout(timeoutMs),
+                            () -> {
+                                action.run();
+                                acted[0] = true;
+                            }
+                    )
             );
         } catch (TimeoutError e) {
-            String message = (acted[0]
-                    ? "No response to " + awaited + " within " + (long) timeoutMs + " ms after the action: the"
-                            + " request was not sent or not answered (see the trace's Network tab)"
-                    : "The action before " + awaited + " did not finish within " + (long) timeoutMs + " ms: "
-                            + firstLine(e.getMessage()))
+            String message = (!acted[0]
+                    ? "The action before " + awaited + " did not finish within " + (long) timeoutMs + " ms: "
+                            + firstLine(e.getMessage())
+                    : sent[0] == null
+                    ? "No " + awaited + " sent within " + (long) timeoutMs + " ms after the action"
+                    : "No response to " + awaited + " within " + (long) timeoutMs + " ms after the action sent it"
+                            + " (see the trace's Network tab)")
                     + ". Page: " + service.getPage().url();
             log.error("[ResponseWaiter] {}", message);
             throw new AssertionError(message, e);
+        }
+        String failure = response.finished();
+        if (failure != null) {
+            String message = "The body of " + awaited + " did not arrive: " + failure;
+            log.error("[ResponseWaiter] {}", message);
+            throw new AssertionError(message);
         }
         log.info("[ResponseWaiter] {} -> {} in {} ms ({})", awaited, response.status(),
                 (System.nanoTime() - start) / 1_000_000, response.url());
@@ -190,40 +205,6 @@ final class ResponseWaiter {
             throw statusError(httpMethod + " " + urlFragment, "200", response);
         }
         return response.text();
-    }
-
-    /**
-     * Clicks and waits for the response to the request the click sent, body included. Unlike
-     * {@link #clickAndWaitForResponse(String, String, String)}, a matching request already in flight before the click
-     * is not taken for it, and the wait does not end at the response headers.
-     */
-    void clickAndWaitForOwnResponse(String locatorKey, String urlFragment, String httpMethod) {
-        String awaited = httpMethod + " " + urlFragment;
-        Request request;
-        try {
-            request = clickAndCaptureRequest(locatorKey, urlFragment, httpMethod);
-        } catch (TimeoutError e) {
-            String message = "No " + awaited + " sent within " + timeoutMillis() + " ms after clicking '" + locatorKey
-                    + "'. Page: " + service.getPage().url();
-            log.error("[ResponseWaiter] {}", message);
-            throw new AssertionError(message, e);
-        }
-        Response response = request.response();
-        if (response == null) {
-            String message = awaited + " sent by clicking '" + locatorKey + "' failed: " + request.failure();
-            log.error("[ResponseWaiter] {}", message);
-            throw new AssertionError(message);
-        }
-        if (response.status() != 200) {
-            throw statusError(awaited, "200", response);
-        }
-        String failure = response.finished();
-        if (failure != null) {
-            String message = "The body of " + awaited + " did not arrive: " + failure;
-            log.error("[ResponseWaiter] {}", message);
-            throw new AssertionError(message);
-        }
-        log.info("[ResponseWaiter] {} sent by the click -> 200, body received ({})", awaited, response.url());
     }
 
     Request clickAndCaptureRequest(String locatorKey, String urlFragment, String httpMethod) {

@@ -59,7 +59,7 @@ public class TradePortalSteps {
      */
     @When("^refresh trade blotter and wait for blotter '([^']*)' to be ready$")
     public void refreshTradeBlotterAndWaitFor(String blotterId) {
-        ctx.clickAndWaitForOwnResponse("trade_portal.refresh_btn", "/api/v1/blotter/trades", "POST");
+        ctx.clickAndWaitForResponse("trade_portal.refresh_btn", "/api/v1/blotter/trades", "POST");
         ctx.assertEventuallyHidden(ctx.getLocatorWithParam("trade_portal.blotter_view_refreshing_state", blotterId));
     }
 

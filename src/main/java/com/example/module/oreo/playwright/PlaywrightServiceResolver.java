@@ -178,9 +178,6 @@ public final class PlaywrightServiceResolver {
         public Request clickAndCaptureRequest(String locatorKey, String urlFragment, String httpMethod) {
             return responses.clickAndCaptureRequest(locatorKey, urlFragment, httpMethod);
         }
-        public void clickAndWaitForOwnResponse(String locatorKey, String urlFragment, String httpMethod) {
-            responses.clickAndWaitForOwnResponse(locatorKey, urlFragment, httpMethod);
-        }
 
         /**
          * Navigates to {@code path} (relative to the configured base URL), waits for the
