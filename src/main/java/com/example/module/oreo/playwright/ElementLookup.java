@@ -9,7 +9,10 @@ import com.example.genie.module.playwright.core.PlaywrightService;
 
 import java.lang.reflect.Field;
 
-/** Reads Genie's element repository, which has no public accessor: reflection on it stays in this class. */
+/**
+ * Finds elements through Genie's element repository, including table rows and cells. The repository has no public
+ * accessor: reflection on it stays in this class.
+ */
 final class ElementLookup {
 
     private final PlaywrightService service;
@@ -55,10 +58,26 @@ final class ElementLookup {
     }
 
     /**
+     * The row of {@code rowKey} whose cell {@code cellKey} (with {@code {0}} = {@code column}) shows exactly
+     * {@code text}: a trade by its full ID, not by its position. A suffixed ID ({@code ...-ALLOC-1}) does not
+     * match; two matching rows fail when the row is used.
+     */
+    Locator rowWithCell(String rowKey, String cellKey, String column, String text) {
+        Locator cell = service.getPage().locator(locatorSelector(cellKey, column))
+                .getByText(text, new Locator.GetByTextOptions().setExact(true));
+        return service.getLocator(rowKey).filter(new Locator.FilterOptions().setHas(cell));
+    }
+
+    /** The cell {@code cellKey} (with {@code {0}} = {@code column}) inside {@code row}. */
+    Locator cellOf(Locator row, String cellKey, String column) {
+        return row.locator(locatorSelector(cellKey, column));
+    }
+
+    /**
      * The CSS selector of an element found by locator, with {@code {0}} replaced by {@code value}: for an element
      * looked up inside another one ({@code row.locator(selector)}).
      */
-    String locatorSelector(String name, String value) {
+    private String locatorSelector(String name, String value) {
         PlaywrightLocatorWrapper element;
         try {
             element = elementRepository().lookup(name);
