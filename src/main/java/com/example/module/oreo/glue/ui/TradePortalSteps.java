@@ -108,13 +108,6 @@ public class TradePortalSteps {
         assertCellValue(rowKey, keyColumn, keyCtxKey, column, expected, ctx.text(cell));
     }
 
-    /** As above, for a column that shows a {@code ui-badge} ({@code trade.basic.status}): asserts its label. */
-    @Then("^blotter '([^']*)' row with column '([^']*)' from stored variable '([^']*)' has badge in column '([^']*)' as '([^']*)'$")
-    public void assertBlotterCellBadge(String rowKey, String keyColumn, String keyCtxKey, String column, String expected) {
-        Locator cell = cellOfRow(rowKey, keyColumn, keyCtxKey, column);
-        assertCellValue(rowKey, keyColumn, keyCtxKey, column, expected, ctx.badgeLabel(cell));
-    }
-
     /** As the text step, with the expected value from stored variable {@code expectedCtxKey}. */
     @Then("^blotter '([^']*)' row with column '([^']*)' from stored variable '([^']*)' has column '([^']*)' as stored variable '([^']*)'$")
     public void assertBlotterCellTextFromStoredVariable(String rowKey, String keyColumn, String keyCtxKey, String column,

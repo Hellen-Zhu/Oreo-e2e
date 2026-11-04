@@ -135,8 +135,6 @@ public final class PlaywrightServiceResolver {
         public Locator cellOf(Locator row, String cellKey, String column) {
             return elements.cellOf(row, cellKey, column);
         }
-        /** The label of the {@code ui-badge} in {@code element}, read once when the element exists. */
-        public String badgeLabel(Locator element) { return actions.badgeLabel(element); }
         /** The trimmed visible text of {@code element}, read once when the element exists. */
         public String text(Locator element) { return actions.text(element); }
 

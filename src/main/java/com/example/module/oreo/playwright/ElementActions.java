@@ -81,18 +81,6 @@ final class ElementActions {
         option.click();
     }
 
-    /** The {@code label} of the {@code ui-badge} in {@code element} (a DOM property, which text matching cannot see). */
-    String badgeLabel(Locator element) {
-        Object label = element.evaluate(
-                "el => { const badge = el.querySelector('ui-badge'); return badge ? badge.label : null; }",
-                null,
-                new Locator.EvaluateOptions().setTimeout(timeoutMillis.getAsLong()));
-        if (label == null) {
-            throw new AssertionError("No ui-badge with a label in " + element);
-        }
-        return String.valueOf(label).trim();
-    }
-
     /** The trimmed visible text of {@code element}. */
     String text(Locator element) {
         return element.innerText(new Locator.InnerTextOptions().setTimeout(timeoutMillis.getAsLong())).trim();

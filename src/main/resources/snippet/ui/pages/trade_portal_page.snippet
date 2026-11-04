@@ -44,9 +44,9 @@
 @When "^page trade portal searches and views trade stored as '([^']*)'$"
     When search for trade stored as '$1' in blotter
 
-# The row of the trade by its exact ID (column 'id'); status is a badge, event status is text.
+# The row of the trade by its exact ID (column 'id'), then the text of its cells.
 @Then "^page trade portal blotter row of trade stored as '([^']*)' shows status '([^']*)' and event status '([^']*)'$"
-    Then blotter 'trade_portal.all_trades_blotter_row' row with column 'id' from stored variable '$1' has badge in column 'trade.basic.status' as '$2'
+    Then blotter 'trade_portal.all_trades_blotter_row' row with column 'id' from stored variable '$1' has column 'trade.basic.status' as '$2'
     And blotter 'trade_portal.all_trades_blotter_row' row with column 'id' from stored variable '$1' has column 'trade.basic.eventStatus' as '$3'
 
 @Then "^page trade portal blotter row of trade stored as '([^']*)' column '([^']*)' matches stored variable '([^']*)'$"
