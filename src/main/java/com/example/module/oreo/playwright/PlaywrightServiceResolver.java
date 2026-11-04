@@ -2,7 +2,6 @@ package com.example.module.oreo.playwright;
 
 import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
-import com.microsoft.playwright.Request;
 import com.example.genie.model.GenieScenario;
 import com.example.genie.module.playwright.core.PlaywrightService;
 import com.example.module.oreo.glue.ScenarioContext;
@@ -141,55 +140,25 @@ public final class PlaywrightServiceResolver {
             );
         }
 
-        // ── Actions that wait for a response (ResponseWaiter) ──────────
-        public void runAndWaitForResponse(Runnable action, String urlFragment, String httpMethod) {
-            responses.runAndWaitForResponse(action, urlFragment, httpMethod);
-        }
-        public void runAndWaitForResponse(Runnable action, String urlFragment, String httpMethod, double timeoutMs) {
-            responses.runAndWaitForResponse(action, urlFragment, httpMethod, timeoutMs);
-        }
+        // ── Actions that wait for their response (ResponseWaiter) ──────
+        // Each waits for the request the action sends and its whole response, and asserts HTTP 200.
         public void clickAndWaitForResponse(String locatorKey, String urlFragment, String httpMethod) {
-            responses.clickAndWaitForResponse(locatorKey, urlFragment, httpMethod);
-        }
-        public void clickAndWaitForResponse(String locatorKey, String urlFragment, String httpMethod, double timeoutMs) {
-            responses.clickAndWaitForResponse(locatorKey, urlFragment, httpMethod, timeoutMs);
+            clickAndWaitForResponse(service.getLocator(locatorKey), urlFragment, httpMethod);
         }
         public void clickAndWaitForResponse(Locator locator, String urlFragment, String httpMethod) {
-            responses.clickAndWaitForResponse(locator, urlFragment, httpMethod);
+            responses.runAndWaitForResponse(locator::click, urlFragment, httpMethod);
         }
         public void doubleClickAndWaitForResponse(String locatorKey, String urlFragment, String httpMethod) {
-            responses.doubleClickAndWaitForResponse(locatorKey, urlFragment, httpMethod);
-        }
-        public void fillAndWaitForResponse(String locatorKey, String value, String urlFragment, String httpMethod) {
-            responses.fillAndWaitForResponse(locatorKey, value, urlFragment, httpMethod);
-        }
-        public void fillAndWaitForResponse(Locator locator, String value, String urlFragment, String httpMethod) {
-            responses.fillAndWaitForResponse(locator, value, urlFragment, httpMethod);
-        }
-        public void fillInnerInputAndWaitForResponse(String locatorKey, String value, String urlFragment, String httpMethod) {
-            responses.fillInnerInputAndWaitForResponse(locatorKey, value, urlFragment, httpMethod);
+            Locator locator = service.getLocator(locatorKey);
+            responses.runAndWaitForResponse(locator::dblclick, urlFragment, httpMethod);
         }
         public void refreshAndWaitForResponse(String urlFragment, String httpMethod) {
-            responses.refreshAndWaitForResponse(urlFragment, httpMethod);
+            responses.runAndWaitForResponse(() -> service.getPage().reload(), urlFragment, httpMethod);
         }
+        /** Like {@link #clickAndWaitForResponse(String, String, String)}, accepting 200 or 201; returns the body. */
         public String clickAndCaptureResponse(String locatorKey, String urlFragment, String httpMethod) {
-            return responses.clickAndCaptureResponse(locatorKey, urlFragment, httpMethod);
-        }
-        public Request clickAndCaptureRequest(String locatorKey, String urlFragment, String httpMethod) {
-            return responses.clickAndCaptureRequest(locatorKey, urlFragment, httpMethod);
-        }
-
-        /**
-         * Navigates to {@code path} (relative to the configured base URL), waits for the
-         * specified API response, asserts HTTP 200, and returns the response body.
-         *
-         * @param path        path relative to base URL, e.g. {@code "/trade/TRD-001"}
-         * @param urlFragment URL substring to match (e.g. {@code "/api/v1/trades/TRD-001"})
-         * @param httpMethod  HTTP method to match (e.g. {@code "GET"})
-         * @return response body as a UTF-8 string
-         */
-        public String navigateAndCaptureResponse(String path, String urlFragment, String httpMethod) {
-            return responses.runAndCaptureResponse(() -> navigateToPath(path), urlFragment, httpMethod);
+            Locator locator = service.getLocator(locatorKey);
+            return responses.runAndCaptureResponse(locator::click, urlFragment, httpMethod);
         }
 
         // ── Mock routes (RouteMocks) ───────────────────────────────────
@@ -225,13 +194,13 @@ public final class PlaywrightServiceResolver {
                 case MOCK:
                     mockRoute(riskUrl, 200, TestData.setup(mockSetup).response());
                     try {
-                        runAndWaitForResponse(click, riskUrl, "POST");
+                        responses.runAndWaitForResponse(click, riskUrl, "POST");
                     } finally {
                         clearMockRoute(riskUrl);
                     }
                     return;
                 case REAL:
-                    runAndWaitForResponse(click, riskUrl, "POST");
+                    responses.runAndWaitForResponse(click, riskUrl, "POST");
                     return;
                 default:
                     throw new IllegalStateException("Unhandled risk engine mode: " + mode);
