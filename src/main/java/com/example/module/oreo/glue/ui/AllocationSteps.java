@@ -24,16 +24,12 @@ public class AllocationSteps {
     // ── Confirm allocation + wait for trades API ────────────────────────
 
     /**
-     * Clicks the confirm button on the trade-change-confirmation dialog, then
-     * waits for the backend {@code GET /api/v1/trades} response to come back
-     * with HTTP 200 before proceeding.
-     *
-     * <p>The response body is stored as {@code tradesAfterAllocation} so that
-     * {@code verifyAllocationDiff} can compare it against the before-allocation snapshot.
+     * Clicks the confirm button on the trade-change-confirmation dialog and waits for
+     * {@code POST /trades/trigger-event} to return HTTP 200. The body is not kept.
      */
     @When("^user confirms allocation and waits for allocation response$")
     public void confirmAllocationAndWaitForResponse() {
-        ctx.clickAndCaptureResponse(
+        ctx.clickAndWaitForResponse(
                 "trade_change_confirmation.confirm_btn", TradeApiClient.TRIGGER_EVENT_PATH, "POST");
         log.info("[AllocationSteps] Allocation confirmed — POST /trades/trigger-event completed.");
     }

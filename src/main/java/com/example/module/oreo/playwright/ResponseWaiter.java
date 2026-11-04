@@ -8,6 +8,7 @@ import com.example.genie.module.playwright.core.PlaywrightService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.function.Consumer;
 import java.util.function.LongSupplier;
 
 /**
@@ -47,8 +48,9 @@ final class ResponseWaiter {
     }
 
     /**
-     * The inner wait finds the request the action sends; the outer one, which shares the same timeout, takes only
-     * that request's response.
+     * A request listener, registered before the action, records the first matching request; the response wait takes
+     * only that request's response. The request event always comes before its response event, so a fast (or mocked)
+     * response that arrives while the click is still running is matched too.
      */
     private Response awaitResponse(Runnable action, String urlFragment, String httpMethod) {
         String awaited = httpMethod + " " + urlFragment;
@@ -56,16 +58,19 @@ final class ResponseWaiter {
         Page page = service.getPage();
         log.info("[ResponseWaiter] waiting up to {} ms for {}", timeoutMs, awaited);
         Request[] sent = {null};
+        Consumer<Request> recordFirstMatch = r -> {
+            if (sent[0] == null && r.url().contains(urlFragment) && r.method().equals(httpMethod)) {
+                sent[0] = r;
+            }
+        };
         long start = System.nanoTime();
         Response response;
+        page.onRequest(recordFirstMatch);
         try {
             response = page.waitForResponse(
-                    r -> r.request() == sent[0],
+                    r -> sent[0] != null && r.request() == sent[0],
                     new Page.WaitForResponseOptions().setTimeout(timeoutMs),
-                    () -> sent[0] = page.waitForRequest(
-                            r -> r.url().contains(urlFragment) && r.method().equals(httpMethod),
-                            new Page.WaitForRequestOptions().setTimeout(timeoutMs),
-                            action));
+                    action);
         } catch (TimeoutError e) {
             String message = (sent[0] == null
                     ? "No " + awaited + " sent within " + timeoutMs + " ms (" + firstLine(e.getMessage()) + ")"
@@ -74,6 +79,8 @@ final class ResponseWaiter {
                     + ". Page: " + page.url();
             log.error("[ResponseWaiter] {}", message);
             throw new AssertionError(message, e);
+        } finally {
+            page.offRequest(recordFirstMatch);
         }
         String failure = response.finished();
         if (failure != null) {
