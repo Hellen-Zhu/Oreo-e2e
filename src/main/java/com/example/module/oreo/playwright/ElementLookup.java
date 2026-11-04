@@ -9,10 +9,7 @@ import com.example.genie.module.playwright.core.PlaywrightService;
 
 import java.lang.reflect.Field;
 
-/**
- * Finds elements through Genie's element repository, including table rows and cells. The repository has no public
- * accessor: reflection on it stays in this class.
- */
+/** Reads Genie's element repository, which has no public accessor: reflection on it stays in this class. */
 final class ElementLookup {
 
     private final PlaywrightService service;
@@ -63,32 +60,14 @@ final class ElementLookup {
      * match; two matching rows fail when the row is used.
      */
     Locator rowWithCell(String rowKey, String cellKey, String column, String text) {
-        Locator cell = service.getPage().locator(locatorSelector(cellKey, column))
+        Locator cell = getLocatorWithParam(cellKey, column)
                 .getByText(text, new Locator.GetByTextOptions().setExact(true));
         return service.getLocator(rowKey).filter(new Locator.FilterOptions().setHas(cell));
     }
 
     /** The cell {@code cellKey} (with {@code {0}} = {@code column}) inside {@code row}. */
     Locator cellOf(Locator row, String cellKey, String column) {
-        return row.locator(locatorSelector(cellKey, column));
-    }
-
-    /**
-     * The CSS selector of an element found by locator, with {@code {0}} replaced by {@code value}: for an element
-     * looked up inside another one ({@code row.locator(selector)}).
-     */
-    private String locatorSelector(String name, String value) {
-        PlaywrightLocatorWrapper element;
-        try {
-            element = elementRepository().lookup(name);
-        } catch (ReflectiveOperationException e) {
-            throw new RuntimeException("Element lookup failed for: " + name, e);
-        }
-        if (!String.valueOf(element.getFindBy()).replaceAll("[^A-Za-z]", "").equalsIgnoreCase("locator")) {
-            throw new IllegalStateException(
-                    "Element '" + name + "' must be found by locator, but is found by " + element.getFindBy());
-        }
-        return element.getValue().replace("{0}", value);
+        return row.locator(getLocatorWithParam(cellKey, column));
     }
 
     private PlaywrightElementRepository elementRepository() throws ReflectiveOperationException {
