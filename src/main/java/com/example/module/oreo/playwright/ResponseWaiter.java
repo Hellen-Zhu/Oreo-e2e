@@ -8,16 +8,17 @@ import com.example.genie.module.playwright.core.PlaywrightService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.List;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.function.LongSupplier;
 
 /**
- * Runs a UI action and waits for the API call it causes: the first matching request sent after the action started,
- * then that request's response with its whole body; optionally then a follow-up call the page sends once the first is
- * answered (a reload). A matching request already in flight before the action is not taken for it. Each call has the
- * whole timeout. A timeout or a wrong status fails with what was awaited instead of Playwright's bare
- * "Timeout exceeded".
+ * Runs a UI action and waits for the API calls it causes, in order: for each call, the first matching request sent
+ * after the previous call was answered (the first: after the action started), then that request's response with its
+ * whole body. A matching request already in flight before the action is not taken for it. Each call has the whole
+ * timeout, counted from the previous answer. A timeout or a wrong status fails with what was awaited instead of
+ * Playwright's bare "Timeout exceeded".
  */
 final class ResponseWaiter {
 
@@ -44,82 +45,76 @@ final class ResponseWaiter {
 
     /** Runs {@code action} and asserts its response is HTTP 200. */
     void runAndWaitForResponse(Runnable action, String urlFragment, String httpMethod) {
-        Call call = new Call(httpMethod, urlFragment);
-        expectStatus200(call, awaitResponses(action, call, null)[0]);
+        runAndWaitForResponses(action, List.of(new Call(httpMethod, urlFragment)));
     }
 
     /** Runs {@code action}, asserts its response is HTTP 200 or 201 and returns the body. */
     String runAndCaptureResponse(Runnable action, String urlFragment, String httpMethod) {
         Call call = new Call(httpMethod, urlFragment);
-        Response response = awaitResponses(action, call, null)[0];
+        Response response = awaitResponses(action, List.of(call)).get(0);
         if (response.status() != 200 && response.status() != 201) {
             throw statusError(call, "2xx", response);
         }
         return response.text();
     }
 
-    /**
-     * Runs {@code action}, waits for {@code first}, then for {@code then} sent after {@code first} was answered;
-     * asserts HTTP 200 on both and returns the body of {@code first}.
-     */
-    String runAndWaitForResponseThen(Runnable action, Call first, Call then) {
-        Response[] responses = awaitResponses(action, first, then);
-        expectStatus200(first, responses[0]);
-        expectStatus200(then, responses[1]);
-        return responses[0].text();
+    /** Runs {@code action}, waits for {@code calls} in order and asserts each response is HTTP 200. */
+    List<Response> runAndWaitForResponses(Runnable action, List<Call> calls) {
+        List<Response> responses = awaitResponses(action, calls);
+        for (int i = 0; i < calls.size(); i++) {
+            expectStatus200(calls.get(i), responses.get(i));
+        }
+        return responses;
     }
 
     /**
      * Listeners registered before the action record the requests as their events arrive (a request event always comes
-     * before its response event, so a fast or mocked response is not missed) and their responses. {@code then} may be
-     * {@code null}.
+     * before its response event, so a fast or mocked response is not missed) and their responses; the call after
+     * them is waited for once the previous one is answered, each up to the whole timeout.
      */
-    private Response[] awaitResponses(Runnable action, Call first, Call then) {
+    private List<Response> awaitResponses(Runnable action, List<Call> calls) {
+        int count = calls.size();
         long timeoutMs = timeoutMillis.getAsLong();
         Page page = service.getPage();
-        log.info("[ResponseWaiter] waiting up to {} ms for {}{}", timeoutMs, first, then == null ? "" : ", then " + then);
-        Request[] sent = new Request[2];
-        Response[] answered = new Response[2];
+        log.info("[ResponseWaiter] waiting up to {} ms for each of {}", timeoutMs, calls);
+        Request[] sent = new Request[count];
+        Response[] answered = new Response[count];
         Consumer<Request> recordRequest = r -> {
-            if (sent[0] == null) {
-                if (first.matches(r)) sent[0] = r;
-            } else if (then != null && sent[1] == null && answered[0] != null && then.matches(r)) {
-                sent[1] = r;
+            int next = 0;
+            while (next < count && sent[next] != null) next++;
+            if (next < count && (next == 0 || answered[next - 1] != null) && calls.get(next).matches(r)) {
+                sent[next] = r;
             }
         };
         Consumer<Response> recordResponse = r -> {
-            if (answered[0] == null && r.request() == sent[0]) {
-                answered[0] = r;
-            } else if (sent[1] != null && answered[1] == null && r.request() == sent[1]) {
-                answered[1] = r;
+            for (int i = 0; i < count; i++) {
+                if (sent[i] != null && answered[i] == null && r.request() == sent[i]) {
+                    answered[i] = r;
+                }
             }
         };
         long start = System.nanoTime();
         page.onRequest(recordRequest);
         page.onResponse(recordResponse);
         try {
-            try {
-                action.run();
-                waitUntil(page, () -> answered[0] != null, timeoutMs);
-            } catch (TimeoutError e) {
-                throw timedOut(first, sent[0], null, timeoutMs, e);
-            }
-            if (then != null) {
+            for (int i = 0; i < count; i++) {
+                int call = i;
                 try {
-                    waitUntil(page, () -> answered[1] != null, timeoutMs);
+                    if (call == 0) action.run();
+                    waitUntil(page, () -> answered[call] != null, timeoutMs);
                 } catch (TimeoutError e) {
-                    throw timedOut(then, sent[1], first, timeoutMs, e);
+                    throw timedOut(calls.get(call), sent[call], call == 0 ? null : calls.get(call - 1), timeoutMs, e);
                 }
             }
         } finally {
             page.offRequest(recordRequest);
             page.offResponse(recordResponse);
         }
-        expectBody(first, answered[0]);
-        if (then != null) expectBody(then, answered[1]);
-        log.info("[ResponseWaiter] {}{} answered in {} ms", first, then == null ? "" : ", then " + then,
-                (System.nanoTime() - start) / 1_000_000);
-        return answered;
+        for (int i = 0; i < count; i++) {
+            expectBody(calls.get(i), answered[i]);
+        }
+        log.info("[ResponseWaiter] {} answered in {} ms", calls, (System.nanoTime() - start) / 1_000_000);
+        return List.of(answered);
     }
 
     private static void waitUntil(Page page, BooleanSupplier condition, long timeoutMs) {
