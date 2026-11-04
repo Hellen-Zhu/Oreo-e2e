@@ -16,7 +16,7 @@
     When component dynamic action clicks confirm button
     And component trade change confirmation dialog is visible
     And component trade change confirmation types comments from stored variable 'comments'
-    And confirm lifecycle event trade change and capture response as 'allocationResponse'
+    And page trade portal confirms trade change, captures response as 'allocationResponse' and waits for New Today Blotter to reload
     And store e2e response list 'data.results[0].childTradeIds' from stored variable 'allocationResponse' as numbered 'allocatedTradeId'
 
 @Then "^the allocation is completed successfully$"
