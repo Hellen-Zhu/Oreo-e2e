@@ -254,7 +254,8 @@ public final class ResponseSuggestions {
 
     /**
      * Per product with two cases or more: the case that, as the base of the others, leaves the fewest characters
-     * (each other case written as its patch or in full, whichever is shorter, as the compaction does). A tie goes to
+     * (each other case written as its patch or in full, whichever is shorter: the compaction always writes a patch on
+     * a declared base, so a case left in full takes {@code "expectedBase": null} in its row). A tie goes to
      * the lowest case number. Cases without a product have no base and are left out.
      *
      * @param responses case ID -> its full (resolved) response

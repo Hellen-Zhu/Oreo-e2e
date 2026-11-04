@@ -123,7 +123,10 @@ final class ExpectedFileChecks {
 
     // ── 10.7 ─────────────────────────────────────────────────────────────────
 
-    /** Plans {@code compact all}: a file or shared part it would write, or a shared file it would delete, is reported. */
+    /**
+     * Plans {@code compact all}: a file or shared part it would write, or a shared file it would delete, is reported;
+     * so is a patch longer than the case's full form.
+     */
     void expectedFilesAreCompacted(Checks.Result result) {
         ExpectedResponses expected = ExpectedResponses.standard();
         ExpectedCompaction.Shared shared = ExpectedCompaction.Shared.rebuild(expected);
@@ -135,6 +138,9 @@ final class ExpectedFileChecks {
             for (ExpectedCompaction.Entry entry : plan.entries()) {
                 if (entry.changed()) {
                     result.warnings.add(project.relativize(expected.fileFor(entry.id())) + ": " + entry.note());
+                }
+                if (entry.warning() != null) {
+                    result.warnings.add(project.relativize(expected.fileFor(entry.id())) + ": " + entry.warning());
                 }
             }
         }

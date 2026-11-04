@@ -182,8 +182,13 @@ A base has no base of its own.
 The case is compared strictly with the base's file plus the ops. Recording always writes the full response; the
 compaction, `mvn -Ptest-data process-test-classes "-Dexec.args=compact trade_creation"` ("Commands", below; `compact all` for every event), then turns the variants into
 patches. Objects are compared key by key, arrays of the same length element by element, other arrays are replaced
-whole; a patch that is not shorter than the full response is not written. Any problem (a base without a file, a patch
-that does not apply) stops it before a file is written, and a second run changes nothing. Then review
+whole. A case with a base is always written as its patch: the form follows the data, never the length, so a new shared
+part (`shared`, `compact all`) or a new recording does not turn a patch into a full file or back. The base itself is
+written in full, its shared parts as references; the patch applies to the base with those references resolved, so a
+change of a shared part reaches the variants through their base. A patch that is not shorter than the case's full
+form is written all the same and reported (`[warn]` in `check` and `compact`): `"expectedBase": null` in the case's
+row (a rejected request, say) keeps it in full, with its shared parts as references. Any problem (a base without a
+file, a patch that does not apply) stops it before a file is written, and a second run changes nothing. Then review
 `git diff` and commit. A change every variant shares (a new response field) shows in the base files only.
 
 Re-record a base together with its variants. A base recorded alone can leave a variant's patch that no longer fits
@@ -326,7 +331,8 @@ fails when none ran: should it report no tests (a JUnit Platform without the vin
    the value) is not dynamic; the ID this scenario created is better `var:createdTradeId`; a value that differs per
    product is data. A rejected case without a `defaults` path needs `"dynamicFields": null` in its row.
 2. **`expectedBase`.** Per product with two recorded cases or more, every case is tried as the base of the others,
-   each written as its patch or in full, whichever is shorter (as `compact` does), and the characters left are
+   each written as its patch or in full, whichever is shorter (in full: `"expectedBase": null` in its row), and the
+   characters left are
    counted; the declared base is shown beside the best. When the declared base is within 10% of the best for every
    product it says to keep it (the plain case is the easier base to read a patch against); otherwise the best as
    `defaults` (`TC-<EVENT>-<product_type>-API-<NNN>`) when every product's best has the same number, per product when

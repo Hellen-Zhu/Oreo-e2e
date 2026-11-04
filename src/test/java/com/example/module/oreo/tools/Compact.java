@@ -91,6 +91,7 @@ final class Compact {
             out.append(plan.eventFile()).append(":\n");
             for (ExpectedCompaction.Entry entry : rewritten) {
                 out.append("  ").append(entry.id().raw()).append(".json: ").append(entry.note()).append('\n');
+                if (entry.warning() != null) out.append("    [warn] ").append(entry.warning()).append('\n');
             }
             changed += rewritten.size();
         }

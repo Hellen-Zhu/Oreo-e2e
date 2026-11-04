@@ -14,6 +14,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -282,5 +283,34 @@ public class ExpectedResponsesTest {
         ExpectedCompaction.plan(expected, "trade_creation", c -> null, c -> Map.of(), shared);
         ExpectedCompaction.write(expected, shared);
         assertEquals(List.of(), expected.shared().names());
+    }
+
+    @Test
+    public void aDeclaredBaseAlwaysGivesAPatchAndALongerOneIsFlagged() {
+        expected.write(id, "{\"trade\":{\"id\":1,\"basic\":" + BASIC + ",\"trace\":[1,2,3]}}");
+        expected.write(variant, "{\"trade\":{\"id\":2,\"basic\":" + BASIC + ",\"trace\":[9]}}");
+        Function<CaseId, String> base = c -> c.equals(id) ? null : id.raw();
+        Function<CaseId, Map<String, String>> parts = c -> Map.of("trade.basic", "basic/FX_TRF");
+        ExpectedCompaction.Shared shared = ExpectedCompaction.Shared.fromDisk(expected);
+        ExpectedCompaction.Plan plan = ExpectedCompaction.plan(expected, "trade_creation", base, parts, shared);
+        assertEquals(List.of(), plan.errors());
+        ExpectedCompaction.write(expected, shared);
+        ExpectedCompaction.write(expected, plan);
+
+        ExpectedCompaction.Entry entry = plan.entries().stream().filter(e -> e.id().equals(variant)).findFirst()
+                .orElseThrow();
+        assertTrue("a patch although the full form with its reference is shorter",
+                ExpectedResponses.isPatch(Json.parse(expected.read(variant).orElseThrow())));
+        assertTrue(entry.warning(), entry.warning().contains("\"expectedBase\": null"));
+        assertNull(plan.entries().stream().filter(e -> e.id().equals(id)).findFirst().orElseThrow().warning());
+        assertEquals(Json.parse("{\"trade\":{\"id\":2,\"basic\":" + BASIC + ",\"trace\":[9]}}"),
+                Json.parse(expected.resolve(variant).orElseThrow().json()));
+
+        // a new shared part does not change the form
+        ObjectNode newPart = (ObjectNode) Json.parse("{\"status\":\"Live\",\"ccy\":\"EUR\"}");
+        ExpectedCompaction.Plan again = ExpectedCompaction.plan(expected, "trade_creation", base, parts,
+                ExpectedCompaction.Shared.withParts(expected, Map.of("basic/FX_TRF", newPart)));
+        assertTrue(again.entries().stream().filter(e -> e.id().equals(variant)).findFirst().orElseThrow().note()
+                .startsWith("patch on " + id.raw()));
     }
 }

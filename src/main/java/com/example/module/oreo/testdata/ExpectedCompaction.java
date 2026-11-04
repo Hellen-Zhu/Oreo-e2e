@@ -20,8 +20,10 @@ import java.util.function.Function;
  *
  * <ol>
  *   <li>every file is resolved to its full form first, from the files as they are;</li>
- *   <li>a case with base {@code B} gets the patch from {@code B}'s full form to its own, written only when its
- *       text is shorter than the full form's;</li>
+ *   <li>a case with base {@code B} gets the patch from {@code B}'s full form to its own, always: the form follows
+ *       the data ({@code expectedBase}), never the length, so a change of a shared part or a new recording does not
+ *       turn a patch into a full file or back. A patch longer than the full form is flagged ({@link Entry#warning}):
+ *       {@code "expectedBase": null} in the case's row keeps it in full;</li>
  *   <li>in a file kept in full, each part the case declares shared ({@code sharedFragments}) becomes a reference to
  *       {@code _shared/<name>.json} plus the keys that differ from it; a part not written yet is taken from the first
  *       case that has it ({@link Shared});</li>
@@ -34,8 +36,11 @@ import java.util.function.Function;
  */
 public final class ExpectedCompaction {
 
-    /** One file: its text before and after, and its form after ({@code full (no base)}, {@code patch on ...}). */
-    public record Entry(CaseId id, String before, String after, String note) {
+    /**
+     * One file: its text before and after, its form after ({@code full (no base)}, {@code patch on ...}) and, for a
+     * patch longer than the case's full form, a warning ({@code null} otherwise).
+     */
+    public record Entry(CaseId id, String before, String after, String note, String warning) {
         public boolean changed() {
             return !before.equals(after);
         }
@@ -184,12 +189,11 @@ public final class ExpectedCompaction {
             patch.put("_base", base);
             patch.set("_patch", ops);
             String patchText = Json.pretty(patch);
-            String fullText = Json.pretty(withReferences(own, fragments.get(id.raw()), shared, null));
-            if (patchText.length() < fullText.length()) {
-                entries.add(new Entry(id, old, patchText, "patch on " + base + ", " + ops.size() + " ops"));
-            } else {
-                entries.add(full(id, old, own, "full (patch not shorter)", fragments.get(id.raw()), shared, errors));
-            }
+            int fullLength = Json.pretty(withReferences(own, fragments.get(id.raw()), shared, null)).length();
+            String warning = patchText.length() < fullLength ? null
+                    : "its patch on " + base + " (" + patchText.length() + " chars) is not shorter than its full form ("
+                            + fullLength + "): \"expectedBase\": null in its row keeps it in full";
+            entries.add(new Entry(id, old, patchText, "patch on " + base + ", " + ops.size() + " ops", warning));
         }
         return new Plan(eventFile, List.copyOf(entries), List.copyOf(errors));
     }
@@ -205,7 +209,8 @@ public final class ExpectedCompaction {
             errors.add(id.raw() + ": " + e.getMessage());
             out = own;
         }
-        return new Entry(id, old, Json.pretty(out), notes.isEmpty() ? form : form + "; " + String.join("; ", notes));
+        return new Entry(id, old, Json.pretty(out), notes.isEmpty() ? form : form + "; " + String.join("; ", notes),
+                null);
     }
 
     /**
