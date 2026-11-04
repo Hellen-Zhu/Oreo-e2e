@@ -15,6 +15,10 @@
 @When "^page trade portal refreshes and waits for New Today Blotter$"
     When refresh trade blotter and wait for blotter 'BLT-DEFAULT-NEW-TODAY' to be ready
 
+# The step's earlier wording, kept for its existing callers: refreshes and waits for the New Today blotter.
+@When "^refresh trade blotter and wait for page ready$"
+    When page trade portal refreshes and waits for New Today Blotter
+
 @When "^page trade portal navigates to Trade Portal page$"
     When click 'trade_portal.nav_trades_tab'
     And atomic refresh webpage and wait for page ready
