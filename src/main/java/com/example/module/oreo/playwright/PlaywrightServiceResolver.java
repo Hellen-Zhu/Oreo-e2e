@@ -12,7 +12,6 @@ import cucumber.api.Scenario;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.List;
 
 public final class PlaywrightServiceResolver {
 
@@ -157,15 +156,15 @@ public final class PlaywrightServiceResolver {
         }
         /**
          * Clicks {@code locatorKey}, waits for the {@code httpMethod urlFragment} response the click causes, then for the
-         * {@code thenHttpMethod thenUrlFragment} response the page sends after it (a reload the UI does by itself);
-         * asserts HTTP 200 on both and returns the first body.
+         * {@code thenHttpMethod thenUrlFragment} response the page sends after it (a reload the UI does by itself), each
+         * with the whole timeout; asserts HTTP 200 on both and returns the first body.
          */
         public String clickAndWaitForResponses(String locatorKey, String urlFragment, String httpMethod,
                                                String thenUrlFragment, String thenHttpMethod) {
             Locator locator = service.getLocator(locatorKey);
-            return responses.runAndWaitForResponses(locator::click, List.of(
+            return responses.runAndWaitForResponseThen(locator::click,
                     new ResponseWaiter.Call(httpMethod, urlFragment),
-                    new ResponseWaiter.Call(thenHttpMethod, thenUrlFragment))).get(0).text();
+                    new ResponseWaiter.Call(thenHttpMethod, thenUrlFragment));
         }
         /** Like {@link #clickAndWaitForResponse(String, String, String)}, accepting 200 or 201; returns the body. */
         public String clickAndCaptureResponse(String locatorKey, String urlFragment, String httpMethod) {
