@@ -21,8 +21,12 @@
     And page trade portal searches and views trade stored as 'createdTradeId'
     And page trade portal blotter row of trade stored as 'createdTradeId' shows status '$1' and event status '$2'
 
+# After approve or reject from the blotter, which the page reloaded: the row is checked where it is.
 @Then "^the trade is Live and marked as New$"
-    Then the trade has status 'LIVE' and event status 'New' in the blotter
+    Then page trade portal blotter row of trade stored as 'createdTradeId' shows status 'LIVE' and event status 'New'
+
+@Then "^the trade is Draft and marked as New$"
+    Then page trade portal blotter row of trade stored as 'createdTradeId' shows status 'DRFT' and event status 'New'
 
 @Then "^trade status is updated to '([^']*)' and event status is updated to '([^']*)' in the trade portal page$"
     When page trade detail navigates back to blotter view

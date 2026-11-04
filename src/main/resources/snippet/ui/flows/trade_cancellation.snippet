@@ -72,5 +72,6 @@
 @Then "^the cancellation request is pending checker approval$"
     Then page trade portal blotter row of trade stored as 'createdTradeId' shows status 'PARV' and event status 'Cancelled'
 
+# After the cancellation is approved from the blotter, which the page reloaded: the row is checked where it is.
 @Then "^the trade is closed as Cancelled$"
-    Then the trade has status 'DEAD' and event status 'Cancelled' in the blotter
+    Then page trade portal blotter row of trade stored as 'createdTradeId' shows status 'DEAD' and event status 'Cancelled'

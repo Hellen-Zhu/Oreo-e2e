@@ -2,13 +2,13 @@
     When page trade portal searches and opens action menu for trade stored as 'createdTradeId'
     And page trade portal approve action button is visible
     And page trade portal clicks approve action for current trade
-    And page trade portal confirms approval or reject trade
+    And page trade portal confirms approval or reject trade and waits for New Today Blotter to reload
 
 @When "^rejects the pending trade from trade portal$"
     When page trade portal searches and opens action menu for trade stored as 'createdTradeId'
     And page trade portal reject action button is visible
     And page trade portal clicks reject action for current trade
-    And page trade portal confirms approval or reject trade
+    And page trade portal confirms approval or reject trade and waits for New Today Blotter to reload
 
 @When "^selects all pending cancellation trades and submits a bulk approval$"
     When page trade portal filters trade by product type as 'FX_TRF'
@@ -17,7 +17,7 @@
     And page trade portal selects trade stored as 'createdTradeId1' for bulk action
     And page trade portal selects trade stored as 'createdTradeId2' for bulk action
     And page trade portal clicks bulk approve for selected trades
-    And page trade portal confirms approval or reject trade
+    And page trade portal confirms approval or reject trade and waits for New Today Blotter to reload
 
 @Then "^cannot approve or reject the Pending Approval trade$"
     When page trade portal searches and opens action menu for trade stored as 'createdTradeId'

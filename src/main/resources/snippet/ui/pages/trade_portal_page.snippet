@@ -63,8 +63,9 @@
     When page trade portal searches and views trade stored as '$1'
     And open action menu item for new today blotter from stored variable '$1'
 
-@When "^page trade portal confirms approval or reject trade and waits for page ready$"
-    When click 'checker_action.confirm_btn'
+# Approve or reject started from the blotter: the page reloads the blotter by itself once the checker task is answered.
+@When "^page trade portal confirms approval or reject trade and waits for New Today Blotter to reload$"
+    When confirm checker action from the blotter and wait for blotter 'BLT-DEFAULT-NEW-TODAY' to reload
     And assert that 'checker_action.dialog' is eventually hidden
 
 @When "^page trade portal selects trade stored as '([^']*)' for bulk action$"
