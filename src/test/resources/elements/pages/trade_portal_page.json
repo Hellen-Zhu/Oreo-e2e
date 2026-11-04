@@ -51,7 +51,7 @@
   {"name": "trade_portal.blotter_view_all_export_btn","lookupDetails": {"findBy": "testId","value": "blotter-view-BLT-DEFAULT-NEW-TODAY-export-btn"}},
   {"name": "trade_portal.blotter_view_all_maximize_btn","lookupDetails": {"findBy": "testId","value": "blotter-view-BLT-DEFAULT-NEW-TODAY-maximize-btn"}},
   {"name": "trade_portal.blotter_view_all_close_btn","lookupDetails": {"findBy": "testId","value": "blotter-view-BLT-DEFAULT-NEW-TODAY-close-btn"}},
-  {"name": "trade_portal.blotter_view_all_refreshing_state","lookupDetails": {"findBy": "testId","value": "blotter-view-BLT-DEFAULT-NEW-TODAY-refreshing-state"}},
+  {"name": "trade_portal.blotter_view_refreshing_state","lookupDetails": {"findBy": "testId","value": "blotter-view-{0}-refreshing-state"}},
   {"name": "trade_portal.all_trade_blotter","lookupDetails": {"findBy": "testId","value": "blotter-table-new-today"}},
   {"name": "trade_portal.all_trades_blotter_row","lookupDetails": {"findBy": "testId","value": "new-today-row"}},
   {"name": "trade_portal.blotter_view_forward_trades","lookupDetails": {"findBy": "testId","value": "blotter-view-forwardTrades"}},

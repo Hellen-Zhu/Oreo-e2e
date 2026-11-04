@@ -12,6 +12,9 @@
 @When "^page trade portal clicks Pending Approval Blotter button$"
     When click 'trade_portal.filter_pending_btn'
 
+@When "^page trade portal refreshes and waits for New Today Blotter$"
+    When refresh trade blotter and wait for blotter 'BLT-DEFAULT-NEW-TODAY' to be ready
+
 @When "^page trade portal navigates to Trade Portal page$"
     When click 'trade_portal.nav_trades_tab'
     And atomic refresh webpage and wait for page ready

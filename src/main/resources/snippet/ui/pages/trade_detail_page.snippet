@@ -37,7 +37,7 @@
 
 @When "^page trade detail navigates back to blotter view$"
     When click 'trade_portal.nav_trades_tab'
-    And refresh trade blotter and wait for page ready
+    And page trade portal refreshes and waits for New Today Blotter
 
 @Then "^page trade detail original td_bf value is populated correctly$"
     Then assert that 'trade_detail.trf_td_bf' eventually has inner 'input' property value from stored variable 'expected.original_td_bf'
