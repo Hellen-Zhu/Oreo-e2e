@@ -53,7 +53,7 @@ public final class PlaywrightServiceResolver {
             this.elements = new ElementLookup(service);
             this.actions = new ElementActions(service, this::timeoutMillis);
             this.responses = new ResponseWaiter(service, this::timeoutMillis);
-            this.mocks = new RouteMocks(service, this::timeoutMillis);
+            this.mocks = new RouteMocks(service);
             this.assertions = new EventualAssertions(this::timeoutMillis);
         }
 
@@ -140,18 +140,6 @@ public final class PlaywrightServiceResolver {
         /** The trimmed visible text of {@code element}, read once when the element exists. */
         public String text(Locator element) { return actions.text(element); }
 
-        public void waitForFunction(String expression, Object arg) {
-            waitForFunction(expression, arg, timeoutMillis());
-        }
-
-        public void waitForFunction(String expression, Object arg, double timeoutMs) {
-            service.getPage().waitForFunction(
-                    expression,
-                    arg,
-                    new Page.WaitForFunctionOptions().setTimeout(timeoutMs)
-            );
-        }
-
         // ── Actions that wait for their response (ResponseWaiter) ──────
         // Each waits for the request the action sends and its whole response, and asserts HTTP 200.
         public void clickAndWaitForResponse(String locatorKey, String urlFragment, String httpMethod) {
@@ -173,26 +161,6 @@ public final class PlaywrightServiceResolver {
             return responses.runAndCaptureResponse(locator::click, urlFragment, httpMethod);
         }
 
-        // ── Mock routes (RouteMocks) ───────────────────────────────────
-        public void mockRoute(String urlFragment, int status, String responseBody) {
-            mocks.mockRoute(urlFragment, status, responseBody);
-        }
-        public void mockRoute(String urlFragment, int status, String responseBody, String contentType) {
-            mocks.mockRoute(urlFragment, status, responseBody, contentType);
-        }
-        public void mockRouteWithDelay(String urlFragment, int status, String responseBody) {
-            mocks.mockRouteWithDelay(urlFragment, status, responseBody);
-        }
-        public void mockRouteWithDelay(String urlFragment, int status, String responseBody, String contentType) {
-            mocks.mockRouteWithDelay(urlFragment, status, responseBody, contentType);
-        }
-        public void clearMockRoute(String urlFragment) { mocks.clearMockRoute(urlFragment); }
-
-        public void clickWithMockedResponse(String locatorKey, String urlFragment,
-                                            String httpMethod, int status, String responseBody) {
-            mocks.clickWithMockedResponse(locatorKey, urlFragment, httpMethod, status, responseBody);
-        }
-
         /**
          * Clicks {@code locatorKey} and waits for the risk calculation {@code POST riskUrl}: REAL lets the risk engine
          * answer, MOCK answers with the response of setup file {@code mockSetup}.
@@ -204,11 +172,11 @@ public final class PlaywrightServiceResolver {
             Runnable click = () -> service.getLocator(locatorKey).click();
             switch (mode) {
                 case MOCK:
-                    mockRoute(riskUrl, 200, TestData.setup(mockSetup).response());
+                    mocks.mockRoute(riskUrl, 200, TestData.setup(mockSetup).response());
                     try {
                         responses.runAndWaitForResponse(click, riskUrl, "POST");
                     } finally {
-                        clearMockRoute(riskUrl);
+                        mocks.clearMockRoute(riskUrl);
                     }
                     return;
                 case REAL:
@@ -221,30 +189,12 @@ public final class PlaywrightServiceResolver {
 
         // ── Assertions (EventualAssertions) ────────────────────────────
         public void assertEventuallyVisible(Locator locator) { assertions.assertEventuallyVisible(locator); }
-        public void assertEventuallyVisible(Locator locator, double timeoutMs) {
-            assertions.assertEventuallyVisible(locator, timeoutMs);
-        }
         public void assertEventuallyHidden(Locator locator) { assertions.assertEventuallyHidden(locator); }
-        public void assertEventuallyHidden(Locator locator, double timeoutMs) {
-            assertions.assertEventuallyHidden(locator, timeoutMs);
-        }
         public void assertEventuallyEnabled(Locator locator) { assertions.assertEventuallyEnabled(locator); }
-        public void assertEventuallyEnabled(Locator locator, double timeoutMs) {
-            assertions.assertEventuallyEnabled(locator, timeoutMs);
-        }
         public void assertEventuallyDisabled(Locator locator) { assertions.assertEventuallyDisabled(locator); }
-        public void assertEventuallyDisabled(Locator locator, double timeoutMs) {
-            assertions.assertEventuallyDisabled(locator, timeoutMs);
-        }
         public void assertEventuallyContains(Locator locator, String text) {
             assertions.assertEventuallyContains(locator, text);
         }
-        public void assertEventuallyContains(Locator locator, String text, double timeoutMs) {
-            assertions.assertEventuallyContains(locator, text, timeoutMs);
-        }
         public void assertHasValue(Locator locator, String value) { assertions.assertHasValue(locator, value); }
-        public void assertHasValue(Locator locator, String value, double timeoutMs) {
-            assertions.assertHasValue(locator, value, timeoutMs);
-        }
     }
 }
