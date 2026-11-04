@@ -2,14 +2,14 @@
 @When "^perform the Partial Novation Remaining event on the '([^']*)' trade from portal page$"
     When opens lifecycle action 'partial novation remaining' for current trade
     And fills Partial Novation Remaining event form with required values for '$1' product type
-    And confirms Partial Novation Remaining event and stores new trade id
+    And confirms Partial Novation Remaining event from the blotter and stores new trade id
 
 @When "^perform the Partial Novation Remaining event on the '([^']*)' trade from detail page$"
     When navigate to trade details for stored trade 'createdTradeId'
     And page trade detail clicks more actions button
     And page trade detail clicks partial novation remaining button
     And fills Partial Novation Remaining event form with required values for '$1' product type
-    And confirms Partial Novation Remaining event and stores new trade id
+    And confirms Partial Novation Remaining event from trade details and stores new trade id
 
 @When "^fills Partial Novation Remaining event form with required values for '([^']*)' product type$"
     When component dynamic action types remaining notional from stored variable 'remainingNotional'
@@ -17,7 +17,14 @@
     And component dynamic action selects counterparty from stored variable 'newCptyName'
     And confirm dynamic action form using configured partial risk engine mode for trade stored as 'createdTradeId'
 
-@When "^confirms Partial Novation Remaining event and stores new trade id$"
+# Started from the blotter: the page reloads the blotter by itself once trigger-event is answered.
+@When "^confirms Partial Novation Remaining event from the blotter and stores new trade id$"
+    When component trade change confirmation dialog is visible
+    And page trade portal confirms trade change, captures response as 'partialNovationRemainingResponse' and waits for New Today Blotter to reload
+    And store e2e response field 'data.results[0].childTradeIds[0]' from stored variable 'partialNovationRemainingResponse' as 'newTradeId'
+
+# Started from trade details: no blotter on the page to reload.
+@When "^confirms Partial Novation Remaining event from trade details and stores new trade id$"
     When component trade change confirmation dialog is visible
     And confirm lifecycle event trade change and capture response as 'partialNovationRemainingResponse'
     And store e2e response field 'data.results[0].childTradeIds[0]' from stored variable 'partialNovationRemainingResponse' as 'newTradeId'
