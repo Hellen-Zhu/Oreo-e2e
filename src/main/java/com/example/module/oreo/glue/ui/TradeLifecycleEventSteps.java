@@ -85,6 +85,29 @@ public class TradeLifecycleEventSteps {
     }
 
     /**
+     * Clicks Confirm & Save in the TradeChangeConfirmation dialog and follows what the page does: waits for
+     * {@code POST /trades/trigger-event}, then for the blotter reload the page sends after it
+     * ({@code POST /api/v1/blotter/trades}), then for blotter {@code blotterId} to finish refreshing.
+     */
+    @When("^confirm lifecycle event trade change and wait for blotter '([^']*)' to reload$")
+    public void confirmLifecycleEventTradeChangeAndWaitForBlotterReload(String blotterId) {
+        confirmTradeChangeAndWaitForBlotterReload(blotterId);
+    }
+
+    /** As above, and stores the trigger-event response body under {@code responseCtxKey}. */
+    @When("^confirm lifecycle event trade change, capture response as '([^']*)' and wait for blotter '([^']*)' to reload$")
+    public void confirmLifecycleEventTradeChangeCaptureAndWaitForBlotterReload(String responseCtxKey, String blotterId) {
+        ctx.set(responseCtxKey, confirmTradeChangeAndWaitForBlotterReload(blotterId));
+    }
+
+    private String confirmTradeChangeAndWaitForBlotterReload(String blotterId) {
+        String triggerEventResponse = ctx.clickAndWaitForResponses("trade_change_confirmation.confirm_btn",
+                TradeApiClient.TRIGGER_EVENT_PATH, "POST", "/api/v1/blotter/trades", "POST");
+        ctx.assertEventuallyHidden(ctx.getLocatorWithParam("trade_portal.blotter_view_refreshing_state", blotterId));
+        return triggerEventResponse;
+    }
+
+    /**
      * Clicks Confirm & Save in the TradeChangeConfirmation dialog, waits for
      * {@code POST /trades/trigger-event} to complete, and stores the response body
      * in scenario context under {@code responseCtxKey}.

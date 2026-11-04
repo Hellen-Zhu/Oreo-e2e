@@ -21,7 +21,7 @@
     And component trade change confirmation dialog is visible
     And component trade change confirmation selects reason option 'DEALER_ERROR'
     And component trade change confirmation types comments as 'cancellation for test'
-    And confirm cancel trade and wait for page ready
+    And page trade portal confirms trade change and waits for New Today Blotter to reload
 
 @When "^perform cancellation for the trade from trade detail page$"
     When opens trade detail for current trade from trade portal
@@ -68,8 +68,9 @@
 @Then "^the cancellation request is pending checker approval in trade details$"
     Then page trade detail status badge shows 'PARV'
 
+# After a cancellation from the blotter, which the page reloaded after it.
 @Then "^the cancellation request is pending checker approval$"
-    Then the trade has status 'PARV' and event status 'Cancelled' in the blotter
+    Then page trade portal blotter row of trade stored as 'createdTradeId' shows status 'PARV' and event status 'Cancelled'
 
 @Then "^the trade is closed as Cancelled$"
     Then the trade has status 'DEAD' and event status 'Cancelled' in the blotter

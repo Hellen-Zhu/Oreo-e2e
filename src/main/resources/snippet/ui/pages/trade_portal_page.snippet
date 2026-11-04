@@ -19,6 +19,13 @@
 @When "^refresh trade blotter and wait for page ready$"
     When page trade portal refreshes and waits for New Today Blotter
 
+# After an event started from the blotter: the page reloads the blotter by itself once trigger-event is answered.
+@When "^page trade portal confirms trade change and waits for New Today Blotter to reload$"
+    When confirm lifecycle event trade change and wait for blotter 'BLT-DEFAULT-NEW-TODAY' to reload
+
+@When "^page trade portal confirms trade change, captures response as '([^']*)' and waits for New Today Blotter to reload$"
+    When confirm lifecycle event trade change, capture response as '$1' and wait for blotter 'BLT-DEFAULT-NEW-TODAY' to reload
+
 @When "^page trade portal navigates to Trade Portal page$"
     When click 'trade_portal.nav_trades_tab'
     And atomic refresh webpage and wait for page ready

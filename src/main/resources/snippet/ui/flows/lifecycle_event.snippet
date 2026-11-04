@@ -9,22 +9,24 @@
 @When "^submits lifecycle event and waits for page ready$"
     When confirm dynamic action form using configured risk engine mode for trade stored as 'createdTradeId'
     And component trade change confirmation dialog is visible
-    And confirm lifecycle event trade change and wait for page ready
+    And page trade portal confirms trade change and waits for New Today Blotter to reload
 
 @When "^submits lifecycle event and stores the new trade id$"
     When confirm dynamic action form using configured risk engine mode for trade stored as 'createdTradeId'
     And component trade change confirmation dialog is visible
-    And confirm lifecycle event trade change and capture response as 'lifecycleEventResponse'
+    And page trade portal confirms trade change, captures response as 'lifecycleEventResponse' and waits for New Today Blotter to reload
     And store e2e response field 'data.results[0].childTradeIds[0]' from stored variable 'lifecycleEventResponse' as 'newTradeId'
 
+# The event was started from the blotter, which the page reloaded after it: the rows are checked where they are.
 @Then "^the trade remains Live and is marked as Amended$"
-    Then the trade has status 'LIVE' and event status 'Amended' in the blotter
+    Then page trade portal blotter row of trade stored as 'createdTradeId' shows status 'LIVE' and event status 'Amended'
 
 @Then "^the original trade is closed as Novated$"
-    Then the trade has status 'DEAD' and event status 'Novated' in the blotter
+    Then page trade portal blotter row of trade stored as 'createdTradeId' shows status 'DEAD' and event status 'Novated'
 
 @Then "^the original trade is closed as Novated and new novated trade is live$"
-    Then the new trade has status 'LIVE' and event status 'Novated' and original trade has status 'DEAD' and event status 'Novated' in the blotter
+    Then page trade portal blotter row of trade stored as 'newTradeId' shows status 'LIVE' and event status 'Novated'
+    And page trade portal blotter row of trade stored as 'createdTradeId' shows status 'DEAD' and event status 'Novated'
 
 @Then "^the trade remains Live and is marked as Novated$"
-    Then the trade has status 'LIVE' and event status 'Novated' in the blotter
+    Then page trade portal blotter row of trade stored as 'createdTradeId' shows status 'LIVE' and event status 'Novated'

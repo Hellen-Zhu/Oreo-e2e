@@ -9,4 +9,4 @@
     Then assert toast notification with type 'success' and message 'EarlyTermination completed successfully'
 
 @Then "^the trade is closed as Terminated$"
-    Then the trade has status 'DEAD' and event status 'Terminated' in the blotter
+    Then page trade portal blotter row of trade stored as 'createdTradeId' shows status 'DEAD' and event status 'Terminated'

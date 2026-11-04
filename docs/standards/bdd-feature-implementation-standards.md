@@ -130,7 +130,10 @@ Every element is registered in JSON and reached through it:
   one of the requests it sends. The response helpers wait for the first matching request the action sends and that
   request's whole response (a request already in flight is not taken for it), so a retried or reordered request
   fails the wait on a page that loaded; keep them for a response that is the result of the action (a save, a
-  refresh). A response is not a redrawn page: after a refresh, also wait for the view's loading state to go. The
+  refresh). When the page answers the action with another request of its own (the blotter reload after
+  trigger-event), wait for both in order (`ctx.clickAndWaitForResponses(...)`) and assert where the user is, instead
+  of reloading or searching again. A response is not a redrawn page: after a refresh, also wait for the view's
+  loading state to go. The
   login waits for the trade portal and its New Today blotter, not for `blotter/trades`.
 - Form values are asserted with `eventually has value` (Playwright `hasValue`), not text content.
 - Glue waits and asserts through `PlaywrightServiceResolver.Context` (`ctx.assertEventuallyContains(...)`,
