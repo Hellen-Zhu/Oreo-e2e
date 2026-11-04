@@ -12,7 +12,6 @@ import cucumber.api.Scenario;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-
 public final class PlaywrightServiceResolver {
 
     private static final Logger log = LoggerFactory.getLogger(PlaywrightServiceResolver.class);
