@@ -17,7 +17,7 @@
     And component trade change confirmation dialog is visible
     And component trade change confirmation types comments from stored variable 'comments'
     And confirm lifecycle event trade change and capture response as 'allocationResponse'
-    And store allocated sub-trade ids from stored variable 'allocationResponse'
+    And store e2e response list 'data.results[0].childTradeIds' from stored variable 'allocationResponse' as numbered 'allocatedTradeId'
 
 @Then "^the allocation is completed successfully$"
     Then assert toast notification with type 'success' and message from stored variable 'toastMessage'

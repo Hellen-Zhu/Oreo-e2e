@@ -10,6 +10,8 @@ import io.restassured.path.json.JsonPath;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.List;
+
 public class CommonE2EInteraction {
 
     private static final Logger log = LoggerFactory.getLogger(CommonE2EInteraction.class);
@@ -65,6 +67,36 @@ public class CommonE2EInteraction {
         ctx.set(targetVarName, stringValue);
         ctx.write("[stored] " + targetVarName + " = " + stringValue);
         log.info("[CommonE2EInteraction] stored '{}' = '{}' from '{}.{}'", targetVarName, stringValue, responseCtxKey, jsonPath);
+    }
+
+    /**
+     * Stores each item of the JSON array at {@code jsonPath} in the response of stored variable
+     * {@code responseCtxKey} as {@code <prefix>1}, {@code <prefix>2}, ... and their number as
+     * {@code <prefix>Count}. Fails when the field is not a non-empty array.
+     *
+     * <pre>And store e2e response list 'data.results[0].childTradeIds' from stored variable 'allocationResponse' as numbered 'allocatedTradeId'</pre>
+     */
+    @When("^store e2e response list '([^']*)' from stored variable '([^']*)' as numbered '([^']*)'$")
+    public void storeResponseListFromStoredVariable(String jsonPath, String responseCtxKey, String prefix) {
+        String responseBody = ctx.get(responseCtxKey);
+        Object value;
+        try {
+            value = JsonPath.from(responseBody).get(jsonPath);
+        } catch (RuntimeException e) {
+            throw new AssertionError("Stored variable '" + responseCtxKey + "' is not valid JSON response content.", e);
+        }
+        if (!(value instanceof List<?> items) || items.isEmpty()) {
+            throw new AssertionError("JSONPath '" + jsonPath + "' in stored variable '" + responseCtxKey
+                    + "' is not a non-empty list: " + value);
+        }
+        for (int i = 0; i < items.size(); i++) {
+            String item = String.valueOf(items.get(i));
+            ctx.set(prefix + (i + 1), item);
+            ctx.write("[stored] " + prefix + (i + 1) + " = " + item);
+        }
+        ctx.set(prefix + "Count", String.valueOf(items.size()));
+        log.info("[CommonE2EInteraction] stored {} item(s) of '{}.{}' as '{}1..'",
+                items.size(), responseCtxKey, jsonPath, prefix);
     }
 
     @When("^type value '([^']*)' into '([^']*)'$")
