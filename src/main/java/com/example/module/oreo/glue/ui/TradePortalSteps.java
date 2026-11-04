@@ -99,6 +99,39 @@ public class TradePortalSteps {
         ctx.assertEventuallyContains(firstRow, tradeId);
     }
 
+    /**
+     * Asserts the text of cell {@code column} in the row whose {@code keyColumn} cell shows exactly the value of
+     * stored variable {@code keyCtxKey}. Columns are {@code data-col} values ({@code id}, {@code trade.basic.eventStatus}).
+     */
+    @Then("^blotter '([^']*)' row with column '([^']*)' from stored variable '([^']*)' has column '([^']*)' as '([^']*)'$")
+    public void assertBlotterCellText(String rowKey, String keyColumn, String keyCtxKey, String column, String expected) {
+        Locator cell = cellOfRow(rowKey, keyColumn, keyCtxKey, column);
+        assertCellValue(rowKey, keyColumn, keyCtxKey, column, expected, ctx.text(cell));
+    }
+
+    /** As above, for a column that shows a {@code ui-badge} ({@code trade.basic.status}): asserts its label. */
+    @Then("^blotter '([^']*)' row with column '([^']*)' from stored variable '([^']*)' has badge in column '([^']*)' as '([^']*)'$")
+    public void assertBlotterCellBadge(String rowKey, String keyColumn, String keyCtxKey, String column, String expected) {
+        Locator cell = cellOfRow(rowKey, keyColumn, keyCtxKey, column);
+        assertCellValue(rowKey, keyColumn, keyCtxKey, column, expected, ctx.badgeLabel(cell));
+    }
+
+    private Locator cellOfRow(String rowKey, String keyColumn, String keyCtxKey, String column) {
+        Locator row = ctx.rowWithCell(rowKey, "trade_portal.blotter_cell", keyColumn, ctx.get(keyCtxKey));
+        return ctx.cellOf(row, "trade_portal.blotter_cell", column);
+    }
+
+    private void assertCellValue(String rowKey, String keyColumn, String keyCtxKey, String column, String expected,
+                                 String actual) {
+        String key = ctx.get(keyCtxKey);
+        ctx.write(String.format("Blotter row %s='%s' column '%s' = '%s'", keyColumn, key, column, actual));
+        if (!expected.equals(actual)) {
+            throw new AssertionError(String.format(
+                    "[TradePortalSteps] blotter '%s' row %s='%s' column '%s': expected '%s' but got '%s'",
+                    rowKey, keyColumn, key, column, expected, actual));
+        }
+    }
+
     @Then("^blotter row '([^']*)' index (\\d+) column '([^']*)' is '([^']*)'$")
     public void assertBlotterColumnValue(String rowTestId, int rowIndex, String colName, String expectedValue) {
         log.info("[TradePortalSteps] Asserting Blotter[{}][{}][{}] = '{}'", rowTestId, rowIndex, colName, expectedValue);

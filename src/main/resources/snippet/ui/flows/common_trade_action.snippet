@@ -19,16 +19,14 @@
 @Then "^the trade has status '([^']*)' and event status '([^']*)' in the blotter$"
     When page trade portal navigates to Trade Portal page
     And page trade portal searches and views trade stored as 'createdTradeId'
-    And page trade portal blotter column 'status' is '$1'
-    And page trade portal blotter column 'eventStatus' is '$2'
+    And page trade portal blotter row of trade stored as 'createdTradeId' shows status '$1' and event status '$2'
 
 @Then "^the new trade has status '([^']*)' and event status '([^']*)' and original trade has status '([^']*)' and event status '([^']*)' in the blotter$"
     When page trade portal navigates to Trade Portal page
+    And page trade portal searches and views trade stored as 'newTradeId'
+    And page trade portal blotter row of trade stored as 'newTradeId' shows status '$1' and event status '$2'
     And page trade portal searches and views trade stored as 'createdTradeId'
-    And page trade portal blotter column 'status' is '$1'
-    And page trade portal blotter column 'eventStatus' is '$2'
-    And page trade portal blotter row 2 column 'status' is '$3'
-    And page trade portal blotter row 2 column 'eventStatus' is '$4'
+    And page trade portal blotter row of trade stored as 'createdTradeId' shows status '$3' and event status '$4'
 
 @Then "^the trade is Live and marked as New$"
     Then the trade has status 'LIVE' and event status 'New' in the blotter

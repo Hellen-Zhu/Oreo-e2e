@@ -11,6 +11,12 @@
     And component trade change confirmation dialog is visible
     And confirm lifecycle event trade change and wait for page ready
 
+@When "^submits lifecycle event and stores the new trade id$"
+    When confirm dynamic action form using configured risk engine mode for trade stored as 'createdTradeId'
+    And component trade change confirmation dialog is visible
+    And confirm lifecycle event trade change and capture response as 'lifecycleEventResponse'
+    And store e2e response field 'data.results[0].childTradeIds[0]' from stored variable 'lifecycleEventResponse' as 'newTradeId'
+
 @Then "^the trade remains Live and is marked as Amended$"
     Then the trade has status 'LIVE' and event status 'Amended' in the blotter
 

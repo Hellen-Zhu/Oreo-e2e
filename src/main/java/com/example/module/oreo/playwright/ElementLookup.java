@@ -54,6 +54,24 @@ final class ElementLookup {
         return "[data-testid=\"" + element.getValue().replace("\\", "\\\\").replace("\"", "\\\"") + "\"]";
     }
 
+    /**
+     * The CSS selector of an element found by locator, with {@code {0}} replaced by {@code value}: for an element
+     * looked up inside another one ({@code row.locator(selector)}).
+     */
+    String locatorSelector(String name, String value) {
+        PlaywrightLocatorWrapper element;
+        try {
+            element = elementRepository().lookup(name);
+        } catch (ReflectiveOperationException e) {
+            throw new RuntimeException("Element lookup failed for: " + name, e);
+        }
+        if (!String.valueOf(element.getFindBy()).replaceAll("[^A-Za-z]", "").equalsIgnoreCase("locator")) {
+            throw new IllegalStateException(
+                    "Element '" + name + "' must be found by locator, but is found by " + element.getFindBy());
+        }
+        return element.getValue().replace("{0}", value);
+    }
+
     private PlaywrightElementRepository elementRepository() throws ReflectiveOperationException {
         Field repoField = PlaywrightService.class.getDeclaredField("playwrightElementRepository");
         repoField.setAccessible(true);

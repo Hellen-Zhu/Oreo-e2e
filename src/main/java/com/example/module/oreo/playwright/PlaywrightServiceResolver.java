@@ -128,6 +128,26 @@ public final class PlaywrightServiceResolver {
         public void fillDateInput(String elementKey, String value) { actions.fillDateInput(elementKey, value); }
         public void clickOption(String name) { actions.clickOption(name); }
 
+        // ── Table rows and cells ───────────────────────────────────────
+        /**
+         * The row of {@code rowKey} whose cell {@code cellKey} (with {@code {0}} = {@code column}) shows exactly
+         * {@code text}: a trade by its full ID, not by its position. A suffixed ID ({@code ...-ALLOC-1}) does not
+         * match; two matching rows fail when the row is used.
+         */
+        public Locator rowWithCell(String rowKey, String cellKey, String column, String text) {
+            Locator cell = service.getPage().locator(elements.locatorSelector(cellKey, column))
+                    .getByText(text, new Locator.GetByTextOptions().setExact(true));
+            return service.getLocator(rowKey).filter(new Locator.FilterOptions().setHas(cell));
+        }
+        /** The cell {@code cellKey} (with {@code {0}} = {@code column}) inside {@code row}. */
+        public Locator cellOf(Locator row, String cellKey, String column) {
+            return row.locator(elements.locatorSelector(cellKey, column));
+        }
+        /** The label of the {@code ui-badge} in {@code element}, read once when the element exists. */
+        public String badgeLabel(Locator element) { return actions.badgeLabel(element); }
+        /** The trimmed visible text of {@code element}, read once when the element exists. */
+        public String text(Locator element) { return actions.text(element); }
+
         public void waitForFunction(String expression, Object arg) {
             waitForFunction(expression, arg, timeoutMillis());
         }

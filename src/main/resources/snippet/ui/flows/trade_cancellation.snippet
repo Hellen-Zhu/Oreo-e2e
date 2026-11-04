@@ -55,11 +55,9 @@
 
 @Then "^all selected trades are closed as cancelled in the blotter$"
     Then search for trade stored as 'createdTradeId1' in blotter
-    And page trade portal blotter column 'status' is 'DEAD'
-    And page trade portal blotter column 'eventStatus' is 'Cancelled'
+    And page trade portal blotter row of trade stored as 'createdTradeId1' shows status 'DEAD' and event status 'Cancelled'
     And search for trade stored as 'createdTradeId2' in blotter
-    And page trade portal blotter column 'status' is 'DEAD'
-    And page trade portal blotter column 'eventStatus' is 'Cancelled'
+    And page trade portal blotter row of trade stored as 'createdTradeId2' shows status 'DEAD' and event status 'Cancelled'
 
 @Then "^the cancellation is submitted successfully$"
     Then assert toast notification with type 'success' and message 'Cancellation completed successfully'

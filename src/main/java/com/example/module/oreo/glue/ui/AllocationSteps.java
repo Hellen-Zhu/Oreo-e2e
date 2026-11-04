@@ -1,6 +1,8 @@
 package com.example.module.oreo.glue.ui;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.example.module.oreo.utils.TradeApiClient;
 import com.example.module.oreo.playwright.PlaywrightServiceResolver;
 import com.microsoft.playwright.Locator;
@@ -13,6 +15,7 @@ import org.slf4j.LoggerFactory;
 public class AllocationSteps {
 
     private static final Logger log = LoggerFactory.getLogger(AllocationSteps.class);
+    private static final ObjectMapper MAPPER = new ObjectMapper();
 
     private PlaywrightServiceResolver.Context ctx;
 
@@ -32,6 +35,28 @@ public class AllocationSteps {
         ctx.clickAndWaitForResponse(
                 "trade_change_confirmation.confirm_btn", TradeApiClient.TRIGGER_EVENT_PATH, "POST");
         log.info("[AllocationSteps] Allocation confirmed — POST /trades/trigger-event completed.");
+    }
+
+    /**
+     * Stores the sub-trade IDs of the allocation response in stored variable {@code responseCtxKey}
+     * ({@code data.results[0].childTradeIds}) as {@code allocatedTradeId1}, {@code allocatedTradeId2}, ...
+     */
+    @When("^store allocated sub-trade ids from stored variable '([^']*)'$")
+    public void storeAllocatedSubTradeIds(String responseCtxKey) {
+        String responseBody = ctx.get(responseCtxKey);
+        JsonNode ids;
+        try {
+            ids = MAPPER.readTree(responseBody).path("data").path("results").path(0).path("childTradeIds");
+        } catch (JsonProcessingException e) {
+            throw new AssertionError("Stored variable '" + responseCtxKey + "' is not a JSON response.", e);
+        }
+        if (!ids.isArray() || ids.isEmpty()) {
+            throw new AssertionError("No data.results[0].childTradeIds in stored variable '" + responseCtxKey + "'.");
+        }
+        for (int i = 0; i < ids.size(); i++) {
+            ctx.set("allocatedTradeId" + (i + 1), ids.get(i).asText());
+            ctx.write("[stored] allocatedTradeId" + (i + 1) + " = " + ids.get(i).asText());
+        }
     }
 
     // ── Trades snapshot capture ────────────────────────────────────────
