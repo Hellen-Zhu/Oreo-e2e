@@ -12,7 +12,6 @@ import cucumber.api.java.en.Then;
 import cucumber.api.java.en.When;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import com.example.module.oreo.utils.DateUtil;
 import com.example.module.oreo.playwright.PlaywrightServiceResolver;
 
 import java.util.List;
@@ -116,6 +115,15 @@ public class TradePortalSteps {
         assertCellValue(rowKey, keyColumn, keyCtxKey, column, expected, ctx.badgeLabel(cell));
     }
 
+    /** As the text step, with the expected value from stored variable {@code expectedCtxKey}. */
+    @Then("^blotter '([^']*)' row with column '([^']*)' from stored variable '([^']*)' has column '([^']*)' as stored variable '([^']*)'$")
+    public void assertBlotterCellTextFromStoredVariable(String rowKey, String keyColumn, String keyCtxKey, String column,
+                                                        String expectedCtxKey) {
+        String expected = ctx.get(expectedCtxKey);
+        Locator cell = cellOfRow(rowKey, keyColumn, keyCtxKey, column);
+        assertCellValue(rowKey, keyColumn, keyCtxKey, column, expected, ctx.text(cell));
+    }
+
     private Locator cellOfRow(String rowKey, String keyColumn, String keyCtxKey, String column) {
         Locator row = ctx.rowWithCell(rowKey, "trade_portal.blotter_cell", keyColumn, ctx.get(keyCtxKey));
         return ctx.cellOf(row, "trade_portal.blotter_cell", column);
@@ -130,32 +138,6 @@ public class TradePortalSteps {
                     "[TradePortalSteps] blotter '%s' row %s='%s' column '%s': expected '%s' but got '%s'",
                     rowKey, keyColumn, key, column, expected, actual));
         }
-    }
-
-    @Then("^blotter row '([^']*)' index (\\d+) column '([^']*)' is '([^']*)'$")
-    public void assertBlotterColumnValue(String rowTestId, int rowIndex, String colName, String expectedValue) {
-        log.info("[TradePortalSteps] Asserting Blotter[{}][{}][{}] = '{}'", rowTestId, rowIndex, colName, expectedValue);
-        assertCell(rowTestId, rowIndex, colName, expectedValue);
-    }
-
-
-    @Then("^blotter row '([^']*)' index (\\d+) column '([^']*)' matches stored variable '([^']*)'$")
-    public void assertBlotterColumnMatchesCtx(String rowTestId, int rowIndex, String colName, String ctxKey) {
-        String expectedValue = ctx.get(ctxKey);
-        log.info("[TradePortalSteps] Asserting Blotter[{}][{}][{}] matches ctx['{}'] = '{}'",
-                rowTestId, rowIndex, colName, ctxKey, expectedValue);
-        assertCell(rowTestId, rowIndex, colName, expectedValue);
-    }
-
-    @Then("^blotter row '([^']*)' index (\\d+) column '([^']*)' is today in format '([^']*)'$")
-    public void assertBlotterColumnIsTodayInFormat(String rowTestId, int rowIndex, String colName, String pattern) {
-        String expectedValue = DateUtil.format(DateUtil.today(), pattern);
-
-        ctx.write("Expected today's date for blotter cell in format '" + pattern + "' is '" + expectedValue + "'.");
-        log.info("[TradePortalSteps] Asserting today's date for Blotter[{}][{}][{}] with pattern '{}' => '{}'",
-                rowTestId, rowIndex, colName, pattern, expectedValue);
-
-        assertCell(rowTestId, rowIndex, colName, expectedValue);
     }
 
     @Then("^blotter '([^']*)' with dynamic value from stored variable '([^']*)' contains column '([^']*)'$")
@@ -180,33 +162,6 @@ public class TradePortalSteps {
     }
 
     // ── Private helpers ─────────────────────────────────────────────
-
-    /** Resolves the nth row's cell and asserts its trimmed text equals {@code expectedValue}. */
-    private void assertCell(String rowTestId, int rowIndex, String colName, String expectedValue) {
-        String cellSelector = colName.contains(".")
-                ? "td[data-col='" + colName + "']"
-                : "td[data-col='" + colName + "'], td[data-col='trade.basic." + colName + "']";
-
-        Locator cell = ctx.service().getLocator(rowTestId)
-                .nth(rowIndex)
-                .locator(cellSelector);
-        cell.waitFor(new Locator.WaitForOptions()
-                .setState(WaitForSelectorState.ATTACHED)
-                .setTimeout(ctx.timeoutMillis()));
-        // ui-badge renders text as a DOM property (badge.label), not as DOM content.
-        // Use JS evaluate to read the property when an ui-badge is present.
-        String actualValue = (String) cell.evaluate(
-                "el => { const badge = el.querySelector('ui-badge'); " +
-                        "const span = el.querySelector('span'); " +
-                        "return badge ? badge.label : span ? span.textContent.trim() : el.textContent.trim(); }");
-        ctx.write(String.format("Blotter cell actual value = '%s'", actualValue));
-        log.info("[TradePortalSteps] Blotter[{}][{}][{}] actual = '{}'", rowTestId, rowIndex, colName, actualValue);
-        if (!expectedValue.equals(actualValue)) {
-            throw new AssertionError(String.format(
-                    "[TradePortalSteps] blotter row '%s' index %d column '%s': expected '%s' but got '%s'",
-                    rowTestId, rowIndex, colName, expectedValue, actualValue));
-        }
-    }
 
     /**
      * Finds the first visible row containing {@code tradeId} in the given blotter and

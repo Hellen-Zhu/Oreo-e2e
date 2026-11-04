@@ -49,17 +49,8 @@
     Then blotter 'trade_portal.all_trades_blotter_row' row with column 'id' from stored variable '$1' has badge in column 'trade.basic.status' as '$2'
     And blotter 'trade_portal.all_trades_blotter_row' row with column 'id' from stored variable '$1' has column 'trade.basic.eventStatus' as '$3'
 
-@Then "^page trade portal blotter column '([^']*)' is '([^']*)'$"
-    Then blotter row 'trade_portal.all_trades_blotter_row' index 0 column '$1' is '$2'
-
-@Then "^page trade portal blotter row 2 column '([^']*)' is '([^']*)'$"
-    Then blotter row 'trade_portal.all_trades_blotter_row' index 1 column '$1' is '$2'
-
-@Then "^page trade portal blotter column '([^']*)' matches stored variable '([^']*)'$"
-    Then blotter row 'trade_portal.all_trades_blotter_row' index 0 column '$1' matches stored variable '$2'
-
-@Then "^page trade portal blotter column '([^']*)' is today in format '([^']*)'$"
-    Then blotter row 'trade_portal.all_trades_blotter_row' index 0 column '$1' is today in format '$2'
+@Then "^page trade portal blotter row of trade stored as '([^']*)' column '([^']*)' matches stored variable '([^']*)'$"
+    Then blotter 'trade_portal.all_trades_blotter_row' row with column 'id' from stored variable '$1' has column '$2' as stored variable '$3'
 
 @When "^page trade portal searches and opens action menu for trade stored as '([^']*)'$"
     When page trade portal searches and views trade stored as '$1'

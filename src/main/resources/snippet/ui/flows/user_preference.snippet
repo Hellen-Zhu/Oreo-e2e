@@ -39,8 +39,8 @@
 
 @Then "^the number format is applied for '([^']*)' and date format is applied for '([^']*)' in the blotter$"
     Then page trade portal searches and views trade stored as 'createdTradeId'
-    And page trade portal blotter column 'premiumAmount' matches stored variable '$1.premiumAmount'
-    And page trade portal blotter column 'valueDate' matches stored variable '$2.expectedValueDateLabel'
+    And page trade portal blotter row of trade stored as 'createdTradeId' column 'trade.basic.premiumAmount' matches stored variable '$1.premiumAmount'
+    And page trade portal blotter row of trade stored as 'createdTradeId' column 'trade.basic.valueDate' matches stored variable '$2.expectedValueDateLabel'
 
 @Then "^the number and date format preferences persist after refresh for '([^']*)'$"
     Then atomic refresh webpage and wait for page ready
