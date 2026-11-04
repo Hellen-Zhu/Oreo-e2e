@@ -52,9 +52,15 @@ public class TradePortalSteps {
         ctx.doubleClickAndWaitForResponse("trade_portal.all_trades_blotter_row", "/api/v1/trades/" + tradeId, "GET");
     }
 
+    /**
+     * Refreshes and waits until every blotter view shows the refreshed trades: the request the click sent, its whole
+     * body, then no "Refreshing..." left. The indicator alone could be checked before it appears, the response alone
+     * ends before the blotter redraws.
+     */
     @When("^refresh trade blotter and wait for page ready$")
     public void refreshTradeBlotterPage() {
-        ctx.clickAndWaitForResponse("trade_portal.refresh_btn", "/api/v1/blotter/trades", "POST");
+        ctx.clickAndWaitForOwnResponse("trade_portal.refresh_btn", "/api/v1/blotter/trades", "POST");
+        ctx.assertEventuallyCount(ctx.service().getLocator("trade_portal.blotter_refreshing_state"), 0);
     }
 
 

@@ -192,6 +192,40 @@ final class ResponseWaiter {
         return response.text();
     }
 
+    /**
+     * Clicks and waits for the response to the request the click sent, body included. Unlike
+     * {@link #clickAndWaitForResponse(String, String, String)}, a matching request already in flight before the click
+     * is not taken for it, and the wait does not end at the response headers.
+     */
+    void clickAndWaitForOwnResponse(String locatorKey, String urlFragment, String httpMethod) {
+        String awaited = httpMethod + " " + urlFragment;
+        Request request;
+        try {
+            request = clickAndCaptureRequest(locatorKey, urlFragment, httpMethod);
+        } catch (TimeoutError e) {
+            String message = "No " + awaited + " sent within " + timeoutMillis() + " ms after clicking '" + locatorKey
+                    + "'. Page: " + service.getPage().url();
+            log.error("[ResponseWaiter] {}", message);
+            throw new AssertionError(message, e);
+        }
+        Response response = request.response();
+        if (response == null) {
+            String message = awaited + " sent by clicking '" + locatorKey + "' failed: " + request.failure();
+            log.error("[ResponseWaiter] {}", message);
+            throw new AssertionError(message);
+        }
+        if (response.status() != 200) {
+            throw statusError(awaited, "200", response);
+        }
+        String failure = response.finished();
+        if (failure != null) {
+            String message = "The body of " + awaited + " did not arrive: " + failure;
+            log.error("[ResponseWaiter] {}", message);
+            throw new AssertionError(message);
+        }
+        log.info("[ResponseWaiter] {} sent by the click -> 200, body received ({})", awaited, response.url());
+    }
+
     Request clickAndCaptureRequest(String locatorKey, String urlFragment, String httpMethod) {
         return service.getPage().waitForRequest(
                 r -> r.url().contains(urlFragment) && r.method().equals(httpMethod),
