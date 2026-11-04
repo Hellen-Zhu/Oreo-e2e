@@ -111,15 +111,6 @@ final class EventualAssertions {
         }
     }
 
-    /**
-     * Polls until {@code locator} matches exactly {@code count} elements; {@code 0} waits until none is on the page,
-     * whichever of several matching elements it is (unlike {@code isHidden}, which needs one element).
-     */
-    void assertEventuallyCount(Locator locator, int count) {
-        PlaywrightAssertions.assertThat(locator).hasCount(count,
-                new LocatorAssertions.HasCountOptions().setTimeout(timeoutMillis()));
-    }
-
     void assertHasValue(Locator locator, String value) { assertHasValue(locator, value, timeoutMillis()); }
 
     void assertHasValue(Locator locator, String value, double timeoutMs) {

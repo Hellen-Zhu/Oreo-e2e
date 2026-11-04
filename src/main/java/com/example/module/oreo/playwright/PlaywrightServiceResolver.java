@@ -247,7 +247,6 @@ public final class PlaywrightServiceResolver {
             assertions.assertEventuallyVisible(locator, timeoutMs);
         }
         public void assertEventuallyHidden(Locator locator) { assertions.assertEventuallyHidden(locator); }
-        public void assertEventuallyCount(Locator locator, int count) { assertions.assertEventuallyCount(locator, count); }
         public void assertEventuallyHidden(Locator locator, double timeoutMs) {
             assertions.assertEventuallyHidden(locator, timeoutMs);
         }
