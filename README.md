@@ -9,8 +9,53 @@ It runs only in the company environment. Agents and contributors: read [CLAUDE.m
 
 ## Quick start
 
-Prerequisites: JDK 21, Maven with the company Artifactory in `~/.m2/settings.xml`, company network. Install Edge for
-Playwright once if missing: `npx playwright install msedge`.
+### Prerequisites
+
+- JDK 21 configured through `JAVA_HOME`.
+- Maven, with access to the company Artifactory repositories configured in `~/.m2/settings.xml` (never committed).
+- Company network or VPN access when resolving internal dependencies or connecting to a test environment.
+- Node.js and `npx` only when installing or inspecting Playwright browser binaries (and for the trace viewer).
+- IntelliJ IDEA with the Gherkin and Cucumber for Java plugins is recommended.
+
+### Clone, compile and install the browser
+
+From the repository root:
+
+```shell
+mvn -B clean compile
+npx playwright install msedge
+```
+
+The Maven Surefire configuration sets `PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1`, so install the browser explicitly when a
+local machine does not already have the required Playwright browser available.
+
+### Run the offline data validation first
+
+This check does not require a browser or a test environment:
+
+```shell
+mvn -Ptest-data process-test-classes
+```
+
+It runs the test-data unit tests, then `TestDataTool check`. There is no `TestDataValidationTest` any more.
+
+### Run the configured Genie runner
+
+```shell
+mvn -B test -Dtest=OreoTest
+```
+
+The default tag declaration is in `src/test/java/com/example/module/oreo/OreoTest.java` and currently contains
+`not @wip` and `@ADO#trade_creation`. Therefore, do not describe this command as an unrestricted full-suite run
+without first checking the runner configuration ("Running", below). API runs book real trades.
+
+### Credentials and secrets
+
+Environment credentials must be supplied through an approved local or CI mechanism. Do not commit passwords, tokens
+or copied environment-specific secrets to `genie.properties` or any other tracked file. If a credential is ever
+placed in a tracked file, treat it as exposed and follow the team rotation process.
+
+### Common commands
 
 | Goal | Command |
 |---|---|
