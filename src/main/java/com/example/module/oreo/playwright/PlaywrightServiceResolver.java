@@ -177,7 +177,7 @@ public final class PlaywrightServiceResolver {
 
         /**
          * A risk calculation an action causes: {@code POST urlFragment}, answered in MOCK mode with the response of setup
-         * file {@code mockSetup}.
+         * file {@code mockSetup}; a null {@code mockSetup} lets the backend answer in both modes.
          */
         public record RiskCall(String urlFragment, String mockSetup) {}
 
@@ -187,9 +187,9 @@ public final class PlaywrightServiceResolver {
         }
 
         /**
-         * Clicks {@code locatorKey} and waits for every risk calculation of {@code riskCalls}, in any order (a URL
-         * listed twice is awaited twice): REAL lets the risk engine answer, MOCK answers each URL with its setup file
-         * until all are answered.
+         * Clicks {@code locatorKey} and waits for the risk calculations of {@code riskCalls} in their order, each sent
+         * after the previous one was answered (a URL listed twice is awaited twice): REAL lets the risk engine answer,
+         * MOCK answers each URL that has a setup file with it until all are answered.
          */
         public void clickUsingRiskEngineMode(String locatorKey, List<RiskCall> riskCalls) {
             OreoModuleConfiguration.RiskEngineMode mode = riskEngineMode();
@@ -202,16 +202,17 @@ public final class PlaywrightServiceResolver {
             switch (mode) {
                 case MOCK:
                     Map<String, String> mockByUrl = new LinkedHashMap<>();
-                    riskCalls.forEach(c -> mockByUrl.putIfAbsent(c.urlFragment(), c.mockSetup()));
+                    riskCalls.stream().filter(c -> c.mockSetup() != null)
+                            .forEach(c -> mockByUrl.putIfAbsent(c.urlFragment(), c.mockSetup()));
                     mockByUrl.forEach((url, setup) -> mocks.mockRoute(url, 200, TestData.setup(setup).response()));
                     try {
-                        responses.awaitInAnyOrder(click, calls);
+                        responses.await(click, calls);
                     } finally {
                         mockByUrl.keySet().forEach(mocks::clearMockRoute);
                     }
                     return;
                 case REAL:
-                    responses.awaitInAnyOrder(click, calls);
+                    responses.await(click, calls);
                     return;
                 default:
                     throw new IllegalStateException("Unhandled risk engine mode: " + mode);

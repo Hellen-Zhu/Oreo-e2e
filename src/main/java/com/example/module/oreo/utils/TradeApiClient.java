@@ -47,6 +47,10 @@ public final class TradeApiClient {
         return "/trades/" + tradeId + "/calculate-partial-novation-risk";
     }
 
+    public static String calculateAllocationRiskPath(String tradeId) {
+        return "/trades/" + tradeId + "/calculate-allocation-risk";
+    }
+
     /** Submits the setup body {@code testDataKey} for {@code product} with the dat file at classpath {@code datPath}. */
     public static JsonNode submitTrade(RequestResponseHelper helper, String userId, String testDataKey,
                                        ProductDatFiles product, String datPath) throws URISyntaxException {

@@ -13,7 +13,7 @@
     And submits allocation event and waits for allocation response
 
 @When "^submits allocation event and waits for allocation response$"
-    When component dynamic action clicks confirm button
+    When confirm 'allocation' event form using configured risk engine mode for trade stored as 'createdTradeId'
     And component trade change confirmation dialog is visible
     And component trade change confirmation types comments from stored variable 'comments'
     And page trade portal confirms trade change, captures response as 'allocationResponse' and waits for New Today Blotter to reload
