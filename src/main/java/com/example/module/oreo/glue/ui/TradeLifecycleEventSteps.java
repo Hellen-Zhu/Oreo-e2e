@@ -61,6 +61,17 @@ public class TradeLifecycleEventSteps {
     // ── Lifecycle event steps ───────────────────────────────────────
 
     /**
+     * Clicks Cancellation, from the blotter row action menu or the trade detail More Actions menu, and waits for the
+     * one {@code calculate-risk} it causes before the TradeChangeConfirmation dialog opens; MOCK answers it with setup
+     * {@code risk-calc-success-mock}.
+     */
+    @When("^trigger cancellation for trade using configured risk engine mode from (trade portal|trade detail page) for trade stored as '([^']*)'$")
+    public void triggerCancellationUsingConfiguredRiskEngineMode(String from, String ctxKey) {
+        String button = from.equals("trade portal") ? "trade_portal.row_action_cancel" : "trade_detail.cancel_btn";
+        ctx.clickUsingRiskEngineMode(button, List.of(calculateRisk(ctx.get(ctxKey))));
+    }
+
+    /**
      * Opens the Novation Remaining form from the blotter row action and waits for {@code GET /trades/<id>/target-gain},
      * which the form sends while it loads; MOCK answers it with setup {@code target-gain-success-mock}.
      */

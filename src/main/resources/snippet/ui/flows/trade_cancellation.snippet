@@ -30,7 +30,7 @@
     And component trade change confirmation dialog is visible
     And component trade change confirmation selects reason option 'DEALER_ERROR'
     And component trade change confirmation types comments as 'cancellation for test'
-    And confirm cancel trade and wait for page ready
+    And confirm lifecycle event trade change and wait for page ready
 
 @Then "^the Cancellation option is available for the trade$"
     When page trade portal searches and opens action menu for trade stored as 'createdTradeId'
