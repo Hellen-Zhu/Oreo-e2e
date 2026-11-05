@@ -64,8 +64,8 @@ placed in a tracked file, treat it as exposed and follow the team rotation proce
 | Run a selection | `mvn -B test -Dtest=OreoTest "-Dcucumber.options=--tags @api --tags @ADO#smoke"` |
 | Run one case | `mvn -B test -Dtest=OreoTest "-Dcucumber.options=--name ^\[TC-TRADE-CREATION-FX_TRF-API-001\].*$"` |
 | See what one case sends and is compared with | `mvn -Ptest-data process-test-classes "-Dexec.args=case <case ID>"` |
-| Update a case's recorded response | "Updating a recorded response", below |
-| Update a shared part (`basic`, `instrument`) | `mvn -Ptest-data process-test-classes "-Dexec.args=shared <case ID>"` or `"-Dexec.args=compact all"`: "Updating a shared part", below |
+| Update a case's recorded response | [docs/test-data.md, "Updating a recorded response"](docs/test-data.md#updating-a-recorded-response) |
+| Update a shared part (`basic`, `instrument`) | [docs/test-data.md, "Updating a shared part"](docs/test-data.md#updating-a-shared-part) |
 | Add a product | skill `.claude/skills/onboarding-e2e-product` |
 | Change data, features, recordings or the registry | skill `.claude/skills/maintaining-e2e-test-data` |
 
@@ -110,64 +110,15 @@ writes traces to `target/traces` (`npx playwright show-trace <zip>`). Never comm
 - **UI steps are layered**: scenario (business language) → flow snippet → page / component snippet → element
   repository (locators).
 
-## Updating a recorded response
+## Updating recorded responses
 
-When the API changed on purpose and a case now fails its comparison (company machine):
+Step-by-step procedures, with the commands, in [docs/test-data.md](docs/test-data.md):
 
-```shell
-# 1. Re-record: update mode overwrites the file with the full response, without reading it
-#    (PowerShell: $env:OREO_EXPECTED = "update" ... Remove-Item Env:OREO_EXPECTED)
-OREO_EXPECTED=update mvn -B test -Dtest=OreoTest "-Dcucumber.options=--name ^\[TC-TRADE-CREATION-FX_TRF-API-001\].*$"
-
-# 2. Turn the variants back into patches on their base case
-mvn -Ptest-data process-test-classes "-Dexec.args=compact trade_creation"
-
-# 3. Check, then run the case again without update mode: it must pass
-mvn -Ptest-data process-test-classes
-mvn -B test -Dtest=OreoTest "-Dcucumber.options=--name ^\[TC-TRADE-CREATION-FX_TRF-API-001\].*$"
-```
-
-- `-Doreo.expected=update` is the same switch as a system property; the environment variable also reaches the
-  runner's forked JVMs. Unset it afterwards, or every later run re-records instead of comparing.
-- Review `git diff` of `data/api/expected/` against the requirement before committing: a wrong value recorded is a
-  wrong expectation. Never edit an expected file by hand.
-- Re-recording a **base** case (`...-API-001`)? Re-record its variants in the same run (`--name ^\[TC-TRADE-CREATION-FX_TRF-API-\d+\].*$`),
-  or their patches may no longer apply.
-- A value that differs on every run (an ID, a date) is not an update: add a `dynamicFields` rule for it, then re-record.
-- A new case needs no update mode: its first run records the file and fails once.
-
-Details: [docs/test-data.md](docs/test-data.md), "Recorded responses" and "Base and patch".
-
-### Updating a shared part (`_shared/`)
-
-`data.trade.basic` and `data.trade.instrument` are kept once per product in `data/api/expected/_shared/`, taken from
-the events of `sharedSources` in `data/api/common.json` (`trade_creation`); the other events refer to them. Which
-command depends on why the part changed (company machine):
-
-```shell
-# A. The API changed the part on purpose: re-record the case that gives it, then make its part the shared one.
-#    <product_type> stays as written: every product's case. Every other case still expects what it expected.
-OREO_EXPECTED=update mvn -B test -Dtest=OreoTest "-Dcucumber.options=--name ^\[TC-TRADE-CREATION-.*-API-001\].*$"
-mvn -Ptest-data process-test-classes "-Dexec.args=shared TC-TRADE-CREATION-<product_type>-API-001"
-
-# B. A dynamicFields rule was added or changed, or the API added a field: re-record every event that holds the
-#    part (together), check the rules, then rebuild every shared part from the sharedSources recordings.
-OREO_EXPECTED=update mvn -B test -Dtest=OreoTest "-Dcucumber.options=--name <narrowest filter covering those events>"
-mvn -Ptest-data process-test-classes "-Dexec.args=suggest trade_creation"
-mvn -Ptest-data process-test-classes "-Dexec.args=compact all"
-
-# Both: check, then review git diff
-mvn -Ptest-data process-test-classes
-```
-
-- In B, not `compact <event>` and not `shared`: they keep the old part, and every case gets the new key beside its
-  reference.
-- A case with `expectedBase` is always written as a patch on its base, whatever the length; `[warn] ... is not shorter
-  than its full form` suggests `"expectedBase": null` in that case's row.
-- `git diff`: a shared-part change shows in each product's `_shared/<part>/<P>.json`; dynamic values must appear as
-  placeholders, never as real values.
-
-Details: [docs/test-data.md](docs/test-data.md), "Shared parts".
+- [Updating a recorded response](docs/test-data.md#updating-a-recorded-response): the API changed a response on
+  purpose and a case fails its comparison (re-record in update mode, compact, check, review, run again).
+- [Updating a shared part](docs/test-data.md#updating-a-shared-part): `basic` / `instrument` in
+  `data/api/expected/_shared/` has to change, because the API changed it (`shared <case ID>`) or because a masking
+  rule or a new field changed it (`compact all`).
 
 ## Layout
 

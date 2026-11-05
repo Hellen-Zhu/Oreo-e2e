@@ -351,6 +351,8 @@ every variant differ from it.
 | New event | `data/<channel>/<event>.json`, named after the feature file; shared blocks through `use`. For its Outlines with `<product_type>`: a `Capability` constant named as in the replay project's `framework/products.ts`, the tag `@capability#<name>` on them, the capability on the products that support it, then `mvn -Ptest-data process-test-classes "-Dexec.args=sync-examples"` |
 | A field turns out dynamic | its rule in the event file (`defaults` or `byProduct`), then record again |
 | A new field in every product's response | "A new response field", below |
+| The API changed a response on purpose; a case fails its comparison | "Updating a recorded response", below |
+| A shared part (`basic`, `instrument`) has to change | "Updating a shared part", below |
 | A new field in every product's request | its value in the block the event's rows `use` (`trade-basic`) or in `defaults.request`; a product whose value differs overrides it in its row; then record its responses as for a new response field |
 | Change the default counterparty | `api/common.json`, `ui/common.json`, `setup/trade-create*.json` (three places, on purpose); record the API cases again |
 | New setup payload | `data/setup/<what-it-prepares>.json`, referenced by that name |
@@ -380,3 +382,104 @@ files by hand: the recording is what proves the system returns it.
 6. Review `git diff`: a field in a shared part adds one line to each product's `_shared/<part>/<P>.json` and leaves
    the case files as they were; elsewhere, one line to each product's base file, the variants' patches unchanged. A
    dynamic value shows as its placeholder, never as a real value.
+
+### Updating a recorded response
+
+The API changed a response on purpose and a case now fails its comparison. On the company machine, from the
+repository root; the example is `TC-TRADE-CREATION-FX_TRF-API-001`, put the case's own ID in its place.
+
+1. **Confirm the change is intended**: read the failure against the requirement. A recording shows what the system
+   did, not what it should do; a disagreement is reported, not recorded.
+2. **A value that differs on every run (an ID, a date) is not an update**: add its `dynamicFields` rule ("Recorded
+   responses", above) and continue with step 3.
+3. **Re-record** in update mode, which overwrites the file with the full response without reading it. A base case
+   (`...-API-001`) is re-recorded with its variants in the same run (`--name ^\[TC-TRADE-CREATION-FX_TRF-API-\d+\].*$`),
+   or their patches may no longer apply:
+
+   ```shell
+   OREO_EXPECTED=update mvn -B test -Dtest=OreoTest "-Dcucumber.options=--name ^\[TC-TRADE-CREATION-FX_TRF-API-001\].*$"
+   ```
+
+   PowerShell: `$env:OREO_EXPECTED = "update"` before the command, `Remove-Item Env:OREO_EXPECTED` after it.
+   `-Doreo.expected=update` is the same switch as a system property; the environment variable also reaches the
+   runner's forked JVMs. Unset it afterwards, or every later run re-records instead of comparing.
+4. **Compact** the event: the variants become patches on their base again.
+
+   ```shell
+   mvn -Ptest-data process-test-classes "-Dexec.args=compact trade_creation"
+   ```
+
+5. **Check** the data offline:
+
+   ```shell
+   mvn -Ptest-data process-test-classes
+   ```
+
+6. **Review `git diff`** of `data/api/expected/` against the requirement: a wrong value recorded is a wrong
+   expectation. Never edit an expected file by hand.
+7. **Run the case again without update mode**: it must pass.
+
+   ```shell
+   mvn -B test -Dtest=OreoTest "-Dcucumber.options=--name ^\[TC-TRADE-CREATION-FX_TRF-API-001\].*$"
+   ```
+
+A new case needs none of this: its first run records the file and fails once; compact, review, commit.
+
+### Updating a shared part
+
+`data.trade.basic` and `data.trade.instrument` are kept once per product in `data/api/expected/_shared/`, taken from
+the events of `sharedSources` in `api/common.json` (`trade_creation`); the other events refer to them ("Shared
+parts", above). On the company machine, choose by why the part changed.
+
+**A. The API changed the part on purpose** (a key added, removed or renamed):
+
+1. Re-record the case that gives the part, for every product:
+
+   ```shell
+   OREO_EXPECTED=update mvn -B test -Dtest=OreoTest "-Dcucumber.options=--name ^\[TC-TRADE-CREATION-.*-API-001\].*$"
+   ```
+
+2. Make its part the shared one; `<product_type>` stays as written (every product's case). Every other case is
+   compacted again and still expects what it expected: the keys that differ stay beside its reference.
+
+   ```shell
+   mvn -Ptest-data process-test-classes "-Dexec.args=shared TC-TRADE-CREATION-<product_type>-API-001"
+   ```
+
+3. Check, then review `git diff` (step C below).
+
+**B. A `dynamicFields` rule was added or changed, or the API added a field** ("A new response field", above):
+
+1. Put the rule in place first: `trade-response-parts` in `api/common.json` for `basic` / `instrument`.
+2. Re-record every event that holds the part, together, with the narrowest filter that covers them (the API cases
+   book real trades):
+
+   ```shell
+   OREO_EXPECTED=update mvn -B test -Dtest=OreoTest "-Dcucumber.options=--name <narrowest filter covering those events>"
+   ```
+
+3. Check the rules of each recorded event; add the ones still reported and record again:
+
+   ```shell
+   mvn -Ptest-data process-test-classes "-Dexec.args=suggest trade_creation"
+   ```
+
+4. Rebuild every shared part from the `sharedSources` recordings. Not `compact <event>` and not `shared`: they keep
+   the old part, and every case gets the new key beside its reference.
+
+   ```shell
+   mvn -Ptest-data process-test-classes "-Dexec.args=compact all"
+   ```
+
+5. Check, then review `git diff` (step C below).
+
+**C. Both: check and review**
+
+```shell
+mvn -Ptest-data process-test-classes
+```
+
+- A shared-part change shows in each product's `_shared/<part>/<P>.json`; the case files keep only their
+  differences. Dynamic values appear as placeholders, never as real values; no real trade or task ID.
+- A case with `expectedBase` is always written as a patch on its base, whatever the length; `[warn] ... is not
+  shorter than its full form` suggests `"expectedBase": null` in that case's row.
