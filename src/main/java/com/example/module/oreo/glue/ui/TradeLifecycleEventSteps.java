@@ -69,10 +69,25 @@ public class TradeLifecycleEventSteps {
     }
 
     /**
+     * Clicks Confirm in the allocation form split into {@code legs} sub-trades and waits for
+     * {@code calculate-allocation-risk}, then calculate-risk. The page rejects an allocation risk whose legs are not
+     * those of the form ("Risk calculation failed"), so MOCK answers with the fixed answer of that many legs: setup
+     * {@code risk-calc-allocation-<legs>-legs-success-mock}.
+     */
+    @When("^confirm '(\\d+)' way allocation form using configured risk engine mode for trade stored as '([^']*)'$")
+    public void confirmAllocationFormUsingConfiguredRiskEngineMode(int legs, String ctxKey) {
+        String tradeId = ctx.get(ctxKey);
+        ctx.clickUsingRiskEngineMode("dynamic_action.confirm_btn", List.of(
+                new RiskCall(TradeApiClient.calculateAllocationRiskPath(tradeId),
+                        "risk-calc-allocation-" + legs + "-legs-success-mock"),
+                calculateRisk(tradeId)));
+    }
+
+    /**
      * Clicks Confirm in the dynamic-action form of {@code event} and waits for the risk calculations it causes, in
      * order, before the TradeChangeConfirmation dialog is used ({@link #riskCallsOf}). MOCK answers those it can.
      */
-    @When("^confirm '(allocation|novation remaining|partial novation remaining|step out full|step out partial|early termination|partial termination|portfolio reassignment)' event form using configured risk engine mode for trade stored as '([^']*)'$")
+    @When("^confirm '(novation remaining|partial novation remaining|step out full|step out partial|early termination|partial termination|portfolio reassignment)' event form using configured risk engine mode for trade stored as '([^']*)'$")
     public void confirmEventFormUsingConfiguredRiskEngineMode(String event, String ctxKey) {
         ctx.clickUsingRiskEngineMode("dynamic_action.confirm_btn", riskCallsOf(event, ctx.get(ctxKey)));
     }
@@ -82,19 +97,20 @@ public class TradeLifecycleEventSteps {
      * previous one is answered (with a {@code GET /trades/<id>} between the event's own calculation and
      * calculate-risk). Novation remaining sends {@code target-gain} when its form opens, not on Confirm
      * ({@link #clickNovationRemainingActionUsingConfiguredRiskEngineMode}).
-     * The mocked {@code calculate-allocation-risk} answer is fixed: two legs, whatever the split.
      */
     static List<RiskCall> riskCallsOf(String event, String tradeId) {
-        RiskCall risk = new RiskCall(TradeApiClient.calculateRiskPath(tradeId), "risk-calc-success-mock");
+        RiskCall risk = calculateRisk(tradeId);
         return switch (event) {
             case "step out full", "step out partial", "early termination", "partial termination",
                  "portfolio reassignment", "novation remaining" -> List.of(risk, risk);
             case "partial novation remaining" -> List.of(
                     new RiskCall(TradeApiClient.calculatePartialRiskPath(tradeId), "risk-calc-partial-success-mock"), risk);
-            case "allocation" -> List.of(new RiskCall(
-                    TradeApiClient.calculateAllocationRiskPath(tradeId), "risk-calc-allocation-success-mock"), risk);
             default -> throw new IllegalArgumentException("No risk calculations known for event '" + event + "'");
         };
+    }
+
+    private static RiskCall calculateRisk(String tradeId) {
+        return new RiskCall(TradeApiClient.calculateRiskPath(tradeId), "risk-calc-success-mock");
     }
 
     /**

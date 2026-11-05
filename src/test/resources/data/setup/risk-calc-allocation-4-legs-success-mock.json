@@ -1,0 +1,75 @@
+{
+  "_comment": "Answer given to the page for POST /trades/<id>/calculate-allocation-risk (riskEngine=mock) for an allocation into 4 sub-trades: original risk, one risk per leg (4 legs, as the page requires), combined risk and delta",
+  "response": {
+    "code": 200,
+    "status": "SUCCESS",
+    "msg": "",
+    "data": {
+      "originalTradeRisk": {
+        "calculationTimestamp": "2000-01-01T00:00:00.000000000Z",
+        "pnl": 5277.25,
+        "riskEngine": "EXAMPLE-RISK-ENGINE"
+      },
+      "allocatedTradeRisks": [
+        {
+          "legNumber": 1,
+          "tradeId": "TRD-EXAMPLE-ALLOC-1",
+          "notionalAmount": 21000,
+          "premiumAmount": 3000,
+          "counterpartyFmId": "100000001",
+          "portfolioId": "EXAMPLE_PF",
+          "risk": {
+            "calculationTimestamp": "2000-01-01T00:00:00.000000000Z",
+            "pnl": 1583.17,
+            "riskEngine": "EXAMPLE-RISK-ENGINE"
+          }
+        },
+        {
+          "legNumber": 2,
+          "tradeId": "TRD-EXAMPLE-ALLOC-2",
+          "notionalAmount": 21000,
+          "premiumAmount": 3000,
+          "counterpartyFmId": "100000002",
+          "portfolioId": "EXAMPLE_PF",
+          "risk": {
+            "calculationTimestamp": "2000-01-01T00:00:00.000000000Z",
+            "pnl": 1583.17,
+            "riskEngine": "EXAMPLE-RISK-ENGINE"
+          }
+        },
+        {
+          "legNumber": 3,
+          "tradeId": "TRD-EXAMPLE-ALLOC-3",
+          "notionalAmount": 21000,
+          "premiumAmount": 3000,
+          "counterpartyFmId": "100000003",
+          "portfolioId": "EXAMPLE_PF",
+          "risk": {
+            "calculationTimestamp": "2000-01-01T00:00:00.000000000Z",
+            "pnl": 1583.17,
+            "riskEngine": "EXAMPLE-RISK-ENGINE"
+          }
+        },
+        {
+          "legNumber": 4,
+          "tradeId": "TRD-EXAMPLE-ALLOC-4",
+          "notionalAmount": 7000,
+          "premiumAmount": 1000,
+          "counterpartyFmId": "100000004",
+          "portfolioId": "EXAMPLE_PF",
+          "risk": {
+            "calculationTimestamp": "2000-01-01T00:00:00.000000000Z",
+            "pnl": 527.73,
+            "riskEngine": "EXAMPLE-RISK-ENGINE"
+          }
+        }
+      ],
+      "combinedRisk": {
+        "pnl": 5277.25
+      },
+      "deltaVsOriginal": {
+        "pnl": 0
+      }
+    }
+  }
+}

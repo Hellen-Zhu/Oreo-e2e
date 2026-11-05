@@ -3,17 +3,17 @@
     And component allocation dialog enters split number '$1'
     And user fills $1 way sub-trade allocation info
     And component allocation dialog total pct value is 'Total: 100.00% ✓'
-    And submits allocation event and waits for allocation response
+    And submits '$1' way allocation event and waits for allocation response
 
 @When "^perform unequal '(\d+)' way allocation for the trade$"
     When opens lifecycle action 'allocation' for current trade
     And component allocation dialog enters split number '$1'
     And user fills $1 way sub-trade allocation info
     And component allocation dialog total pct value is 'Total: 100.00% ✓'
-    And submits allocation event and waits for allocation response
+    And submits '$1' way allocation event and waits for allocation response
 
-@When "^submits allocation event and waits for allocation response$"
-    When confirm 'allocation' event form using configured risk engine mode for trade stored as 'createdTradeId'
+@When "^submits '(\d+)' way allocation event and waits for allocation response$"
+    When confirm '$1' way allocation form using configured risk engine mode for trade stored as 'createdTradeId'
     And component trade change confirmation dialog is visible
     And component trade change confirmation types comments from stored variable 'comments'
     And page trade portal confirms trade change, captures response as 'allocationResponse' and waits for New Today Blotter to reload
