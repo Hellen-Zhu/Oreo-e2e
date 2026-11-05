@@ -15,7 +15,7 @@
     When component dynamic action types remaining notional from stored variable 'remainingNotional'
     And component dynamic action equation line contains stored variable 'equationLineValue.$1'
     And component dynamic action selects counterparty from stored variable 'newCptyName'
-    And confirm dynamic action form using configured partial risk engine mode for trade stored as 'createdTradeId'
+    And confirm 'partial novation remaining' event form using configured risk engine mode for trade stored as 'createdTradeId'
 
 # Started from the blotter: the page reloads the blotter by itself once trigger-event is answered.
 @When "^confirms Partial Novation Remaining event from the blotter and stores new trade id$"

@@ -2,7 +2,7 @@
     When opens lifecycle action 'partial termination' for current trade
     And component dynamic action types new notional from stored variable 'partialTermination.newNotional'
     And component dynamic action types amount from stored variable 'partialTermination.unwindFeeAmount'
-    And submits lifecycle event and waits for page ready
+    And submits 'partial termination' lifecycle event and waits for page ready
 
 @Then "^the trade notional reflects the partial termination reduction in trade detail page$"
     Then double click to navigate to trade detail and wait for page ready for stored variable 'createdTradeId'

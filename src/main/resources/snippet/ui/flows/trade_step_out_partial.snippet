@@ -5,7 +5,7 @@
     And component dynamic action types currency from stored variable 'currency'
     And component dynamic action types new notional from stored variable 'newNotional'
     And component dynamic action selects counterparty from stored variable 'counterpartyName'
-    And submits lifecycle event and waits for page ready
+    And submits 'step out partial' lifecycle event and waits for page ready
 
 @Then "^the step out partial is completed successfully$"
     Then assert toast notification with type 'success' and message 'StepOutPartial completed successfully'

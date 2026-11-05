@@ -8,6 +8,8 @@ import cucumber.api.java.en.When;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.List;
+
 public class TradeLifecycleEventSteps {
 
     private static final Logger log = LoggerFactory.getLogger(TradeLifecycleEventSteps.class);
@@ -56,21 +58,28 @@ public class TradeLifecycleEventSteps {
     // ── Lifecycle event steps ───────────────────────────────────────
 
     /**
-     * Clicks Confirm in any dynamic-action event form dialog and waits for the
-     * calculate-risk POST to complete. Applies to PartialTermination, EarlyTermination,
-     * PortfolioReassignment, or any other event that uses the dynamic-action dialog.
-     * On success the TradeChangeConfirmation dialog opens automatically.
+     * Clicks Confirm in the dynamic-action form of {@code event} and waits for all the risk calculations it causes
+     * before the TradeChangeConfirmation dialog is used ({@link #riskCallsOf}). MOCK answers each of them.
      */
-    @When("^confirm dynamic action form using configured risk engine mode for trade stored as '([^']*)'$")
-    public void confirmDynamicActionFormUsingConfiguredRiskEngineMode(String ctxKey) {
-        ctx.clickUsingRiskEngineMode("dynamic_action.confirm_btn",
-                TradeApiClient.calculateRiskPath(ctx.get(ctxKey)), "risk-calc-success-mock");
+    @When("^confirm '(novation remaining|partial novation remaining|step out full|step out partial|early termination|partial termination|portfolio reassignment)' event form using configured risk engine mode for trade stored as '([^']*)'$")
+    public void confirmEventFormUsingConfiguredRiskEngineMode(String event, String ctxKey) {
+        ctx.clickUsingRiskEngineMode("dynamic_action.confirm_btn", riskCallsOf(event, ctx.get(ctxKey)));
     }
 
-    @When("^confirm dynamic action form using configured partial risk engine mode for trade stored as '([^']*)'$")
-    public void confirmDynamicActionFormUsingConfiguredPartialRiskEngineMode(String ctxKey) {
-        ctx.clickUsingRiskEngineMode("dynamic_action.confirm_btn",
-                TradeApiClient.calculatePartialRiskPath(ctx.get(ctxKey)), "risk-calc-partial-success-mock");
+    /**
+     * The risk calculations the Confirm of an event form causes, as the page sends them. Novation remaining also sends
+     * {@code target-gain}, which is neither awaited nor mocked here.
+     */
+    static List<PlaywrightServiceResolver.Context.RiskCall> riskCallsOf(String event, String tradeId) {
+        PlaywrightServiceResolver.Context.RiskCall risk = new PlaywrightServiceResolver.Context.RiskCall(
+                TradeApiClient.calculateRiskPath(tradeId), "risk-calc-success-mock");
+        return switch (event) {
+            case "step out full", "step out partial", "early termination", "partial termination",
+                 "portfolio reassignment", "novation remaining" -> List.of(risk, risk);
+            case "partial novation remaining" -> List.of(new PlaywrightServiceResolver.Context.RiskCall(
+                    TradeApiClient.calculatePartialRiskPath(tradeId), "risk-calc-partial-success-mock"), risk);
+            default -> throw new IllegalArgumentException("No risk calculations known for event '" + event + "'");
+        };
     }
 
     /**

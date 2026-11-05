@@ -3,7 +3,7 @@
     And component dynamic action selects direction from stored variable 'earlyTermination.direction'
     And component dynamic action types amount from stored variable 'earlyTermination.amount'
     And component dynamic action types currency from stored variable 'earlyTermination.ccy'
-    And submits lifecycle event and waits for page ready
+    And submits 'early termination' lifecycle event and waits for page ready
 
 @Then "^the early termination is completed successfully$"
     Then assert toast notification with type 'success' and message 'EarlyTermination completed successfully'

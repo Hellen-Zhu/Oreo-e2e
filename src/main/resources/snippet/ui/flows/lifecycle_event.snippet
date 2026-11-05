@@ -6,13 +6,13 @@
     And page trade portal clicks $1 action for current trade
     And component dynamic action dialog is visible
 
-@When "^submits lifecycle event and waits for page ready$"
-    When confirm dynamic action form using configured risk engine mode for trade stored as 'createdTradeId'
+@When "^submits '(novation remaining|step out full|step out partial|early termination|partial termination|portfolio reassignment)' lifecycle event and waits for page ready$"
+    When confirm '$1' event form using configured risk engine mode for trade stored as 'createdTradeId'
     And component trade change confirmation dialog is visible
     And page trade portal confirms trade change and waits for New Today Blotter to reload
 
-@When "^submits lifecycle event and stores the new trade id$"
-    When confirm dynamic action form using configured risk engine mode for trade stored as 'createdTradeId'
+@When "^submits '(novation remaining|step out full|step out partial|early termination|partial termination|portfolio reassignment)' lifecycle event and stores the new trade id$"
+    When confirm '$1' event form using configured risk engine mode for trade stored as 'createdTradeId'
     And component trade change confirmation dialog is visible
     And page trade portal confirms trade change, captures response as 'lifecycleEventResponse' and waits for New Today Blotter to reload
     And store e2e response field 'data.results[0].childTradeIds[0]' from stored variable 'lifecycleEventResponse' as 'newTradeId'

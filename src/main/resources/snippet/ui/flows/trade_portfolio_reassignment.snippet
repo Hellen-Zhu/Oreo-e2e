@@ -1,7 +1,7 @@
 @When "^perform Portfolio Reassignment event on the '([^']*)' trade$"
     When opens lifecycle action 'portfolio reassignment' for current trade
     And component dynamic action selects portfolio from stored variable 'portfolioReassignment.newPortfolio'
-    And submits lifecycle event and waits for page ready
+    And submits 'portfolio reassignment' lifecycle event and waits for page ready
 
 @Then "^the trade details show the updated portfolio assignment$"
     When double click to navigate to trade detail and wait for page ready for stored variable 'createdTradeId'

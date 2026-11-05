@@ -12,6 +12,10 @@ import cucumber.api.Scenario;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
 
 public final class PlaywrightServiceResolver {
 
@@ -172,26 +176,42 @@ public final class PlaywrightServiceResolver {
         }
 
         /**
-         * Clicks {@code locatorKey} and waits for the risk calculation {@code POST riskUrl}: REAL lets the risk engine
-         * answer, MOCK answers with the response of setup file {@code mockSetup}.
+         * A risk calculation an action causes: {@code POST urlFragment}, answered in MOCK mode with the response of setup
+         * file {@code mockSetup}.
          */
+        public record RiskCall(String urlFragment, String mockSetup) {}
+
+        /** {@link #clickUsingRiskEngineMode(String, List)} for an action that causes one risk calculation. */
         public void clickUsingRiskEngineMode(String locatorKey, String riskUrl, String mockSetup) {
+            clickUsingRiskEngineMode(locatorKey, List.of(new RiskCall(riskUrl, mockSetup)));
+        }
+
+        /**
+         * Clicks {@code locatorKey} and waits for every risk calculation of {@code riskCalls}, in any order (a URL
+         * listed twice is awaited twice): REAL lets the risk engine answer, MOCK answers each URL with its setup file
+         * until all are answered.
+         */
+        public void clickUsingRiskEngineMode(String locatorKey, List<RiskCall> riskCalls) {
             OreoModuleConfiguration.RiskEngineMode mode = riskEngineMode();
-            log.info("[PlaywrightServiceResolver] clicking '{}' using configured risk engine mode='{}', url='{}'",
-                    locatorKey, mode, riskUrl);
+            log.info("[PlaywrightServiceResolver] clicking '{}' using configured risk engine mode='{}', calls={}",
+                    locatorKey, mode, riskCalls);
             Runnable click = () -> service.getLocator(locatorKey).click();
-            ResponseWaiter.Call risk = new ResponseWaiter.Call("POST", riskUrl);
+            ResponseWaiter.Call[] calls = riskCalls.stream()
+                    .map(c -> new ResponseWaiter.Call("POST", c.urlFragment()))
+                    .toArray(ResponseWaiter.Call[]::new);
             switch (mode) {
                 case MOCK:
-                    mocks.mockRoute(riskUrl, 200, TestData.setup(mockSetup).response());
+                    Map<String, String> mockByUrl = new LinkedHashMap<>();
+                    riskCalls.forEach(c -> mockByUrl.putIfAbsent(c.urlFragment(), c.mockSetup()));
+                    mockByUrl.forEach((url, setup) -> mocks.mockRoute(url, 200, TestData.setup(setup).response()));
                     try {
-                        responses.await(click, risk);
+                        responses.awaitInAnyOrder(click, calls);
                     } finally {
-                        mocks.clearMockRoute(riskUrl);
+                        mockByUrl.keySet().forEach(mocks::clearMockRoute);
                     }
                     return;
                 case REAL:
-                    responses.await(click, risk);
+                    responses.awaitInAnyOrder(click, calls);
                     return;
                 default:
                     throw new IllegalStateException("Unhandled risk engine mode: " + mode);

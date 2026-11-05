@@ -53,24 +53,48 @@ final class ResponseWaiter {
     }
 
     /**
-     * The one entry point: runs {@code action}, waits for {@code calls} in order and asserts each status; returns the
-     * responses in the order of {@code calls}. Listeners registered before the action record the requests as their events arrive (a request event always comes
-     * before its response event, so a fast or mocked response is not missed) and their responses; the call after
-     * them is waited for once the previous one is answered, each up to the whole timeout.
+     * Runs {@code action}, waits for {@code calls} in order and asserts each status; returns the responses in the
+     * order of {@code calls}. Each call is the first matching request sent after the previous one was answered (so a
+     * reload is told apart from an older request still in flight), each up to the whole timeout.
      */
-    List<Response> await(Runnable action, Call... callArray) {
-        List<Call> calls = List.of(callArray);
+    List<Response> await(Runnable action, Call... calls) {
+        return await(action, List.of(calls), true);
+    }
+
+    /**
+     * Like {@link #await(Runnable, Call...)}, in any order: each request sent after the action started is taken by the
+     * first of {@code calls} it matches and that has no request yet, even while an earlier one is still unanswered. For
+     * calls the page may send together, such as the risk calculations of a lifecycle event.
+     */
+    List<Response> awaitInAnyOrder(Runnable action, Call... calls) {
+        return await(action, List.of(calls), false);
+    }
+
+    /**
+     * Listeners registered before the action record the requests as their events arrive (a request event always comes
+     * before its response event, so a fast or mocked response is not missed) and their responses.
+     */
+    private List<Response> await(Runnable action, List<Call> calls, boolean ordered) {
         int count = calls.size();
         long timeoutMs = timeoutMillis.getAsLong();
         Page page = service.getPage();
-        log.info("[ResponseWaiter] waiting up to {} ms for each of {}", timeoutMs, calls);
+        log.info("[ResponseWaiter] waiting up to {} ms for each of {}{}", timeoutMs, calls, ordered ? "" : ", in any order");
         Request[] sent = new Request[count];
         Response[] answered = new Response[count];
         Consumer<Request> recordRequest = r -> {
-            int next = 0;
-            while (next < count && sent[next] != null) next++;
-            if (next < count && (next == 0 || answered[next - 1] != null) && calls.get(next).matches(r)) {
-                sent[next] = r;
+            if (ordered) {
+                int next = 0;
+                while (next < count && sent[next] != null) next++;
+                if (next < count && (next == 0 || answered[next - 1] != null) && calls.get(next).matches(r)) {
+                    sent[next] = r;
+                }
+                return;
+            }
+            for (int i = 0; i < count; i++) {
+                if (sent[i] == null && calls.get(i).matches(r)) {
+                    sent[i] = r;
+                    return;
+                }
             }
         };
         Consumer<Response> recordResponse = r -> {
@@ -84,13 +108,19 @@ final class ResponseWaiter {
         page.onRequest(recordRequest);
         page.onResponse(recordResponse);
         try {
+            try {
+                action.run();
+            } catch (TimeoutError e) {
+                throw timedOut(calls.get(0), null, null, timeoutMs, e);
+            }
             for (int i = 0; i < count; i++) {
-                int call = i;
+                int done = i + 1;
                 try {
-                    if (call == 0) action.run();
-                    waitUntil(page, () -> answered[call] != null, timeoutMs);
+                    waitUntil(page, () -> answeredCount(answered) >= done, timeoutMs);
                 } catch (TimeoutError e) {
-                    throw timedOut(calls.get(call), sent[call], call == 0 ? null : calls.get(call - 1), timeoutMs, e);
+                    int call = ordered ? i : firstUnanswered(answered);
+                    Call after = ordered && call > 0 ? calls.get(call - 1) : null;
+                    throw timedOut(calls.get(call), sent[call], after, timeoutMs, e);
                 }
             }
         } finally {
@@ -103,6 +133,17 @@ final class ResponseWaiter {
         }
         log.info("[ResponseWaiter] {} answered in {} ms", calls, (System.nanoTime() - start) / 1_000_000);
         return List.of(answered);
+    }
+
+    private static int answeredCount(Response[] answered) {
+        int n = 0;
+        for (Response r : answered) if (r != null) n++;
+        return n;
+    }
+
+    private static int firstUnanswered(Response[] answered) {
+        for (int i = 0; i < answered.length; i++) if (answered[i] == null) return i;
+        return answered.length - 1;
     }
 
     private static void waitUntil(Page page, BooleanSupplier condition, long timeoutMs) {
