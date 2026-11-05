@@ -12,7 +12,6 @@ import cucumber.api.Scenario;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.List;
 
 public final class PlaywrightServiceResolver {
 
@@ -141,36 +140,35 @@ public final class PlaywrightServiceResolver {
         public String text(Locator element) { return actions.text(element); }
 
         // ── Actions that wait for their response (ResponseWaiter) ──────
-        // Each waits for the request the action sends and its whole response, and asserts HTTP 200.
+        // Each runs the action and waits for the request it sends and its whole response (ResponseWaiter.await):
+        // HTTP 200 unless said otherwise.
         public void clickAndWaitForResponse(String locatorKey, String urlFragment, String httpMethod) {
             clickAndWaitForResponse(service.getLocator(locatorKey), urlFragment, httpMethod);
         }
         public void clickAndWaitForResponse(Locator locator, String urlFragment, String httpMethod) {
-            responses.runAndWaitForResponse(locator::click, urlFragment, httpMethod);
+            responses.await(locator::click, new ResponseWaiter.Call(httpMethod, urlFragment));
         }
         public void doubleClickAndWaitForResponse(String locatorKey, String urlFragment, String httpMethod) {
-            Locator locator = service.getLocator(locatorKey);
-            responses.runAndWaitForResponse(locator::dblclick, urlFragment, httpMethod);
+            responses.await(service.getLocator(locatorKey)::dblclick, new ResponseWaiter.Call(httpMethod, urlFragment));
         }
         public void refreshAndWaitForResponse(String urlFragment, String httpMethod) {
-            responses.runAndWaitForResponse(() -> service.getPage().reload(), urlFragment, httpMethod);
+            responses.await(() -> service.getPage().reload(), new ResponseWaiter.Call(httpMethod, urlFragment));
         }
         /**
          * Clicks {@code locatorKey}, waits for the {@code httpMethod urlFragment} response the click causes, then for the
          * {@code thenHttpMethod thenUrlFragment} response the page sends after it (a reload the UI does by itself), each
-         * with the whole timeout; asserts HTTP 200 on both and returns the first body.
+         * with the whole timeout; returns the first body.
          */
         public String clickAndWaitForResponses(String locatorKey, String urlFragment, String httpMethod,
                                                String thenUrlFragment, String thenHttpMethod) {
-            Locator locator = service.getLocator(locatorKey);
-            return responses.runAndWaitForResponses(locator::click, List.of(
+            return responses.await(service.getLocator(locatorKey)::click,
                     new ResponseWaiter.Call(httpMethod, urlFragment),
-                    new ResponseWaiter.Call(thenHttpMethod, thenUrlFragment))).get(0).text();
+                    new ResponseWaiter.Call(thenHttpMethod, thenUrlFragment)).get(0).text();
         }
         /** Like {@link #clickAndWaitForResponse(String, String, String)}, accepting 200 or 201; returns the body. */
         public String clickAndCaptureResponse(String locatorKey, String urlFragment, String httpMethod) {
-            Locator locator = service.getLocator(locatorKey);
-            return responses.runAndCaptureResponse(locator::click, urlFragment, httpMethod);
+            return responses.await(service.getLocator(locatorKey)::click,
+                    new ResponseWaiter.Call(httpMethod, urlFragment).orCreated()).get(0).text();
         }
 
         /**
@@ -182,17 +180,18 @@ public final class PlaywrightServiceResolver {
             log.info("[PlaywrightServiceResolver] clicking '{}' using configured risk engine mode='{}', url='{}'",
                     locatorKey, mode, riskUrl);
             Runnable click = () -> service.getLocator(locatorKey).click();
+            ResponseWaiter.Call risk = new ResponseWaiter.Call("POST", riskUrl);
             switch (mode) {
                 case MOCK:
                     mocks.mockRoute(riskUrl, 200, TestData.setup(mockSetup).response());
                     try {
-                        responses.runAndWaitForResponse(click, riskUrl, "POST");
+                        responses.await(click, risk);
                     } finally {
                         mocks.clearMockRoute(riskUrl);
                     }
                     return;
                 case REAL:
-                    responses.runAndWaitForResponse(click, riskUrl, "POST");
+                    responses.await(click, risk);
                     return;
                 default:
                     throw new IllegalStateException("Unhandled risk engine mode: " + mode);

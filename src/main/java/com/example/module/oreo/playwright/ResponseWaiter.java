@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.function.LongSupplier;
+import java.util.stream.Collectors;
 
 /**
  * Runs a UI action and waits for the API calls it causes, in order: for each call, the first matching request sent
@@ -25,8 +26,16 @@ final class ResponseWaiter {
     private static final Logger log = LoggerFactory.getLogger(ResponseWaiter.class);
     private static final int BODY_IN_MESSAGE = 500;
 
-    /** An API call the action is expected to cause: a request whose URL contains {@code urlFragment}. */
-    record Call(String httpMethod, String urlFragment) {
+    /**
+     * An API call the action is expected to cause: a request whose URL contains {@code urlFragment}, answered with one
+     * of {@code statuses} (200 unless {@link #orCreated()}).
+     */
+    record Call(String httpMethod, String urlFragment, List<Integer> statuses) {
+        Call(String httpMethod, String urlFragment) { this(httpMethod, urlFragment, List.of(200)); }
+
+        /** This call, also accepting 201 Created. */
+        Call orCreated() { return new Call(httpMethod, urlFragment, List.of(200, 201)); }
+
         boolean matches(Request request) {
             return request.url().contains(urlFragment) && request.method().equals(httpMethod);
         }
@@ -43,36 +52,14 @@ final class ResponseWaiter {
         this.timeoutMillis = timeoutMillis;
     }
 
-    /** Runs {@code action} and asserts its response is HTTP 200. */
-    void runAndWaitForResponse(Runnable action, String urlFragment, String httpMethod) {
-        runAndWaitForResponses(action, List.of(new Call(httpMethod, urlFragment)));
-    }
-
-    /** Runs {@code action}, asserts its response is HTTP 200 or 201 and returns the body. */
-    String runAndCaptureResponse(Runnable action, String urlFragment, String httpMethod) {
-        Call call = new Call(httpMethod, urlFragment);
-        Response response = awaitResponses(action, List.of(call)).get(0);
-        if (response.status() != 200 && response.status() != 201) {
-            throw statusError(call, "2xx", response);
-        }
-        return response.text();
-    }
-
-    /** Runs {@code action}, waits for {@code calls} in order and asserts each response is HTTP 200. */
-    List<Response> runAndWaitForResponses(Runnable action, List<Call> calls) {
-        List<Response> responses = awaitResponses(action, calls);
-        for (int i = 0; i < calls.size(); i++) {
-            expectStatus200(calls.get(i), responses.get(i));
-        }
-        return responses;
-    }
-
     /**
-     * Listeners registered before the action record the requests as their events arrive (a request event always comes
+     * The one entry point: runs {@code action}, waits for {@code calls} in order and asserts each status; returns the
+     * responses in the order of {@code calls}. Listeners registered before the action record the requests as their events arrive (a request event always comes
      * before its response event, so a fast or mocked response is not missed) and their responses; the call after
      * them is waited for once the previous one is answered, each up to the whole timeout.
      */
-    private List<Response> awaitResponses(Runnable action, List<Call> calls) {
+    List<Response> await(Runnable action, Call... callArray) {
+        List<Call> calls = List.of(callArray);
         int count = calls.size();
         long timeoutMs = timeoutMillis.getAsLong();
         Page page = service.getPage();
@@ -112,6 +99,7 @@ final class ResponseWaiter {
         }
         for (int i = 0; i < count; i++) {
             expectBody(calls.get(i), answered[i]);
+            expectStatus(calls.get(i), answered[i]);
         }
         log.info("[ResponseWaiter] {} answered in {} ms", calls, (System.nanoTime() - start) / 1_000_000);
         return List.of(answered);
@@ -143,17 +131,13 @@ final class ResponseWaiter {
         log.info("[ResponseWaiter] {} -> {} ({})", call, response.status(), response.url());
     }
 
-    private static void expectStatus200(Call call, Response response) {
-        if (response.status() != 200) {
-            throw statusError(call, "200", response);
-        }
-    }
-
-    private static AssertionError statusError(Call call, String expectedStatus, Response response) {
-        String message = "Expected " + call + " to return " + expectedStatus + " but got " + response.status()
+    private static void expectStatus(Call call, Response response) {
+        if (call.statuses().contains(response.status())) return;
+        String expected = call.statuses().stream().map(String::valueOf).collect(Collectors.joining(" or "));
+        String message = "Expected " + call + " to return " + expected + " but got " + response.status()
                 + " from " + response.url() + ". Body: " + body(response);
         log.error("[ResponseWaiter] {}", message);
-        return new AssertionError(message);
+        throw new AssertionError(message);
     }
 
     private static String body(Response response) {
