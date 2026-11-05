@@ -51,58 +51,43 @@ public class AllocationSteps {
         log.info("[AllocationSteps] Trades snapshot captured as '{}'.", ctxKey);
     }
 
+    /**
+     * Fills the first {@code legs} sub-trade rows of the allocation dialog, which the split number has made, from the
+     * case data {@code subTrades}: the item's {@code counterpartyName} is selected and its {@code percentage} typed,
+     * each when the item has it. The report shows each row.
+     *
+     * <pre>And user fills 3 way sub-trade allocation info</pre>
+     */
     @When("^user fills (\\d+) way sub-trade allocation info$")
-    public void fillSubTradeRows(int size) {
-        JsonNode subTrades = ctx.get("_tc.request.subTrades");
-
-        if (subTrades.isMissingNode() || !subTrades.isArray() || subTrades.isEmpty()) {
-            throw new AssertionError(
-                    "[AllocationSteps] 'subTrades' array is missing or empty "
-                    + "for key '" + ctx.get("_tc.key") + "'.");
-        }
-        if (size > subTrades.size()) {
-            throw new AssertionError(
-                    "[AllocationSteps] Requested size " + size + " exceeds 'subTrades' length "
-                    + subTrades.size() + " for key '" + ctx.get("_tc.key") + "'.");
-        }
-
-        Locator dialog = ctx.service().getLocator("dynamic_action.dialog");
-
-        for (int i = 0; i < size; i++) {
-            JsonNode leg              = subTrades.get(i);
-            String   counterpartyName = optionalLegField(leg, "counterpartyName");
-            String   percentage       = optionalLegField(leg, "percentage");
-
-            log.info("[AllocationSteps] Row {} — counterparty='{}'{}",
-                    i + 1,
-                    counterpartyName,
-                    percentage.isEmpty() ? "" : ", percentage='" + percentage + "'");
-
-            Locator row = dialog.locator("tbody tr").nth(i);
-            if (!counterpartyName.isEmpty()) {
-                selectCounterparty(row, counterpartyName);
+    public void fillSubTradeRows(int legs) {
+        JsonNode subTrades = caseSubTrades(legs);
+        Locator counterparties = ctx.service().getLocator("allocation_dialog.subtrade_counterparty_select");
+        Locator percentages = ctx.service().getLocator("allocation_dialog.subtrade_percentage_input");
+        for (int i = 0; i < legs; i++) {
+            String counterparty = text(subTrades.get(i), "counterpartyName");
+            String percentage = text(subTrades.get(i), "percentage");
+            if (!counterparty.isEmpty()) {
+                counterparties.nth(i).click();
+                ctx.clickOption(counterparty);
             }
             if (!percentage.isEmpty()) {
-                fillSubTradePercentage(row, percentage);
+                ctx.innerInput(percentages.nth(i)).fill(percentage);
             }
-
+            ctx.write("Sub-trade " + (i + 1) + ": counterparty '" + counterparty + "', percentage '" + percentage + "'");
         }
-        log.info("[AllocationSteps] All {} sub-trade row(s) filled.", size);
     }
 
-
-    // ── Private helpers ──────────────────────────────────────────────
-
-    private String optionalLegField(JsonNode leg, String fieldName) {
-        return leg.path(fieldName).asText("").trim();
+    /** The case's {@code subTrades}, which must have at least {@code legs} items. */
+    private JsonNode caseSubTrades(int legs) {
+        JsonNode subTrades = ctx.find("_tc.request.subTrades");
+        if (subTrades == null || !subTrades.isArray() || subTrades.size() < legs) {
+            throw new AssertionError("Case " + ctx.find("_tc.key") + " needs at least " + legs
+                    + " items in its 'subTrades' for a " + legs + "-way allocation, has: " + subTrades);
+        }
+        return subTrades;
     }
 
-    private void selectCounterparty(Locator row, String optionName) {
-        row.locator("[data-testid='allocation-sub-trade-counterparty-select']").click();
-        ctx.clickOption(optionName);
-    }
-
-    private void fillSubTradePercentage(Locator row, String percentage) {
-        ctx.innerInput(row.locator("[data-testid='allocation-sub-trade-percentage-input']")).fill(percentage);
+    private static String text(JsonNode item, String field) {
+        return item.path(field).asText("").trim();
     }
 }
