@@ -1,6 +1,5 @@
 package com.example.module.oreo.glue.ui;
 
-import com.example.module.oreo.utils.AllocationRiskMock;
 import com.example.module.oreo.utils.TradeApiClient;
 import com.example.module.oreo.playwright.PlaywrightServiceResolver;
 import com.example.module.oreo.playwright.PlaywrightServiceResolver.Context.RiskCall;
@@ -72,7 +71,7 @@ public class TradeLifecycleEventSteps {
      * The risk calculations the Confirm of an event form causes, in the order the page sends them: each after the
      * previous one is answered (with a {@code GET /trades/<id>} between the event's own calculation and
      * calculate-risk). Novation remaining sends {@code target-gain} when its form opens, not on Confirm.
-     * The mocked {@code calculate-allocation-risk} has one leg per leg of its request ({@link AllocationRiskMock}).
+     * The mocked {@code calculate-allocation-risk} answer is fixed: two legs, whatever the split.
      */
     static List<RiskCall> riskCallsOf(String event, String tradeId) {
         RiskCall risk = new RiskCall(TradeApiClient.calculateRiskPath(tradeId), "risk-calc-success-mock");
@@ -81,9 +80,8 @@ public class TradeLifecycleEventSteps {
                  "portfolio reassignment", "novation remaining" -> List.of(risk, risk);
             case "partial novation remaining" -> List.of(
                     new RiskCall(TradeApiClient.calculatePartialRiskPath(tradeId), "risk-calc-partial-success-mock"), risk);
-            case "allocation" -> List.of(new RiskCall(TradeApiClient.calculateAllocationRiskPath(tradeId),
-                    "risk-calc-allocation-success-mock",
-                    (response, requestBody) -> AllocationRiskMock.answer(tradeId, response, requestBody)), risk);
+            case "allocation" -> List.of(new RiskCall(
+                    TradeApiClient.calculateAllocationRiskPath(tradeId), "risk-calc-allocation-success-mock"), risk);
             default -> throw new IllegalArgumentException("No risk calculations known for event '" + event + "'");
         };
     }

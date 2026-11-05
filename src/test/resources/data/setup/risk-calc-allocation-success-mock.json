@@ -1,5 +1,5 @@
 {
-  "_comment": "Answer given to the page for POST /trades/<id>/calculate-allocation-risk (riskEngine=mock). A template: allocatedTradeRisks holds one leg, which AllocationRiskMock repeats for each leg of the request, taking its notional, premium, counterparty and portfolio from the request and numbering legNumber and tradeId (<id>-ALLOC-<n>)",
+  "_comment": "Answer given to the page for POST /trades/<id>/calculate-allocation-risk (riskEngine=mock): original risk, one risk per allocated leg (two legs, whatever the split), combined risk and delta",
   "response": {
     "code": 200,
     "status": "SUCCESS",
@@ -13,14 +13,27 @@
       "allocatedTradeRisks": [
         {
           "legNumber": 1,
-          "tradeId": "",
-          "notionalAmount": 0,
-          "premiumAmount": 0,
-          "counterpartyFmId": "",
-          "portfolioId": "",
+          "tradeId": "TRD-EXAMPLE-ALLOC-1",
+          "notionalAmount": 35000,
+          "premiumAmount": 5000,
+          "counterpartyFmId": "100000001",
+          "portfolioId": "EXAMPLE_PF",
           "risk": {
             "calculationTimestamp": "2000-01-01T00:00:00.000000000Z",
             "pnl": 2638.63,
+            "riskEngine": "EXAMPLE-RISK-ENGINE"
+          }
+        },
+        {
+          "legNumber": 2,
+          "tradeId": "TRD-EXAMPLE-ALLOC-2",
+          "notionalAmount": 35000,
+          "premiumAmount": 5000,
+          "counterpartyFmId": "100000002",
+          "portfolioId": "EXAMPLE_PF",
+          "risk": {
+            "calculationTimestamp": "2000-01-01T00:00:00.000000000Z",
+            "pnl": 2638.62,
             "riskEngine": "EXAMPLE-RISK-ENGINE"
           }
         }
