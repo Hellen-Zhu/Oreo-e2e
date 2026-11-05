@@ -15,6 +15,7 @@ import org.slf4j.LoggerFactory;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BinaryOperator;
 
 
 public final class PlaywrightServiceResolver {
@@ -177,9 +178,17 @@ public final class PlaywrightServiceResolver {
 
         /**
          * A risk calculation an action causes: {@code POST urlFragment}, answered in MOCK mode with the response of setup
-         * file {@code mockSetup}; a null {@code mockSetup} lets the backend answer in both modes.
+         * file {@code mockSetup} as {@code answer} makes it from that response and the request body (the response as it
+         * is unless given); a null {@code mockSetup} lets the backend answer in both modes.
          */
-        public record RiskCall(String urlFragment, String mockSetup) {}
+        public record RiskCall(String urlFragment, String mockSetup, BinaryOperator<String> answer) {
+            public RiskCall(String urlFragment, String mockSetup) {
+                this(urlFragment, mockSetup, (response, requestBody) -> response);
+            }
+
+            @Override
+            public String toString() { return "POST " + urlFragment + " (mock: " + mockSetup + ")"; }
+        }
 
         /** {@link #clickUsingRiskEngineMode(String, List)} for an action that causes one risk calculation. */
         public void clickUsingRiskEngineMode(String locatorKey, String riskUrl, String mockSetup) {
@@ -201,10 +210,13 @@ public final class PlaywrightServiceResolver {
                     .toArray(ResponseWaiter.Call[]::new);
             switch (mode) {
                 case MOCK:
-                    Map<String, String> mockByUrl = new LinkedHashMap<>();
+                    Map<String, RiskCall> mockByUrl = new LinkedHashMap<>();
                     riskCalls.stream().filter(c -> c.mockSetup() != null)
-                            .forEach(c -> mockByUrl.putIfAbsent(c.urlFragment(), c.mockSetup()));
-                    mockByUrl.forEach((url, setup) -> mocks.mockRoute(url, 200, TestData.setup(setup).response()));
+                            .forEach(c -> mockByUrl.putIfAbsent(c.urlFragment(), c));
+                    mockByUrl.forEach((url, c) -> {
+                        String response = TestData.setup(c.mockSetup()).response();
+                        mocks.mockRoute(url, 200, request -> c.answer().apply(response, request.postData()));
+                    });
                     try {
                         responses.await(click, calls);
                     } finally {
