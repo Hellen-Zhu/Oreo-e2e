@@ -1,0 +1,9 @@
+{
+  "_comment": "Answer given to the page for GET /trades/<id>/target-gain, which the Novation Remaining form sends as it opens (riskEngine=mock): the target gain",
+  "response": {
+    "code": 200,
+    "status": "SUCCESS",
+    "msg": "",
+    "data": 458.11
+  }
+}

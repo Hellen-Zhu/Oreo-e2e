@@ -176,10 +176,13 @@ public final class PlaywrightServiceResolver {
         }
 
         /**
-         * A risk calculation an action causes: {@code POST urlFragment}, answered in MOCK mode with the response of setup
-         * file {@code mockSetup}; a null {@code mockSetup} lets the backend answer in both modes.
+         * A risk calculation an action causes: {@code httpMethod urlFragment} ({@code POST} unless given), answered in
+         * MOCK mode with the response of setup file {@code mockSetup}; a null {@code mockSetup} lets the backend answer
+         * in both modes.
          */
-        public record RiskCall(String urlFragment, String mockSetup) {}
+        public record RiskCall(String httpMethod, String urlFragment, String mockSetup) {
+            public RiskCall(String urlFragment, String mockSetup) { this("POST", urlFragment, mockSetup); }
+        }
 
         /** {@link #clickUsingRiskEngineMode(String, List)} for an action that causes one risk calculation. */
         public void clickUsingRiskEngineMode(String locatorKey, String riskUrl, String mockSetup) {
@@ -197,7 +200,7 @@ public final class PlaywrightServiceResolver {
                     locatorKey, mode, riskCalls);
             Runnable click = () -> service.getLocator(locatorKey).click();
             ResponseWaiter.Call[] calls = riskCalls.stream()
-                    .map(c -> new ResponseWaiter.Call("POST", c.urlFragment()))
+                    .map(c -> new ResponseWaiter.Call(c.httpMethod(), c.urlFragment()))
                     .toArray(ResponseWaiter.Call[]::new);
             switch (mode) {
                 case MOCK:

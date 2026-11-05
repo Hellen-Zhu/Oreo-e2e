@@ -59,6 +59,16 @@ public class TradeLifecycleEventSteps {
     // ── Lifecycle event steps ───────────────────────────────────────
 
     /**
+     * Opens the Novation Remaining form from the blotter row action and waits for {@code GET /trades/<id>/target-gain},
+     * which the form sends while it loads; MOCK answers it with setup {@code target-gain-success-mock}.
+     */
+    @When("^click novation remaining action using configured risk engine mode for trade stored as '([^']*)'$")
+    public void clickNovationRemainingActionUsingConfiguredRiskEngineMode(String ctxKey) {
+        ctx.clickUsingRiskEngineMode("trade_portal.row_action_novationremaining", List.of(
+                new RiskCall("GET", TradeApiClient.targetGainPath(ctx.get(ctxKey)), "target-gain-success-mock")));
+    }
+
+    /**
      * Clicks Confirm in the dynamic-action form of {@code event} and waits for the risk calculations it causes, in
      * order, before the TradeChangeConfirmation dialog is used ({@link #riskCallsOf}). MOCK answers those it can.
      */
@@ -70,7 +80,8 @@ public class TradeLifecycleEventSteps {
     /**
      * The risk calculations the Confirm of an event form causes, in the order the page sends them: each after the
      * previous one is answered (with a {@code GET /trades/<id>} between the event's own calculation and
-     * calculate-risk). Novation remaining sends {@code target-gain} when its form opens, not on Confirm.
+     * calculate-risk). Novation remaining sends {@code target-gain} when its form opens, not on Confirm
+     * ({@link #clickNovationRemainingActionUsingConfiguredRiskEngineMode}).
      * The mocked {@code calculate-allocation-risk} answer is fixed: two legs, whatever the split.
      */
     static List<RiskCall> riskCallsOf(String event, String tradeId) {

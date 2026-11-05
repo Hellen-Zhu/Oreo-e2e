@@ -135,8 +135,9 @@
 @When "^page trade portal clicks allocation action for current trade$"
     When click 'trade_portal.row_action_allocation'
 
+# The form loads its target gain (GET target-gain) as it opens: mocked in MOCK mode, awaited in both.
 @When "^page trade portal clicks novation remaining action for current trade$"
-    When click 'trade_portal.row_action_novationremaining'
+    When click novation remaining action using configured risk engine mode for trade stored as 'createdTradeId'
 
 @When "^page trade portal clicks partial novation remaining action for current trade$"
     When click 'trade_portal.row_action_partialnovationremaining'
