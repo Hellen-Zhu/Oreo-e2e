@@ -41,7 +41,21 @@ public class LoginSteps {
         String email = user.email();
         ctx.innerInput("login.email").fill(email);
         ctx.innerInput("login.password").fill(user.password());
-        ctx.service().getLocator("login.submit").click();
+        submitAndWaitForFirstBlotterLoad();
         ctx.write("Signed in as " + user.role() + " (" + email + ")");
+    }
+
+    /**
+     * Submits the filled login form and waits for the portal's first blotter load. After the click the portal loads
+     * config, unread count, products, user preferences, blotters and availability, and only then sends
+     * {@code POST /api/v1/blotter/trades}: the last call of the start-up and the one the blotter draws from. The wait is
+     * registered before the click, so a fast load is not missed, and a request in flight before the click is not
+     * taken. On a timeout the message gives the page: still on /login means the sign-in itself failed.
+     *
+     * <pre>And submit login and wait for the first blotter load</pre>
+     */
+    @Given("^submit login and wait for the first blotter load$")
+    public void submitAndWaitForFirstBlotterLoad() {
+        ctx.clickAndWaitForResponse("login.submit", "/api/v1/blotter/trades", "POST");
     }
 }

@@ -3,4 +3,4 @@
 @Given "^page login signs in with email '([^']*)' and password '([^']*)'$"
     And type value '$1' into 'login.email'
     And type value '$2' into 'login.password'
-    And click 'login.submit'
+    And submit login and wait for the first blotter load
