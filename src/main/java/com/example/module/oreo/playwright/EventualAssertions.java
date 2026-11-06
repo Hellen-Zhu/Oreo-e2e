@@ -111,6 +111,27 @@ final class EventualAssertions {
         }
     }
 
+    /** Polls until {@code locator} matches exactly {@code count} elements. */
+    void assertEventuallyCount(Locator locator, int count) {
+        PlaywrightAssertions.assertThat(locator).hasCount(
+                count,
+                new LocatorAssertions.HasCountOptions().setTimeout(timeoutMillis()));
+    }
+
+    /** Polls until the whole text of {@code locator} matches {@code pattern}. */
+    void assertEventuallyMatches(Locator locator, Pattern pattern, double timeoutMs) {
+        PlaywrightAssertions.assertThat(locator).hasText(
+                pattern,
+                new LocatorAssertions.HasTextOptions().setTimeout(timeoutMs));
+    }
+
+    /** Polls until the whole text of {@code locator} is no longer {@code text}. */
+    void assertEventuallyNotText(Locator locator, String text, double timeoutMs) {
+        PlaywrightAssertions.assertThat(locator).not().hasText(
+                text,
+                new LocatorAssertions.HasTextOptions().setTimeout(timeoutMs));
+    }
+
     void assertHasValue(Locator locator, String value) { assertHasValue(locator, value, timeoutMillis()); }
 
     void assertHasValue(Locator locator, String value, double timeoutMs) {

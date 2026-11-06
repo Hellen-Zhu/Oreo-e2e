@@ -1,8 +1,6 @@
 package com.example.module.oreo.glue.ui;
 
 import com.microsoft.playwright.Locator;
-import com.microsoft.playwright.assertions.LocatorAssertions;
-import com.microsoft.playwright.assertions.PlaywrightAssertions;
 import com.example.genie.module.rest.service.RequestResponseHelper;
 import com.example.module.oreo.utils.RestApiUtil;
 import com.example.module.oreo.playwright.PlaywrightServiceResolver;
@@ -26,7 +24,7 @@ public class WebsocketNotificationSteps {
     private static final String NOTIFICATION_UNREAD_BADGE_BASELINE_CTX_KEY = "wsNotificationUnreadBadgeBaseline";
     private static final String NO_UNREAD_BADGE_VALUE = "0";
     private static final Pattern POSITIVE_UNREAD_BADGE_PATTERN = Pattern.compile("^[1-9]\\d*$");
-    private static final double NOTIFICATION_UPDATE_TIMEOUT_MILLIS = 10_000D;
+    private static final long NOTIFICATION_UPDATE_TIMEOUT_MILLIS = 10_000L;
 
     private PlaywrightServiceResolver.Context ctx;
     private RequestResponseHelper helper;
@@ -65,18 +63,11 @@ public class WebsocketNotificationSteps {
     private String waitUntilUnreadBadgeChangesFromBaseline(String baselineUnreadBadge) {
         Locator unreadBadge = ctx.service().getLocator("trade_portal.notification_unread_badge");
         try {
-            if (NO_UNREAD_BADGE_VALUE.equals(baselineUnreadBadge)) {
-                PlaywrightAssertions.assertThat(unreadBadge).hasText(
-                        POSITIVE_UNREAD_BADGE_PATTERN,
-                        new LocatorAssertions.HasTextOptions().setTimeout(NOTIFICATION_UPDATE_TIMEOUT_MILLIS));
-            } else {
-                PlaywrightAssertions.assertThat(unreadBadge).not().hasText(
-                        baselineUnreadBadge,
-                        new LocatorAssertions.HasTextOptions().setTimeout(NOTIFICATION_UPDATE_TIMEOUT_MILLIS));
-                PlaywrightAssertions.assertThat(unreadBadge).hasText(
-                        POSITIVE_UNREAD_BADGE_PATTERN,
-                        new LocatorAssertions.HasTextOptions().setTimeout(NOTIFICATION_UPDATE_TIMEOUT_MILLIS));
+            // A baseline of zero is an absent badge: there is no text to leave, only a count to appear
+            if (!NO_UNREAD_BADGE_VALUE.equals(baselineUnreadBadge)) {
+                ctx.assertEventuallyNotText(unreadBadge, baselineUnreadBadge, NOTIFICATION_UPDATE_TIMEOUT_MILLIS);
             }
+            ctx.assertEventuallyMatches(unreadBadge, POSITIVE_UNREAD_BADGE_PATTERN, NOTIFICATION_UPDATE_TIMEOUT_MILLIS);
             return readUnreadBadgeValueOrZero();
         } catch (AssertionError e) {
             String currentUnreadBadge = readUnreadBadgeValueOrZero();
@@ -84,7 +75,7 @@ public class WebsocketNotificationSteps {
                     "[WebsocketNotificationSteps] Unread badge did not change in sensible time."
                             + " baselineUnread='" + baselineUnreadBadge + "'"
                             + ", currentUnread='" + currentUnreadBadge + "'"
-                            + ", timeoutMs=" + (long) NOTIFICATION_UPDATE_TIMEOUT_MILLIS,
+                            + ", timeoutMs=" + NOTIFICATION_UPDATE_TIMEOUT_MILLIS,
                     e);
         }
     }

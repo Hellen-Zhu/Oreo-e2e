@@ -15,12 +15,13 @@ import org.slf4j.LoggerFactory;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
  * The trade endpoints as Java glue calls them: their paths, for the requests here and for the UI steps that wait for
- * a response, and the requests that provision a trade from {@code data/setup/}. API snippets use the built-in REST
- * steps, not this class.
+ * a response; the requests that provision a trade from {@code data/setup/}; what their responses say, so that no step
+ * reads a response path. API snippets use the built-in REST steps, not this class.
  */
 public final class TradeApiClient {
 
@@ -30,6 +31,12 @@ public final class TradeApiClient {
     public static final String SUBMIT_TRADE_PATH = "/trades/create?tradeAction=SUBMIT";
     public static final String SAVE_TRADE_PATH = "/trades/create?tradeAction=SAVE";
     public static final String TRIGGER_EVENT_PATH = "/trades/trigger-event";
+
+    /**
+     * A trade that {@link #submitTrade} or {@link #saveTrade} created: its ID ({@code data.trade.id}) and the ID of its
+     * checker task ({@code data.checkerContext.taskId}), blank when the response has none.
+     */
+    public record CreatedTrade(String tradeId, String taskId) {}
 
     private TradeApiClient() {
         // Utility class
@@ -56,15 +63,24 @@ public final class TradeApiClient {
     }
 
     /** Submits the setup body {@code testDataKey} for {@code product} with the dat file at classpath {@code datPath}. */
-    public static JsonNode submitTrade(RequestResponseHelper helper, String userId, String testDataKey,
-                                       ProductDatFiles product, String datPath) throws URISyntaxException {
-        return createTrade(helper, SUBMIT_TRADE_PATH, userId, testDataKey, product, datPath);
+    public static CreatedTrade submitTrade(RequestResponseHelper helper, String userId, String testDataKey,
+                                           ProductDatFiles product, String datPath) throws URISyntaxException {
+        return createdTrade(createTrade(helper, SUBMIT_TRADE_PATH, userId, testDataKey, product, datPath), testDataKey);
     }
 
     /** Saves the setup body {@code testDataKey} as a draft of {@code product}. */
-    public static JsonNode saveTrade(RequestResponseHelper helper, String userId, String testDataKey,
-                                     ProductDatFiles product, String datPath) throws URISyntaxException {
-        return createTrade(helper, SAVE_TRADE_PATH, userId, testDataKey, product, datPath);
+    public static CreatedTrade saveTrade(RequestResponseHelper helper, String userId, String testDataKey,
+                                         ProductDatFiles product, String datPath) throws URISyntaxException {
+        return createdTrade(createTrade(helper, SAVE_TRADE_PATH, userId, testDataKey, product, datPath), testDataKey);
+    }
+
+    /** @throws AssertionError when the response names no trade */
+    private static CreatedTrade createdTrade(JsonNode response, String testDataKey) {
+        String tradeId = response.at("/data/trade/id").asText("");
+        if (tradeId.isBlank()) {
+            throw new AssertionError("[TradeApiClient] setup " + testDataKey + " created no trade: " + response);
+        }
+        return new CreatedTrade(tradeId, response.at("/data/checkerContext/taskId").asText(""));
     }
 
     private static JsonNode createTrade(RequestResponseHelper helper, String path, String userId, String testDataKey,
@@ -116,15 +132,29 @@ public final class TradeApiClient {
         return RestApiUtil.post(helper, updatePath(tradeId), userId, TestData.setup(testDataKey).request());
     }
 
-    /** Triggers the event of the setup body {@code testDataKey} on {@code tradeIds}. */
-    public static JsonNode triggerEvent(RequestResponseHelper helper, List<String> tradeIds, String userId,
-                                        String testDataKey) throws JsonProcessingException {
+    /**
+     * Triggers the event of the setup body {@code testDataKey} on {@code tradeIds}; returns the checker task IDs of the
+     * response's results ({@code data.results[].checkerTaskId}), in its order.
+     *
+     * @throws AssertionError when the response has no result
+     */
+    public static List<String> triggerEvent(RequestResponseHelper helper, List<String> tradeIds, String userId,
+                                            String testDataKey) throws JsonProcessingException {
         ObjectNode body = (ObjectNode) OBJECT_MAPPER.readTree(TestData.setup(testDataKey).request());
         ArrayNode ids = OBJECT_MAPPER.createArrayNode();
         tradeIds.forEach(ids::add);
         body.set("tradeIds", ids);
         log.info("[TradeApiClient] triggerEvent: tradeIds='{}', userId='{}', testDataKey='{}'", tradeIds, userId, testDataKey);
-        return RestApiUtil.post(helper, TRIGGER_EVENT_PATH, userId, OBJECT_MAPPER.writeValueAsString(body));
+        JsonNode response = RestApiUtil.post(helper, TRIGGER_EVENT_PATH, userId,
+                OBJECT_MAPPER.writeValueAsString(body));
+        JsonNode results = response.at("/data/results");
+        if (!results.isArray() || results.isEmpty()) {
+            throw new AssertionError("[TradeApiClient] setup " + testDataKey + " on " + tradeIds + " has no results: "
+                    + response);
+        }
+        List<String> taskIds = new ArrayList<>();
+        results.forEach(result -> taskIds.add(result.path("checkerTaskId").asText("")));
+        return taskIds;
     }
 
     public static JsonNode approveTask(RequestResponseHelper helper, String taskId, String userId) {

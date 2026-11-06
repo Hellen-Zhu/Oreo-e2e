@@ -4,8 +4,6 @@ import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.options.AriaRole;
 import com.microsoft.playwright.options.KeyboardModifier;
 import com.microsoft.playwright.options.MouseButton;
-import com.microsoft.playwright.options.WaitForSelectorState;
-import com.microsoft.playwright.assertions.PlaywrightAssertions;
 import cucumber.api.Scenario;
 import cucumber.api.java.Before;
 import cucumber.api.java.en.Then;
@@ -133,25 +131,16 @@ public class TradePortalSteps {
         }
     }
 
+    /**
+     * Asserts that blotter {@code blotterElementName} (with {@code {0}} = stored variable {@code dynamicCtxKey}) shows
+     * exactly one header of column {@code colName} ({@code data-col}), waiting for the blotter to draw it.
+     */
     @Then("^blotter '([^']*)' with dynamic value from stored variable '([^']*)' contains column '([^']*)'$")
     public void assertBlotterContainsColumn(String blotterElementName, String dynamicCtxKey, String colName) {
-
         Locator blotter = ctx.getLocatorFromStoredVariable(blotterElementName, dynamicCtxKey);
-        log.info("[TradePortalSteps] Asserting Blotter '{}' contains column '{}'",
-                blotter, colName);
-
-        blotter.waitFor(new Locator.WaitForOptions()
-                .setState(WaitForSelectorState.ATTACHED)
-                .setTimeout(ctx.timeoutMillis()));
-
-        Locator column = blotter.locator("th[data-col='" + colName + "']");
-
-        ctx.write(String.format(
-                "Blotter '%s' contains column '%s'.",
-                blotterElementName,
-                colName));
-
-        PlaywrightAssertions.assertThat(column).hasCount(1);
+        log.info("[TradePortalSteps] Asserting Blotter '{}' contains column '{}'", blotter, colName);
+        ctx.write(String.format("Blotter '%s' contains column '%s'.", blotterElementName, colName));
+        ctx.assertEventuallyCount(ctx.cellOf(blotter, "trade_portal.blotter_header_cell", colName), 1);
     }
 
     // ── Private helpers ─────────────────────────────────────────────

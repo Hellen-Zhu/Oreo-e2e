@@ -153,13 +153,13 @@ Every element is registered in JSON and reached through it:
 | REST service and context | `RestServiceResolver` |
 | Current-case / setup JSON as request, path parameters, task IDs, response extraction, request ID header | `ApiRequestSteps` |
 | Request from Java (provisioning, hooks, cleanup) with the required headers | `RestApiUtil` |
-| Endpoint paths and provisioning requests of a domain, for Java steps and response waits | `TradeApiClient`, `ProductApiClient` |
+| Endpoint paths and provisioning requests of a domain, for Java steps and response waits; the IDs a provisioning response returns (`CreatedTrade`, `CreatedProduct`) | `TradeApiClient`, `ProductApiClient` |
 | Product provisioning, event configuration, schema files to upload | `ProductApiClient` |
 | Product, multipart and dat file requests | `TradeApiSteps` |
 | Recorded-response comparison, stored-variable and field assertions | `ApiResponseAssertionSteps` |
 | UI trade provisioning | `TradeProvisioningSteps` |
 | Dynamic elements, inputs, eventual assertions | `CommonE2EInteraction`, `CommonE2EAssertion` |
-| Response wait / capture, mocked routes, parameterized locators | `PlaywrightServiceResolver.Context` |
+| Response wait / capture, eventual assertions (visible, text, count, ...), mocked routes, parameterized locators | `PlaywrightServiceResolver.Context` |
 
 A new domain starts from these. When no existing snippet, glue or data contract fits, report the gap before
 designing a new one.

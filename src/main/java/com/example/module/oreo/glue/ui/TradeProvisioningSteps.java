@@ -1,6 +1,5 @@
 package com.example.module.oreo.glue.ui;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.example.genie.module.rest.service.RequestResponseHelper;
 import com.example.module.oreo.testdata.ProductDatFiles;
 import com.example.module.oreo.utils.RestApiUtil;
@@ -106,31 +105,20 @@ public class TradeProvisioningSteps {
     private void saveTradeAsDraft(String tradeIdVar, String taskIdVar, String testDataKey, ProductDatFiles datFile) throws Exception {
         log.info("[TradeProvisioningSteps] Submitting trade as draft: tradeIdVar='{}', taskIdVar='{}', testDataKey='{}', datFile='{}'",
                 tradeIdVar, taskIdVar, testDataKey, datFile);
-
-        JsonNode body = TradeApiClient.saveTrade(helper, TestUser.MAKER.email(), testDataKey, datFile, datFile.path());
-        String tradeId = body.at("/data/trade/id").asText();
-        String taskId = body.at("/data/checkerContext/taskId").asText();
-
-        log.info("[TradeProvisioningSteps] Trade saved: extracted tradeId='{}', taskId='{}'", tradeId, taskId);
-
-        ctx.set(tradeIdVar, tradeId);
-        ctx.write("Trade created with id: " + tradeId);
-        ctx.set(taskIdVar, taskId);
+        TradeApiClient.CreatedTrade trade =
+                TradeApiClient.saveTrade(helper, TestUser.MAKER.email(), testDataKey, datFile, datFile.path());
+        storeTrade(tradeIdVar, taskIdVar, trade);
     }
 
     private void submitTradeAsPendingApproval(String tradeIdVar, String taskIdVar, String testDataKey, ProductDatFiles datFile) throws Exception {
         log.info("[TradeProvisioningSteps] Submitting trade as pending approval: tradeIdVar='{}', taskIdVar='{}', testDataKey='{}', datFile='{}'",
                 tradeIdVar, taskIdVar, testDataKey, datFile);
-
-        JsonNode body = submitTrade(TestUser.MAKER.email(), testDataKey, datFile);
-        String tradeId = body.at("/data/trade/id").asText();
-        String taskId = body.at("/data/checkerContext/taskId").asText();
-
-        log.info("[TradeProvisioningSteps] Trade submitted: extracted tradeId='{}', taskId='{}'", tradeId, taskId);
-
-        ctx.set(tradeIdVar, tradeId);
-        ctx.write("Trade created with id: " + tradeId);
-        ctx.set(taskIdVar, taskId);
+        // The case's dat file (datFile of its test data), else the product's default one
+        String datPath = datFile.path(ctx.find("_tc.datFile"));
+        ctx.write("[dat file] " + datPath);
+        TradeApiClient.CreatedTrade trade =
+                TradeApiClient.submitTrade(helper, TestUser.MAKER.email(), testDataKey, datFile, datPath);
+        storeTrade(tradeIdVar, taskIdVar, trade);
     }
 
     private void provisionLifecycleEvent(String tradeIdVar, String taskIdVar, String testDataKey) throws Exception {
@@ -138,18 +126,17 @@ public class TradeProvisioningSteps {
         log.info("[TradeProvisioningSteps] Provisioning lifecycle event: tradeIdVar='{}', tradeId='{}', taskIdVar='{}', testDataKey='{}'",
                 tradeIdVar, tradeId, taskIdVar, testDataKey);
 
-        JsonNode body = TradeApiClient.triggerEvent(helper, List.of(tradeId), TestUser.MAKER.email(), testDataKey);
-        String taskId = body.at("/data/results/0/checkerTaskId").asText();
+        String taskId = TradeApiClient.triggerEvent(helper, List.of(tradeId), TestUser.MAKER.email(), testDataKey).get(0);
 
-        log.info("[TradeProvisioningSteps] Lifecycle event submitted: extracted checkerTaskId='{}'", taskId);
+        log.info("[TradeProvisioningSteps] Lifecycle event submitted: checkerTaskId='{}'", taskId);
 
         ctx.set(taskIdVar, taskId);
     }
 
-    private JsonNode submitTrade(String userId, String testDataKey, ProductDatFiles datFile) throws Exception {
-        // The case's dat file (datFile of its test data), else the product's default one
-        String datPath = datFile.path(ctx.find("_tc.datFile"));
-        ctx.write("[dat file] " + datPath);
-        return TradeApiClient.submitTrade(helper, userId, testDataKey, datFile, datPath);
+    private void storeTrade(String tradeIdVar, String taskIdVar, TradeApiClient.CreatedTrade trade) {
+        log.info("[TradeProvisioningSteps] Trade created: tradeId='{}', taskId='{}'", trade.tradeId(), trade.taskId());
+        ctx.set(tradeIdVar, trade.tradeId());
+        ctx.write("Trade created with id: " + trade.tradeId());
+        ctx.set(taskIdVar, trade.taskId());
     }
 }

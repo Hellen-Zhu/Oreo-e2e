@@ -15,6 +15,7 @@ import org.slf4j.LoggerFactory;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 
 public final class PlaywrightServiceResolver {
@@ -231,5 +232,20 @@ public final class PlaywrightServiceResolver {
             assertions.assertEventuallyContains(locator, text);
         }
         public void assertHasValue(Locator locator, String value) { assertions.assertHasValue(locator, value); }
+        /** Polls until {@code locator} matches exactly {@code count} elements. */
+        public void assertEventuallyCount(Locator locator, int count) {
+            assertions.assertEventuallyCount(locator, count);
+        }
+        /**
+         * Polls until the whole text of {@code locator} matches {@code pattern}, for at most {@code timeoutMillis}: a
+         * step that proves a change within a time of its own, not within {@link #timeoutMillis()}.
+         */
+        public void assertEventuallyMatches(Locator locator, Pattern pattern, long timeoutMillis) {
+            assertions.assertEventuallyMatches(locator, pattern, timeoutMillis);
+        }
+        /** Polls until the whole text of {@code locator} is not {@code text}, for at most {@code timeoutMillis}. */
+        public void assertEventuallyNotText(Locator locator, String text, long timeoutMillis) {
+            assertions.assertEventuallyNotText(locator, text, timeoutMillis);
+        }
     }
 }

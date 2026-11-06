@@ -55,6 +55,7 @@
   {"name": "trade_portal.all_trade_blotter","lookupDetails": {"findBy": "testId","value": "blotter-table-new-today"}},
   {"name": "trade_portal.all_trades_blotter_row","lookupDetails": {"findBy": "testId","value": "new-today-row"}},
   {"name": "trade_portal.blotter_cell","lookupDetails": {"findBy": "locator","value": "td[data-col='{0}']"}},
+  {"name": "trade_portal.blotter_header_cell","lookupDetails": {"findBy": "locator","value": "th[data-col='{0}']"}},
   {"name": "trade_portal.blotter_view_forward_trades","lookupDetails": {"findBy": "testId","value": "blotter-view-forwardTrades"}},
   {"name": "trade_portal.blotter_view_forward_trades_swap_left_btn","lookupDetails": {"findBy": "testId","value": "blotter-view-forwardTrades-swap-left-btn"}},
   {"name": "trade_portal.blotter_view_forward_trades_swap_up_btn","lookupDetails": {"findBy": "testId","value": "blotter-view-forwardTrades-swap-up-btn"}},
