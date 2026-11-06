@@ -25,14 +25,8 @@
     And a '$1' trade with pending cancellation is created with trade stored as 'createdTradeId2' and task stored as 'createdTaskId2'
 
 # ── Build request ───────────────────────────────────────────────────
-@When "^checker has invalid Cancellation data for a non-existent trade$"
-    Given build json request with body from current scenario as user 'checker'
-
-@When "^maker has valid data for Cancellation event$"
-    Given build json request from current scenario with trade id from stored variable 'createdTradeId' as user 'maker'
-
-@When "^checker has valid data for Cancellation event$"
-    Given build json request from current scenario with trade id from stored variable 'createdTradeId' as user 'checker'
+# The Cancellation event itself (request, call, outcome) uses the shared steps of api/trade_lifecycle_event.snippet;
+# these are the checker tasks it creates.
 
 @When "^checker has valid data for cancellation approval$"
     Given build json request with path parameter 'taskId' from stored variable 'createdTaskId' as user 'checker'
@@ -46,29 +40,11 @@
 @When "^checker has valid data for bulk cancellation approval$"
     Given build json request from current scenario with task ids from stored variables 'createdTaskId1' and 'createdTaskId2' as user 'checker'
 
-# ── Make api call ───────────────────────────────────────────────────
-
-@When "^performs the Cancellation event via api$"
-    When post to path '/trades/trigger-event'
-    And attach the response body to the report
-
-
-
-
 # ── Assertions ──────────────────────────────────────────────────────
-
-@Then "^the Cancellation event is executed successfully$"
-    Then the 'cancellation' should be 'executed' successfully
 
 @Then "^the '([^']*)' Cancellation event is submitted for checker approval$"
     Then response status code is '200'
     And response matches current scenario
-
-@Then "^the Cancellation event is rejected with permission denied$"
-    Then failed to 'execute' 'cancellation' with status '403'
-
-@Then "^the Cancellation event is rejected with a business rule violation$"
-    Then failed to 'execute' 'cancellation' with status '400'
 
 @Then "^the trade status is updated to '([^']*)'$"
     Then response status code is '200'

@@ -7,9 +7,9 @@ Feature: Trade Portfolio Reassignment Event API
   @ADO#positive @ADO#smoke @capability#portfolioReassignment
   Scenario Outline: [TC-TRADE-PORTFOLIO-REASSIGNMENT-<product_type>-API-001] PortfolioReassignment event updates portfolio assignment for an active <product_type> trade
     Given a live '<product_type>' trade is created via api
-    When maker has valid data for PortfolioReassignment event
-    And performs the PortfolioReassignment event via api
-    Then the PortfolioReassignment event is executed successfully
+    When maker has valid data for the 'PortfolioReassignment' event
+    And performs the 'PortfolioReassignment' event via api
+    Then the 'PortfolioReassignment' event is executed successfully
 
     Examples:
       | product_type    |
@@ -21,6 +21,6 @@ Feature: Trade Portfolio Reassignment Event API
   @ADO#negative @ADO#regression
   Scenario: [TC-TRADE-PORTFOLIO-REASSIGNMENT-API-002] Invalid PortfolioReassignment event for a trade is rejected
     Given a live 'FX_TRF' trade is created via api
-    When maker has invalid data for PortfolioReassignment event
-    And performs the PortfolioReassignment event via api
-    Then the PortfolioReassignment event is rejected with a validation error
+    When maker has invalid data for the 'PortfolioReassignment' event
+    And performs the 'PortfolioReassignment' event via api
+    Then the 'PortfolioReassignment' event is rejected with a validation error

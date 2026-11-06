@@ -1,14 +1,25 @@
 # Every lifecycle event sent through POST /trades/trigger-event, the event named as a parameter. As in the other API
 # snippets the request is built in one step and sent in the next. The request is the case's own row
-# (data/api/<event>.json, chosen by the case ID) with its tradeIds replaced by the stored trade; the event name and the
-# word before "data" (valid, malformed, duplicate) are for the reader, the row is what is sent. The outcomes compare the
-# response with the case's recording. A new event needs no snippet here: case data, recordings and the feature. Evidence
-# beyond the response (notional reduced, trade closed) stays in the event's own api/<feature>.snippet.
+# (data/api/<event>.json, chosen by the case ID) with its tradeIds replaced by a stored trade. The event name, the word
+# before "data" (valid, invalid, malformed, duplicate) and the optional "with '<what>'" are for the reader: they say
+# what the row holds, so that the scenarios of a feature differ in their steps; the row is what is sent. The outcomes
+# compare the response with the case's recording. A new event needs no snippet here: case data, recordings and the
+# feature. Evidence beyond the response (notional reduced, trade closed) stays in the event's own api/<feature>.snippet.
 
 # ── Build request ───────────────────────────────────────────────────
 
-@When "^(maker|checker) has (?:valid|malformed|duplicate) data for the '([^']*)' event$"
+# On the trade of the precondition (createdTradeId).
+# Example: maker has invalid data with 'an empty sub-trade list' for the 'Allocation' event
+@When "^(maker|checker) has (?:valid|invalid|malformed|duplicate) data(?: with '[^']*')? for the '([^']*)' event$"
     Given build json request from current scenario with trade id from stored variable 'createdTradeId' as user '$1'
+
+# On another stored trade, e.g. one a precondition stored under its own name.
+@When "^(maker|checker) has (?:valid|invalid|malformed|duplicate) data(?: with '[^']*')? for the '([^']*)' event on the trade stored as '([^']*)'$"
+    Given build json request from current scenario with trade id from stored variable '$3' as user '$1'
+
+# The row's own tradeIds, which name no trade.
+@When "^(maker|checker) has data for the '([^']*)' event on a trade that does not exist$"
+    Given build json request with body from current scenario as user '$1'
 
 # ── Make api call ───────────────────────────────────────────────────
 
@@ -26,3 +37,6 @@
 
 @Then "^the '([^']*)' event is rejected with a business rule violation$"
     Then failed to 'execute' '$1'
+
+@Then "^the '([^']*)' event is rejected with permission denied$"
+    Then failed to 'execute' '$1' with status '403'

@@ -12,21 +12,23 @@ Concerns, in order; not every scenario needs every one:
 | Concern | Existing shape |
 |---|---|
 | Precondition (trade state) | `Given a live '<product_type>' trade is created via api`; `a draft ...`, `a dead ...`, `a '<product_type>' trade is submitted to pending approval via api` |
-| Actor data readiness | lifecycle event: `When maker has valid data for the 'EarlyTermination' event`; `... has malformed data ...`, `... has duplicate data ...`. Other: the feature's own, e.g. `maker has valid data for Trade Amendment` |
+| Actor data readiness | lifecycle event: `When maker has valid data for the 'EarlyTermination' event`; `... has invalid data with 'an empty sub-trade list' for the 'Allocation' event`; `... for the '<event>' event on the trade stored as '<key>'`; `maker has data for the '<event>' event on a trade that does not exist`. Other: the feature's own, e.g. `maker has valid data for Trade Amendment` |
 | Business action | lifecycle event: `And performs the 'EarlyTermination' event via api`. Other: the feature's own, e.g. `performs the Trade Amendment action via api` |
-| Outcome (response) | lifecycle event: `Then the 'EarlyTermination' event is executed successfully`; `... is rejected with a validation error` / `... a business rule violation`. Other: `the '<object>' should be '<action>' successfully`; `failed to '<action>' '<object>'`; `failed to '<action>' '<object>' with status '<status>'` |
+| Outcome (response) | lifecycle event: `Then the 'EarlyTermination' event is executed successfully`; `... is rejected with a validation error` / `... a business rule violation` / `... permission denied` (403). Other: `the '<object>' should be '<action>' successfully`; `failed to '<action>' '<object>'`; `failed to '<action>' '<object>' with status '<status>'` |
 | Outcome (state) | `maker retrieves the trade`, then `the trade basic status is '<status>'` / `the trade basic event status is '<status>'` |
 
 - The response outcomes already check the status and compare the whole response with the case's recorded file: never
   add a step for a status code or a response field.
 - The data and the call are two steps, so that the scenarios of one feature differ in their steps, not only in their
   titles. The event name is the `eventType` of the case data (`EarlyTermination`, `PartialNovationRemaining`); the word
-  before `data` says what the case row holds: `valid`, `malformed` (the failure is caused by the input), `duplicate`
-  (the same event again). The row itself, not the word, is what is sent.
+  before `data` says what the case row holds: `valid`, `invalid` or `malformed` (the failure is caused by the input),
+  `duplicate` (the same event again). When two scenarios of a feature would still read the same, `with '<what>'` says
+  what sets the row apart (`valid data with 'a 3-way unequal split'`, `invalid data with 'an empty sub-trade list'`).
+  The row itself, not the words, is what is sent.
 - A forbidden state, a role or a duplicate also needs the precondition that creates it (`a dead ...`, an earlier
-  `has valid data` + `performs` as `Given` / `And`).
-- Events not moved to `api/trade_lifecycle_event.snippet` yet still have their own `maker has ... data for X event` /
-  `performs the X event via api` steps; a scenario appended to such a feature keeps the feature's existing wording.
+  `has valid data` + `performs` as `Given` / `And`); the data is then `valid`.
+- Every `trigger-event` event uses these steps; an event's own `api/<feature>.snippet` holds only its preconditions and
+  the evidence beyond the response.
 - Evidence beyond the response is a business `Then` of its own, written only when the TP's evidence asks for it.
 
 ## UI scenarios

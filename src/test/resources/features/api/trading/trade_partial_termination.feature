@@ -7,9 +7,9 @@ Feature: Trade Partial Termination API
   @ADO#positive @ADO#smoke @capability#partialTermination
   Scenario Outline: [TC-TRADE-PARTIAL-TERMINATION-<product_type>-API-001] Valid PartialTermination event reduces the <product_type> trade notional by the terminated amount
     Given a live '<product_type>' trade is created via api
-    When maker has valid data for PartialTermination event
-    And performs the PartialTermination event via api
-    Then the PartialTermination event is executed successfully
+    When maker has valid data for the 'PartialTermination' event
+    And performs the 'PartialTermination' event via api
+    Then the 'PartialTermination' event is executed successfully
     When maker retrieves the trade
     And the trade notional is reduced by the terminated amount
 
@@ -23,13 +23,13 @@ Feature: Trade Partial Termination API
   @ADO#negative @ADO#regression
   Scenario: [TC-TRADE-PARTIAL-TERMINATION-API-002] Malformed PartialTermination event with unrecognised amount field for a trade is rejected
     Given a live 'FX_TRF' trade is created via api
-    When maker has invalid data with unknown amount filed for PartialTermination event
-    And performs the PartialTermination event via api
-    Then the PartialTermination event is rejected with a validation error
+    When maker has invalid data with 'an unknown amount field' for the 'PartialTermination' event
+    And performs the 'PartialTermination' event via api
+    Then the 'PartialTermination' event is rejected with a validation error
 
   @ADO#negative @ADO#regression
   Scenario: [TC-TRADE-PARTIAL-TERMINATION-API-003] PartialTermination event is rejected when newNotional exceeds the original notional for a trade
     Given a live 'FX_TRF' trade is created via api
-    When maker has invalid data with newNotional exceeds the original notional for PartialTermination event
-    And performs the PartialTermination event via api
-    Then the PartialTermination event is rejected with a validation error
+    When maker has invalid data with 'newNotional exceeding the original notional' for the 'PartialTermination' event
+    And performs the 'PartialTermination' event via api
+    Then the 'PartialTermination' event is rejected with a validation error

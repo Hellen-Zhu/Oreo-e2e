@@ -40,8 +40,8 @@ Feature: Audit Trail API
   @ADO#regression @ADO#negative
   Scenario: [TC-TRADE-AUDIT-API-006] Batch event rejected when a trade ID is invalid, audit_entries unchanged
     Given a live 'FX_TRF' trade is created via api
-    When checker has invalid Cancellation data for a non-existent trade
-    And performs the Cancellation event via api
+    When checker has data for the 'Cancellation' event on a trade that does not exist
+    And performs the 'Cancellation' event via api
     And no cancellation record is written to audit_entries for that trade
     And the live trade state is preserved in the database
 

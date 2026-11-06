@@ -7,9 +7,9 @@ Feature: Trade NovationRemaining API
   @ADO#positive @ADO#smoke @capability#novationRemaining
   Scenario Outline: [TC-TRADE-NOVATION-REMAINING-<product_type>-API-001] Should be able to perform NovationRemaining event for a live <product_type> trade
     Given a live '<product_type>' trade is created via api
-    When maker has valid data for NovationRemaining event
-    And performs the NovationRemaining event via api
-    Then the NovationRemaining event is executed successfully
+    When maker has valid data for the 'NovationRemaining' event
+    And performs the 'NovationRemaining' event via api
+    Then the 'NovationRemaining' event is executed successfully
 
     Examples:
       | product_type    |

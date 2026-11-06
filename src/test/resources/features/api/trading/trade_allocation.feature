@@ -7,9 +7,9 @@ Feature: Trade Allocation Event API
   @ADO#positive @ADO#smoke @capability#allocation
   Scenario Outline: [TC-TRADE-ALLOCATION-<product_type>-API-001] 2-way equal allocation executes successfully for Live <product_type> trade
     Given a live '<product_type>' trade is created via api
-    When maker has valid data for 2-way equal Allocation event
-    And performs the Allocation event via api
-    Then the Allocation event is executed successfully
+    When maker has valid data with 'a 2-way equal split' for the 'Allocation' event
+    And performs the 'Allocation' event via api
+    Then the 'Allocation' event is executed successfully
 
     Examples:
       | product_type    |
@@ -21,9 +21,9 @@ Feature: Trade Allocation Event API
   @ADO#positive @ADO#regression @capability#allocation
   Scenario Outline: [TC-TRADE-ALLOCATION-<product_type>-API-002] 3-way unequal allocation executes successfully for <product_type> trade
     Given a live '<product_type>' trade is created via api
-    When maker has valid data for 3-way unequal Allocation event
-    And performs the Allocation event via api
-    Then the Allocation event is executed successfully
+    When maker has valid data with 'a 3-way unequal split' for the 'Allocation' event
+    And performs the 'Allocation' event via api
+    Then the 'Allocation' event is executed successfully
 
     Examples:
       | product_type    |
@@ -35,40 +35,40 @@ Feature: Trade Allocation Event API
   @ADO#negative @ADO#smoke
   Scenario: [TC-TRADE-ALLOCATION-API-003] Allocation rejected with 400 when notional don't sum to parent for FX_TRF trade
     Given a live 'FX_TRF' trade is created via api
-    When maker has invalid data with notional amounts not summing to parent trade for Allocation event
-    And performs the Allocation event via api
-    Then the Allocation event is rejected with a validation error
+    When maker has invalid data with 'notional amounts not summing to the parent trade' for the 'Allocation' event
+    And performs the 'Allocation' event via api
+    Then the 'Allocation' event is rejected with a validation error
 
   @ADO#negative @ADO#smoke
   Scenario: [TC-TRADE-ALLOCATION-API-004] Allocation rejected with 400 when sub-trade arrays are empty for trade
     Given a live 'FX_TRF' trade is created via api
-    When maker has invalid data with an empty sub-trade list for Allocation event
-    And performs the Allocation event via api
-    Then the Allocation event is rejected with a validation error
+    When maker has invalid data with 'an empty sub-trade list' for the 'Allocation' event
+    And performs the 'Allocation' event via api
+    Then the 'Allocation' event is rejected with a validation error
 
   @ADO#negative @ADO#smoke
   Scenario: [TC-TRADE-ALLOCATION-API-005] Allocation rejected with 400 when trade ID does not exist for FX_TRF trade
-    When maker has invalid data for a non-existent trade
-    And performs the Allocation event via api
-    Then the Allocation event is rejected with a validation error
+    When maker has data for the 'Allocation' event on a trade that does not exist
+    And performs the 'Allocation' event via api
+    Then the 'Allocation' event is rejected with a validation error
 
   @ADO#negative @ADO#regression
   Scenario: [TC-TRADE-ALLOCATION-API-006] Allocation rejected with 400 when FX_TRF trade is already Allocated
     Given a trade is allocated with 2-way equal split via api
-    When maker has invalid data with the already-allocated trade
-    And performs the Allocation event via api
-    Then the Allocation event is rejected with a business rule violation
+    When maker has valid data for the 'Allocation' event on the trade stored as 'allocatedParentTradeId'
+    And performs the 'Allocation' event via api
+    Then the 'Allocation' event is rejected with a business rule violation
 
   @ADO#negative @ADO#regression
   Scenario: [TC-TRADE-ALLOCATION-API-007] Allocation rejected with 400 when notional exceed parent notional for FX_TRF trade
     Given a live 'FX_TRF' trade is created via api
-    When maker has invalid data with notional exceeding the parent trade value
-    And performs the Allocation event via api
-    Then the Allocation event is rejected with a validation error
+    When maker has invalid data with 'notional exceeding the parent trade value' for the 'Allocation' event
+    And performs the 'Allocation' event via api
+    Then the 'Allocation' event is rejected with a validation error
 
   @ADO#negative @ADO#regression
   Scenario: [TC-TRADE-ALLOCATION-API-008] Allocation rejected with 400 when sub-trade array lengths are mismatched for FX_TRF trade
     Given a live 'FX_TRF' trade is created via api
-    When maker has invalid data with mismatched sub-trade array lengths
-    And performs the Allocation event via api
-    Then the Allocation event is rejected with a validation error
+    When maker has invalid data with 'mismatched sub-trade array lengths' for the 'Allocation' event
+    And performs the 'Allocation' event via api
+    Then the 'Allocation' event is rejected with a validation error

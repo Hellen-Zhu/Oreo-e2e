@@ -1,18 +1,7 @@
-# ── Build request ───────────────────────────────────────────────────
-
-@When "^maker has valid data for StepOutFull event$"
-    Given build json request from current scenario with trade id from stored variable 'createdTradeId' as user 'maker'
-
-# ── Make api call ───────────────────────────────────────────────────
-
-@When "^performs the StepOutFull event via api$"
-    When post to path '/trades/trigger-event'
-    And attach the response body to the report
+# StepOutFull: the evidence beyond the response. The request, the call and the outcome are the shared steps of
+# api/trade_lifecycle_event.snippet.
 
 # ── Assertions ──────────────────────────────────────────────────────
-
-@Then "^the StepOutFull event is executed successfully$"
-    Then the 'StepOutFull' should be 'executed' successfully
 
 @Then "^the original trade is closed as Novated after StepOutFull$"
     Then maker retrieves the trade for stored variable 'createdTradeId'
