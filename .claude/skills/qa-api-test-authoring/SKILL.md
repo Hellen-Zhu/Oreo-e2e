@@ -38,7 +38,8 @@ repair round the failure output and `revisionInstructions`.
    | Step | Status | Source |
    |---|---|---|
    | `a live '<product_type>' trade is created via api` | REUSE | `api/common_trade_action.snippet` |
-   | `performs the Allocation event via api` | NEW_SNIPPET | `api/trade_allocation.snippet`, from `ApiRequestSteps` + REST built-ins |
+   | `maker triggers the 'EarlyTermination' event via api` | REUSE | `api/trade_lifecycle_event.snippet` |
+   | `the trade notional is reduced by the terminated amount` | NEW_SNIPPET | `api/trade_partial_termination.snippet`, from existing snippet steps + REST built-ins |
 
    Statuses, in the order they must be tried: `REUSE` (an existing snippet step), `NEW_SNIPPET` (composed of existing
    snippet steps, REST built-ins `docs/genie_rest_glue_catalog.md`, existing glue), `NEW_STEP` (Java, only for one

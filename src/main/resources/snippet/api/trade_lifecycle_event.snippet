@@ -1,0 +1,23 @@
+# Every lifecycle event sent through POST /trades/trigger-event, the event named as a parameter. The request is the
+# case's own row (data/api/<event>.json, chosen by the case ID) with its tradeIds replaced by the stored trade; the
+# event name in the step is for the reader, the row's eventType is what is sent. The outcomes compare the response with
+# the case's recording. A new event needs no snippet here: case data, recordings and the feature. Evidence beyond the
+# response (notional reduced, trade closed) stays in the event's own api/<feature>.snippet.
+
+# ── Make api call ───────────────────────────────────────────────────
+
+@When "^(maker|checker) triggers the '([^']*)' event via api$"
+    Given build json request from current scenario with trade id from stored variable 'createdTradeId' as user '$1'
+    When post to path '/trades/trigger-event'
+    And attach the response body to the report
+
+# ── Assertions ──────────────────────────────────────────────────────
+
+@Then "^the '([^']*)' event is executed successfully$"
+    Then the '$1' should be 'executed' successfully
+
+@Then "^the '([^']*)' event is rejected with a validation error$"
+    Then failed to 'execute' '$1'
+
+@Then "^the '([^']*)' event is rejected with a business rule violation$"
+    Then failed to 'execute' '$1'

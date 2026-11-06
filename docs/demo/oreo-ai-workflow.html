@@ -304,7 +304,7 @@ flowchart LR
   <p>假设 story：<i>"提前终止只能对 Live 状态的交易发起，对 Dead 交易应被拒绝"</i>。</p>
   <ol class="steps">
     <li><span class="n">阶段 1</span><div class="d"><div class="t">两个测试点</div><p>TP-001 Live 交易可提前终止：<code>@api</code>，所有支持的产品（capability <code>earlyTermination</code>），证据为回读交易状态（强度 2），smoke。<br>TP-002 Dead 交易被拒绝：<code>@api</code>，一个代表产品，证据为拒绝响应（强度 1），regression。不需要 UI 测试点：用户在界面上看不到额外结果。</p></div></li>
-    <li><span class="n">阶段 2</span><div class="d"><div class="t">追加到现有文件</div><p><code>trade_early_termination.feature</code> 已存在 → append。TP-001 已被现有 Outline 覆盖则报告；TP-002 续编为 <code>[TC-TRADE-EARLY-TERMINATION-FX_TRF-API-004]</code>，步骤全部来自索引：<code>a dead 'FX_TRF' trade is created via api</code> → <code>performs the EarlyTermination event via api</code> → <code>failed to '...' '...'</code>。</p></div></li>
+    <li><span class="n">阶段 2</span><div class="d"><div class="t">追加到现有文件</div><p><code>trade_early_termination.feature</code> 已存在 → append。TP-001 已被现有 Outline 覆盖则报告；TP-002 续编为 <code>[TC-TRADE-EARLY-TERMINATION-FX_TRF-API-004]</code>，步骤全部来自索引：<code>a dead 'FX_TRF' trade is created via api</code> → <code>maker triggers the 'EarlyTermination' event via api</code> → <code>the 'EarlyTermination' event is rejected with a business rule violation</code>。</p></div></li>
     <li><span class="n">实现</span><div class="d"><div class="t">只加一行数据</div><p>步骤都是 REUSE，数据跑 defaults 即可；负向 case 加一行 <code>"dynamicFields": null</code>。check 只报这个新 case 缺录制文件，dry run 通过。</p></div></li>
     <li><span class="n">运行</span><div class="d"><div class="t">录制并复核</div><p>你同意后运行：第一次录下拒绝响应并失败，第二次通过；你确认拒绝信息里说的确实是"交易不是 Live"，compact 后完成。</p></div></li>
   </ol>

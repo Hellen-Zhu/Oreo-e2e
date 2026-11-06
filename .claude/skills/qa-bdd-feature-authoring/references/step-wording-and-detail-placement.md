@@ -12,15 +12,18 @@ Concerns, in order; not every scenario needs every one:
 | Concern | Existing shape |
 |---|---|
 | Precondition (trade state) | `Given a live '<product_type>' trade is created via api`; `a draft ...`, `a dead ...`, `a '<product_type>' trade is submitted to pending approval via api` |
-| Actor data readiness | `When maker has valid data for EarlyTermination event`; `maker has malformed data for ...`, `maker has duplicate ... data` |
-| Business action | `And performs the EarlyTermination event via api` |
-| Outcome (response) | `Then the '<object>' should be '<action>' successfully`; `failed to '<action>' '<object>'`; `failed to '<action>' '<object>' with status '<status>'` |
+| Business action (lifecycle event) | `When maker triggers the 'EarlyTermination' event via api`: the case's own request, whatever its data (valid, malformed, ...) |
+| Business action (other) | the feature's own step, e.g. `When maker has valid data for Trade Amendment`, `And performs the Trade Amendment action via api` |
+| Outcome (response) | lifecycle event: `Then the 'EarlyTermination' event is executed successfully`; `... is rejected with a validation error` / `... a business rule violation`. Other: `the '<object>' should be '<action>' successfully`; `failed to '<action>' '<object>'`; `failed to '<action>' '<object>' with status '<status>'` |
 | Outcome (state) | `maker retrieves the trade`, then `the trade basic status is '<status>'` / `the trade basic event status is '<status>'` |
 
 - The response outcomes already check the status and compare the whole response with the case's recorded file: never
   add a step for a status code or a response field.
-- `has valid data` / `has malformed data` only when the failure is caused by input data. A forbidden state, a role or a
-  duplicate is said as such (`... is rejected as the trade is not Live`), with the precondition that creates it.
+- The event name is the `eventType` of the case data (`EarlyTermination`, `PartialNovationRemaining`). What makes the
+  data valid or malformed is said by the scenario title and lives in the case row, not in the step. A forbidden state, a
+  role or a duplicate comes from the precondition that creates it (`a dead ...`, an earlier `triggers` as a `Given`).
+- Events not moved to `api/trade_lifecycle_event.snippet` yet still have their own `maker has ... data for X event` /
+  `performs the X event via api` steps; a scenario appended to such a feature keeps the feature's existing wording.
 - Evidence beyond the response is a business `Then` of its own, written only when the TP's evidence asks for it.
 
 ## UI scenarios
@@ -78,9 +81,6 @@ about setup, the evidence to collect or reliability. It is removed once the auto
   @ADO#negative @ADO#regression
   Scenario: [TC-TRADE-EARLY-TERMINATION-FX_TRF-API-004] Early termination of a dead trade is rejected
     Given a dead 'FX_TRF' trade is created via api
-    When maker has valid data for EarlyTermination event
-    And performs the EarlyTermination event via api
-    Then failed to 'early terminate' 'trade'
+    When maker triggers the 'EarlyTermination' event via api
+    Then the 'EarlyTermination' event is rejected with a business rule violation
 ```
-
-The last step is a shape example: check the `object` / `action` values the existing scenarios of the feature use.
