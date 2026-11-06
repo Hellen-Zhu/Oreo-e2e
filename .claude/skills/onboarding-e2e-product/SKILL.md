@@ -50,7 +50,9 @@ One message, in the user's language, after section 2 and `sync-examples`; nothin
 answers. It holds:
 
 1. **Capabilities** (default: all). A table: capability, the Outlines it now runs for `<P>` (case ID with `<P>`,
-   title), from `git diff` of the feature files or `grep -rn -A1 "@capability#" src/test/resources/features`, with a
+   title), from `git diff` of the feature files or `grep -rn -A1 "@capability#" src/test/resources/features`; the
+   product's column of `mvn -Ptest-data process-test-classes "-Dexec.args=coverage"` shows how many API and UI
+   Outlines each capability runs and which have none (`NONE`, listed as gaps); with a
    column QA fills in: **supported / not supported, row by row**. A general "looks fine" is not an answer: ask again
    for the rows still empty. A capability without its row answered stays a default: it is not recorded, run or
    committed. A capability covers all its Outlines, API and UI: a no for only some of them is a question for the user,

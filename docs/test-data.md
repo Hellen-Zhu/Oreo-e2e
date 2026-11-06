@@ -274,11 +274,12 @@ mvn -Ptest-data process-test-classes "-Dexec.args=compact trade_creation"
 mvn -Ptest-data process-test-classes "-Dexec.args=shared TC-TRADE-CREATION-FX_TRF-API-001"
 mvn -Ptest-data process-test-classes "-Dexec.args=shared TC-TRADE-CREATION-<product_type>-API-001"
 mvn -Ptest-data process-test-classes "-Dexec.args=unused-steps"
+mvn -Ptest-data process-test-classes "-Dexec.args=coverage"
 ```
 
-The first command defaults to `check`. Each command first runs the seven unit tests of the code that decides what a
+The first command defaults to `check`. Each command first runs the eight unit tests of the code that decides what a
 case sends and what its response is compared with (`ResponseMaskerTest`, `ExpectedResponsesTest`, `JsonPatchTest`,
-`TestDataRepositoryTest`, `JsonLayersTest`, `ResponseSuggestionsTest`, `UnusedStepsTest`; their data is written in the
+`TestDataRepositoryTest`, `JsonLayersTest`, `ResponseSuggestionsTest`, `UnusedStepsTest`, `CoverageTest`; their data is written in the
 tests themselves, none of it lives under
 `src/test/resources`): a failing one stops Maven before the tool reads any data. The commands stop before the
 `test` phase: they do not run Cucumber. A failed check fails Maven. Plain `mvn test` retains its existing behavior and does not activate
@@ -297,6 +298,14 @@ After deleting resource files, add `clean` before `process-test-classes` to remo
   `<-`: such a step is called in a snippet file, but no feature reaches that snippet, so delete the first list, then
   run it again. A Java step marked `[method called from Java]` is used by its method: only the annotation is unused.
   Run it on the company copy before deleting anything: the public copy has fewer features and fewer steps.
+- `coverage`: prints the product x capability matrix: one row per capability, one column per product of
+  `ProductDatFiles`, each cell the product Outlines that run for that product, `API/UI` (`@wip` ones counted apart).
+  `-` is a capability the product does not support, `NONE` one it supports with no Outline running for it, `*` an
+  Outline still without the product's row (`sync-examples` adds it). Below the matrix: the gaps (supported, no case,
+  and `sync-examples` would not change it: a scenario to write) and the cells to sync. It writes nothing and never
+  fails. Only product Outlines are counted: a Scenario with a fixed product says no capability. Whether each case has
+  its data and recording is what `check` reports. Run it after `sync-examples` when a product is added, and give the
+  product's column to QA for the review.
 - `suggest <event>`: reads the event's recordings and prints, without writing anything, the `dynamicFields` rules
   they need and the `expectedBase` that suits them ("Suggestions", below).
 - `compact <event>` or `compact all`: the compaction of "Base and patch" and "Shared parts". It lists the files it
