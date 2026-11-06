@@ -3,7 +3,6 @@ package com.example.module.oreo.glue.ui;
 import com.microsoft.playwright.Locator;
 import com.example.genie.module.database.glue.DatabaseGlue;
 import com.example.genie.module.rest.service.RequestResponseHelper;
-import com.example.module.oreo.testdata.ProductRequests;
 import com.example.module.oreo.utils.CleanupTestDataUtil;
 import com.example.module.oreo.utils.ProductApiClient;
 import com.example.module.oreo.utils.RestApiUtil;
@@ -62,7 +61,7 @@ public class ComposeProductSteps {
         ctx.write("Payload as:" + product.request());
         ctx.set("CreatedProductEntityId", product.entityId());
         ctx.set("createdProductId", product.productId());
-        ctx.set("reformattedProductId", ProductRequests.eventId(product.productId()));
+        ctx.set("reformattedProductId", ProductApiClient.eventId(product.productId()));
         ctx.write("Created product with productId: " + product.productId() + ", entityId: " + product.entityId());
     }
 

@@ -2,7 +2,6 @@ package com.example.module.oreo.glue.ui;
 
 import com.microsoft.playwright.Locator;
 import com.example.genie.module.database.glue.DatabaseGlue;
-import com.example.module.oreo.testdata.ProductRequests;
 import com.example.module.oreo.utils.CleanupTestDataUtil;
 import com.example.module.oreo.utils.DateUtil;
 import com.example.module.oreo.utils.ProductApiClient;
@@ -74,7 +73,7 @@ public class ProductSchemaUploadSteps {
             throw new AssertionError("No schema file path found in current scenario for key: " + dotPath);
         }
 
-        Path uploadFile = ProductRequests.schemaFile(classpathFile, currentSysSeconds);
+        Path uploadFile = ProductApiClient.schemaFile(classpathFile, currentSysSeconds);
         Locator input = ctx.service().getLocator("schema_upload.file_input");
         input.setInputFiles(uploadFile);
 

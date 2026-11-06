@@ -122,8 +122,7 @@ Every element is registered in JSON and reached through it:
   snippet, not Java. No `if/else` on business variants: split scenarios or preconditions instead.
 - A step class holds no endpoint, payload assembly or response path. A Java step that calls an endpoint, or waits for
   its response, takes the path and the request from the domain's API client (`utils/TradeApiClient`,
-  `utils/ProductApiClient`); a request body built from data is shaped in `testdata/<Domain>Requests` (`TradeRequests`,
-  `ProductRequests`), which the offline unit tests cover.
+  `utils/ProductApiClient`).
 
 ### 4.3 Waiting and ctx
 
@@ -155,7 +154,7 @@ Every element is registered in JSON and reached through it:
 | Current-case / setup JSON as request, path parameters, task IDs, response extraction, request ID header | `ApiRequestSteps` |
 | Request from Java (provisioning, hooks, cleanup) with the required headers | `RestApiUtil` |
 | Endpoint paths and provisioning requests of a domain, for Java steps and response waits | `TradeApiClient`, `ProductApiClient` |
-| Product provisioning, event configuration, schema files to upload | `ProductApiClient`, `ProductRequests` |
+| Product provisioning, event configuration, schema files to upload | `ProductApiClient` |
 | Product, multipart and dat file requests | `TradeApiSteps` |
 | Recorded-response comparison, stored-variable and field assertions | `ApiResponseAssertionSteps` |
 | UI trade provisioning | `TradeProvisioningSteps` |
@@ -184,8 +183,8 @@ Full rules: [docs/test-data.md](../test-data.md). The essentials:
 
 `request` and/or `response`, optional `extends`; names are lower case with `-`. Reuse before adding. API case data and
 UI setup data stay apart on purpose, so that an API case change never alters how a UI case prepares its trade.
-`{currentSysSeconds}` in `product-create` and in a schema file becomes the second of the run (`ProductRequests`), so
-that each run creates a product of its own.
+`{currentSysSeconds}` in `product-create` and in a schema file becomes a second of the run (`ProductApiClient`),
+so that each run creates a product of its own.
 
 ### 5.3 Products — `ProductDatFiles`
 
