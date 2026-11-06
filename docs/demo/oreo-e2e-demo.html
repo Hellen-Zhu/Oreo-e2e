@@ -241,11 +241,11 @@ flowchart LR
       <div class="sec-head"><span class="sec-no">04</span><h2 class="sec">产品与 sync-examples</h2><span class="dur">5 分钟</span></div>
       <div class="say">
         <p>接下来讲产品是怎么进到用例里的。这里有三样东西配合。</p>
-        <p>第一，<strong>能力</strong>，<code>Capability</code>。每个生命周期事件、fixings、cortex formula、product upload 都是一个能力。第二，Feature 里每个带 <code>&lt;product_type&gt;</code> 的 Outline 打一个 <code>@capability#&lt;名字&gt;</code> 标签，说明它测的是哪个能力。第三，<strong>产品注册表</strong> <code>ProductDatFiles</code>，每个产品一个常量，写明它支持哪些能力。</p>
+        <p>第一，<strong>能力</strong>，<code>Capability</code>。每个生命周期事件、fixings、cortex formula、product upload 都是一个能力，分成两组：交易生命周期 <code>SUPPORT_CAPABILITY</code>（建单、step in 和各个事件），和产品特性 <code>PRODUCT_FEATURES</code>（fixings、cortex formula、product upload）。第二，Feature 里每个带 <code>&lt;product_type&gt;</code> 的 Outline 打一个 <code>@capability#&lt;名字&gt;</code> 标签，说明它测的是哪个能力。第三，<strong>产品注册表</strong> <code>ProductDatFiles</code>，每个产品一个常量，写明它支持哪些能力。</p>
       </div>
-<pre class="code"><code>FX_TRF(SUPPORT_CAPABILITY),                                        // 全部能力
-FX_NEW(except(SUPPORT_CAPABILITY, ALLOCATION, PORTFOLIO_REASSIGNMENT)), // 缺几项
-FX_DCD(CREATE, EARLY_TERMINATION),                                 // 只支持少数几项</code></pre>
+<pre class="code"><code>FX_TRF(SUPPORT_CAPABILITY, PRODUCT_FEATURES),                       // 全部能力
+FX_NEW(except(SUPPORT_CAPABILITY, ALLOCATION), only(PRODUCT_UPLOAD)), // 缺几个事件，只有一个产品特性
+FX_DCD(only(CREATE, EARLY_TERMINATION)),                             // 只支持少数几项，没有产品特性</code></pre>
       <div class="say">
         <p>有了这三样，Examples 里该有哪些产品就是确定的：<strong>支持这个能力的所有产品，按注册表顺序排列</strong>。所以 Examples 里的产品行没有人手写，由 <code>sync-examples</code> 生成。</p>
       </div>
@@ -448,7 +448,7 @@ mvn -B test -Dtest=OreoTest "-Dcucumber.options=--name ^\[TC-TRADE-CREATION-FX_T
           <thead><tr><th>步骤</th><th>做什么</th><th>对应</th></tr></thead>
           <tbody>
             <tr><td>1 · 要 dat</td><td>只问一件事：按产品 ID 命名的默认 dat 文件 <code>&lt;P&gt;.dat</code></td><td>—</td></tr>
-            <tr><td>2 · 注册</td><td><code>ProductDatFiles</code> 加常量 <code>&lt;P&gt;(SUPPORT_CAPABILITY)</code>，默认全部能力；加 dat 文件；先不写 <code>byProduct</code></td><td>04</td></tr>
+            <tr><td>2 · 注册</td><td><code>ProductDatFiles</code> 加常量 <code>&lt;P&gt;(SUPPORT_CAPABILITY, PRODUCT_FEATURES)</code>，默认全部能力；加 dat 文件；先不写 <code>byProduct</code></td><td>04</td></tr>
             <tr><td>3 · 同步</td><td><code>sync-examples</code>，看每个 Outline 的 <code>add &lt;P&gt;</code></td><td>04</td></tr>
             <tr><td>4 · QA review</td><td>把能力表（能力、对应的 Outline 和用例 ID）给 QA，<strong>每个能力逐行</strong>答支持 / 不支持，再给出和默认值不同的数据；不支持的从常量上去掉，再 sync-examples，差异写进 <code>byProduct</code>，用 <code>case</code> 命令确认</td><td>03 · 04</td></tr>
             <tr><td>5 · 录制</td><td>只跑这个产品的 API case：录一次、<code>suggest</code> 看建议、跑第二次找漏掉的动态值、加规则、重录</td><td>05</td></tr>

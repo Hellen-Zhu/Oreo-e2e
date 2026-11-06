@@ -17,9 +17,11 @@ import static com.example.module.oreo.testdata.Capability.*;
  * <h3>Adding a new product type</h3>
  * <ol>
  *   <li>Add its default dat file as {@code src/test/resources/data/dat/<P>/<P>.dat}</li>
- *   <li>Add a new enum constant here, named as the product ID, with the capabilities the product supports: the
- *       group {@link Capability#SUPPORT_CAPABILITY} (or {@code except(SUPPORT_CAPABILITY, ...)}) and the others one by
- *       one (the order of the constants is the order of the {@code Examples} rows; never put one first)</li>
+ *   <li>Add a new enum constant here, named as the product ID, with one entry per group of {@link Capability#GROUPS}
+ *       it has: the trade lifecycle {@link Capability#SUPPORT_CAPABILITY} and the product features
+ *       {@link Capability#PRODUCT_FEATURES}, each whole, {@code except(<group>, ...)} or {@code only(...)}; a group the
+ *       product has none of is left out (the order of the constants is the order of the {@code Examples} rows; never
+ *       put one first)</li>
  *   <li>Run {@code TestDataTool sync-examples} (skill {@code maintaining-e2e-test-data}): it writes the product
  *       into the {@code Examples} of every Outline tagged with one of its capabilities</li>
  *   <li>Review {@code git diff}</li>
@@ -28,18 +30,18 @@ import static com.example.module.oreo.testdata.Capability.*;
 public enum ProductDatFiles {
 
     /** FX Total Return Forward — uses the standard TRF .dat template. */
-    FX_TRF(SUPPORT_CAPABILITY),
+    FX_TRF(SUPPORT_CAPABILITY, PRODUCT_FEATURES),
 
     /** CorrOption (FX Correlation Option). */
-    FX_PSCRIPT(SUPPORT_CAPABILITY),
+    FX_PSCRIPT(SUPPORT_CAPABILITY, PRODUCT_FEATURES),
 
     /** FX Floating Strike Barrier. */
-    FX_PSCRIPT_FSKO(SUPPORT_CAPABILITY),
+    FX_PSCRIPT_FSKO(SUPPORT_CAPABILITY, PRODUCT_FEATURES),
 
-    FX_PSCRIPT_TRF(SUPPORT_CAPABILITY);
+    FX_PSCRIPT_TRF(SUPPORT_CAPABILITY, PRODUCT_FEATURES);
 
     /** Placeholder for FX Option: add data/dat/FX_OPT/FX_OPT.dat when its template is available. Supports nothing. */
-//    FX_OPT(except(ALLOCATION, PORTFOLIO_REASSIGNMENT));
+//    FX_OPT(except(SUPPORT_CAPABILITY, ALLOCATION, PORTFOLIO_REASSIGNMENT), only(PRODUCT_UPLOAD));
 
     /** The classpath folder of the dat files, one folder per product. */
     public static final String DAT_DIR = "data/dat/";
@@ -47,15 +49,14 @@ public enum ProductDatFiles {
 
     private final Set<Capability> capabilities;
 
-    ProductDatFiles(Capability... capabilities) {
-        this(Set.of(), capabilities);
-    }
-
-    /** The capabilities of {@code group} (such as {@link Capability#SUPPORT_CAPABILITY}) and {@code more}. */
-    ProductDatFiles(Set<Capability> group, Capability... more) {
+    /**
+     * The capabilities of {@code groups}: each a group of {@link Capability#GROUPS} ({@code SUPPORT_CAPABILITY},
+     * {@code PRODUCT_FEATURES}), or part of one ({@code except(...)}, {@code only(...)}).
+     */
+    @SafeVarargs
+    ProductDatFiles(Set<Capability>... groups) {
         EnumSet<Capability> set = EnumSet.noneOf(Capability.class);
-        set.addAll(group);
-        set.addAll(Arrays.asList(more));
+        for (Set<Capability> group : groups) set.addAll(group);
         this.capabilities = Collections.unmodifiableSet(set);
     }
 

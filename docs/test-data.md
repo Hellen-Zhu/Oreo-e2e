@@ -22,10 +22,16 @@ API and UI data never read each other; only the code is shared.
 `stepInFull`, `stepInPartial` and one per lifecycle event, `earlyTermination`, `novationRemaining`, `cancellation`,
 `allocation`, `amendment`, `partialTermination`, `partialNovationRemaining`, `stepOutFull`, `stepOutPartial`,
 `portfolioReassignment`, named as in the replay project's `framework/products.ts`; then `fixings`, `cortexFormula` and
-`productUpload`). They also form one group, `Capability.SUPPORT_CAPABILITY`: every constant above (the replay
-project's `SUPPORT_CAPABILITY` has the events only). A product names the group, or `except(SUPPORT_CAPABILITY, ...)`
-when it lacks some, and any capability outside the group one by one (`FX_TRF(SUPPORT_CAPABILITY)`,
-`<P>(except(SUPPORT_CAPABILITY, CANCELLATION))`). A new constant joins the group only if every product that names the group supports it.
+`productUpload`). They form two groups (`Capability.GROUPS`), each capability in exactly one (`CapabilityTest`):
+- `SUPPORT_CAPABILITY`, the trade lifecycle: create, step in full / partial and the lifecycle events, what nearly every
+  product supports (the replay project's `SUPPORT_CAPABILITY` has the events only);
+- `PRODUCT_FEATURES`: `fixings`, `cortexFormula`, `productUpload`, what the product itself has rather than an event on
+  its trades, where products differ most.
+
+A product names each group it has, whole, `except(<group>, ...)` when it lacks some, or `only(...)` when it has a few:
+`FX_TRF(SUPPORT_CAPABILITY, PRODUCT_FEATURES)`, `<P>(except(SUPPORT_CAPABILITY, CANCELLATION), only(FIXINGS))`; a group
+it has none of is left out. A new constant joins the group it belongs to, and only if every product that names that
+group supports it. `coverage` shows the matrix in the same two sections.
 Approval, rejection and query are not capabilities: an Outline that approves, rejects or queries what an event made
 carries that event's capability (`create`, `stepInFull`, `stepInPartial`, `cancellation`; a query of fixing data
 `fixings`). Each
@@ -277,9 +283,9 @@ mvn -Ptest-data process-test-classes "-Dexec.args=unused-steps"
 mvn -Ptest-data process-test-classes "-Dexec.args=coverage"
 ```
 
-The first command defaults to `check`. Each command first runs the eight unit tests of the code that decides what a
+The first command defaults to `check`. Each command first runs the nine unit tests of the code that decides what a
 case sends and what its response is compared with (`ResponseMaskerTest`, `ExpectedResponsesTest`, `JsonPatchTest`,
-`TestDataRepositoryTest`, `JsonLayersTest`, `ResponseSuggestionsTest`, `UnusedStepsTest`, `CoverageTest`; their data is written in the
+`TestDataRepositoryTest`, `JsonLayersTest`, `ResponseSuggestionsTest`, `UnusedStepsTest`, `CoverageTest`, `CapabilityTest`; their data is written in the
 tests themselves, none of it lives under
 `src/test/resources`): a failing one stops Maven before the tool reads any data. The commands stop before the
 `test` phase: they do not run Cucumber. A failed check fails Maven. Plain `mvn test` retains its existing behavior and does not activate

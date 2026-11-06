@@ -79,6 +79,16 @@ public class CoverageTest {
     }
 
     @Test
+    public void eachGroupIsASectionOfItsOwnCapabilities() {
+        String report = Coverage.render(ENTRIES, Set.of(), List.of("P1"), (product, capability) -> true);
+        int lifecycle = report.indexOf("Trade lifecycle");
+        int features = report.indexOf("Product features");
+        assertTrue(report, lifecycle >= 0 && features > lifecycle);
+        assertTrue(report, report.indexOf("\nallocation ") > lifecycle && report.indexOf("\nallocation ") < features);
+        assertTrue(report, report.indexOf("\nfixings ") > features);
+    }
+
+    @Test
     public void wipIsInheritedFromTheFeatureAndTheRule() throws IOException {
         Path file = Files.createTempFile("coverage", ".feature");
         try {

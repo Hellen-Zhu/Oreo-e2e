@@ -3,6 +3,8 @@ package com.example.module.oreo.testdata;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -36,17 +38,37 @@ public enum Capability {
     PRODUCT_UPLOAD("productUpload");
 
     /**
-     * The trade lifecycle: booking (create, step in full / partial) and the events on a live trade. A product that
-     * supports all of them names the group instead of each one, one that lacks some names
+     * The trade lifecycle: booking (create, step in full / partial) and the events on a live trade, what nearly every
+     * product supports. A product that supports all of them names the group, one that lacks some names
      * {@code except(SUPPORT_CAPABILITY, ...)}. The Playwright registry's {@code SUPPORT_CAPABILITY} has the events only
-     * (its products list create and step in beside it). A new constant joins the group only if every product that
-     * names the group supports it.
+     * (its products list create and step in beside it).
      */
     public static final Set<Capability> SUPPORT_CAPABILITY = Collections.unmodifiableSet(EnumSet.of(
             CREATE, STEP_IN_FULL, STEP_IN_PARTIAL,
             CANCELLATION, ALLOCATION, AMENDMENT, EARLY_TERMINATION, PARTIAL_TERMINATION, NOVATION_REMAINING,
-            PARTIAL_NOVATION_REMAINING, STEP_OUT_FULL, STEP_OUT_PARTIAL, PORTFOLIO_REASSIGNMENT, FIXINGS, CORTEX_FORMULA,
-            PRODUCT_UPLOAD));
+            PARTIAL_NOVATION_REMAINING, STEP_OUT_FULL, STEP_OUT_PARTIAL, PORTFOLIO_REASSIGNMENT));
+
+    /**
+     * What the product itself has, not an event on its trades: a fixing schedule, a Cortex formula, a schema upload.
+     * Products differ here more than in the lifecycle: a product names the group, {@code except(PRODUCT_FEATURES, ...)}
+     * or {@code only(...)}.
+     */
+    public static final Set<Capability> PRODUCT_FEATURES = Collections.unmodifiableSet(EnumSet.of(
+            FIXINGS, CORTEX_FORMULA, PRODUCT_UPLOAD));
+
+    /**
+     * The groups by their title, in the order the coverage matrix shows them. Every capability is in exactly one: a
+     * new constant joins the group it belongs to (CapabilityTest fails otherwise), and only if every product that
+     * names that group supports it.
+     */
+    public static final Map<String, Set<Capability>> GROUPS = groups();
+
+    private static Map<String, Set<Capability>> groups() {
+        Map<String, Set<Capability>> groups = new LinkedHashMap<>();
+        groups.put("Trade lifecycle", SUPPORT_CAPABILITY);
+        groups.put("Product features", PRODUCT_FEATURES);
+        return Collections.unmodifiableMap(groups);
+    }
 
     /** The tag of an Outline: {@code @capability#stepInFull}. */
     public static final String TAG_PREFIX = "@capability#";
@@ -71,6 +93,13 @@ public enum Capability {
                 throw new IllegalArgumentException(c.tagName + " is not in the group " + group);
             }
         }
+        return Collections.unmodifiableSet(out);
+    }
+
+    /** A group of {@code capabilities} alone, for a product that has only some of a group: {@code only(FIXINGS)}. */
+    public static Set<Capability> only(Capability... capabilities) {
+        EnumSet<Capability> out = EnumSet.noneOf(Capability.class);
+        out.addAll(Arrays.asList(capabilities));
         return Collections.unmodifiableSet(out);
     }
 

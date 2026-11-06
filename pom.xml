@@ -171,15 +171,12 @@
                     <!-- A plain mvn test (the pipeline) runs the Cucumber suite (OreoTest) only, not the unit tests
                          of the test data code: those run first in every mvn -Ptest-data command (the profile's
                          test-data-unit-tests execution), before TestDataTool.
+                         The same patterns as the profile's includes, so a new unit test needs no line here.
                          **/*$* is surefire's default exclude (inner classes), which a list of excludes replaces. -->
                     <excludes>
                         <exclude>**/*$*</exclude>
-                        <exclude>**/testdata/ResponseMaskerTest.java</exclude>
-                        <exclude>**/testdata/ExpectedResponsesTest.java</exclude>
-                        <exclude>**/testdata/JsonPatchTest.java</exclude>
-                        <exclude>**/testdata/TestDataRepositoryTest.java</exclude>
-                        <exclude>**/testdata/JsonLayersTest.java</exclude>
-                        <exclude>**/testdata/ResponseSuggestionsTest.java</exclude>
+                        <exclude>**/testdata/*Test.java</exclude>
+                        <exclude>**/tools/*Test.java</exclude>
                     </excludes>
                 </configuration>
             </plugin>

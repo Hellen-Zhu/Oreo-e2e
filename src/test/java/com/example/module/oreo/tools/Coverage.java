@@ -12,12 +12,14 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.function.BiPredicate;
 import java.util.stream.Stream;
 
 /**
- * The coverage matrix ({@code coverage}): one row per capability, one column per product of the registry, each cell
+ * The coverage matrix ({@code coverage}): one row per capability, by group of {@link Capability#GROUPS} (trade
+ * lifecycle, product features), one column per product of the registry, each cell
  * the number of product Outlines that run for that product, {@code API/UI}. It reads the registry
  * ({@link ProductDatFiles}) and the product Outlines ({@code @capability#} tags, {@link ProductExamples}); it writes
  * nothing and never fails. A Scenario with a fixed product is not counted: only the product Outlines say which
@@ -87,26 +89,33 @@ final class Coverage {
         return new Cell(supported, api, ui, wipCount, unsynced);
     }
 
-    /** The matrix, its legend and the gaps: the capabilities a product supports with no case at all. */
+    /**
+     * The matrix, its legend and the gaps: the capabilities a product supports with no case at all. Each group of
+     * {@link Capability#GROUPS} is a section headed by its title, its capabilities in declaration order.
+     */
     static String render(List<ProductExamples.Entry> entries, Set<String> wip, List<String> products,
                          BiPredicate<String, Capability> supports) {
         List<List<String>> rows = new ArrayList<>();
-        List<String> header = new ArrayList<>();
-        header.add("capability");
-        header.addAll(products);
-        rows.add(header);
         List<String> gaps = new ArrayList<>();
         List<String> unsynced = new ArrayList<>();
-        for (Capability capability : Capability.values()) {
-            List<String> row = new ArrayList<>();
-            row.add(capability.tagName());
-            for (String product : products) {
-                Cell cell = cell(entries, wip, capability, product, supports.test(product, capability));
-                row.add(cell.text());
-                if (cell.gap()) gaps.add(product + ": " + capability.tagName());
-                if (cell.unsynced()) unsynced.add(product + ": " + capability.tagName());
+        for (Map.Entry<String, Set<Capability>> group : Capability.GROUPS.entrySet()) {
+            if (!rows.isEmpty()) rows.add(null);
+            List<String> header = new ArrayList<>();
+            header.add(group.getKey());
+            header.addAll(rows.isEmpty() ? products : products.stream().map(p -> "").toList());
+            rows.add(header);
+            for (Capability capability : Capability.values()) {
+                if (!group.getValue().contains(capability)) continue;
+                List<String> row = new ArrayList<>();
+                row.add(capability.tagName());
+                for (String product : products) {
+                    Cell cell = cell(entries, wip, capability, product, supports.test(product, capability));
+                    row.add(cell.text());
+                    if (cell.gap()) gaps.add(product + ": " + capability.tagName());
+                    if (cell.unsynced()) unsynced.add(product + ": " + capability.tagName());
+                }
+                rows.add(row);
             }
-            rows.add(row);
         }
         StringBuilder out = new StringBuilder();
         out.append("Coverage: product x capability, product Outlines that run (API/UI)\n\n");
@@ -126,15 +135,20 @@ final class Coverage {
         return out.toString();
     }
 
-    /** The rows as text columns, each padded to its widest cell. */
+    /** The rows as text columns, each padded to its widest cell; a null row is a blank line. */
     private static String table(List<List<String>> rows) {
         int columns = rows.getFirst().size();
         int[] width = new int[columns];
         for (List<String> row : rows) {
+            if (row == null) continue;
             for (int i = 0; i < columns; i++) width[i] = Math.max(width[i], row.get(i).length());
         }
         StringBuilder out = new StringBuilder();
         for (List<String> row : rows) {
+            if (row == null) {
+                out.append('\n');
+                continue;
+            }
             StringBuilder line = new StringBuilder();
             for (int i = 0; i < columns; i++) {
                 String cell = row.get(i);

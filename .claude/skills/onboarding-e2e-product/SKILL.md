@@ -32,7 +32,7 @@ Nothing else is asked first. With the dat file, make the change (section 2), the
 
 | File | Change |
 |---|---|
-| `src/main/java/com/example/module/oreo/testdata/ProductDatFiles.java` | One constant `<P>(SUPPORT_CAPABILITY)`, named exactly as the product ID: every capability (create, step in full / partial, every lifecycle event, fixings, cortex formula, product upload) until QA's review takes some off: `except(SUPPORT_CAPABILITY, <the ones it lacks>)`, or the remaining ones one by one (`<P>(CREATE, EARLY_TERMINATION)`). Added after the last product, never first (`values()[0]` is the data checks' example product; the order of the constants is the order of the `Examples` rows). Its comment: the product's name as QA gives it, else none |
+| `src/main/java/com/example/module/oreo/testdata/ProductDatFiles.java` | One constant `<P>(SUPPORT_CAPABILITY, PRODUCT_FEATURES)`, named exactly as the product ID: both groups, every capability (the trade lifecycle: create, step in full / partial, every lifecycle event; the product features: fixings, cortex formula, product upload) until QA's review takes some off, per group: `except(<group>, <the ones it lacks>)`, `only(<the ones it has>)` (`<P>(SUPPORT_CAPABILITY, only(PRODUCT_UPLOAD))`), or the group left out when it has none of it. Added after the last product, never first (`values()[0]` is the data checks' example product; the order of the constants is the order of the `Examples` rows). Its comment: the product's name as QA gives it, else none |
 | `src/test/resources/data/dat/<P>/<P>.dat` (the default; variants QA names go into the same folder) | If the committed `.dat` files are one-line placeholders (`# Placeholder: copy <P>.dat from the E2E project.`), this is the public copy: write the same line for `<P>`, never the real file, and add `<P>` to the placeholder list in `README.md` ("This copy"). Otherwise copy QA's file byte for byte |
 | `byProduct.<P>` of an event file | Nothing at first: the product runs on the defaults. Only values QA gives in the review that differ from them. `dynamicFields` only after a recording shows them (section 5) |
 
@@ -53,7 +53,9 @@ answers. It holds:
    title), from `git diff` of the feature files or `grep -rn -A1 "@capability#" src/test/resources/features`; the
    product's column of `mvn -Ptest-data process-test-classes "-Dexec.args=coverage"` shows how many API and UI
    Outlines each capability runs and which have none (`NONE`, listed as gaps); with a
-   column QA fills in: **supported / not supported, row by row**. A general "looks fine" is not an answer: ask again
+   column QA fills in: **supported / not supported, row by row**, in two parts as `Capability.GROUPS` has them: the
+   trade lifecycle, then the product features (fixings, cortex formula, product upload), asked on their own: products
+   differ there most, so "the same as the others" for the lifecycle is no answer for them. A general "looks fine" is not an answer: ask again
    for the rows still empty. A capability without its row answered stays a default: it is not recorded, run or
    committed. A capability covers all its Outlines, API and UI: a no for only some of them is a question for the user,
    not a registry line. The answer comes from the requirement or the BA.
