@@ -31,7 +31,7 @@ public class TradeDetailSteps {
         log.info("[TradeDetailSteps] Confirming trade change confirmation; wait for /trades/{}/update?tradeAction=SUBMIT response", tradeId);
         ctx.clickAndWaitForResponse(
                 "trade_change_confirmation.confirm_btn",
-                TradeApiClient.updatePath(tradeId) + "?tradeAction=SUBMIT",
+                TradeApiClient.submitUpdatePath(tradeId),
                 "POST"
         );
     }
@@ -42,7 +42,7 @@ public class TradeDetailSteps {
         log.info("[TradeDetailSteps] Confirming trade change confirmation; wait for /trades/{}/update?tradeAction=SAVE response", tradeId);
         ctx.clickAndWaitForResponse(
                 "trade_change_confirmation.confirm_btn",
-                TradeApiClient.updatePath(tradeId) + "?tradeAction=SAVE",
+                TradeApiClient.saveUpdatePath(tradeId),
                 "POST"
         );
     }

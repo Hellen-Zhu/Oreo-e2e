@@ -62,7 +62,8 @@ public final class ProductApiClient {
         return "/products/" + productId + "/schema/commit";
     }
 
-    private static String byProductIdPath(String productId) {
+    /** The product by its product ID, as {@link #getProduct} reads it and a product page loads it. */
+    public static String byProductIdPath(String productId) {
         return "/products/productId/" + productId;
     }
 

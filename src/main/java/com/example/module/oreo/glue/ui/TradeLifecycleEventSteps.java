@@ -55,7 +55,7 @@ public class TradeLifecycleEventSteps {
     @When("^confirm checker action on trade detail and wait for page ready$")
     public void confirmCheckerActionAndWait() {
         log.info("[TradeLifecycleEventSteps] Confirming checker action on trade detail; waiting for /checker/tasks/ response");
-        ctx.clickAndWaitForResponse("trade_detail.checker_confirm_btn", "/checker/tasks/", "POST");
+        ctx.clickAndWaitForResponse("trade_detail.checker_confirm_btn", TradeApiClient.CHECKER_TASKS_PATH, "POST");
     }
 
     // ── Lifecycle event steps ───────────────────────────────────────
@@ -205,12 +205,13 @@ public class TradeLifecycleEventSteps {
      */
     @When("^confirm checker action from the blotter and wait for blotter '([^']*)' to reload$")
     public void confirmCheckerActionAndWaitForBlotterReload(String blotterId) {
-        clickAndWaitForBlotterReload("checker_action.confirm_btn", "/checker/tasks/", blotterId);
+        clickAndWaitForBlotterReload("checker_action.confirm_btn", TradeApiClient.CHECKER_TASKS_PATH, blotterId);
     }
 
     /** Clicks {@code locatorKey}, waits for {@code POST urlFragment} and the blotter reload after it; returns the first body. */
     private String clickAndWaitForBlotterReload(String locatorKey, String urlFragment, String blotterId) {
-        String response = ctx.clickAndWaitForResponses(locatorKey, urlFragment, "POST", "/api/v1/blotter/trades", "POST");
+        String response = ctx.clickAndWaitForResponses(locatorKey, urlFragment, "POST",
+                TradeApiClient.BLOTTER_TRADES_PATH, "POST");
         ctx.assertEventuallyHidden(ctx.getLocatorWithParam("trade_portal.blotter_view_refreshing_state", blotterId));
         return response;
     }

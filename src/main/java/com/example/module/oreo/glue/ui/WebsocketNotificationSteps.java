@@ -3,6 +3,7 @@ package com.example.module.oreo.glue.ui;
 import com.microsoft.playwright.Locator;
 import com.example.genie.module.rest.service.RequestResponseHelper;
 import com.example.module.oreo.utils.RestApiUtil;
+import com.example.module.oreo.utils.TradeApiClient;
 import com.example.module.oreo.playwright.PlaywrightServiceResolver;
 import com.example.module.oreo.config.TestUser;
 import cucumber.api.Scenario;
@@ -35,10 +36,10 @@ public class WebsocketNotificationSteps {
         this.helper = RestApiUtil.helperFromScenario(scenario);
     }
 
-    /** Marks checker notifications as read through RestApiUtil endpoint call. */
+    /** Marks every notification of the checker as read. */
     @Given("^checker marks all notifications as read via api$")
     public void markAllNotificationsAsReadForChecker() {
-        RestApiUtil.post(helper, "/notifications/read-all", TestUser.CHECKER.email());
+        TradeApiClient.markAllNotificationsRead(helper, TestUser.CHECKER.email());
     }
 
     /** Captures baseline unread badge value before triggering checker action. */

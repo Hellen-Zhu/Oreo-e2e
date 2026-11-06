@@ -1,6 +1,7 @@
 package com.example.module.oreo.glue.ui;
 
 import com.example.module.oreo.config.TestUser;
+import com.example.module.oreo.utils.TradeApiClient;
 import com.example.module.oreo.playwright.PlaywrightServiceResolver;
 import com.microsoft.playwright.TimeoutError;
 import cucumber.api.Scenario;
@@ -41,7 +42,7 @@ public class LoginSteps {
         String email = user.email();
         ctx.innerInput("login.email").fill(email);
         ctx.innerInput("login.password").fill(user.password());
-        ctx.clickAndWaitForResponse("login.submit", "/api/v1/blotter/trades", "POST");
+        ctx.clickAndWaitForResponse("login.submit", TradeApiClient.BLOTTER_TRADES_PATH, "POST");
         ctx.write("Signed in as " + user.role() + " (" + email + ")");
     }
 }

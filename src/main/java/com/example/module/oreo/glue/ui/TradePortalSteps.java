@@ -10,6 +10,7 @@ import cucumber.api.java.en.Then;
 import cucumber.api.java.en.When;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import com.example.module.oreo.utils.TradeApiClient;
 import com.example.module.oreo.playwright.PlaywrightServiceResolver;
 
 import java.util.List;
@@ -40,13 +41,14 @@ public class TradePortalSteps {
     @When("^navigate to trade detail and wait for page ready for stored variable '([^']*)'$")
     public void navigateToTradeDetail(String ctxKey) {
         String tradeId = ctx.get(ctxKey);
-        ctx.clickAndWaitForResponse("trade_portal.row_action_view_details", "/api/v1/trades/" + tradeId, "GET");
+        ctx.clickAndWaitForResponse("trade_portal.row_action_view_details", TradeApiClient.tradePath(tradeId), "GET");
     }
 
     @When("^double click to navigate to trade detail and wait for page ready for stored variable '([^']*)'$")
     public void doubleClickToViewTradeDetail(String ctxKey) {
         String tradeId = ctx.get(ctxKey);
-        ctx.doubleClickAndWaitForResponse("trade_portal.all_trades_blotter_row", "/api/v1/trades/" + tradeId, "GET");
+        ctx.doubleClickAndWaitForResponse("trade_portal.all_trades_blotter_row", TradeApiClient.tradePath(tradeId),
+                "GET");
     }
 
     /**
@@ -56,7 +58,7 @@ public class TradePortalSteps {
      */
     @When("^refresh trade blotter and wait for blotter '([^']*)' to be ready$")
     public void refreshTradeBlotterAndWaitFor(String blotterId) {
-        ctx.clickAndWaitForResponse("trade_portal.refresh_btn", "/api/v1/blotter/trades", "POST");
+        ctx.clickAndWaitForResponse("trade_portal.refresh_btn", TradeApiClient.BLOTTER_TRADES_PATH, "POST");
         ctx.assertEventuallyHidden(ctx.getLocatorWithParam("trade_portal.blotter_view_refreshing_state", blotterId));
     }
 

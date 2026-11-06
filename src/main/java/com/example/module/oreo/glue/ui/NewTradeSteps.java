@@ -1,6 +1,7 @@
 package com.example.module.oreo.glue.ui;
 
 import com.example.module.oreo.testdata.ProductDatFiles;
+import com.example.module.oreo.utils.TradeApiClient;
 import com.example.module.oreo.playwright.PlaywrightServiceResolver;
 import cucumber.api.Scenario;
 import cucumber.api.java.Before;
@@ -13,8 +14,6 @@ import java.net.URL;
 import java.nio.file.Paths;
 
 public class NewTradeSteps {
-
-    private static final String NEW_TRADE_RISK_URL = "/trades/calculate-risk-for-new";
 
     private PlaywrightServiceResolver.Context ctx;
     private static final Logger log = LoggerFactory.getLogger(NewTradeSteps.class);
@@ -32,17 +31,20 @@ public class NewTradeSteps {
 
     @When("^click save using configured risk engine mode for new trade creation$")
     public void clickSaveUsingConfiguredRiskEngineModeForNewTrade() {
-        ctx.clickUsingRiskEngineMode("new_trade.save_btn", NEW_TRADE_RISK_URL, "risk-calc-success-mock");
+        ctx.clickUsingRiskEngineMode("new_trade.save_btn", TradeApiClient.CALCULATE_RISK_FOR_NEW_PATH,
+                "risk-calc-success-mock");
     }
 
     @When("^click book using configured risk engine mode for new trade creation$")
     public void clickBookUsingConfiguredRiskEngineModeForNewTrade() {
-        ctx.clickUsingRiskEngineMode("new_trade.book_btn", NEW_TRADE_RISK_URL, "risk-calc-success-mock");
+        ctx.clickUsingRiskEngineMode("new_trade.book_btn", TradeApiClient.CALCULATE_RISK_FOR_NEW_PATH,
+                "risk-calc-success-mock");
     }
 
     @When("^confirm new trade and wait for page ready$")
     public void waitForNewTradeCreatedReady() {
-        ctx.clickAndWaitForResponse("trade_change_confirmation.confirm_btn", "/api/v1/blotter/trades", "POST");
+        ctx.clickAndWaitForResponse("trade_change_confirmation.confirm_btn", TradeApiClient.BLOTTER_TRADES_PATH,
+                "POST");
     }
 
     @When("^confirm new trade creation and capture response as '([^']*)'$")
@@ -50,7 +52,7 @@ public class NewTradeSteps {
         log.info("[NewTradeSteps] Confirming trade change confirmation; capturing /trades/create response as '{}'", responseCtxKey);
         String responseBody = ctx.clickAndCaptureResponse(
                 "trade_change_confirmation.confirm_btn",
-                "/api/v1/trades/create",
+                TradeApiClient.CREATE_TRADE_PATH,
                 "POST"
         );
         ctx.set(responseCtxKey, responseBody);

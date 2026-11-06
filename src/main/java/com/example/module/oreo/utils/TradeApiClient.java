@@ -19,18 +19,29 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * The trade endpoints as Java glue calls them: their paths, for the requests here and for the UI steps that wait for
- * a response; the requests that provision a trade from {@code data/setup/}; what their responses say, so that no step
- * reads a response path. API snippets use the built-in REST steps, not this class.
+ * The trade endpoints as Java glue calls them, with those of the maker-checker flow around a trade (checker tasks,
+ * the blotter's trades, notifications): their paths, for the requests here and for the UI steps that wait for a
+ * response; the requests that provision a trade from {@code data/setup/}; what their responses say, so that no step
+ * reads a response path. A path is relative to {@code rest.base.url}; a UI step waits for a response whose URL contains
+ * it. API snippets use the built-in REST steps, not this class.
  */
 public final class TradeApiClient {
 
     private static final Logger log = LoggerFactory.getLogger(TradeApiClient.class);
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
-    public static final String SUBMIT_TRADE_PATH = "/trades/create?tradeAction=SUBMIT";
-    public static final String SAVE_TRADE_PATH = "/trades/create?tradeAction=SAVE";
+    /** Creates a trade, with {@code ?tradeAction=SUBMIT} or {@code SAVE}: the new trade page sends one of them. */
+    public static final String CREATE_TRADE_PATH = "/trades/create";
+    public static final String SUBMIT_TRADE_PATH = CREATE_TRADE_PATH + "?tradeAction=SUBMIT";
+    public static final String SAVE_TRADE_PATH = CREATE_TRADE_PATH + "?tradeAction=SAVE";
     public static final String TRIGGER_EVENT_PATH = "/trades/trigger-event";
+    /** The risk of the trade on the new trade page, before it exists. */
+    public static final String CALCULATE_RISK_FOR_NEW_PATH = "/trades/calculate-risk-for-new";
+    /** The trades of a blotter: the trade portal loads them after a sign-in, a refresh and a change to a trade. */
+    public static final String BLOTTER_TRADES_PATH = "/blotter/trades";
+    /** The start of every checker task action: approve or reject, one task or bulk. */
+    public static final String CHECKER_TASKS_PATH = "/checker/tasks/";
+    private static final String READ_ALL_NOTIFICATIONS_PATH = "/notifications/read-all";
 
     /**
      * A trade that {@link #submitTrade} or {@link #saveTrade} created: its ID ({@code data.trade.id}) and the ID of its
@@ -42,24 +53,39 @@ public final class TradeApiClient {
         // Utility class
     }
 
+    /** The trade, as the trade detail page loads it. */
+    public static String tradePath(String tradeId) {
+        return "/trades/" + tradeId;
+    }
+
     public static String updatePath(String tradeId) {
-        return "/trades/" + tradeId + "/update";
+        return tradePath(tradeId) + "/update";
+    }
+
+    /** {@link #updatePath} as the trade detail page books the change. */
+    public static String submitUpdatePath(String tradeId) {
+        return updatePath(tradeId) + "?tradeAction=SUBMIT";
+    }
+
+    /** {@link #updatePath} as the trade detail page saves the change as a draft. */
+    public static String saveUpdatePath(String tradeId) {
+        return updatePath(tradeId) + "?tradeAction=SAVE";
     }
 
     public static String calculateRiskPath(String tradeId) {
-        return "/trades/" + tradeId + "/calculate-risk";
+        return tradePath(tradeId) + "/calculate-risk";
     }
 
     public static String calculatePartialRiskPath(String tradeId) {
-        return "/trades/" + tradeId + "/calculate-partial-novation-risk";
+        return tradePath(tradeId) + "/calculate-partial-novation-risk";
     }
 
     public static String calculateAllocationRiskPath(String tradeId) {
-        return "/trades/" + tradeId + "/calculate-allocation-risk";
+        return tradePath(tradeId) + "/calculate-allocation-risk";
     }
 
     public static String targetGainPath(String tradeId) {
-        return "/trades/" + tradeId + "/target-gain";
+        return tradePath(tradeId) + "/target-gain";
     }
 
     /** Submits the setup body {@code testDataKey} for {@code product} with the dat file at classpath {@code datPath}. */
@@ -159,11 +185,17 @@ public final class TradeApiClient {
 
     public static JsonNode approveTask(RequestResponseHelper helper, String taskId, String userId) {
         log.info("[TradeApiClient] approveTask: taskId='{}', userId='{}'", taskId, userId);
-        return RestApiUtil.post(helper, "/checker/tasks/" + taskId + "/approve", userId);
+        return RestApiUtil.post(helper, CHECKER_TASKS_PATH + taskId + "/approve", userId);
     }
 
     public static JsonNode rejectTask(RequestResponseHelper helper, String taskId, String userId) {
         log.info("[TradeApiClient] rejectTask: taskId='{}', userId='{}'", taskId, userId);
-        return RestApiUtil.post(helper, "/checker/tasks/" + taskId + "/reject", userId);
+        return RestApiUtil.post(helper, CHECKER_TASKS_PATH + taskId + "/reject", userId);
+    }
+
+    /** Marks every notification of {@code userId} as read. */
+    public static JsonNode markAllNotificationsRead(RequestResponseHelper helper, String userId) {
+        log.info("[TradeApiClient] markAllNotificationsRead: userId='{}'", userId);
+        return RestApiUtil.post(helper, READ_ALL_NOTIFICATIONS_PATH, userId);
     }
 }
