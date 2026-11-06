@@ -8,7 +8,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.example.genie.module.rest.service.RequestResponseHelper;
 import com.example.module.oreo.testdata.ProductDatFiles;
 import com.example.module.oreo.testdata.TestData;
-import com.example.module.oreo.testdata.TradeRequests;
+import com.example.module.oreo.testdata.Json;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -70,7 +70,7 @@ public final class TradeApiClient {
     private static JsonNode createTrade(RequestResponseHelper helper, String path, String userId, String testDataKey,
                                         ProductDatFiles product, String datPath) throws URISyntaxException {
         // The setup body carries no product: it is set from the dat file's product
-        String tradeJson = TradeRequests.withProductId(TestData.setup(testDataKey).request(), product.name());
+        String tradeJson = withProductId(TestData.setup(testDataKey).request(), product.name());
         URL resource = TradeApiClient.class.getClassLoader().getResource(datPath);
         if (resource == null) {
             throw new AssertionError("[TradeApiClient] dat file '" + datPath + "' not found on classpath.");
@@ -79,6 +79,36 @@ public final class TradeApiClient {
                 path, userId, testDataKey, datPath);
         return RestApiUtil.postMultipart(helper, path, userId, "trade", tradeJson, "datFile",
                 Paths.get(resource.toURI()));
+    }
+
+    /**
+     * {@code requestJson} with {@code basic.productId} set to {@code productId} ({@code basic} is created when
+     * absent): a trade request in the data never names its product, the step sets it. Numbers are kept exactly as
+     * written.
+     *
+     * @throws AssertionError when the request or its {@code basic} is not a JSON object
+     */
+    public static String withProductId(String requestJson, String productId) {
+        JsonNode root;
+        try {
+            root = Json.parse(requestJson);
+        } catch (IllegalStateException e) {
+            throw new AssertionError("[TradeApiClient] Failed to inject basic.productId: " + e.getMessage(), e);
+        }
+        if (!(root instanceof ObjectNode rootObject)) {
+            throw new AssertionError("[TradeApiClient] request must be a JSON object.");
+        }
+        JsonNode basic = rootObject.get("basic");
+        ObjectNode basicObject;
+        if (basic == null || basic.isNull()) {
+            basicObject = rootObject.putObject("basic");
+        } else if (basic instanceof ObjectNode object) {
+            basicObject = object;
+        } else {
+            throw new AssertionError("[TradeApiClient] request.basic must be a JSON object.");
+        }
+        basicObject.put("productId", productId);
+        return Json.compact(rootObject);
     }
 
     public static JsonNode updateTrade(RequestResponseHelper helper, String tradeId, String userId, String testDataKey) {

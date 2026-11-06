@@ -2,7 +2,7 @@ package com.example.module.oreo.glue.api;
 
 import com.example.module.oreo.testdata.ProductDatFiles;
 import com.example.module.oreo.testdata.TestData;
-import com.example.module.oreo.testdata.TradeRequests;
+import com.example.module.oreo.utils.TradeApiClient;
 import cucumber.api.Scenario;
 import cucumber.api.java.Before;
 import cucumber.api.java.en.Given;
@@ -97,7 +97,7 @@ public class TradeApiSteps {
 
     private String setBasicProductId(String requestJson, String productId, String key) {
         try {
-            return TradeRequests.withProductId(requestJson, productId);
+            return TradeApiClient.withProductId(requestJson, productId);
         } catch (AssertionError e) {
             throw new AssertionError("[TradeApiSteps] request for key '" + key + "': " + e.getMessage(), e);
         }
