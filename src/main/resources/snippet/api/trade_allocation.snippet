@@ -1,0 +1,8 @@
+# Allocation: the evidence the recording of the allocated trade cannot give. The request, the call and the outcome
+# are the shared steps of api/trade_lifecycle_event.snippet.
+
+# ── Assertions ──────────────────────────────────────────────────────
+
+# The trades the allocation created, retrieved: their notionals are the requested split.
+@Then "^the allocated trades carry the requested notional amounts$"
+    Then the new trades of the event have 'data.trade.basic.notionalAmount' as in the request's 'notionalAmounts'

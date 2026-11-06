@@ -1,5 +1,5 @@
 {
-  "_comment": "features/api/trading/trade_early_termination.feature. Body of POST /trades/trigger-event; the step replaces tradeIds with the created trade. API-001's row names only its run-to-run response fields. No expectedBase: the three responses share nothing.",
+  "_comment": "features/api/trading/trade_early_termination.feature. Body of POST /trades/trigger-event; the step replaces tradeIds with the created trade. A success records the trade retrieved after the event (retrieved-trade); a rejection the event's response. No expectedBase: the responses share nothing.",
   "defaults": {
     "request": {
       "eventType": "EarlyTermination",
@@ -17,8 +17,8 @@
   "cases": [
     {
       "id": "TC-TRADE-EARLY-TERMINATION-<product_type>-API-001",
-      "_comment": "Positive: 200 ALL_EXECUTED; the message and the trade ID change from run to run",
-      "dynamicFields": { "msg": "type", "data.results[*].tradeId": "type" }
+      "_comment": "Positive: 200 ALL_EXECUTED; the recording is the terminated trade, retrieved after the event",
+      "use": ["trade-response-parts", "retrieved-trade"]
     },
     {
       "id": "TC-TRADE-EARLY-TERMINATION-<product_type>-API-002",

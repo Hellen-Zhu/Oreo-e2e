@@ -1,9 +1,14 @@
 package com.example.module.oreo.glue.api;
 
+import com.example.module.oreo.config.TestUser;
 import com.example.module.oreo.testdata.CaseId;
 import com.example.module.oreo.testdata.ExpectedResponses;
+import com.example.module.oreo.testdata.Json;
 import com.example.module.oreo.testdata.ResponseMasker;
 import com.example.module.oreo.testdata.TestData;
+import com.example.module.oreo.utils.RestApiUtil;
+import com.example.module.oreo.utils.TradeApiClient;
+import com.fasterxml.jackson.databind.JsonNode;
 import cucumber.api.Scenario;
 import cucumber.api.java.Before;
 import cucumber.api.java.en.Then;
@@ -13,7 +18,9 @@ import org.hamcrest.Matchers;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.math.BigDecimal;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -132,6 +139,87 @@ public class ApiResponseAssertionSteps {
                     + " TestDataTool compact " + id.eventFile()
                     + " (.claude/skills/maintaining-e2e-test-data), and review the diff.", e);
         }
+    }
+
+    // ── Lifecycle event outcome ──────────────────────────────────────────
+
+    /**
+     * The response of {@code POST /trades/trigger-event}: 200, {@code status} SUCCESS and at least one result. Stores
+     * the trade the event ran on as {@code eventTradeId} and the trades it created as {@code childTradeId1..n}, with
+     * their number as {@code childTradeCount}, for the retrieval that is the case's evidence.
+     */
+    @Then("^the lifecycle event response lists its trades$")
+    public void lifecycleEventResponseListsItsTrades() {
+        JsonNode response = Json.parse(ctx.helper().response().statusCode(200).extract().asString());
+        if (!"SUCCESS".equals(response.path("status").asText())) {
+            throw new AssertionError("[ApiResponseAssertionSteps] the event response is not SUCCESS: " + response);
+        }
+        TradeApiClient.EventResult result = TradeApiClient.eventResults(response, "the event response").get(0);
+        ctx.set("eventTradeId", result.tradeId());
+        List<String> children = result.childTradeIds();
+        ctx.set("childTradeCount", String.valueOf(children.size()));
+        for (int i = 0; i < children.size(); i++) {
+            ctx.set("childTradeId" + (i + 1), children.get(i));
+        }
+        ctx.write("[event] eventTradeId = " + result.tradeId() + ", childTradeIds = " + children);
+    }
+
+    /**
+     * Retrieves every trade the event created ({@code childTradeId1..n}) as the maker and compares the values at
+     * {@code responsePath} with the JSON array of the case request's {@code data} entry {@code dataKey}, in any order
+     * (the response does not say which created trade is which entry); numbers compare by value.
+     */
+    @Then("^the new trades of the event have '([^']*)' as in the request's '([^']*)'$")
+    public void newTradesOfTheEventHaveValuesFromRequest(String responsePath, String dataKey) {
+        List<String> expected = sortedValues(requestDataArray(dataKey));
+        int count = Integer.parseInt(ctx.get("childTradeCount"));
+        List<JsonNode> actualNodes = new ArrayList<>();
+        for (int i = 1; i <= count; i++) {
+            String tradeId = ctx.get("childTradeId" + i);
+            JsonNode trade = RestApiUtil.get(ctx.helper(), TradeApiClient.tradePath(tradeId), TestUser.MAKER.email());
+            JsonNode value = trade.at("/" + responsePath.replace('.', '/'));
+            if (value.isMissingNode()) {
+                throw new AssertionError("[ApiResponseAssertionSteps] new trade " + tradeId + " has no "
+                        + responsePath + ": " + trade);
+            }
+            actualNodes.add(value);
+        }
+        List<String> actual = sortedValues(actualNodes);
+        if (!expected.equals(actual)) {
+            throw new AssertionError("[ApiResponseAssertionSteps] the new trades' " + responsePath + " are " + actual
+                    + ", the request's " + dataKey + " are " + expected);
+        }
+        ctx.write("[event] new trades' " + responsePath + " = " + actual + " as in the request's " + dataKey);
+    }
+
+    /** The values of the case request's {@code data} entry {@code key}: its {@code value} is a JSON array as text. */
+    private List<JsonNode> requestDataArray(String key) {
+        JsonNode request = Json.parse(TestData.forCase(ctx.find("_tc.key")).request());
+        for (JsonNode entry : request.path("data")) {
+            if (key.equals(entry.path("key").asText())) {
+                JsonNode values = Json.parse(entry.path("value").asText());
+                List<JsonNode> out = new ArrayList<>();
+                values.forEach(out::add);
+                return out;
+            }
+        }
+        throw new AssertionError("[ApiResponseAssertionSteps] the case request has no data entry '" + key + "': "
+                + request);
+    }
+
+    /** Each value as text, a number in its plain form without trailing zeros (35000 = 35000.0), sorted. */
+    private static List<String> sortedValues(List<JsonNode> values) {
+        List<String> out = new ArrayList<>();
+        for (JsonNode value : values) {
+            String text = value.asText();
+            try {
+                out.add(new BigDecimal(text).stripTrailingZeros().toPlainString());
+            } catch (NumberFormatException e) {
+                out.add(text);
+            }
+        }
+        out.sort(null);
+        return out;
     }
 
     private void assertResponseMatches(String expected, String sourceLabel) {

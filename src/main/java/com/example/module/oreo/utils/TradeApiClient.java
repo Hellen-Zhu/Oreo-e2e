@@ -197,8 +197,12 @@ public final class TradeApiClient {
         return eventResults(response, testDataKey + " on " + tradeIds);
     }
 
-    /** @throws AssertionError when the response has no result */
-    static List<EventResult> eventResults(JsonNode response, String what) {
+    /**
+     * The results of a lifecycle event's response, in its order; {@code what} names the event in the error.
+     *
+     * @throws AssertionError when the response has no result
+     */
+    public static List<EventResult> eventResults(JsonNode response, String what) {
         JsonNode results = response.at("/data/results");
         if (!results.isArray() || results.isEmpty()) {
             throw new AssertionError("[TradeApiClient] " + what + " has no results: " + response);

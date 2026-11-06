@@ -2,9 +2,12 @@
 # snippets the request is built in one step and sent in the next. The request is the case's own row
 # (data/api/<event>.json, chosen by the case ID) with its tradeIds replaced by a stored trade. The event name, the word
 # before "data" (valid, invalid, malformed, duplicate) and the optional "with '<what>'" are for the reader: they say
-# what the row holds, so that the scenarios of a feature differ in their steps; the row is what is sent. The outcomes
-# compare the response with the case's recording. A new event needs no snippet here: case data, recordings and the
-# feature. Evidence beyond the response (notional reduced, trade closed) stays in the event's own api/<feature>.snippet.
+# what the row holds, so that the scenarios of a feature differ in their steps; the row is what is sent. A rejection
+# compares the response with the case's recording. A success checks the response lightly (200, SUCCESS, its results)
+# and compares the trade the event ran on, retrieved after it, with the case's recording: the row uses the blocks
+# trade-response-parts and retrieved-trade (api/common.json). The trades it created are stored as childTradeId1..n
+# for the event's own snippet. A new event needs no snippet here: case data, recordings and the feature. Evidence the
+# recording cannot give (the new trades, a rule of the requirement) stays in the event's own api/<feature>.snippet.
 
 # ── Build request ───────────────────────────────────────────────────
 
@@ -30,7 +33,9 @@
 # ── Assertions ──────────────────────────────────────────────────────
 
 @Then "^the '([^']*)' event is executed successfully$"
-    Then the '$1' should be 'executed' successfully
+    Then the lifecycle event response lists its trades
+    And maker retrieves the trade for stored variable 'eventTradeId'
+    And response matches current scenario
 
 @Then "^the '([^']*)' event is rejected with a validation error$"
     Then failed to 'execute' '$1'

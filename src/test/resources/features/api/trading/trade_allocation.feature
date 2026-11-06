@@ -10,6 +10,7 @@ Feature: Trade Allocation Event API
     When maker has valid data with 'a 2-way equal split' for the 'Allocation' event
     And performs the 'Allocation' event via api
     Then the 'Allocation' event is executed successfully
+    And the allocated trades carry the requested notional amounts
 
     Examples:
       | product_type    |
@@ -24,6 +25,7 @@ Feature: Trade Allocation Event API
     When maker has valid data with 'a 3-way unequal split' for the 'Allocation' event
     And performs the 'Allocation' event via api
     Then the 'Allocation' event is executed successfully
+    And the allocated trades carry the requested notional amounts
 
     Examples:
       | product_type    |

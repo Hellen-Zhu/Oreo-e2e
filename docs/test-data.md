@@ -162,6 +162,22 @@ comparison the variable's value of that run is put in its place. It takes text, 
 scenario that has not stored the variable fails. Example, a risk query by the trade of the case:
 `"dynamicFields": { "data.tradeId": "var:createdTradeId" }`.
 
+### Lifecycle events: the retrieved trade
+
+A lifecycle event's success (`the '<event>' event is executed successfully`) records the trade the event ran on,
+retrieved after it, not the event's response: the response says the request was taken, the trade says what the event
+did. The response is checked lightly (200, `SUCCESS`, a result) and its IDs stored (`eventTradeId`,
+`childTradeId1..n`). The positive row says so with the blocks of `api/common.json`:
+
+```jsonc
+{ "id": "TC-TRADE-ALLOCATION-<product_type>-API-001", "use": ["trade-response-parts", "retrieved-trade"] }
+```
+
+`retrieved-trade` gives the trade's parts their paths (`data.trade.basic`, `data.trade.instrument`, so they refer to
+`_shared/`) and masks `data.trade.id`; other values that change from run to run go into the row after the first
+recording (`suggest <event>`). A rejection keeps the event's response, with `"dynamicFields": null`. The trades an
+event creates are not recorded: the event's own snippet checks them against the request.
+
 ## Base and patch
 
 The variants of a case return mostly the same response, so a variant's file holds only its differences from a

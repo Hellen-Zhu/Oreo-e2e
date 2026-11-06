@@ -13,6 +13,16 @@
         "{basic}.valueDate": "type",
         "{basic}.premiumDate": "type"
       }
+    },
+    "retrieved-trade": {
+      "_comment": "A lifecycle event's success: its recording is the trade the event ran on, retrieved after it (GET /trades/<id>), not the event's response. A positive row names it with trade-response-parts: \"use\": [\"trade-response-parts\", \"retrieved-trade\"]. Values that change from run to run beyond these (timestamps of the trace, say) are added to the row after the first recording (TestDataTool suggest <event>)",
+      "sharedFragments": {
+        "basic": "data.trade.basic",
+        "instrument": "data.trade.instrument"
+      },
+      "dynamicFields": {
+        "data.trade.id": "type"
+      }
     }
   }
 }

@@ -1,5 +1,5 @@
 {
-  "_comment": "features/api/trading/trade_allocation.feature. Body of POST /trades/trigger-event; the step replaces tradeIds with the created trade. The defaults are the 2-way equal split of an FX_TRF trade (notional 70000), the trade of every case without a product. The amounts must sum to the trade's notional, which comes from the product's dat file: API-001 and API-002 give every product of the allocation capability its own split in their byProduct, and a new product needs one there too.",
+  "_comment": "features/api/trading/trade_allocation.feature. Body of POST /trades/trigger-event; the step replaces tradeIds with the created trade. A success records the allocated trade retrieved after the event (retrieved-trade); a rejection the event's response. The defaults are the 2-way equal split of an FX_TRF trade (notional 70000), the trade of every case without a product. The amounts must sum to the trade's notional, which comes from the product's dat file: API-001 and API-002 give every product of the allocation capability its own split in their byProduct, and a new product needs one there too.",
   "defaults": {
     "expectedBase": "TC-TRADE-ALLOCATION-<product_type>-API-001",
     "request": {
@@ -12,17 +12,13 @@
       "reason": "NON_ECON_CHANGE",
       "comments": "Allocation split into 2 equal parts with distinct counterparties and portfolios",
       "tradeIds": ["PLACEHOLDER"]
-    },
-    "dynamicFields": {
-      "msg": "type",
-      "data.results[*].tradeId": "type",
-      "data.results[*].childTradeIds[*]": "type"
     }
   },
   "cases": [
     {
       "id": "TC-TRADE-ALLOCATION-<product_type>-API-001",
-      "_comment": "2-way equal split: 200 ALL_EXECUTED, two child trades",
+      "_comment": "2-way equal split: 200 ALL_EXECUTED, two child trades; the recording is the allocated trade",
+      "use": ["trade-response-parts", "retrieved-trade"],
       "byProduct": {
         "FX_PSCRIPT": {
           "_comment": "Notional 6937.5",
@@ -48,7 +44,8 @@
     },
     {
       "id": "TC-TRADE-ALLOCATION-<product_type>-API-002",
-      "_comment": "3-way unequal split: 200 ALL_EXECUTED, three child trades",
+      "_comment": "3-way unequal split: 200 ALL_EXECUTED, three child trades; the recording is the allocated trade",
+      "use": ["trade-response-parts", "retrieved-trade"],
       "byProduct": {
         "FX_TRF": {
           "request": {
