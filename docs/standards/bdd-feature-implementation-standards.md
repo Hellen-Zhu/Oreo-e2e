@@ -165,6 +165,7 @@ Every element is registered in JSON and reached through it:
 | Lifecycle event request and results (`childTradeIds` included) | `TradeApiClient.triggerEvent` |
 | Dynamic elements, inputs, eventual assertions | `CommonE2EInteraction`, `CommonE2EAssertion` |
 | Response wait / capture, eventual assertions (visible, text, count, ...), mocked routes, parameterized locators | `PlaywrightServiceResolver.Context` |
+| Risk calls in MOCK mode: one an action causes (`clickUsingRiskEngineMode`), one the page sends by itself for the whole scenario (`mockRiskCallForScenario`; the trade detail risk metrics, in `E2EScenarioHooks`) | `PlaywrightServiceResolver.Context`, `data/setup/*-mock.json` |
 
 A new domain starts from these. When no existing snippet, glue or data contract fits, report the gap before
 designing a new one.

@@ -223,6 +223,19 @@ public final class PlaywrightServiceResolver {
             }
         }
 
+        /**
+         * In MOCK mode, answers every request of the rest of the scenario whose URL contains {@code urlFragment} with
+         * the response of setup file {@code mockSetup}: a risk call the page sends by itself (on load, on reload),
+         * not as the answer to one action. In REAL mode the backend answers and nothing is registered.
+         */
+        public void mockRiskCallForScenario(String urlFragment, String mockSetup) {
+            OreoModuleConfiguration.RiskEngineMode mode = riskEngineMode();
+            if (mode != OreoModuleConfiguration.RiskEngineMode.MOCK) return;
+            log.info("[PlaywrightServiceResolver] risk engine mode=MOCK: '{}' answered by setup '{}' for the scenario",
+                    urlFragment, mockSetup);
+            mocks.mockRouteForScenario(urlFragment, 200, TestData.setup(mockSetup).response());
+        }
+
         // ── Assertions (EventualAssertions) ────────────────────────────
         public void assertEventuallyVisible(Locator locator) { assertions.assertEventuallyVisible(locator); }
         public void assertEventuallyHidden(Locator locator) { assertions.assertEventuallyHidden(locator); }
