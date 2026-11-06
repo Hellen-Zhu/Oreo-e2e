@@ -7,7 +7,7 @@ Feature: Cortex Formula Configuration API
   @ADO#positive @ADO#smoke @ADO#regression @capability#cortexFormula
   Scenario Outline: [TC-CORTEX-FORMULA-MANAGEMENT-<product_type>-API-001] Product receives its complete active Cortex formula catalogue
     When retrieves Cortex formula configurations for product '<product_type>'
-    Then the Cortex formula catalogue retrieved successfully
+    Then the 'Cortex formula catalogue' is retrieved successfully
 
     Examples:
       | product_type    |

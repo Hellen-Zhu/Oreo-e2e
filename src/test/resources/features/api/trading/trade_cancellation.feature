@@ -30,7 +30,7 @@ Feature: Trade Cancellation API
     Given a '<product_type>' trade is submitted to pending approval via api
     When maker has valid data for the 'Cancellation' event
     And performs the 'Cancellation' event via api
-    Then the 'Cancellation' event is rejected with a business rule violation
+    Then the 'Cancellation' event is rejected with a validation error
 
     Examples:
       | product_type    |
@@ -44,4 +44,4 @@ Feature: Trade Cancellation API
     Given a dead 'FX_TRF' trade is created via api
     When maker has valid data for the 'Cancellation' event
     And performs the 'Cancellation' event via api
-    Then the 'Cancellation' event is rejected with a business rule violation
+    Then the 'Cancellation' event is rejected with a validation error

@@ -14,7 +14,7 @@ Concerns, in order; not every scenario needs every one:
 | Precondition (trade state) | `Given a live '<product_type>' trade is created via api`; `a draft ...`, `a dead ...`, `a '<product_type>' trade is submitted to pending approval via api` |
 | Actor data readiness | lifecycle event: `When maker has valid data for the 'EarlyTermination' event`; `... has invalid data with 'an empty sub-trade list' for the 'Allocation' event`; `... for the '<event>' event on the trade stored as '<key>'`; `maker has data for the '<event>' event on a trade that does not exist`. Other: the feature's own, e.g. `maker has valid data for Trade Amendment` |
 | Business action | lifecycle event: `And performs the 'EarlyTermination' event via api`. Other: the feature's own, e.g. `performs the Trade Amendment action via api` |
-| Outcome (response) | lifecycle event: `Then the 'EarlyTermination' event is executed successfully`; `... is rejected with a validation error` / `... a business rule violation` / `... permission denied` (403). Other: `the '<object>' should be '<action>' successfully`; `failed to '<action>' '<object>'`; `failed to '<action>' '<object>' with status '<status>'` |
+| Outcome (response) | lifecycle event: `Then the 'EarlyTermination' event is executed successfully`; `... is rejected with a validation error` (400) / `... with permission denied` (403) / `... as not found` (404) / `... with a conflict` (409). Other: `the '<subject>' is retrieved / created / updated / ... successfully`; `the '<subject>' request is rejected with a validation error` (and the same other outcomes). The word follows the status the system answers, never a synonym |
 | Outcome (state) | `maker retrieves the trade`, then `the trade basic status is '<status>'` / `the trade basic event status is '<status>'` |
 
 - The response outcomes already check the status and compare the whole response with the case's recorded file: never
@@ -88,5 +88,5 @@ about setup, the evidence to collect or reliability. It is removed once the auto
     Given a dead 'FX_TRF' trade is created via api
     When maker has valid data for the 'EarlyTermination' event
     And performs the 'EarlyTermination' event via api
-    Then the 'EarlyTermination' event is rejected with a business rule violation
+    Then the 'EarlyTermination' event is rejected with a validation error
 ```

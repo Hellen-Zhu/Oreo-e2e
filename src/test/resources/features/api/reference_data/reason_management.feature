@@ -17,4 +17,4 @@ Feature: Reason Management API
   Scenario: [TC-REASON-MANAGEMENT-API-002] New reason is created and persisted after valid request
     Given admin has valid data for a new trade lifecycle event reason
     When creates the new reason
-    Then the reason should be created and persisted successfully
+    Then the 'reason' is created successfully

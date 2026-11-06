@@ -41,13 +41,10 @@
 
 # ── Assertions ──────────────────────────────────────────────────────
 
-@Then "^counterparties list should be retrieved successfully$"
-    Then the 'counterparties list' should be 'retrieved' successfully
-
 @Then "^counterparties search results should match requested keyword$"
-    Then the 'counterparties search' should be 'retrieved' successfully
+    Then the 'counterparties search' is retrieved successfully
     And response body contains a key 'data.content[0].counterpartyCode' with stored variable 'counterpartyKeywordFromList'
 
 @Then "^counterparty detail should be retrieved successfully$"
-    Then the 'counterparty detail' should be 'retrieved' successfully
+    Then the 'counterparty detail' is retrieved successfully
     And response body contains a key 'data.id' with stored variable 'counterpartyIdFromList'

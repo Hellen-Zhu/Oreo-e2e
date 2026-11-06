@@ -161,16 +161,20 @@ Feature files are business specifications: a reviewer who does not read Java mus
   `invalid`, `malformed`, `duplicate`, an optional `with '<what>'`, `... on the trade stored as '<key>'`,
   `maker has data for the '<event>' event on a trade that does not exist`); the call,
   `performs the 'EarlyTermination' event via api`; the outcome, `the 'EarlyTermination' event is executed successfully`,
-  `... is rejected with a validation error`, `... with a business rule violation`, `... with permission denied`. Data
+  `... is rejected with a validation error`, `... with permission denied`, `... as not found`, `... with a conflict`. Data
   and call stay two steps, as in every API feature: the data step is where two scenarios of a feature differ.
 - Checker tasks (`/checker/tasks`) use `api/trade_approval_rejection.snippet`, the task kind named in the step:
   `checker has valid data for cancellation approval` (`trade creation`, `amendment`; `rejection`; a maker approving
   their own task: `maker has valid data for ... self-approval`), then `performs the approval for the request`
-  (`rejection`, `bulk approval`), then `the cancellation approval request is processed successfully` or
-  `the cancellation self-approval request is rejected with permission denied`.
-- Shared outcomes: `the '<object>' should be '<action>' successfully`, `failed to '<action>' '<object>'`,
-  `failed to '<action>' '<object>' with status '<status>'`. They include the status code and the strict comparison with
-  the case's recorded response, so neither appears as a step of its own.
+  (`rejection`, `bulk approval`), then `the 'cancellation approval' request is processed successfully` or
+  `the 'cancellation self-approval' request is rejected with permission denied`.
+- Shared outcomes (`api/common_api.snippet`), one vocabulary for every API, the quoted subject for the reader and the
+  outcome fixing the status: `the '<subject>' [request] is|are retrieved / created / updated / approved / processed /
+  executed successfully` (200); `the '<subject>' request|event is rejected with a validation error` (400),
+  `... with permission denied` (403), `... as not found` (404), `... with a conflict` (409). Choose the outcome by what
+  the system answers, never by a synonym ("business rule violation" is 400 in one API and 409 in another: say
+  `validation error` or `conflict`). They include the status code and the strict comparison with the case's recorded
+  response, so neither appears as a step of its own; no feature gets a wrapper step that only renames one of them.
 - Evidence beyond the response (state, persistence, audit, rejection reason) is its own business `Then`, written only
   when the TP asks for it: `the trade basic status is '<status>'`, `exactly one new audit record exists for action 'SUBMIT'
   on the created trade`.

@@ -7,7 +7,7 @@ Feature: Portfolio Management API
   @ADO#positive @ADO#smoke
   Scenario: [TC-PORTFOLIO-MANAGEMENT-API-001] Portfolio list endpoint returns paged response without keyword
     When retrieves portfolios with paging parameters
-    Then portfolios list should be retrieved successfully
+    Then the 'portfolios list' is retrieved successfully
 
   @ADO#positive @ADO#regression
   Scenario: [TC-PORTFOLIO-MANAGEMENT-API-002] Portfolio list endpoint applies keyword search

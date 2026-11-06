@@ -76,21 +76,30 @@
     Given build json request with path parameter '$2' from stored variable '$3' as user '$4'
     When get from path '$1'
 
-# ── Common Assertions ───────────────────────────────────────────────
+# ── Outcomes ────────────────────────────────────────────────────────
 
-# Happy path: HTTP 200 + strict match against the case's recorded response (data/api/expected/<event>/<caseId>.json).
-# Use this as the standard success assertion in every positive scenario.
-# Example: successfully retrieved trade, successfully created reason, successfully approved trade etc.
-@Then "^the '([^']*)' should be '([^']*)' successfully$"
+# The outcome of the request just sent, one vocabulary for every API. The quoted subject is for the reader; the
+# outcome fixes the status, then the response is compared strictly with the case's recording
+# (data/api/expected/<event>/<caseId>.json). A domain step exists only when it checks more than this.
+# Example: the 'counterparties list' is retrieved successfully; the 'trade creation' request is rejected with permission
+# denied; the 'Allocation' event is rejected with a validation error.
+
+@Then "^the '([^']*)'(?: request)? (?:is|are) (?:retrieved|created|updated|approved|processed|executed) successfully$"
     Then response status code is '200'
     And response matches current scenario
 
-# Failed path: HTTP 400 + strict match against the case's recorded response (data/api/expected/<event>/<caseId>.json).
-# Example: failed to retrieve trade, failed to create reason, failed to approve trade etc.
-@Then "^failed to '([^']*)' '([^']*)'$"
+@Then "^the '([^']*)' (?:request|event) is rejected with a validation error$"
     Then response status code is '400'
     And response matches current scenario
 
-@Then "^failed to '([^']*)' '([^']*)' with status '([^']*)'$"
-    Then response status code is '$3'
+@Then "^the '([^']*)' (?:request|event) is rejected with permission denied$"
+    Then response status code is '403'
+    And response matches current scenario
+
+@Then "^the '([^']*)' (?:request|event) is rejected as not found$"
+    Then response status code is '404'
+    And response matches current scenario
+
+@Then "^the '([^']*)' (?:request|event) is rejected with a conflict$"
+    Then response status code is '409'
     And response matches current scenario

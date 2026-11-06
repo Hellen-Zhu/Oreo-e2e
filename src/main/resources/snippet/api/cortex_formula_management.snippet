@@ -3,7 +3,3 @@
     Given build request as user 'maker'
     When get from path '/products/$1/cortex-formulas'
     And attach the response body to the report
-
-# ── Assertions ──────────────────────────────────────────────────────
-@Then "^the Cortex formula catalogue retrieved successfully$"
-    Then the 'Cortex formula catalogue' should be 'retrieved' successfully

@@ -36,7 +36,7 @@ Feature: Trade Blotter API
     Given a blotter was created via api
     When maker have invalid data to import the blotter
     And import blotter as personal copy
-    Then the import request is rejected with a validation error
+    Then the 'blotter import' request is rejected as not found
 
   @ADO#positive @ADO#regression
   Scenario: [TC-TRADE-BLOTTER-API-006] Should able to update a blotter as public marketplace blotter
@@ -48,13 +48,13 @@ Feature: Trade Blotter API
   @ADO#positive @ADO#regression
   Scenario: [TC-TRADE-BLOTTER-API-007] Should able to retrieve all blotters with correct total count
     When maker retrieves all available trade blotters
-    Then all blotters are retrieved successfully
+    Then the 'blotters' are retrieved successfully
     And every blotter of maker in the database is returned
 
   @ADO#positive @ADO#regression
   Scenario Outline: [TC-TRADE-BLOTTER-API-008] Should able to retrieve all public blotters with correct total count
     When maker retrieves all available public trade blotters
-    Then all blotters are retrieved successfully
+    Then the 'blotters' are retrieved successfully
     And all configured public blotters are returned with a total count of '<count>'
 
     Examples:

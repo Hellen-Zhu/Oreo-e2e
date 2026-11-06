@@ -26,14 +26,3 @@
 @When "^performs the single risk metric retrieval request$"
     When get from path '/trades/{tradeId}/risk-metrics/{metricType}'
     And attach the response body to the report
-
-# ── Assertions ──────────────────────────────────────────────────────
-
-@Then "^the risk metrics should be retrieved successfully$"
-    Then the 'risk metrics' should be 'retrieved' successfully
-
-@Then "^the '([^']*)' risk metric should be retrieved successfully$"
-    Then the 'risk metrics' should be 'retrieved' successfully
-
-@Then "^the risk metrics request should be rejected$"
-    Then failed to 'retrieve' 'risk metrics'

@@ -25,13 +25,10 @@
 
 # ── Assertions ──────────────────────────────────────────────────────
 
-@Then "^portfolios list should be retrieved successfully$"
-    Then the 'portfolios list' should be 'retrieved' successfully
-
 @Then "^portfolios search results should match requested keyword$"
-    Then the 'portfolios search' should be 'retrieved' successfully
+    Then the 'portfolios search' is retrieved successfully
     And response body contains a key 'data.content[0].portfolioName' with stored variable 'keyword'
 
 @Then "^portfolio detail should be retrieved successfully$"
-    Then the 'portfolio detail' should be 'retrieved' successfully
+    Then the 'portfolio detail' is retrieved successfully
     And response body contains a key 'data.id' with stored variable 'portfolioId'

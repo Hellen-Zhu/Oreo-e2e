@@ -41,7 +41,7 @@ Feature: Trade Early Termination API
     And performs the 'EarlyTermination' event via api
     When maker has duplicate data for the 'EarlyTermination' event
     And performs the 'EarlyTermination' event via api
-    Then the 'EarlyTermination' event is rejected with a business rule violation
+    Then the 'EarlyTermination' event is rejected with a validation error
 
     Examples:
       | product_type    |

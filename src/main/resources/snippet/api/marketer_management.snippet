@@ -26,13 +26,7 @@
     And response body is not empty
 
 @Then "^all active marketers are returned with a total count of '([^']*)'$"
-    Then the 'marketers' should be 'retrieved' successfully
+    Then the 'marketers' are retrieved successfully
     And response body contains an element 'data' of size $1
-
-@Then "^the marketer record is returned with the current business semantics$"
-    Then the 'marketer' should be 'retrieved' successfully
-
-@Then "^the marketer lookup should be rejected with validation error$"
-    Then failed to 'retrieve' 'marketer' with status '404'
 
 @Then "^the marketer search results match the keyword criteria$"

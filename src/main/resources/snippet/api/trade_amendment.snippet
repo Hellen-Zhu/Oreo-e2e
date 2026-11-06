@@ -23,9 +23,6 @@
 @Then "^the trade amendment enters Pending Approval status$"
     Then response matches current scenario
 
-@Then "^the trade is updated with the amended terms$"
-    Then the 'trade' should be 'updated' successfully
-
 # Stores the task ID extracted from the msg field for downstream checker steps.
 @Then "^the '([^']*)' trade should be updated with the amended terms$"
     Then response matches current scenario
@@ -34,12 +31,6 @@
 
 @Then "^the amended fields are persisted on the trade$"
     Then response matches current scenario
-
-@Then "^the Trade Amendment request is rejected with a business rule violation$"
-    Then failed to 'update' 'trade' with status '409'
-
-@Then "^the Amendment request is rejected with a conflict$"
-    Then failed to 'update' 'trade' with status '409'
 
 @Then "^the original trade fields are preserved after amendment rejection$"
     Then response matches current scenario

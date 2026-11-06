@@ -107,13 +107,6 @@
     Then response status code is '201'
     And response matches current scenario
 
-@Then "^the import request is rejected with a validation error$"
-    Then response status code is '404'
-    And response matches current scenario
-
-@Then "^all blotters are retrieved successfully$"
-    Then the 'blotter' should be 'retrieved' successfully
-
 # The database count minus the returned count: 0 when every blotter of the role and the default ones are returned.
 @Then "^every blotter of (maker|checker|admin|user) in the database is returned$"
     When store response field 'data.size()' as 'returnedBlotterCount'

@@ -35,14 +35,3 @@
 @When "^performs the bulk approval for the request$"
     When post to path '/checker/tasks/bulk-approve'
     And attach the response body to the report
-
-# ── Assertions ──────────────────────────────────────────────────────
-
-@Then "^the (?:(?:trade )?creation|amendment|cancellation) (?:approval|rejection) request is processed successfully$"
-    Then the 'checker task' should be 'processed' successfully
-
-@Then "^the (?:trade creation|amendment|cancellation) self-approval request is rejected with permission denied$"
-    Then failed to 'approve' 'checker task' with status '403'
-
-@Then "^all cancellation tasks should be approved successfully$"
-    Then the 'bulk cancellation' should be 'executed' successfully

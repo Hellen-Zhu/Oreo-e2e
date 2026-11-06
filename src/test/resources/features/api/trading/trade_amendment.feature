@@ -23,7 +23,7 @@ Feature: Trade Amendment API
     Given a '<product_type>' trade pending amendment approval is created via api
     When maker has valid data for Trade Amendment
     And performs the Trade Amendment action via api
-    Then the Amendment request is rejected with a conflict
+    Then the 'Trade Amendment' request is rejected with a conflict
 
     Examples:
       | product_type    |
@@ -37,4 +37,4 @@ Feature: Trade Amendment API
     Given a dead 'FX_TRF' trade is created via api
     When maker has valid data for Trade Amendment
     And performs the Trade Amendment action via api
-    Then the Trade Amendment request is rejected with a business rule violation
+    Then the 'Trade Amendment' request is rejected with a conflict

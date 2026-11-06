@@ -19,10 +19,6 @@
     When get from path '/refdata/reasons'
     And attach the response body to the report
 
-# ── Then steps - Assertions──────────────────────────────────────────
-@Then "^the reason should be created and persisted successfully$"
-    Then the 'reason' should be 'created' successfully
-
 @Then "^all configured reasons are returned with a total count of '([^']*)'$"
-    Then the 'reason' should be 'retrieved' successfully
+    Then the 'reasons' are retrieved successfully
     And response body contains a key 'data.totalElements' with value '$1'

@@ -15,7 +15,7 @@
     And attach the response body to the report
 
 @Then "^the submitted '([^']*)' trade schedule is available for review$"
-    Then the 'trade details' should be 'retrieved' successfully
+    Then the 'trade details' are retrieved successfully
     And the submitted '$1' trade schedule contains expected review data
 
 @Then "^the submitted 'FX_PSCRIPT' trade schedule contains expected review data$"

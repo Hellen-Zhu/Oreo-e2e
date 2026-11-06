@@ -47,16 +47,16 @@ Feature: Trade Creation API
   Scenario: [TC-TRADE-CREATION-API-004] Trade creation is rejected when counterparty is absent for FX_TRF trade
     Given maker has invalid 'counterparty' data for 'FX_TRF' StepIn Partial trade submission
     When performs the Trade Creation action via api
-    Then the trade creation request is rejected with a validation error
+    Then the 'trade creation' request is rejected with a validation error
 
   @ADO#negative @ADO#regression
   Scenario: [TC-TRADE-CREATION-API-005] Trade creation is rejected when portfolio is absent for FX_TRF trade
     Given maker has invalid 'portfolio' data for 'FX_TRF' StepIn Full trade submission
     When performs the Trade Creation action via api
-    Then the trade creation request is rejected with a validation error
+    Then the 'trade creation' request is rejected with a validation error
 
   @ADO#negative @ADO#regression
   Scenario: [TC-TRADE-CREATION-API-006] User without Maker role cannot submit a FX_TRF trade
     Given checker has valid data for 'FX_TRF' New trade submission
     When performs the Trade Creation action via api
-    Then the trade creation request is rejected with permission denied
+    Then the 'trade creation' request is rejected with permission denied

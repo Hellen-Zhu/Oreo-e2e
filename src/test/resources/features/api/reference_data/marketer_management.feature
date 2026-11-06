@@ -16,12 +16,12 @@ Feature: Marketer Management API
   @ADO#positive @ADO#smoke
   Scenario: [TC-MARKETER-MANAGEMENT-API-002] An existing marketer can be retrieved by id
     When retrieves the marketer by an existing id
-    Then the marketer record is returned with the current business semantics
+    Then the 'marketer record' is retrieved successfully
 
   @ADO#negative @ADO#regression
   Scenario: [TC-MARKETER-MANAGEMENT-API-003] A non-existing marketer id is rejected with not-found response
     When retrieves the marketer by a non-existing id
-    Then the marketer lookup should be rejected with validation error
+    Then the 'marketer lookup' request is rejected as not found
 
   @ADO#positive @ADO#smoke
   Scenario: [TC-MARKETER-MANAGEMENT-API-004] Marketer search returns results that match the keyword criteria

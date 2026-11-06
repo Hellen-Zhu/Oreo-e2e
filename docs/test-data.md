@@ -122,8 +122,8 @@ how a UI case prepares its trade. `trade-cancellation` and `trade-amendment` hav
 
 ## Recorded responses
 
-`response matches current scenario` (behind `the '<x>' should be '<y>' successfully` and `failed to ...`, after the
-status code check) compares the response strictly with `data/api/expected/<event>/<caseId>.json`:
+`response matches current scenario` (behind the outcomes of `api/common_api.snippet`, `the '<x>' is retrieved
+successfully`, `the '<x>' request is rejected with ...`, after the status code check) compares the response strictly with `data/api/expected/<event>/<caseId>.json`:
 
 | Situation | Run | Result |
 |---|---|---|

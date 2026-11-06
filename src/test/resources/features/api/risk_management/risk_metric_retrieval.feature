@@ -9,14 +9,14 @@ Feature: Risk Metric Retrieval
     Given a live 'FX_TRF' trade is created via api
     When maker has valid data for bulk risk metrics retrieval
     And performs the bulk risk metrics retrieval request
-    Then the risk metrics should be retrieved successfully
+    Then the 'risk metrics' are retrieved successfully
 
   @ADO#positive @ADO#regression
   Scenario Outline: [TC-RISK-METRIC-RETRIEVAL-API-<case>] Supported metric type <metricType> is accepted and returns correct value
     Given a live 'FX_TRF' trade is created via api
     When maker has valid data for the '<metricType>' risk metric retrieval
     And performs the single risk metric retrieval request
-    Then the '<metricType>' risk metric should be retrieved successfully
+    Then the '<metricType> risk metric' is retrieved successfully
 
     Examples:
       | case | metricType |
@@ -31,4 +31,4 @@ Feature: Risk Metric Retrieval
     Given a live 'FX_TRF' trade is created via api
     When maker has valid data for unsupported risk metric retrieval
     And performs the single risk metric retrieval request
-    Then the risk metrics request should be rejected
+    Then the 'risk metrics' request is rejected with a validation error

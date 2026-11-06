@@ -3,7 +3,8 @@
 # (data/api/<event>.json, chosen by the case ID) with its tradeIds replaced by a stored trade. The event name, the word
 # before "data" (valid, invalid, malformed, duplicate) and the optional "with '<what>'" are for the reader: they say
 # what the row holds, so that the scenarios of a feature differ in their steps; the row is what is sent. A rejection
-# compares the response with the case's recording. A success checks the response lightly (200, SUCCESS, its results)
+# is an outcome of api/common_api.snippet (the '<event>' event is rejected with a validation error, with permission
+# denied, ...), which compares the response with the case's recording. A success checks the response lightly (200, SUCCESS, its results)
 # and compares the trade the event ran on, retrieved after it, with the case's recording: the row uses the blocks
 # trade-response-parts and retrieved-trade (api/common.json). The trades it created are stored as childTradeId1..n
 # for the event's own snippet. A new event needs no snippet here: case data, recordings and the feature. Evidence the
@@ -36,12 +37,3 @@
     Then the lifecycle event response lists its trades
     And maker retrieves the trade for stored variable 'eventTradeId'
     And response matches current scenario
-
-@Then "^the '([^']*)' event is rejected with a validation error$"
-    Then failed to 'execute' '$1'
-
-@Then "^the '([^']*)' event is rejected with a business rule violation$"
-    Then failed to 'execute' '$1'
-
-@Then "^the '([^']*)' event is rejected with permission denied$"
-    Then failed to 'execute' '$1' with status '403'

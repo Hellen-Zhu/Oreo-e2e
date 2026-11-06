@@ -59,7 +59,7 @@ Feature: Trade Allocation Event API
     Given a trade is allocated with 2-way equal split via api
     When maker has valid data for the 'Allocation' event on the trade stored as 'allocatedParentTradeId'
     And performs the 'Allocation' event via api
-    Then the 'Allocation' event is rejected with a business rule violation
+    Then the 'Allocation' event is rejected with a validation error
 
   @ADO#negative @ADO#regression
   Scenario: [TC-TRADE-ALLOCATION-API-007] Allocation rejected with 400 when notional exceed parent notional for FX_TRF trade
