@@ -35,7 +35,12 @@ final class ExpectedFileChecks {
     private final Path data;
     private final List<FeatureCases.FeatureCase> featureCases;
 
-    ExpectedFileChecks(Path project, List<FeatureCases.FeatureCase> featureCases) {
+    /** The cases left out for a malformed ID, which the check "every feature case resolves" reports. */
+    private final int skipped;
+
+    /** @param featureCases the cases with a valid ID ({@link FeatureCases#withValidIds}) */
+    ExpectedFileChecks(Path project, List<FeatureCases.FeatureCase> featureCases, int skipped) {
+        this.skipped = skipped;
         this.project = project;
         this.data = project.resolve("src/test/resources/data");
         this.featureCases = featureCases;
@@ -47,6 +52,8 @@ final class ExpectedFileChecks {
         ExpectedResponses expected = ExpectedResponses.standard();
         Set<Path> wanted = new TreeSet<>();
         int none = 0;
+        String skippedNote = FeatureCases.skippedNote(skipped);
+        if (skippedNote != null) result.notes.add(skippedNote);
         for (FeatureCases.FeatureCase c : featureCases) {
             if (!c.channelDir().equals("api")) continue;
             Path file = expected.fileFor(CaseId.parse(c.caseId()));
@@ -96,7 +103,13 @@ final class ExpectedFileChecks {
                 result.errors.add(c.caseId() + ": " + e.getMessage());
                 continue;
             }
-            Map<String, String> rules = TestData.forCase(c.caseId()).dynamicFields();
+            Map<String, String> rules;
+            try {
+                rules = TestData.forCase(c.caseId()).dynamicFields();
+            } catch (RuntimeException e) {
+                result.errors.add(c.caseId() + ": " + e.getMessage());
+                continue;
+            }
             List<List<Object>> ruleSteps = new ArrayList<>();
             for (Map.Entry<String, String> rule : rules.entrySet()) {
                 String label = c.caseId() + ": rule " + rule.getKey() + " = " + rule.getValue();

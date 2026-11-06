@@ -33,7 +33,10 @@ final class Checks {
 
     private final Path project;
     private final Path data;
+    /** Every case of the feature files, for the check that reports malformed IDs. */
     private final List<FeatureCases.FeatureCase> featureCases;
+    /** The cases with a valid ID, for the other checks. */
+    private final List<FeatureCases.FeatureCase> validCases;
     private final TestDataRepository repo = new TestDataRepository("data/");
 
     /** What one check found: problems fail it, warnings and notes are printed only. */
@@ -51,6 +54,7 @@ final class Checks {
         this.project = project;
         this.data = project.resolve("src/test/resources/data");
         this.featureCases = featureCases;
+        this.validCases = FeatureCases.withValidIds(featureCases);
     }
 
     static int run() throws IOException {
@@ -61,7 +65,7 @@ final class Checks {
             throw new IllegalStateException("no [TC-...] scenarios found in src/test/resources/features");
         }
         Checks c = new Checks(project, cases);
-        ExpectedFileChecks e = new ExpectedFileChecks(project, cases);
+        ExpectedFileChecks e = new ExpectedFileChecks(project, c.validCases, cases.size() - c.validCases.size());
         int problems = 0;
         problems += c.check("data files are well formed", null, c::dataFilesAreWellFormed);
         problems += c.check("every feature case resolves", null, c::everyFeatureCaseResolves);
@@ -166,11 +170,13 @@ final class Checks {
     // ── 10.3 ─────────────────────────────────────────────────────────────────
 
     private void everyRowAndEventFileHasAFeature(Result result) throws IOException {
+        String skipped = FeatureCases.skippedNote(featureCases.size() - validCases.size());
+        if (skipped != null) result.notes.add(skipped);
         for (String channelDir : List.of("api", "ui")) {
             for (Path file : jsonFiles(data.resolve(channelDir))) {
                 String event = baseName(file);
                 if (event.equals("common")) continue;
-                List<FeatureCases.FeatureCase> ofFile = featureCases.stream()
+                List<FeatureCases.FeatureCase> ofFile = validCases.stream()
                         .filter(c -> c.channelDir().equals(channelDir) && c.featureName().equals(event))
                         .toList();
                 if (ofFile.isEmpty()) {

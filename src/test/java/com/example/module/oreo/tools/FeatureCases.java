@@ -1,5 +1,6 @@
 package com.example.module.oreo.tools;
 
+import com.example.module.oreo.testdata.CaseId;
 import com.example.module.oreo.testdata.ExpectedResponses;
 
 import java.io.IOException;
@@ -40,6 +41,27 @@ final class FeatureCases {
                        boolean noExpected) {}
 
     private FeatureCases() {}
+
+    /**
+     * The cases whose ID is a case ID ({@link CaseId#parse}). The check "every feature case resolves" reports the
+     * others one by one; the checks after it take these, so that one malformed ID does not stop them.
+     */
+    static List<FeatureCase> withValidIds(List<FeatureCase> cases) {
+        return cases.stream().filter(c -> {
+            try {
+                CaseId.parse(c.caseId());
+                return true;
+            } catch (IllegalArgumentException e) {
+                return false;
+            }
+        }).toList();
+    }
+
+    /** The note of a check that left out {@code skipped} cases with a malformed ID; null when none was. */
+    static String skippedNote(int skipped) {
+        return skipped == 0 ? null : skipped + " case(s) with a malformed ID left out: see \"every feature case"
+                + " resolves\"";
+    }
 
     static List<FeatureCase> load(Path featuresRoot) {
         List<FeatureCase> cases = new ArrayList<>();
