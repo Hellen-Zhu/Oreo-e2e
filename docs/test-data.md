@@ -284,9 +284,9 @@ mvn -Ptest-data process-test-classes "-Dexec.args=coverage"
 mvn -Ptest-data process-test-classes "-Dexec.args=coverage --html"
 ```
 
-The first command defaults to `check`. Each command first runs the ten unit tests of the code that decides what a
+The first command defaults to `check`. Each command first runs the eleven unit tests of the code that decides what a
 case sends and what its response is compared with (`ResponseMaskerTest`, `ExpectedResponsesTest`, `JsonPatchTest`,
-`TestDataRepositoryTest`, `JsonLayersTest`, `ResponseSuggestionsTest`, `UnusedStepsTest`, `CoverageTest`, `CoverageHtmlTest`, `CapabilityTest`; their data is written in the
+`TestDataRepositoryTest`, `JsonLayersTest`, `ResponseSuggestionsTest`, `UnusedStepsTest`, `CoverageTest`, `CoverageHtmlTest`, `CapabilityTest`, `ProductRequestsTest`; their data is written in the
 tests themselves, none of it lives under
 `src/test/resources`): a failing one stops Maven before the tool reads any data. The commands stop before the
 `test` phase: they do not run Cucumber. A failed check fails Maven. Plain `mvn test` retains its existing behavior and does not activate

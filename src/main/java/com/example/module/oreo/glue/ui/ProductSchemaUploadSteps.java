@@ -2,7 +2,10 @@ package com.example.module.oreo.glue.ui;
 
 import com.microsoft.playwright.Locator;
 import com.example.genie.module.database.glue.DatabaseGlue;
+import com.example.module.oreo.testdata.ProductRequests;
 import com.example.module.oreo.utils.CleanupTestDataUtil;
+import com.example.module.oreo.utils.DateUtil;
+import com.example.module.oreo.utils.ProductApiClient;
 import com.example.module.oreo.playwright.PlaywrightServiceResolver;
 import cucumber.api.Scenario;
 import cucumber.api.java.After;
@@ -12,14 +15,7 @@ import cucumber.api.java.en.When;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.time.Instant;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -31,14 +27,18 @@ public class ProductSchemaUploadSteps {
 
     private PlaywrightServiceResolver.Context ctx;
     private DatabaseGlue databaseGlue;
-    private String currentSysSeconds;
+    /**
+     * The second rendered into every schema file the scenario uploads: a second upload of the same file is the same
+     * product and version (the duplicate-version cases).
+     */
+    private long currentSysSeconds;
 
     @Before({"@playwright"})
     public void beforeScenario(Scenario scenario) {
         this.ctx = PlaywrightServiceResolver.from(scenario);
         this.databaseGlue = new DatabaseGlue();
         this.databaseGlue.before(scenario);
-        this.currentSysSeconds = String.valueOf(Instant.now().getEpochSecond());
+        this.currentSysSeconds = DateUtil.now().getEpochSecond();
     }
 
     @After(value = "@ADO#product_schema_upload", order = 2)
@@ -74,8 +74,7 @@ public class ProductSchemaUploadSteps {
             throw new AssertionError("No schema file path found in current scenario for key: " + dotPath);
         }
 
-        Path resolvedFile = resolveClasspathPath(classpathFile);
-        Path uploadFile = materializeDynamicSchemaFile(resolvedFile);
+        Path uploadFile = ProductRequests.schemaFile(classpathFile, currentSysSeconds);
         Locator input = ctx.service().getLocator("schema_upload.file_input");
         input.setInputFiles(uploadFile);
 
@@ -85,7 +84,7 @@ public class ProductSchemaUploadSteps {
 
     @When("^schema preview is requested and completed$")
     public void schemaPreviewIsRequestedAndCompleted() {
-        ctx.clickAndWaitForResponse("schema_upload.preview_btn", "/products/schema/parse", "POST");
+        ctx.clickAndWaitForResponse("schema_upload.preview_btn", ProductApiClient.SCHEMA_PARSE_PATH, "POST");
     }
 
     @Then("^current product identifier is captured from edit url when available$")
@@ -94,36 +93,6 @@ public class ProductSchemaUploadSteps {
         String productId = extractProductIdFromEditUrl(currentUrl);
         if (productId != null && !productId.isBlank()) {
             ctx.set("createdProductId", productId);
-        }
-    }
-
-    private Path resolveClasspathPath(String classpathFile) {
-        URL resource = getClass().getClassLoader().getResource(classpathFile);
-        if (resource == null) {
-            throw new AssertionError("Cannot find classpath resource: " + classpathFile);
-        }
-        try {
-            return Paths.get(resource.toURI());
-        } catch (URISyntaxException e) {
-            throw new AssertionError("Invalid URI for classpath resource '" + classpathFile + "': " + e.getMessage(), e);
-        }
-    }
-
-    private Path materializeDynamicSchemaFile(Path sourceFile) {
-        try {
-            String content = Files.readString(sourceFile);
-            if (!content.contains("{currentSysSeconds}")) {
-                return sourceFile;
-            }
-
-            String renderedContent = content.replace("{currentSysSeconds}", currentSysSeconds);
-            Path tempFile = Files.createTempFile("schema-upload-", ".json");
-            Files.writeString(tempFile, renderedContent, StandardCharsets.UTF_8);
-            tempFile.toFile().deleteOnExit();
-            return tempFile;
-        } catch (IOException e) {
-            throw new AssertionError(
-                    "Failed to materialize dynamic schema file from '" + sourceFile + "': " + e.getMessage(), e);
         }
     }
 

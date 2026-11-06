@@ -1,13 +1,11 @@
 package com.example.module.oreo.glue.ui;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.microsoft.playwright.Locator;
 import com.example.genie.module.database.glue.DatabaseGlue;
 import com.example.genie.module.rest.service.RequestResponseHelper;
-import com.example.module.oreo.testdata.TestData;
+import com.example.module.oreo.testdata.ProductRequests;
 import com.example.module.oreo.utils.CleanupTestDataUtil;
+import com.example.module.oreo.utils.ProductApiClient;
 import com.example.module.oreo.utils.RestApiUtil;
 import com.example.module.oreo.playwright.PlaywrightServiceResolver;
 import com.example.module.oreo.config.TestUser;
@@ -19,7 +17,6 @@ import cucumber.api.java.en.When;
 
 public class ComposeProductSteps {
 
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     private PlaywrightServiceResolver.Context ctx;
     private DatabaseGlue databaseGlue;
     private RequestResponseHelper helper;
@@ -35,20 +32,20 @@ public class ComposeProductSteps {
     @After(value = "@ADO#compose_product", order = 2)
     public void deleteProductAfterTest() {
         String productId = ctx.get("createdProductId");
-            deleteProduct(productId);
+        CleanupTestDataUtil.cleanupTestProduct(databaseGlue, productId);
     }
 
     @When("^save product edit for metadata of product '([^']*)' and wait for page ready$")
     public void saveProductDetailPageForCatalogueBasic(String productIdKey) {
         String productId = ctx.get(productIdKey);
-        ctx.clickAndWaitForResponse("product_edit.save_btn", "/api/v1/products/" + productId + "/metadata", "PUT");
+        ctx.clickAndWaitForResponse("product_edit.save_btn", ProductApiClient.metadataPath(productId), "PUT");
     }
 
     @When("^save product edit for product '([^']*)' and wait for page ready$")
     public void saveProductDetailPageForEventConfiguration(String productIdKey) {
         String productEntityId = ctx.get(productIdKey);
         ctx.set("CreatedProductEntityId", productEntityId);
-        ctx.clickAndWaitForResponse("product_edit.save_btn", "/api/v1/products/" + productEntityId + "/update", "POST");
+        ctx.clickAndWaitForResponse("product_edit.save_btn", ProductApiClient.updatePath(productEntityId), "POST");
     }
 
     @When("^add event '([^']*)' into canvas$")
@@ -61,72 +58,19 @@ public class ComposeProductSteps {
 
     @Given("^a product is provisioned via playwright api$")
     public void provisionProduct() {
-        JsonNode body = createProduct("product-create", TestUser.MAKER.email());
-        String productId = body.at("/data/productId").asText();
-        JsonNode getProductResponse = RestApiUtil.get(helper, "/products/productId/" + productId, TestUser.MAKER.email());
-        String entityId = getProductResponse.path("data").path("id").asText();
-        ctx.set("CreatedProductEntityId", entityId);
-        ctx.set("createdProductId", productId);
-        ctx.set("reformattedProductId", reformatProductIdForEventId(productId));
-        ctx.write("Created product with productId: " + productId + ", entityId: " + entityId);
-    }
-
-    private JsonNode createProduct(String testDataKey, String userId) {
-        String raw = TestData.setup(testDataKey).request();
-        try {
-            String currentSysSeconds = String.valueOf(System.currentTimeMillis() / 1000);
-            String renderedRaw = raw.replace("{currentSysSeconds}", currentSysSeconds);
-            ObjectNode body = (ObjectNode) OBJECT_MAPPER.readTree(renderedRaw);
-            String productId = body.path("productId").asText();
-            if (productId == null || productId.isBlank()) {
-                throw new AssertionError("Missing required productId in request payload");
-            }
-            ctx.write("Payload as:" + body);
-            return RestApiUtil.post(helper, "/products/" + productId + "/schema/commit", userId,
-                    OBJECT_MAPPER.writeValueAsString(body));
-        } catch (Exception e) {
-            throw new AssertionError("Failed to build product payload: " + e.getMessage(), e);
-        }
-    }
-
-    private void deleteProduct(String productId) {
-        CleanupTestDataUtil.cleanupTestProduct(databaseGlue, productId);
+        ProductApiClient.CreatedProduct product = ProductApiClient.createProduct(helper, TestUser.MAKER.email());
+        ctx.write("Payload as:" + product.request());
+        ctx.set("CreatedProductEntityId", product.entityId());
+        ctx.set("createdProductId", product.productId());
+        ctx.set("reformattedProductId", ProductRequests.eventId(product.productId()));
+        ctx.write("Created product with productId: " + product.productId() + ", entityId: " + product.entityId());
     }
 
     @When("^seed compose product with initial EarlyTermination event configuration$")
     public void seedComposeProductWithInitialEarlyTerminationEventConfiguration() {
         String productId = ctx.get("createdProductId");
         String productEntityId = ctx.get("CreatedProductEntityId");
-
-        JsonNode productResponse = RestApiUtil.get(helper, "/products/productId/" + productId, TestUser.MAKER.email());
-        JsonNode currentProductData = productResponse.path("data");
-        if (currentProductData == null || currentProductData.isMissingNode() || currentProductData.isNull()) {
-            throw new AssertionError("Failed to load product data for productId: " + productId
-                    + ". Endpoint response: " + productResponse);
-        }
-
-        String rawTemplate = TestData.setup("product-event-configure").request();
-        String renderedTemplate = rawTemplate.replace("{productId}", reformatProductIdForEventId(productId));
-        try {
-            JsonNode templatePayload = OBJECT_MAPPER.readTree(renderedTemplate);
-            JsonNode initialEventConfigurations = templatePayload.path("productEventConfigurations");
-            if (!initialEventConfigurations.isArray() || initialEventConfigurations.isEmpty()) {
-                throw new AssertionError("No productEventConfigurations found in product-event-configure test data.");
-            }
-
-            ObjectNode updateBody = currentProductData.deepCopy();
-            updateBody.put("id", productEntityId);
-            updateBody.put("productId", productId);
-            updateBody.set("productEventConfigurations", initialEventConfigurations.deepCopy());
-            RestApiUtil.post(helper, "/products/" + productEntityId + "/update", TestUser.MAKER.email(), OBJECT_MAPPER.writeValueAsString(updateBody));
-
-            ctx.refreshAndWaitForResponse("/api/v1/products/" + productId, "GET");
-        } catch (Exception e) {
-            throw new AssertionError("Failed to seed initial EarlyTermination event configuration: " + e.getMessage(), e);
-        }
-    }
-
-    private static String reformatProductIdForEventId(String productId) {
-        return productId.trim().replace('_', '-');
+        ProductApiClient.seedEventConfigurations(helper, productId, productEntityId, TestUser.MAKER.email());
+        ctx.refreshAndWaitForResponse(ProductApiClient.productPath(productId), "GET");
     }
 }
