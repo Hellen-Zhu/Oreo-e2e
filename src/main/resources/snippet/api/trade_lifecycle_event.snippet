@@ -1,13 +1,18 @@
-# Every lifecycle event sent through POST /trades/trigger-event, the event named as a parameter. The request is the
-# case's own row (data/api/<event>.json, chosen by the case ID) with its tradeIds replaced by the stored trade; the
-# event name in the step is for the reader, the row's eventType is what is sent. The outcomes compare the response with
-# the case's recording. A new event needs no snippet here: case data, recordings and the feature. Evidence beyond the
-# response (notional reduced, trade closed) stays in the event's own api/<feature>.snippet.
+# Every lifecycle event sent through POST /trades/trigger-event, the event named as a parameter. As in the other API
+# snippets the request is built in one step and sent in the next. The request is the case's own row
+# (data/api/<event>.json, chosen by the case ID) with its tradeIds replaced by the stored trade; the event name and the
+# word before "data" (valid, malformed, duplicate) are for the reader, the row is what is sent. The outcomes compare the
+# response with the case's recording. A new event needs no snippet here: case data, recordings and the feature. Evidence
+# beyond the response (notional reduced, trade closed) stays in the event's own api/<feature>.snippet.
+
+# ── Build request ───────────────────────────────────────────────────
+
+@When "^(maker|checker) has (?:valid|malformed|duplicate) data for the '([^']*)' event$"
+    Given build json request from current scenario with trade id from stored variable 'createdTradeId' as user '$1'
 
 # ── Make api call ───────────────────────────────────────────────────
 
-@When "^(maker|checker) triggers the '([^']*)' event via api$"
-    Given build json request from current scenario with trade id from stored variable 'createdTradeId' as user '$1'
+@When "^performs the '([^']*)' event via api$"
     When post to path '/trades/trigger-event'
     And attach the response body to the report
 

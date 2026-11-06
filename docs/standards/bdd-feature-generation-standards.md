@@ -156,11 +156,13 @@ Feature files are business specifications: a reviewer who does not read Java mus
 
 - Preconditions reuse the provisioning steps: `a live '<product_type>' trade is created via api`,
   `a '<product_type>' trade is submitted to pending approval via api`, `a draft ...`, `a dead ...`.
-- Lifecycle events (`POST /trades/trigger-event`) use one set of steps, the event named as its `eventType`:
-  `maker triggers the 'EarlyTermination' event via api`, then `the 'EarlyTermination' event is executed successfully`,
-  `... is rejected with a validation error`, `... is rejected with a business rule violation`
-  (`api/trade_lifecycle_event.snippet`). The case row holds the data, valid or not; the scenario title says which. Events
-  not moved there yet keep their own steps until their feature is migrated.
+- Lifecycle events (`POST /trades/trigger-event`) use one set of steps, the event named as its `eventType`
+  (`api/trade_lifecycle_event.snippet`): the data, `maker has valid data for the 'EarlyTermination' event` (also
+  `malformed`, `duplicate`); the call, `performs the 'EarlyTermination' event via api`; the outcome,
+  `the 'EarlyTermination' event is executed successfully`, `... is rejected with a validation error`,
+  `... is rejected with a business rule violation`. Data and call stay two steps, as in every API feature: the data
+  step is where two scenarios of a feature differ. Events not moved there yet keep their own steps until their feature
+  is migrated.
 - Shared outcomes: `the '<object>' should be '<action>' successfully`, `failed to '<action>' '<object>'`,
   `failed to '<action>' '<object>' with status '<status>'`. They include the status code and the strict comparison with
   the case's recorded response, so neither appears as a step of its own.

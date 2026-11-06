@@ -7,7 +7,8 @@ Feature: Trade Early Termination API
   @ADO#positive @ADO#smoke @capability#earlyTermination
   Scenario Outline: [TC-TRADE-EARLY-TERMINATION-<product_type>-API-001] <product_type> trade status is updated to Terminated when EarlyTermination event is received
     Given a live '<product_type>' trade is created via api
-    When maker triggers the 'EarlyTermination' event via api
+    When maker has valid data for the 'EarlyTermination' event
+    And performs the 'EarlyTermination' event via api
     And the 'EarlyTermination' event is executed successfully
     And maker retrieves the trade
     Then the trade basic event status is 'Terminated'
@@ -22,7 +23,8 @@ Feature: Trade Early Termination API
   @ADO#negative @ADO#regression @capability#earlyTermination
   Scenario Outline: [TC-TRADE-EARLY-TERMINATION-<product_type>-API-002] Malformed EarlyTermination event is rejected with error recorded for a <product_type> trade
     Given a live '<product_type>' trade is created via api
-    When maker triggers the 'EarlyTermination' event via api
+    When maker has malformed data for the 'EarlyTermination' event
+    And performs the 'EarlyTermination' event via api
     Then the 'EarlyTermination' event is rejected with a validation error
 
     Examples:
@@ -35,8 +37,10 @@ Feature: Trade Early Termination API
   @ADO#negative @ADO#regression @capability#earlyTermination
   Scenario Outline: [TC-TRADE-EARLY-TERMINATION-<product_type>-API-003] Duplicate EarlyTermination event is rejected with error recorded for a <product_type> trade
     Given a live '<product_type>' trade is created via api
-    And maker triggers the 'EarlyTermination' event via api
-    When maker triggers the 'EarlyTermination' event via api
+    And maker has valid data for the 'EarlyTermination' event
+    And performs the 'EarlyTermination' event via api
+    When maker has duplicate data for the 'EarlyTermination' event
+    And performs the 'EarlyTermination' event via api
     Then the 'EarlyTermination' event is rejected with a business rule violation
 
     Examples:
