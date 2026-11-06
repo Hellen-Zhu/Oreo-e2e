@@ -326,7 +326,8 @@ or with `-U`.
   `target/coverage/coverage.html`, for readers outside the team: one tab per capability group (the trade lifecycle
   first), one row per product, each cell two dots, API and UI, the counts on hover, a product's cases on a click. The
   page is one file with nothing loaded from elsewhere: it opens offline, and a pipeline can publish it as a build
-  artifact. Its data is written beside it, `coverage.json`, for other tools. Both are generated: never commit them. The
+  artifact. Its data is written beside it, `coverage.json`, for other tools (and for the planned dashboard,
+  [test-dashboard-plan.md](test-dashboard-plan.md)). Both are generated: never commit them. The
   page's template is `src/test/resources/tools/coverage-report.html`.
 - `suggest <event>`: reads the event's recordings and prints, without writing anything, the `dynamicFields` rules
   they need and the `expectedBase` that suits them ("Suggestions", below).
