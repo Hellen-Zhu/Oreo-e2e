@@ -6,8 +6,12 @@ import com.example.module.oreo.testdata.ProjectPaths;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -24,11 +28,14 @@ import java.util.stream.Stream;
  * ({@link ProductDatFiles}) and the product Outlines ({@code @capability#} tags, {@link ProductExamples}); it writes
  * nothing and never fails. A Scenario with a fixed product is not counted: only the product Outlines say which
  * capability they test. Whether a case has its data and its recording is the check's business, not this report's.
+ * {@code coverage --html} also writes the matrix as a page and its data as JSON ({@link CoverageHtml}) under
+ * {@code target/coverage}.
  */
 final class Coverage {
 
     static final String NOT_SUPPORTED = "-";
     static final String NO_CASE = "NONE";
+    static final String OUTPUT_DIR = "target/coverage";
     private static final String WIP_TAG = "@wip";
 
     /**
@@ -53,20 +60,42 @@ final class Coverage {
 
     private Coverage() {}
 
-    static int run() {
+    static int run(boolean html) {
         Path project = ProjectPaths.projectRoot();
         Path features = project.resolve("src/test/resources/features");
         ProductExamples.Plan plan = ProductExamples.plan(features, ProductExamples::registryProducts);
         List<String> products = Arrays.stream(ProductDatFiles.values()).map(Enum::name).toList();
         BiPredicate<String, Capability> supports =
                 (product, capability) -> ProductDatFiles.valueOf(product).capabilities().contains(capability);
-        System.out.print(render(plan.entries(), wipOutlines(features), products, supports));
+        Set<String> wip = wipOutlines(features);
+        System.out.print(render(plan.entries(), wip, products, supports));
         if (!plan.errors().isEmpty()) {
             System.out.println();
             System.out.println(plan.errors().size() + " Outline(s) not counted, the check reports them:");
             plan.errors().forEach(e -> System.out.println("  " + e));
         }
+        if (html) writePage(project, plan.entries(), wip, products, supports);
         return 0;
+    }
+
+    /** {@code target/coverage/coverage.html} and {@code coverage.json}: the matrix of every group, with its cases. */
+    private static void writePage(Path project, List<ProductExamples.Entry> entries, Set<String> wip,
+                                  List<String> products, BiPredicate<String, Capability> supports) {
+        String generated = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm 'UTC'")
+                .format(OffsetDateTime.now(ZoneOffset.UTC));
+        String json = CoverageHtml.json(CoverageHtml.model(entries, wip, products, supports, generated));
+        Path dir = project.resolve(OUTPUT_DIR);
+        try {
+            String template = Files.readString(project.resolve(CoverageHtml.TEMPLATE), StandardCharsets.UTF_8);
+            Files.createDirectories(dir);
+            Files.writeString(dir.resolve("coverage.json"), json, StandardCharsets.UTF_8);
+            Files.writeString(dir.resolve("coverage.html"), CoverageHtml.page(template, json), StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            throw new UncheckedIOException("[Coverage] cannot write " + dir, e);
+        }
+        System.out.println();
+        System.out.println("Wrote " + OUTPUT_DIR + "/coverage.html (open it in a browser) and " + OUTPUT_DIR
+                + "/coverage.json");
     }
 
     /** The cell of {@code capability} and {@code product}. */

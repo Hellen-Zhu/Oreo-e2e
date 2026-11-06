@@ -281,11 +281,12 @@ mvn -Ptest-data process-test-classes "-Dexec.args=shared TC-TRADE-CREATION-FX_TR
 mvn -Ptest-data process-test-classes "-Dexec.args=shared TC-TRADE-CREATION-<product_type>-API-001"
 mvn -Ptest-data process-test-classes "-Dexec.args=unused-steps"
 mvn -Ptest-data process-test-classes "-Dexec.args=coverage"
+mvn -Ptest-data process-test-classes "-Dexec.args=coverage --html"
 ```
 
-The first command defaults to `check`. Each command first runs the nine unit tests of the code that decides what a
+The first command defaults to `check`. Each command first runs the ten unit tests of the code that decides what a
 case sends and what its response is compared with (`ResponseMaskerTest`, `ExpectedResponsesTest`, `JsonPatchTest`,
-`TestDataRepositoryTest`, `JsonLayersTest`, `ResponseSuggestionsTest`, `UnusedStepsTest`, `CoverageTest`, `CapabilityTest`; their data is written in the
+`TestDataRepositoryTest`, `JsonLayersTest`, `ResponseSuggestionsTest`, `UnusedStepsTest`, `CoverageTest`, `CoverageHtmlTest`, `CapabilityTest`; their data is written in the
 tests themselves, none of it lives under
 `src/test/resources`): a failing one stops Maven before the tool reads any data. The commands stop before the
 `test` phase: they do not run Cucumber. A failed check fails Maven. Plain `mvn test` retains its existing behavior and does not activate
@@ -321,7 +322,12 @@ or with `-U`.
   and `sync-examples` would not change it: a scenario to write) and the cells to sync. It writes nothing and never
   fails. Only product Outlines are counted: a Scenario with a fixed product says no capability. Whether each case has
   its data and recording is what `check` reports. Run it after `sync-examples` when a product is added, and give the
-  product's column to QA for the review.
+  product's column to QA for the review. `coverage --html` prints the same and also writes the matrix as a page,
+  `target/coverage/coverage.html`, for readers outside the team: one tab per capability group (the trade lifecycle
+  first), one row per product, each cell two dots, API and UI, the counts on hover, a product's cases on a click. The
+  page is one file with nothing loaded from elsewhere: it opens offline, and a pipeline can publish it as a build
+  artifact. Its data is written beside it, `coverage.json`, for other tools. Both are generated: never commit them. The
+  page's template is `src/test/resources/tools/coverage-report.html`.
 - `suggest <event>`: reads the event's recordings and prints, without writing anything, the `dynamicFields` rules
   they need and the `expectedBase` that suits them ("Suggestions", below).
 - `compact <event>` or `compact all`: the compaction of "Base and patch" and "Shared parts". It lists the files it

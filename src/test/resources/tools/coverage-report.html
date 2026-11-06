@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<!-- The template of TestDataTool coverage --html (CoverageHtml): the tool puts the coverage data in place of the mark
+     in the script element "coverage-data" and writes the page to target/coverage/coverage.html. Everything the page
+     needs is in this file: it opens offline, with no server. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OREO E2E coverage</title>
+<style>
+:root {
+  --bg: #ffffff; --surface: #f6f7f9; --surface-2: #eceef2; --text: #1d2330; --text-2: #5b6474; --muted: #9aa1ad;
+  --border: #e3e6eb; --border-strong: #c4c9d2; --accent: #2f5bd3; --accent-bg: #e9effc;
+  --ok: #1f8a4c; --ok-bg: #e6f4ec; --warn: #b26a00; --warn-bg: #fdf1dc; --bad: #c4352b; --bad-bg: #fbe9e7;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #14171c; --surface: #1c2027; --surface-2: #262b34; --text: #e6e9ee; --text-2: #a4acb9; --muted: #6c7482;
+    --border: #2c323c; --border-strong: #454d5a; --accent: #7c9cf0; --accent-bg: #1f2a44;
+    --ok: #4cc283; --ok-bg: #16301f; --warn: #e0a243; --warn-bg: #33270f; --bad: #f0776c; --bad-bg: #3a1d1a;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #14171c; --surface: #1c2027; --surface-2: #262b34; --text: #e6e9ee; --text-2: #a4acb9; --muted: #6c7482;
+  --border: #2c323c; --border-strong: #454d5a; --accent: #7c9cf0; --accent-bg: #1f2a44;
+  --ok: #4cc283; --ok-bg: #16301f; --warn: #e0a243; --warn-bg: #33270f; --bad: #f0776c; --bad-bg: #3a1d1a;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text);
+  font: 14px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+main { max-width: 1440px; margin: 0 auto; padding: 24px 24px 48px; }
+h1 { font-size: 22px; font-weight: 600; margin: 0; }
+.meta { color: var(--text-2); font-size: 13px; margin-top: 4px; }
+.tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--border); margin: 20px 0 16px; }
+.tabs button { background: none; border: 0; border-bottom: 2px solid transparent; margin-bottom: -1px;
+  padding: 8px 14px; font: inherit; font-size: 15px; color: var(--text-2); cursor: pointer; }
+.tabs button[aria-selected="true"] { color: var(--text); border-bottom-color: var(--accent); font-weight: 600; }
+.badge { display: inline-block; margin-left: 6px; padding: 0 7px; border-radius: 9px; font-size: 12px;
+  font-weight: 500; background: var(--bad-bg); color: var(--bad); }
+.badge.ok { background: var(--ok-bg); color: var(--ok); }
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+.card { background: var(--surface); border-radius: 8px; padding: 12px 14px; }
+.card .k { font-size: 12px; color: var(--text-2); }
+.card .v { font-size: 24px; font-weight: 600; margin-top: 2px; }
+.card .v small { font-size: 13px; font-weight: 400; color: var(--muted); }
+.card .h { font-size: 12px; color: var(--muted); }
+.explain { color: var(--text-2); margin: 16px 0 8px; }
+.toolbar { display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: center; font-size: 12px; color: var(--text-2);
+  margin-bottom: 8px; }
+.toolbar .right { margin-left: auto; display: flex; gap: 14px; align-items: center; }
+.toolbar input[type="search"] { font: inherit; font-size: 13px; padding: 5px 9px; border-radius: 6px; width: 190px;
+  border: 1px solid var(--border-strong); background: var(--bg); color: var(--text); }
+.wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 8px; }
+table { border-collapse: collapse; width: 100%; }
+th, td { padding: 6px 4px; text-align: center; border-bottom: 1px solid var(--border); white-space: nowrap; }
+thead th { font-size: 12px; font-weight: 500; color: var(--text-2); background: var(--surface); line-height: 1.25; }
+thead tr.family th { color: var(--text); font-size: 13px; }
+th.product, td.product { text-align: left; padding-left: 12px; position: sticky; left: 0; background: var(--bg);
+  min-width: 170px; }
+thead th.product { background: var(--surface); vertical-align: bottom; color: var(--text); font-size: 13px; }
+.sep { border-left: 1px solid var(--border); }
+tbody tr { cursor: pointer; }
+tbody tr:hover td { background: var(--surface); }
+tbody tr[aria-selected="true"] td { background: var(--accent-bg); }
+tbody tr:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.pname { font-family: var(--mono); font-size: 13px; }
+.bar { display: flex; align-items: center; gap: 6px; margin-top: 3px; font-size: 11px; color: var(--muted); }
+.bar span { display: block; width: 90px; height: 4px; border-radius: 2px; background: var(--surface-2); overflow: hidden; }
+.bar i { display: block; height: 100%; background: var(--ok); }
+.bar i.part { background: var(--warn); }
+.dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin: 0 1.5px; vertical-align: middle; }
+.dot.on { background: var(--ok); }
+.dot.off { border: 1.5px solid var(--muted); }
+.gap { display: inline-block; width: 22px; height: 12px; border-radius: 3px; background: var(--bad); vertical-align: middle; }
+.sync { color: var(--warn); font-weight: 700; margin-left: 2px; }
+.syncbox { display: inline-block; width: 22px; height: 12px; border-radius: 3px; border: 1.5px dashed var(--warn);
+  vertical-align: middle; }
+.na { color: var(--muted); }
+.count { font-size: 12px; color: var(--text-2); margin-left: 4px; }
+.empty { padding: 24px; color: var(--muted); text-align: center; cursor: default; }
+.foot td { color: var(--muted); font-size: 12px; text-align: left; padding-left: 12px; cursor: default; }
+.detail { margin-top: 16px; background: var(--surface); border-radius: 8px; padding: 14px 16px; }
+.detail h2 { font-size: 15px; margin: 0 0 10px; font-weight: 600; }
+.detail h2 .pname { font-size: 15px; }
+.detail .hint { color: var(--muted); }
+.caps { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 10px 24px; }
+.cap .name { font-weight: 500; }
+.chip { display: inline-block; font-size: 11px; padding: 0 6px; border-radius: 4px; margin-left: 6px; font-weight: 500; }
+.chip.ok { background: var(--ok-bg); color: var(--ok); }
+.chip.warn { background: var(--warn-bg); color: var(--warn); }
+.chip.bad { background: var(--bad-bg); color: var(--bad); }
+.chip.na { background: var(--surface-2); color: var(--muted); }
+.case { font-family: var(--mono); font-size: 12px; margin-top: 2px; }
+.case .layer { display: inline-block; width: 26px; color: var(--text-2); }
+.case .file { color: var(--muted); }
+.case.wip, .case.tosync { color: var(--muted); }
+footer { margin-top: 24px; color: var(--muted); font-size: 12px; }
+code { font-family: var(--mono); font-size: 12px; }
+@media (max-width: 640px) {
+  main { padding: 16px 16px 32px; }
+  .toolbar .right { margin-left: 0; }
+  th.product, td.product { min-width: 130px; }
+}
+@media print {
+  .toolbar .right, .tabs { display: none; }
+  .wrap { overflow: visible; border: 0; }
+  tbody tr:hover td { background: none; }
+}
+</style>
+</head>
+<body>
+<main>
+  <h1>OREO E2E coverage</h1>
+  <div class="meta" id="meta"></div>
+  <div class="tabs" role="tablist" id="tabs"></div>
+  <section class="cards" id="cards" aria-label="Summary"></section>
+  <p class="explain">Each cell shows which layers have a case that tests the capability for the product: the left dot is
+    API, the right dot is UI. Hover a cell for the counts; click a product for its cases.</p>
+  <div class="toolbar">
+    <span><span class="dot on"></span><span class="dot on"></span> API and UI</span>
+    <span><span class="dot on"></span><span class="dot off"></span> API only</span>
+    <span><span class="dot off"></span><span class="dot on"></span> UI only</span>
+    <span><span class="gap"></span> gap: supported, no case</span>
+    <span><span class="sync">*</span> run sync-examples</span>
+    <span class="na">– not supported</span>
+    <span class="right">
+      <input type="search" id="filter" placeholder="Filter products" aria-label="Filter products">
+      <label><input type="checkbox" id="gapsFirst"> Gaps first</label>
+    </span>
+  </div>
+  <div class="wrap"><table id="matrix"><thead id="head"></thead><tbody id="body"></tbody></table></div>
+  <section class="detail" id="detail" aria-live="polite"></section>
+  <footer>Written by <code>TestDataTool coverage --html</code> from <code>ProductDatFiles</code> and the product
+    Outlines (<code>@capability#</code>). Outlines tagged <code>@wip</code> are not counted. A Scenario with a fixed
+    product is not counted. Whether a case has its data and its recording is what <code>check</code> reports.</footer>
+</main>
+<script id="coverage-data" type="application/json">@@COVERAGE_DATA@@</script>
+<script>
+(function () {
+  "use strict";
+  var DATA = JSON.parse(document.getElementById("coverage-data").textContent);
+  var WIDE = 5; // a group with this many columns or fewer shows the counts in its cells
+  var state = { tab: 0, product: null, filter: "", gapsFirst: false };
+
+  function el(id) { return document.getElementById(id); }
+  function esc(text) {
+    return String(text).replace(/[&<>"]/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;" }[c];
+    });
+  }
+  function slug(title) { return title.toLowerCase().replace(/[^a-z0-9]+/g, "-"); }
+  function label(column) { return column.family + (column.variant ? " " + column.variant.toLowerCase() : ""); }
+  function plural(n, word) { return n + " " + word + (n === 1 ? "" : "s"); }
+
+  // per row: supported, covered (a case on any layer), gaps, one layer only, to sync
+  function rowStats(row) {
+    var s = { supported: 0, covered: 0, gaps: 0, one: 0, sync: 0 };
+    row.cells.forEach(function (c) {
+      if (!c.supported) return;
+      s.supported++;
+      if (c.api + c.ui > 0) s.covered++;
+      if (c.gap) s.gaps++;
+      if ((c.api > 0) !== (c.ui > 0)) s.one++;
+      if (c.toSync.length) s.sync++;
+    });
+    return s;
+  }
+  function groupStats(group) {
+    var g = { applicable: 0, na: 0, full: 0, gaps: 0, one: 0, sync: 0 };
+    group.rows.forEach(function (row) {
+      var s = rowStats(row);
+      if (!s.supported) { g.na++; return; }
+      g.applicable++;
+      if (s.covered === s.supported) g.full++;
+      g.gaps += s.gaps; g.one += s.one; g.sync += s.sync;
+    });
+    return g;
+  }
+
+  function renderTabs() {
+    el("tabs").innerHTML = DATA.groups.map(function (group, i) {
+      var g = groupStats(group);
+      var badge = g.gaps ? "<span class=\"badge\">" + plural(g.gaps, "gap") + "</span>"
+                         : "<span class=\"badge ok\">no gap</span>";
+      return "<button role=\"tab\" data-i=\"" + i + "\" aria-selected=\"" + (i === state.tab) + "\">"
+          + esc(group.title) + badge + "</button>";
+    }).join("");
+    Array.prototype.forEach.call(el("tabs").querySelectorAll("button"), function (b) {
+      b.addEventListener("click", function () {
+        state.tab = +b.dataset.i; state.product = null;
+        history.replaceState(null, "", "#" + slug(DATA.groups[state.tab].title));
+        render();
+      });
+    });
+  }
+
+  function card(key, value, hint, color) {
+    return "<div class=\"card\"><div class=\"k\">" + key + "</div><div class=\"v\""
+        + (color ? " style=\"color:var(" + color + ")\"" : "") + ">" + value + "</div>"
+        + (hint ? "<div class=\"h\">" + hint + "</div>" : "") + "</div>";
+  }
+  function renderCards(group) {
+    var g = groupStats(group);
+    var html = card("Products", g.applicable + (g.na ? " <small>+" + g.na + " not applicable</small>" : ""),
+        "support at least one of these")
+      + card("Fully covered", g.full + " <small>/ " + g.applicable + "</small>",
+        "every supported capability has a case", g.full === g.applicable ? "--ok" : null)
+      + card("Gaps", g.gaps, "supported, no case: a scenario to write", g.gaps ? "--bad" : "--ok")
+      + card("One layer only", g.one, "API or UI has no case");
+    if (g.sync) html += card("To sync", g.sync, "run sync-examples", "--warn");
+    el("cards").innerHTML = html;
+  }
+
+  function renderHead(group) {
+    var families = [];
+    group.columns.forEach(function (c) {
+      var last = families[families.length - 1];
+      if (last && last.name === c.family) last.columns.push(c); else families.push({ name: c.family, columns: [c] });
+    });
+    var split = families.some(function (f) { return f.columns.length > 1; });
+    var top = "<tr class=\"family\"><th class=\"product\" scope=\"col\"" + (split ? " rowspan=\"2\"" : "")
+        + ">Product</th>";
+    var sub = "<tr>";
+    families.forEach(function (f, i) {
+      var sep = i ? " sep" : "";
+      if (f.columns.length === 1) {
+        top += "<th scope=\"col\" class=\"" + sep + "\"" + (split ? " rowspan=\"2\" style=\"vertical-align:bottom\"" : "")
+            + " title=\"@capability#" + esc(f.columns[0].tag) + "\">" + esc(f.name) + "</th>";
+      } else {
+        top += "<th scope=\"colgroup\" colspan=\"" + f.columns.length + "\" class=\"" + sep + "\">" + esc(f.name) + "</th>";
+        f.columns.forEach(function (c, j) {
+          sub += "<th scope=\"col\" class=\"" + (j === 0 ? sep : "") + "\" title=\"@capability#" + esc(c.tag) + "\">"
+              + esc(c.variant) + "</th>";
+        });
+      }
+    });
+    el("head").innerHTML = top + "</tr>" + (split ? sub + "</tr>" : "");
+    var first = {};
+    families.forEach(function (f, i) { if (i) first[f.columns[0].tag] = true; });
+    return first;
+  }
+
+  function cellHtml(column, c, wide) {
+    if (!c.supported) return "<span class=\"na\" title=\"" + esc(label(column)) + ": not supported\">–</span>";
+    var tip = label(column) + ": API " + c.api + " · UI " + c.ui;
+    if (c.wip) tip += " · " + c.wip + " @wip";
+    if (c.toSync.length) tip += " · " + c.toSync.length + " to sync";
+    var mark;
+    if (c.gap) mark = "<span class=\"gap\"></span>";
+    else if (c.api + c.ui === 0) mark = "<span class=\"syncbox\"></span>";
+    else mark = "<span class=\"dot " + (c.api ? "on" : "off") + "\"></span><span class=\"dot " + (c.ui ? "on" : "off")
+        + "\"></span>";
+    if (c.toSync.length) mark += "<span class=\"sync\">*</span>";
+    if (wide) mark += "<span class=\"count\">API " + c.api + " · UI " + c.ui + "</span>";
+    return "<span title=\"" + esc(tip) + "\">" + mark + "</span>";
+  }
+
+  function renderBody(group, first) {
+    var wide = group.columns.length <= WIDE;
+    var rows = group.rows.map(function (row) { return { row: row, s: rowStats(row) }; })
+        .filter(function (r) { return r.s.supported > 0; })
+        .filter(function (r) { return r.row.product.toLowerCase().indexOf(state.filter) >= 0; });
+    if (state.gapsFirst) {
+      rows.sort(function (a, b) { return (b.s.gaps - a.s.gaps) || (b.s.one - a.s.one); });
+    }
+    var na = group.rows.filter(function (row) { return rowStats(row).supported === 0; }).length;
+    var span = group.columns.length + 1;
+    var html = rows.map(function (r) {
+      var pct = Math.round(100 * r.s.covered / r.s.supported);
+      return "<tr tabindex=\"0\" data-p=\"" + esc(r.row.product) + "\" aria-selected=\""
+          + (r.row.product === state.product) + "\"><td class=\"product\"><div class=\"pname\">" + esc(r.row.product)
+          + "</div><div class=\"bar\"><span><i class=\"" + (r.s.covered < r.s.supported ? "part" : "")
+          + "\" style=\"width:" + pct + "%\"></i></span>" + r.s.covered + " / " + r.s.supported + "</div></td>"
+          + r.row.cells.map(function (c, i) {
+            var column = group.columns[i];
+            return "<td class=\"" + (first[column.tag] ? "sep" : "") + "\">" + cellHtml(column, c, wide) + "</td>";
+          }).join("") + "</tr>";
+    }).join("");
+    if (!rows.length) html = "<tr><td class=\"empty\" colspan=\"" + span + "\">No product matches.</td></tr>";
+    if (na) {
+      html += "<tr class=\"foot\"><td colspan=\"" + span + "\">" + plural(na, "product")
+          + " support none of these capabilities and are not shown.</td></tr>";
+    }
+    el("body").innerHTML = html;
+    Array.prototype.forEach.call(el("body").querySelectorAll("tr[data-p]"), function (tr) {
+      function pick() { state.product = tr.dataset.p; render(); }
+      tr.addEventListener("click", pick);
+      tr.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); pick(); } });
+    });
+  }
+
+  function renderDetail(group) {
+    var row = group.rows.filter(function (r) { return r.product === state.product; })[0];
+    if (!row) {
+      el("detail").innerHTML = "<span class=\"hint\">Click a product to list its cases for each capability.</span>";
+      return;
+    }
+    var html = "<h2><span class=\"pname\">" + esc(row.product) + "</span> · " + esc(group.title) + "</h2><div class=\"caps\">";
+    row.cells.forEach(function (c, i) {
+      var column = group.columns[i];
+      var chip;
+      if (!c.supported) chip = "<span class=\"chip na\">not supported</span>";
+      else if (c.gap) chip = "<span class=\"chip bad\">gap</span>";
+      else if (c.api + c.ui === 0) chip = "<span class=\"chip warn\">to sync</span>";
+      else if (!c.api || !c.ui) chip = "<span class=\"chip warn\">" + (c.api ? "API only" : "UI only") + "</span>";
+      else chip = "<span class=\"chip ok\">API and UI</span>";
+      html += "<div class=\"cap\"><div><span class=\"name\">" + esc(label(column)) + "</span>" + chip + "</div>";
+      c.cases.forEach(function (k) {
+        html += "<div class=\"case" + (k.wip ? " wip" : "") + "\"><span class=\"layer\">" + k.layer + "</span>"
+            + esc(k.id) + (k.wip ? " (@wip)" : "") + " <span class=\"file\">" + esc(k.file) + "</span></div>";
+      });
+      c.toSync.forEach(function (id) {
+        html += "<div class=\"case tosync\"><span class=\"layer\">*</span>" + esc(id) + " (no row yet: sync-examples)</div>";
+      });
+      html += "</div>";
+    });
+    el("detail").innerHTML = html + "</div>";
+  }
+
+  function render() {
+    var group = DATA.groups[state.tab];
+    renderTabs();
+    renderCards(group);
+    var first = renderHead(group);
+    renderBody(group, first);
+    renderDetail(group);
+  }
+
+  el("meta").textContent = "Product × capability · " + plural(DATA.products.length, "product") + " · generated "
+      + DATA.generated;
+  var hash = location.hash.slice(1);
+  DATA.groups.forEach(function (group, i) { if (slug(group.title) === hash) state.tab = i; });
+  el("filter").addEventListener("input", function (e) { state.filter = e.target.value.trim().toLowerCase(); render(); });
+  el("gapsFirst").addEventListener("change", function (e) { state.gapsFirst = e.target.checked; render(); });
+  render();
+})();
+</script>
+</body>
+</html>
