@@ -1,5 +1,5 @@
 {
-  "_comment": "Answer given to the page for GET /trades/<id>/risk-metrics, which the trade detail page sends on load (riskEngine=mock)",
+  "_comment": "Answer given to the page for GET /trades/<id>/risk-metrics, which the trade detail page sends after loading the trade (riskEngine=mock)",
   "response": {
     "code": 200,
     "status": "SUCCESS",

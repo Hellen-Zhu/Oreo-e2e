@@ -12,6 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.example.module.oreo.utils.TradeApiClient;
 import com.example.module.oreo.playwright.PlaywrightServiceResolver;
+import com.example.module.oreo.playwright.PlaywrightServiceResolver.Context.RiskCall;
 
 import java.util.List;
 
@@ -44,11 +45,13 @@ public class TradePortalSteps {
         ctx.clickAndWaitForResponse("trade_portal.row_action_view_details", TradeApiClient.tradePath(tradeId), "GET");
     }
 
+    /** Waits for the trade, then its risk metrics, answered by setup risk-metrics-success-mock in MOCK mode. */
     @When("^double click to navigate to trade detail and wait for page ready for stored variable '([^']*)'$")
     public void doubleClickToViewTradeDetail(String ctxKey) {
         String tradeId = ctx.get(ctxKey);
-        ctx.doubleClickAndWaitForResponse("trade_portal.all_trades_blotter_row", TradeApiClient.tradePath(tradeId),
-                "GET");
+        ctx.doubleClickUsingRiskEngineMode("trade_portal.all_trades_blotter_row", List.of(
+                new RiskCall("GET", TradeApiClient.tradePath(tradeId), null),
+                new RiskCall("GET", TradeApiClient.riskMetricsPath(tradeId), "risk-metrics-success-mock")));
     }
 
     /**

@@ -2,11 +2,14 @@ package com.example.module.oreo.glue.ui;
 
 import com.example.module.oreo.utils.TradeApiClient;
 import com.example.module.oreo.playwright.PlaywrightServiceResolver;
+import com.example.module.oreo.playwright.PlaywrightServiceResolver.Context.RiskCall;
 import cucumber.api.Scenario;
 import cucumber.api.java.Before;
 import cucumber.api.java.en.When;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.List;
 
 public class TradeDetailSteps {
 
@@ -17,12 +20,15 @@ public class TradeDetailSteps {
     @Before({"@playwright"})
     public void beforeScenario(Scenario scenario) { this.ctx = PlaywrightServiceResolver.from(scenario); }
 
+    /** Waits for the trade, then its risk metrics, answered by setup risk-metrics-success-mock in MOCK mode. */
     @When("^navigate to trade details for stored trade '([^']*)'$")
     public void navigateToTradeDetails(String ctxKey){
         String tradeId = ctx.get(ctxKey);
         ctx.write("Navigating to trade details for tradeId: " + tradeId);
         log.info("Navigating to trade details for tradeId: {}", tradeId);
-        ctx.navigateToPath("/trade/" + tradeId);
+        ctx.navigateUsingRiskEngineMode("/trade/" + tradeId, List.of(
+                new RiskCall("GET", TradeApiClient.tradePath(tradeId), null),
+                new RiskCall("GET", TradeApiClient.riskMetricsPath(tradeId), "risk-metrics-success-mock")));
     }
 
     @When("^confirm book trade from detail page for trade '([^']*)'$")

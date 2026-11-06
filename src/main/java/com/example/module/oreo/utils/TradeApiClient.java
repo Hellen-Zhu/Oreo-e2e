@@ -47,11 +47,6 @@ public final class TradeApiClient {
     public static final String BLOTTER_TRADES_PATH = "/blotter/trades";
     /** The start of every checker task action: approve or reject, one task or bulk. */
     public static final String CHECKER_TASKS_PATH = "/checker/tasks/";
-    /**
-     * The end of {@code GET /trades/<id>/risk-metrics}, which the trade detail page sends whenever it loads a trade: a
-     * URL fragment that matches the call for any trade.
-     */
-    public static final String RISK_METRICS_PATH_END = "/risk-metrics";
     /** Triggers a lifecycle event (cancellation, allocation, novation, ...) on one or more trades. */
     public static final String TRIGGER_EVENT_PATH = "/trades/trigger-event";
     private static final String READ_ALL_NOTIFICATIONS_PATH = "/notifications/read-all";
@@ -90,6 +85,11 @@ public final class TradeApiClient {
     /** {@link #updatePath} as the trade detail page saves the change as a draft. */
     public static String saveUpdatePath(String tradeId) {
         return updatePath(tradeId) + "?tradeAction=SAVE";
+    }
+
+    /** The risk metrics of the trade, which the trade detail page loads after the trade. */
+    public static String riskMetricsPath(String tradeId) {
+        return tradePath(tradeId) + "/risk-metrics";
     }
 
     public static String calculateRiskPath(String tradeId) {

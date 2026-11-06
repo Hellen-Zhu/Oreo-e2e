@@ -177,9 +177,9 @@ public final class PlaywrightServiceResolver {
         }
 
         /**
-         * A risk calculation an action causes: {@code httpMethod urlFragment} ({@code POST} unless given), answered in
-         * MOCK mode with the response of setup file {@code mockSetup}; a null {@code mockSetup} lets the backend answer
-         * in both modes.
+         * A call an action causes: {@code httpMethod urlFragment} ({@code POST} unless given), answered in MOCK mode
+         * with the response of setup file {@code mockSetup} (a risk calculation, the risk metrics); a null
+         * {@code mockSetup} lets the backend answer in both modes (the trade the page loads first, say).
          */
         public record RiskCall(String httpMethod, String urlFragment, String mockSetup) {
             public RiskCall(String urlFragment, String mockSetup) { this("POST", urlFragment, mockSetup); }
@@ -196,10 +196,25 @@ public final class PlaywrightServiceResolver {
          * MOCK answers each URL that has a setup file with it until all are answered.
          */
         public void clickUsingRiskEngineMode(String locatorKey, List<RiskCall> riskCalls) {
+            usingRiskEngineMode("clicking '" + locatorKey + "'", () -> service.getLocator(locatorKey).click(),
+                    riskCalls);
+        }
+
+        /** {@link #clickUsingRiskEngineMode(String, List)} with a double click (a blotter row opening its trade). */
+        public void doubleClickUsingRiskEngineMode(String locatorKey, List<RiskCall> riskCalls) {
+            usingRiskEngineMode("double-clicking '" + locatorKey + "'", () -> service.getLocator(locatorKey).dblclick(),
+                    riskCalls);
+        }
+
+        /** {@link #clickUsingRiskEngineMode(String, List)} for {@link #navigateToPath}{@code (path)}. */
+        public void navigateUsingRiskEngineMode(String path, List<RiskCall> riskCalls) {
+            usingRiskEngineMode("navigating to '" + path + "'", () -> navigateToPath(path), riskCalls);
+        }
+
+        private void usingRiskEngineMode(String what, Runnable action, List<RiskCall> riskCalls) {
             OreoModuleConfiguration.RiskEngineMode mode = riskEngineMode();
-            log.info("[PlaywrightServiceResolver] clicking '{}' using configured risk engine mode='{}', calls={}",
-                    locatorKey, mode, riskCalls);
-            Runnable click = () -> service.getLocator(locatorKey).click();
+            log.info("[PlaywrightServiceResolver] {} using configured risk engine mode='{}', calls={}",
+                    what, mode, riskCalls);
             ResponseWaiter.Call[] calls = riskCalls.stream()
                     .map(c -> new ResponseWaiter.Call(c.httpMethod(), c.urlFragment()))
                     .toArray(ResponseWaiter.Call[]::new);
@@ -210,30 +225,17 @@ public final class PlaywrightServiceResolver {
                             .forEach(c -> mockByUrl.putIfAbsent(c.urlFragment(), c.mockSetup()));
                     mockByUrl.forEach((url, setup) -> mocks.mockRoute(url, 200, TestData.setup(setup).response()));
                     try {
-                        responses.await(click, calls);
+                        responses.await(action, calls);
                     } finally {
                         mockByUrl.keySet().forEach(mocks::clearMockRoute);
                     }
                     return;
                 case REAL:
-                    responses.await(click, calls);
+                    responses.await(action, calls);
                     return;
                 default:
                     throw new IllegalStateException("Unhandled risk engine mode: " + mode);
             }
-        }
-
-        /**
-         * In MOCK mode, answers every request of the rest of the scenario whose URL contains {@code urlFragment} with
-         * the response of setup file {@code mockSetup}: a risk call the page sends by itself (on load, on reload),
-         * not as the answer to one action. In REAL mode the backend answers and nothing is registered.
-         */
-        public void mockRiskCallForScenario(String urlFragment, String mockSetup) {
-            OreoModuleConfiguration.RiskEngineMode mode = riskEngineMode();
-            if (mode != OreoModuleConfiguration.RiskEngineMode.MOCK) return;
-            log.info("[PlaywrightServiceResolver] risk engine mode=MOCK: '{}' answered by setup '{}' for the scenario",
-                    urlFragment, mockSetup);
-            mocks.mockRouteForScenario(urlFragment, 200, TestData.setup(mockSetup).response());
         }
 
         // ── Assertions (EventualAssertions) ────────────────────────────
