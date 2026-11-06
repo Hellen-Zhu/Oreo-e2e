@@ -51,8 +51,8 @@ answers. It holds:
 
 1. **Capabilities** (default: all). A table: capability, the Outlines it now runs for `<P>` (case ID with `<P>`,
    title), from `git diff` of the feature files or `grep -rn -A1 "@capability#" src/test/resources/features`; the
-   product's column of `mvn -Ptest-data process-test-classes "-Dexec.args=coverage"` shows how many API and UI
-   Outlines each capability runs and which have none (`NONE`, listed as gaps); with a
+   product's column of `mvn -Ptest-data process-test-classes "-Dexec.args=coverage"` shows for each capability
+   whether API cases, UI cases or both test it, and which have none (`NONE`, listed as gaps); with a
    column QA fills in: **supported / not supported, row by row**, in two parts as `Capability.GROUPS` has them: the
    trade lifecycle, then the product features (fixings, cortex formula, product upload), asked on their own: products
    differ there most, so "the same as the others" for the lifecycle is no answer for them. A general "looks fine" is not an answer: ask again

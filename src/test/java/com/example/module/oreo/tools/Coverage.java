@@ -19,8 +19,8 @@ import java.util.stream.Stream;
 
 /**
  * The coverage matrix ({@code coverage}): one row per capability, by group of {@link Capability#GROUPS} (trade
- * lifecycle, product features), one column per product of the registry, each cell
- * the number of product Outlines that run for that product, {@code API/UI}. It reads the registry
+ * lifecycle, product features), one column per product of the registry, each cell the layers whose cases test it for
+ * that product: {@code API+UI}, {@code API}, {@code UI}, or {@code NONE}. It reads the registry
  * ({@link ProductDatFiles}) and the product Outlines ({@code @capability#} tags, {@link ProductExamples}); it writes
  * nothing and never fails. A Scenario with a fixed product is not counted: only the product Outlines say which
  * capability they test. Whether a case has its data and its recording is the check's business, not this report's.
@@ -39,9 +39,9 @@ final class Coverage {
 
         String text() {
             if (!supported) return NOT_SUPPORTED;
-            String text = api == 0 && ui == 0 ? NO_CASE : api + "/" + ui;
-            if (wip > 0) text += " +" + wip + "wip";
-            if (unsynced) text += " *";
+            String text = api > 0 && ui > 0 ? "API+UI" : api > 0 ? "API" : ui > 0 ? "UI" : NO_CASE;
+            if (wip > 0) text += " +wip";
+            if (unsynced) text += " sync";
             return text;
         }
 
@@ -118,13 +118,15 @@ final class Coverage {
             }
         }
         StringBuilder out = new StringBuilder();
-        out.append("Coverage: product x capability, product Outlines that run (API/UI)\n\n");
+        out.append("Coverage: which layers test each capability for each product\n\n");
         out.append(table(rows)).append('\n');
-        out.append("  a/u    API and UI Outlines that run for the product (not @wip)\n");
-        out.append("  ").append(NO_CASE).append("   the product supports it and no Outline runs for it\n");
-        out.append("  ").append(NOT_SUPPORTED).append("      the product does not support it (ProductDatFiles)\n");
-        out.append("  +Nwip  N more Outlines carry @wip\n");
-        out.append("  *      an Outline of it has no row for the product: run sync-examples\n");
+        out.append("  API+UI  tested by API cases and by UI cases\n");
+        out.append("  API     tested by API cases only\n");
+        out.append("  UI      tested by UI cases only\n");
+        out.append("  ").append(NO_CASE).append("    supported, but no case tests it: write one\n");
+        out.append("  ").append(NOT_SUPPORTED).append("       the product does not support it (ProductDatFiles)\n");
+        out.append("  +wip    more cases of it carry @wip and do not run\n");
+        out.append("  sync    a case of it has no row for the product yet: run sync-examples\n");
         out.append('\n');
         out.append(gaps.isEmpty() ? "No gap.\n" : gaps.size() + " gap(s), supported with no case to run, write one:\n");
         gaps.forEach(g -> out.append("  ").append(g).append('\n'));
