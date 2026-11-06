@@ -194,10 +194,11 @@ final class Checks {
     // ── 10.6 ─────────────────────────────────────────────────────────────────
 
     private static final Pattern SETUP_CALL = Pattern.compile("TestData\\.setup\\(\"([^\"]+)\"\\)");
-    /** The provisioning helpers of TradeProvisioningSteps take the setup name as a string argument. */
-    private static final Pattern PROVISIONING_CALL = Pattern.compile(
-            "(?:submitTradeAsPendingApproval|provisionLiveTradeAs|provisionLifecycleEvent|submitAmendment)"
-                    + "\\(([^;{]*)\\);");
+    /**
+     * The provisioning glue passes the setup name as a string argument to its provision... helpers, TradeApiClient's
+     * provision... methods and LifecycleEventApiClient.triggerEvent.
+     */
+    private static final Pattern PROVISIONING_CALL = Pattern.compile("\\b(?:provision\\w*|triggerEvent)\\(([^;{]*)\\);");
     private static final Pattern NAME_LITERAL = Pattern.compile("\"([a-z0-9][a-z0-9-]*)\"");
     private static final Pattern STEP_TEXT = Pattern.compile("from test data '([^']+)'");
 

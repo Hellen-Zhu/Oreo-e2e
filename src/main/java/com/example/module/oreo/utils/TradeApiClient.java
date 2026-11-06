@@ -2,10 +2,9 @@ package com.example.module.oreo.utils;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.example.genie.module.rest.service.RequestResponseHelper;
+import com.example.module.oreo.config.TestUser;
 import com.example.module.oreo.testdata.ProductDatFiles;
 import com.example.module.oreo.testdata.TestData;
 import com.example.module.oreo.testdata.Json;
@@ -15,26 +14,29 @@ import org.slf4j.LoggerFactory;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * The trade endpoints as Java glue calls them, with those of the maker-checker flow around a trade (checker tasks,
  * the blotter's trades, notifications): their paths, for the requests here and for the UI steps that wait for a
- * response; the requests that provision a trade from {@code data/setup/}; what their responses say, so that no step
- * reads a response path. A path is relative to {@code rest.base.url}; a UI step waits for a response whose URL contains
- * it. API snippets use the built-in REST steps, not this class.
+ * response; the requests that provision a trade from {@code data/setup/} (the {@code provision...} methods, for the
+ * API and the UI provisioning steps alike); what their responses say, so that no step reads a response path. It holds
+ * no scenario state: a method returns the IDs it created and the caller stores them. A path is relative to
+ * {@code rest.base.url}; a UI step waits for a response whose URL contains it. The lifecycle event endpoint is
+ * {@link LifecycleEventApiClient}. API snippets use the built-in REST steps, not this class.
  */
 public final class TradeApiClient {
 
     private static final Logger log = LoggerFactory.getLogger(TradeApiClient.class);
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    /** An amendment's response names its checker task only in its message: "... TaskId: <id>". */
+    private static final Pattern TASK_ID_IN_MSG = Pattern.compile("TaskId:\\s*(\\S+)");
 
     /** Creates a trade, with {@code ?tradeAction=SUBMIT} or {@code SAVE}: the new trade page sends one of them. */
     public static final String CREATE_TRADE_PATH = "/trades/create";
     public static final String SUBMIT_TRADE_PATH = CREATE_TRADE_PATH + "?tradeAction=SUBMIT";
     public static final String SAVE_TRADE_PATH = CREATE_TRADE_PATH + "?tradeAction=SAVE";
-    public static final String TRIGGER_EVENT_PATH = "/trades/trigger-event";
     /** The risk of the trade on the new trade page, before it exists. */
     public static final String CALCULATE_RISK_FOR_NEW_PATH = "/trades/calculate-risk-for-new";
     /** The trades of a blotter: the trade portal loads them after a sign-in, a refresh and a change to a trade. */
@@ -44,8 +46,8 @@ public final class TradeApiClient {
     private static final String READ_ALL_NOTIFICATIONS_PATH = "/notifications/read-all";
 
     /**
-     * A trade that {@link #submitTrade} or {@link #saveTrade} created: its ID ({@code data.trade.id}) and the ID of its
-     * checker task ({@code data.checkerContext.taskId}), blank when the response has none.
+     * A provisioned trade: its ID and the ID of its latest checker task, blank when it has none. After
+     * {@link #submitTrade} or {@link #saveTrade} they are {@code data.trade.id} and {@code data.checkerContext.taskId}.
      */
     public record CreatedTrade(String tradeId, String taskId) {}
 
@@ -158,29 +160,62 @@ public final class TradeApiClient {
         return RestApiUtil.post(helper, updatePath(tradeId), userId, TestData.setup(testDataKey).request());
     }
 
+    // ── Provisioning: maker submits, checker decides ─────────────────────
+
+    /** The setup body {@code testDataKey} of {@code product} submitted by the maker: a trade pending approval. */
+    public static CreatedTrade provisionPendingTrade(RequestResponseHelper helper, String testDataKey,
+                                                     ProductDatFiles product, String datPath) throws URISyntaxException {
+        return submitTrade(helper, TestUser.MAKER.email(), testDataKey, product, datPath);
+    }
+
+    /** The setup body {@code testDataKey} of {@code product} saved by the maker: a draft. */
+    public static CreatedTrade provisionDraftTrade(RequestResponseHelper helper, String testDataKey,
+                                                   ProductDatFiles product, String datPath) throws URISyntaxException {
+        return saveTrade(helper, TestUser.MAKER.email(), testDataKey, product, datPath);
+    }
+
+    /** {@link #provisionPendingTrade} approved by the checker: a live trade; its task is the approved one. */
+    public static CreatedTrade provisionLiveTrade(RequestResponseHelper helper, String testDataKey,
+                                                  ProductDatFiles product, String datPath) throws URISyntaxException {
+        CreatedTrade trade = provisionPendingTrade(helper, testDataKey, product, datPath);
+        approveTask(helper, trade.taskId(), TestUser.CHECKER.email());
+        log.info("[TradeApiClient] live trade provisioned: tradeId='{}'", trade.tradeId());
+        return trade;
+    }
+
     /**
-     * Triggers the event of the setup body {@code testDataKey} on {@code tradeIds}; returns the checker task IDs of the
-     * response's results ({@code data.results[].checkerTaskId}), in its order.
+     * The event of the setup body {@code testDataKey} triggered by the maker on trade {@code tradeId}, pending the
+     * checker: the trade with the event's checker task.
      *
-     * @throws AssertionError when the response has no result
+     * @throws AssertionError when the event created no checker task
      */
-    public static List<String> triggerEvent(RequestResponseHelper helper, List<String> tradeIds, String userId,
-                                            String testDataKey) throws JsonProcessingException {
-        ObjectNode body = (ObjectNode) OBJECT_MAPPER.readTree(TestData.setup(testDataKey).request());
-        ArrayNode ids = OBJECT_MAPPER.createArrayNode();
-        tradeIds.forEach(ids::add);
-        body.set("tradeIds", ids);
-        log.info("[TradeApiClient] triggerEvent: tradeIds='{}', userId='{}', testDataKey='{}'", tradeIds, userId, testDataKey);
-        JsonNode response = RestApiUtil.post(helper, TRIGGER_EVENT_PATH, userId,
-                OBJECT_MAPPER.writeValueAsString(body));
-        JsonNode results = response.at("/data/results");
-        if (!results.isArray() || results.isEmpty()) {
-            throw new AssertionError("[TradeApiClient] setup " + testDataKey + " on " + tradeIds + " has no results: "
-                    + response);
+    public static CreatedTrade provisionPendingEvent(RequestResponseHelper helper, String tradeId, String testDataKey)
+            throws JsonProcessingException {
+        String taskId = LifecycleEventApiClient.triggerEvent(helper, List.of(tradeId), TestUser.MAKER.email(),
+                testDataKey).get(0).checkerTaskId();
+        if (taskId.isBlank()) {
+            throw new AssertionError("[TradeApiClient] setup " + testDataKey + " on " + tradeId
+                    + " created no checker task");
         }
-        List<String> taskIds = new ArrayList<>();
-        results.forEach(result -> taskIds.add(result.path("checkerTaskId").asText("")));
-        return taskIds;
+        return new CreatedTrade(tradeId, taskId);
+    }
+
+    /**
+     * The amendment of the setup body {@code testDataKey} submitted by the maker on trade {@code tradeId}, pending the
+     * checker: the trade with the amendment's checker task, read from the response's {@code msg}.
+     *
+     * @throws AssertionError when the message names no task
+     */
+    public static CreatedTrade provisionPendingAmendment(RequestResponseHelper helper, String tradeId,
+                                                         String testDataKey) {
+        JsonNode response = updateTrade(helper, tradeId, TestUser.MAKER.email(), testDataKey);
+        String msg = response.path("msg").asText(response.at("/data/msg").asText(""));
+        Matcher taskId = TASK_ID_IN_MSG.matcher(msg);
+        if (!taskId.find()) {
+            throw new AssertionError("[TradeApiClient] setup " + testDataKey + " on " + tradeId
+                    + " names no checker task in msg: " + response);
+        }
+        return new CreatedTrade(tradeId, taskId.group(1).replaceAll("\\.$", ""));
     }
 
     public static JsonNode approveTask(RequestResponseHelper helper, String taskId, String userId) {

@@ -16,13 +16,8 @@
 # ── Build request ───────────────────────────────────────────────────
 
 # The task of the precondition (createdTaskId).
-@When "^(maker|checker) has (?:valid|invalid) data for (?:trade creation|cancellation) (?:approval|rejection|self-approval)$"
+@When "^(maker|checker) has (?:valid|invalid) data for (?:trade creation|amendment|cancellation) (?:approval|rejection|self-approval)$"
     Given build json request with path parameter 'taskId' from stored variable 'createdTaskId' as user '$1'
-
-# The amendment precondition stores its task as createdAmendTaskId. Once it stores it as createdTaskId, amendment joins
-# the step above.
-@When "^(maker|checker) has (?:valid|invalid) data for amendment (?:approval|rejection|self-approval)$"
-    Given build json request with path parameter 'taskId' from stored variable 'createdAmendTaskId' as user '$1'
 
 @When "^checker has valid data for bulk cancellation approval$"
     Given build json request from current scenario with task ids from stored variables 'createdTaskId1' and 'createdTaskId2' as user 'checker'

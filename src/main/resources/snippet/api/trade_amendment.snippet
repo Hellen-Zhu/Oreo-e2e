@@ -6,15 +6,6 @@
     And performs the Trade Amendment action via api
     Then response status code is '200'
 
-@Given "^a live '([^']*)' trade with a pending Amendment exists$"
-    Given a live '$1' trade is created via api
-    Given build json request with path parameter 'tradeId' from stored variable 'createdTradeId' as user 'maker'
-    And set request body from test data 'trade-amendment'
-    When post to path '/trades/{tradeId}/update'
-    Then response status code is '200'
-    And store response field 'msg' as 'amendTaskMsg'
-    And the amendment task ID is extracted and stored
-
 # ── Build request ───────────────────────────────────────────────────
 
 @When "^maker has valid data for Trade Amendment$"

@@ -81,8 +81,8 @@ Work down the list and stop at the first that fits:
 
 | Need | Use | Notes |
 |---|---|---|
-| UI precondition | `a Live / Draft Pending Approval / Dead / Draft '<product_type>' trade exists in the blotter` (`flows/common_trade_action.snippet`) | Provisions through the API via `TradeProvisioningSteps`; does not log in or navigate; stores `createdTradeId` / `createdTaskId` |
-| API precondition | `a live / draft / dead '<product_type>' trade is created via api`, `a '<product_type>' trade is submitted to pending approval via api`, and their `... stored as '<key>'` variants (`api/common_trade_action.snippet`) | Never inline create + approve: headers, task IDs and ctx keys are part of the contract |
+| UI precondition | `a Live / Draft Pending Approval / Dead / Draft '<product_type>' trade exists in the blotter` (`flows/common_trade_action.snippet`) | Provisions through the API via `PlaywrightTradeProvisioningSteps`; does not log in or navigate; stores `createdTradeId` / `createdTaskId` |
+| API precondition | `a live / draft / dead '<product_type>' trade is created via api`, `a '<product_type>' trade is submitted to pending approval via api`, and their `... stored as '<key>'` variants, a pending Cancellation / Amendment, an allocated trade (`ApiTradeProvisioningSteps`) | Never inline create + approve: headers, task IDs and ctx keys are part of the contract |
 | API lifecycle event | `(maker\|checker) has valid / invalid / malformed / duplicate data [with '<what>'] for the '<event>' event [on the trade stored as '<key>']`, `... has data for the '<event>' event on a trade that does not exist`, `performs the '<event>' event via api`, `the '<event>' event is executed successfully / is rejected with a validation error / a business rule violation / permission denied` (`api/trade_lifecycle_event.snippet`) | A new event adds case data, recordings and the feature; its own snippet holds only preconditions and evidence beyond the response. A new variant (another status, another trade source) is added there, for every event |
 | API checker task | `(maker\|checker) has valid data for trade creation / amendment / cancellation approval / rejection / self-approval`, `performs the approval / rejection / bulk approval for the request`, `the <kind> approval / rejection request is processed successfully`, `the <kind> self-approval request is rejected with permission denied`; provisioning `checker approves / rejects the pending task` (`api/trade_approval_rejection.snippet`) | A new kind of task adds its name to the alternations, not a step |
 | API outcome | `the '<object>' should be '<action>' successfully` (200), `failed to '<action>' '<object>'` (400), `... with status '<status>'` (`api/common_api.snippet`) | Status + strict comparison with the recorded response |
@@ -159,7 +159,10 @@ Every element is registered in JSON and reached through it:
 | Product provisioning, event configuration, schema files to upload | `ProductApiClient` |
 | Product, multipart and dat file requests | `TradeApiSteps` |
 | Recorded-response comparison, stored-variable and field assertions | `ApiResponseAssertionSteps` |
-| UI trade provisioning | `TradeProvisioningSteps` |
+| UI trade provisioning | `PlaywrightTradeProvisioningSteps` |
+| API trade provisioning | `ApiTradeProvisioningSteps` |
+| Provisioning calls shared by both (no scenario state) | `TradeApiClient` `provision...` methods |
+| Lifecycle event request and results (`childTradeIds` included) | `LifecycleEventApiClient` |
 | Dynamic elements, inputs, eventual assertions | `CommonE2EInteraction`, `CommonE2EAssertion` |
 | Response wait / capture, eventual assertions (visible, text, count, ...), mocked routes, parameterized locators | `PlaywrightServiceResolver.Context` |
 

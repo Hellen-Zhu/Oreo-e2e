@@ -11,7 +11,7 @@ in full is `docs/test-data.md`; this page is the decision procedure. Used by `qa
 | What an API case sends, its masking rules, its base | `data/api/<event>.json` (`<event>` = the feature file name) | `ScenarioLifecycleHooks` before each case |
 | What a UI case types or selects | `data/ui/<event>.json` | the same hook; flows read the values from ctx |
 | A block several events of one channel share | `data/api/common.json`, `data/ui/common.json` (`shared`), applied only where `use` names it | the event file that names it |
-| The payload that prepares a precondition (a trade, a mock) | `data/setup/<name>.json` (`extends` another setup) | the steps `... from test data '<name>'`, `TradeProvisioningSteps` |
+| The payload that prepares a precondition (a trade, a mock) | `data/setup/<name>.json` (`extends` another setup) | the steps `... from test data '<name>'`, `ApiTradeProvisioningSteps`, `PlaywrightTradeProvisioningSteps` |
 | What an API case's response must be | `data/api/expected/<event>/<case ID>.json` | the response check; **written by a run, never by hand** |
 | A product's dat file | `data/dat/<P>/<P>.dat`, variants in the same folder | upload and provisioning steps |
 

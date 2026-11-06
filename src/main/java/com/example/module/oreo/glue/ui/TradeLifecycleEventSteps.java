@@ -1,6 +1,7 @@
 package com.example.module.oreo.glue.ui;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.example.module.oreo.utils.LifecycleEventApiClient;
 import com.example.module.oreo.utils.TradeApiClient;
 import com.example.module.oreo.playwright.PlaywrightServiceResolver;
 import com.example.module.oreo.playwright.PlaywrightServiceResolver.Context.RiskCall;
@@ -174,7 +175,7 @@ public class TradeLifecycleEventSteps {
     @When("^confirm lifecycle event trade change and wait for page ready$")
     public void confirmLifecycleEventTradeChangeAndWait() {
         log.info("[TradeLifecycleEventSteps] Confirming trade change confirmation; waiting for trigger-event response");
-        ctx.clickAndWaitForResponse("trade_change_confirmation.confirm_btn", TradeApiClient.TRIGGER_EVENT_PATH, "POST");
+        ctx.clickAndWaitForResponse("trade_change_confirmation.confirm_btn", LifecycleEventApiClient.TRIGGER_EVENT_PATH, "POST");
     }
 
     /**
@@ -194,7 +195,7 @@ public class TradeLifecycleEventSteps {
     }
 
     private String confirmTradeChangeAndWaitForBlotterReload(String blotterId) {
-        return clickAndWaitForBlotterReload("trade_change_confirmation.confirm_btn", TradeApiClient.TRIGGER_EVENT_PATH,
+        return clickAndWaitForBlotterReload("trade_change_confirmation.confirm_btn", LifecycleEventApiClient.TRIGGER_EVENT_PATH,
                 blotterId);
     }
 
@@ -226,7 +227,7 @@ public class TradeLifecycleEventSteps {
         log.info("[TradeLifecycleEventSteps] Confirming trade change confirmation; capturing trigger-event response as '{}'", responseCtxKey);
         String responseBody = ctx.clickAndCaptureResponse(
                 "trade_change_confirmation.confirm_btn",
-                TradeApiClient.TRIGGER_EVENT_PATH,
+                LifecycleEventApiClient.TRIGGER_EVENT_PATH,
                 "POST"
         );
         ctx.set(responseCtxKey, responseBody);

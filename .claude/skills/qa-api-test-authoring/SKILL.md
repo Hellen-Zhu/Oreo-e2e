@@ -37,7 +37,7 @@ repair round the failure output and `revisionInstructions`.
 
    | Step | Status | Source |
    |---|---|---|
-   | `a live '<product_type>' trade is created via api` | REUSE | `api/common_trade_action.snippet` |
+   | `a live '<product_type>' trade is created via api` | REUSE | `glue/api/ApiTradeProvisioningSteps` |
    | `maker has valid data for the 'EarlyTermination' event` | REUSE | `api/trade_lifecycle_event.snippet` |
    | `performs the 'EarlyTermination' event via api` | REUSE | `api/trade_lifecycle_event.snippet` |
    | `the trade notional is reduced by the terminated amount` | NEW_SNIPPET | `api/trade_partial_termination.snippet`, from existing snippet steps + REST built-ins |
