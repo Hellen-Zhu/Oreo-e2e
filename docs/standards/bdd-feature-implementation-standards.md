@@ -162,7 +162,7 @@ Every element is registered in JSON and reached through it:
 | UI trade provisioning | `PlaywrightTradeProvisioningSteps` |
 | API trade provisioning | `ApiTradeProvisioningSteps` |
 | Provisioning calls shared by both (no scenario state) | `TradeApiClient` `provision...` methods |
-| Lifecycle event request and results (`childTradeIds` included) | `LifecycleEventApiClient` |
+| Lifecycle event request and results (`childTradeIds` included) | `TradeApiClient.triggerEvent` |
 | Dynamic elements, inputs, eventual assertions | `CommonE2EInteraction`, `CommonE2EAssertion` |
 | Response wait / capture, eventual assertions (visible, text, count, ...), mocked routes, parameterized locators | `PlaywrightServiceResolver.Context` |
 

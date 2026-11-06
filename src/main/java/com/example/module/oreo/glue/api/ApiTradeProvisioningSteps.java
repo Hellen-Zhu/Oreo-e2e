@@ -2,7 +2,6 @@ package com.example.module.oreo.glue.api;
 
 import com.example.module.oreo.config.TestUser;
 import com.example.module.oreo.testdata.ProductDatFiles;
-import com.example.module.oreo.utils.LifecycleEventApiClient;
 import com.example.module.oreo.utils.TradeApiClient;
 import com.example.module.oreo.utils.TradeApiClient.CreatedTrade;
 import cucumber.api.Scenario;
@@ -81,7 +80,7 @@ public class ApiTradeProvisioningSteps {
     @Given("^a trade is allocated with 2-way equal split via api$")
     public void allocatedTrade() throws Exception {
         CreatedTrade live = live("FX_TRF", "createdTradeId", "createdTaskId");
-        LifecycleEventApiClient.EventResult result = LifecycleEventApiClient.triggerEvent(ctx.helper(),
+        TradeApiClient.EventResult result = TradeApiClient.triggerEvent(ctx.helper(),
                 List.of(live.tradeId()), TestUser.MAKER.email(), "allocation-create").get(0);
         ctx.set("allocatedParentTradeId", result.tradeId());
         ctx.write(String.format("[provisioned] allocatedParentTradeId = %s, children = %s", result.tradeId(),

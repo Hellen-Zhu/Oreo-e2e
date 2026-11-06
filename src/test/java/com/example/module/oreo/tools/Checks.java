@@ -195,8 +195,8 @@ final class Checks {
 
     private static final Pattern SETUP_CALL = Pattern.compile("TestData\\.setup\\(\"([^\"]+)\"\\)");
     /**
-     * The provisioning glue passes the setup name as a string argument to its provision... helpers, TradeApiClient's
-     * provision... methods and LifecycleEventApiClient.triggerEvent.
+     * The provisioning glue passes the setup name as a string argument to its provision... helpers and to
+     * TradeApiClient's provision... and triggerEvent methods.
      */
     private static final Pattern PROVISIONING_CALL = Pattern.compile("\\b(?:provision\\w*|triggerEvent)\\(([^;{]*)\\);");
     private static final Pattern NAME_LITERAL = Pattern.compile("\"([a-z0-9][a-z0-9-]*)\"");
