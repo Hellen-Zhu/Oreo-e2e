@@ -18,3 +18,4 @@ Feature: Trade Portfolio Reassignment E2E
       | FX_TRF          |
       | FX_PSCRIPT      |
       | FX_PSCRIPT_FSKO |
+      | FX_PSCRIPT_TRF  |

@@ -77,6 +77,7 @@ Feature: Trade Checker Approval API
       | FX_TRF          |
       | FX_PSCRIPT      |
       | FX_PSCRIPT_FSKO |
+      | FX_PSCRIPT_TRF  |
 
   @ADO#positive @ADO#regression @capability#cancellation
   Scenario Outline: [TC-TRADE-APPROVAL-REJECTION<product_type>-API-008] Checker rejects <product_type> cancellation and trade reverts to Live
@@ -91,6 +92,7 @@ Feature: Trade Checker Approval API
       | FX_TRF          |
       | FX_PSCRIPT      |
       | FX_PSCRIPT_FSKO |
+      | FX_PSCRIPT_TRF  |
 
   @ADO#negative @ADO#regression
   Scenario: [TC-TRADE-APPROVAL-REJECTIONAPI-009] Maker is blocked from self-approving a FX_TRF cancellation task

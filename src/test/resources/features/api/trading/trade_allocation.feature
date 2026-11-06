@@ -16,6 +16,7 @@ Feature: Trade Allocation Event API
       | FX_TRF          |
       | FX_PSCRIPT      |
       | FX_PSCRIPT_FSKO |
+      | FX_PSCRIPT_TRF  |
 
   @ADO#positive @ADO#regression @capability#allocation
   Scenario Outline: [TC-TRADE-ALLOCATION-<product_type>-API-002] 3-way unequal allocation executes successfully for <product_type> trade
@@ -29,6 +30,7 @@ Feature: Trade Allocation Event API
       | FX_TRF          |
       | FX_PSCRIPT      |
       | FX_PSCRIPT_FSKO |
+      | FX_PSCRIPT_TRF  |
 
   @ADO#negative @ADO#smoke
   Scenario: [TC-TRADE-ALLOCATION-API-003] Allocation rejected with 400 when notional don't sum to parent for FX_TRF trade

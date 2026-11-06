@@ -17,6 +17,7 @@ Feature: Trade Allocation E2E
       | FX_TRF          |
       | FX_PSCRIPT      |
       | FX_PSCRIPT_FSKO |
+      | FX_PSCRIPT_TRF  |
 
   @ADO#positive @ADO#regression
   Scenario: [TC-TRADE-ALLOCATION-UI-002] Live trade splits into four sub-trades after 30/30/30/10 allocation successfully

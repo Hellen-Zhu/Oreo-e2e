@@ -16,6 +16,7 @@ Feature: Trade Cancellation API
       | FX_TRF          |
       | FX_PSCRIPT      |
       | FX_PSCRIPT_FSKO |
+      | FX_PSCRIPT_TRF  |
 
   @ADO#negative @ADO#smoke
   Scenario: [TC-TRADE-CANCELLATION-API-002] Backend rejects a cancel request submitted by a checker for FX_TRF trade
@@ -36,6 +37,7 @@ Feature: Trade Cancellation API
       | FX_TRF          |
       | FX_PSCRIPT      |
       | FX_PSCRIPT_FSKO |
+      | FX_PSCRIPT_TRF  |
 
   @ADO#negative @ADO#regression
   Scenario: [TC-TRADE-CANCELLATION-API-004] Cancellation is rejected for a dead FX_TRF trade

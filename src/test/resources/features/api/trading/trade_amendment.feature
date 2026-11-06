@@ -16,6 +16,7 @@ Feature: Trade Amendment API
       | FX_TRF          |
       | FX_PSCRIPT      |
       | FX_PSCRIPT_FSKO |
+      | FX_PSCRIPT_TRF  |
 
   @ADO#negative @ADO#regression @capability#amendment
   Scenario Outline: [TC-TRADE-AMENDMENT-<product_type>-API-002] Amendment event is rejected for a <product_type> trade already pending checker approval
@@ -29,6 +30,7 @@ Feature: Trade Amendment API
       | FX_TRF          |
       | FX_PSCRIPT      |
       | FX_PSCRIPT_FSKO |
+      | FX_PSCRIPT_TRF  |
 
   @ADO#negative @ADO#regression
   Scenario: [TC-TRADE-AMENDMENT-API-003] Amendment of a Dead FX_TRF trade is rejected with a business rule violation
