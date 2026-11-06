@@ -314,7 +314,8 @@ or with `-U`.
   run it again. A Java step marked `[method called from Java]` is used by its method: only the annotation is unused.
   Run it on the company copy before deleting anything: the public copy has fewer features and fewer steps.
 - `coverage`: prints the product x capability matrix: one row per capability, one column per product of
-  `ProductDatFiles`, each cell the product Outlines that run for that product, `API/UI` (`@wip` ones counted apart).
+  `ProductDatFiles`, each cell the product Outlines that run for that product, `API/UI`: `4/5` is 4 API cases and 5 UI
+  cases, `1/0` API cases only, `0/1` UI cases only (`@wip` ones counted apart); the report says so above the table.
   `-` is a capability the product does not support, `NONE` one it supports with no Outline running for it, `*` an
   Outline still without the product's row (`sync-examples` adds it). Below the matrix: the gaps (supported, no case,
   and `sync-examples` would not change it: a scenario to write) and the cells to sync. It writes nothing and never

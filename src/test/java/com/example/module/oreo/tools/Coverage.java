@@ -118,9 +118,12 @@ final class Coverage {
             }
         }
         StringBuilder out = new StringBuilder();
-        out.append("Coverage: product x capability, product Outlines that run (API/UI)\n\n");
+        out.append("Coverage: product x capability\n");
+        out.append("Each cell is API/UI: the number of API cases / the number of UI cases that test the capability"
+                + " for the product.\n");
+        out.append("  e.g. 4/5 = 4 API cases and 5 UI cases, 1/0 = API cases only, 0/1 = UI cases only\n\n");
         out.append(table(rows)).append('\n');
-        out.append("  a/u    API and UI Outlines that run for the product (not @wip)\n");
+        out.append("  a/u    a API cases and u UI cases run for the product (not @wip)\n");
         out.append("  ").append(NO_CASE).append("   the product supports it and no Outline runs for it\n");
         out.append("  ").append(NOT_SUPPORTED).append("      the product does not support it (ProductDatFiles)\n");
         out.append("  +Nwip  N more Outlines carry @wip\n");
