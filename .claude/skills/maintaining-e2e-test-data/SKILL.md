@@ -78,6 +78,7 @@ One `[ok]` or `[FAIL]` line per check, its problems and `[warn]` lines below it:
 | Running the compiled class directly after a change | Use the full Maven command to refresh classes and resources |
 | Stale resource message after deleting a data file | Run `mvn -Ptest-data clean process-test-classes` with the desired `exec.args` |
 | Plugin cannot be resolved | Ensure the company Maven repository provides `org.codehaus.mojo:exec-maven-plugin:3.6.4` |
+| Every run downloads dependencies the local repository has | The Genie SNAPSHOTs are checked daily and taken again when a new one is published: add `-o` (offline) or `-nsu` (no snapshot updates) to the command, or set `MAVEN_ARGS=-nsu` on the machine; never in `pom.xml` (the pipeline needs the latest). Release jars downloaded again: show the `Downloading from` lines to the user |
 | A unit test fails | Fix the code under `testdata/` (or the test, if the rule it checks changed on purpose); never `-DskipTests` to get the tool to run |
 | "No tests were executed" | The JUnit Platform has no vintage engine: add `org.junit.vintage:junit-vintage-engine` in test scope |
 | A `-D` argument unquoted in PowerShell | Quote each one whole |

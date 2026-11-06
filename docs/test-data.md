@@ -292,6 +292,15 @@ tests themselves, none of it lives under
 this profile. The company Maven repository needs `org.codehaus.mojo:exec-maven-plugin:3.6.4`.
 After deleting resource files, add `clean` before `process-test-classes` to remove stale copied files.
 
+The Genie dependencies are SNAPSHOTs, which Maven checks against the remote repository once a day and downloads again
+whenever a new one is published, even though the local repository has them. These commands read only local files, so
+run them offline once the dependencies are there: `mvn -o -Ptest-data process-test-classes "-Dexec.args=coverage"`
+(`-o`: no remote at all; a missing dependency fails with "offline mode", then run once without it), or with
+`-nsu` (no snapshot updates; a missing dependency is still downloaded). To make `-nsu` the default of your own
+machine, set the environment variable `MAVEN_ARGS=-nsu` (Maven 3.9 or later); never in `pom.xml` or a committed
+`.mvn/maven.config`, as the pipeline needs the latest SNAPSHOTs. To take a new Genie SNAPSHOT, run once without them,
+or with `-U`.
+
 - `check`: every data file loads, every case of every feature resolves, every row and event file has its feature,
   every API case has its expected file (except those tagged `@expected#none`) and every expected file its case, the rules agree with the expected files,
   every setup name used exists, the expected files resolve and are compacted (a file the compaction would still change
