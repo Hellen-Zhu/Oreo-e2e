@@ -1,3 +1,6 @@
+# Cancellation: its preconditions. The event itself uses api/trade_lifecycle_event.snippet, the checker task it creates
+# api/trade_approval_rejection.snippet.
+
 # ── Provisioning ────────────────────────────────────────────────────
 
 @Given "^maker submit triggers a Cancellation event and task stored as '([^']*)'$"
@@ -23,36 +26,3 @@
 @Given "^multiple live '([^']*)' trades have pending cancellation requests$"
     Given a '$1' trade with pending cancellation is created with trade stored as 'createdTradeId1' and task stored as 'createdTaskId1'
     And a '$1' trade with pending cancellation is created with trade stored as 'createdTradeId2' and task stored as 'createdTaskId2'
-
-# ── Build request ───────────────────────────────────────────────────
-# The Cancellation event itself (request, call, outcome) uses the shared steps of api/trade_lifecycle_event.snippet;
-# these are the checker tasks it creates.
-
-@When "^checker has valid data for cancellation approval$"
-    Given build json request with path parameter 'taskId' from stored variable 'createdTaskId' as user 'checker'
-
-@When "^checker has valid data for cancellation rejection$"
-    Given build json request with path parameter 'taskId' from stored variable 'createdTaskId' as user 'checker'
-
-@When "^maker has valid data for cancellation approval$"
-    Given build json request with path parameter 'taskId' from stored variable 'createdTaskId' as user 'maker'
-
-@When "^checker has valid data for bulk cancellation approval$"
-    Given build json request from current scenario with task ids from stored variables 'createdTaskId1' and 'createdTaskId2' as user 'checker'
-
-# ── Assertions ──────────────────────────────────────────────────────
-
-@Then "^the '([^']*)' Cancellation event is submitted for checker approval$"
-    Then response status code is '200'
-    And response matches current scenario
-
-@Then "^the trade status is updated to '([^']*)'$"
-    Then response status code is '200'
-    And response body contains a key 'data.basic.status' with value '$1'
-    And attach the response body to the report
-
-@Then "^the cancellation approval request is rejected with permission denied$"
-    Then failed to 'approve' 'cancellation' with status '403'
-
-@Then "^all cancellation tasks should be approved successfully$"
-    Then the 'bulk cancellation' should be 'executed' successfully

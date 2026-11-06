@@ -7,7 +7,7 @@ Feature: Trade Checker Approval API
   @ADO#negative @ADO#regression
   Scenario: [TC-TRADE-APPROVAL-REJECTION-API-001] Maker is blocked from self-approving a trade amendment task
     Given a live 'FX_TRF' trade with a pending Amendment exists
-    When maker has valid data for amendment approval
+    When maker has valid data for amendment self-approval
     And performs the approval for the request
     Then the amendment self-approval request is rejected with permission denied
 
@@ -97,9 +97,9 @@ Feature: Trade Checker Approval API
   @ADO#negative @ADO#regression
   Scenario: [TC-TRADE-APPROVAL-REJECTION-API-009] Maker is blocked from self-approving a FX_TRF cancellation task
     Given a live 'FX_TRF' trade with a pending Cancellation exists
-    When maker has valid data for cancellation approval
+    When maker has valid data for cancellation self-approval
     And performs the approval for the request
-    Then the cancellation approval request is rejected with permission denied
+    Then the cancellation self-approval request is rejected with permission denied
 
   @ADO#positive @ADO#regression
   Scenario: [TC-TRADE-APPROVAL-REJECTION-API-010] Checker bulk approves all pending FX_TRF cancellation tasks in one transaction

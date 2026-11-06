@@ -163,6 +163,11 @@ Feature files are business specifications: a reviewer who does not read Java mus
   `performs the 'EarlyTermination' event via api`; the outcome, `the 'EarlyTermination' event is executed successfully`,
   `... is rejected with a validation error`, `... with a business rule violation`, `... with permission denied`. Data
   and call stay two steps, as in every API feature: the data step is where two scenarios of a feature differ.
+- Checker tasks (`/checker/tasks`) use `api/trade_approval_rejection.snippet`, the task kind named in the step:
+  `checker has valid data for cancellation approval` (`trade creation`, `amendment`; `rejection`; a maker approving
+  their own task: `maker has valid data for ... self-approval`), then `performs the approval for the request`
+  (`rejection`, `bulk approval`), then `the cancellation approval request is processed successfully` or
+  `the cancellation self-approval request is rejected with permission denied`.
 - Shared outcomes: `the '<object>' should be '<action>' successfully`, `failed to '<action>' '<object>'`,
   `failed to '<action>' '<object>' with status '<status>'`. They include the status code and the strict comparison with
   the case's recorded response, so neither appears as a step of its own.

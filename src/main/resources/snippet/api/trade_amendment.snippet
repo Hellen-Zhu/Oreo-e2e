@@ -21,15 +21,6 @@
     Given build json request with path parameter 'tradeId' from stored variable 'createdTradeId' as user 'maker'
     And set request body from current scenario
 
-@When "^checker has valid data for amendment approval$"
-    Given build json request with path parameter 'taskId' from stored variable 'createdAmendTaskId' as user 'checker'
-
-@When "^checker has valid data for amendment rejection$"
-    Given build json request with path parameter 'taskId' from stored variable 'createdAmendTaskId' as user 'checker'
-
-@When "^maker has valid data for amendment approval$"
-    Given build json request with path parameter 'taskId' from stored variable 'createdAmendTaskId' as user 'maker'
-
 # ── Make api call ───────────────────────────────────────────────────
 
 @When "^performs the Trade Amendment action via api$"
@@ -58,9 +49,6 @@
 
 @Then "^the Amendment request is rejected with a conflict$"
     Then failed to 'update' 'trade' with status '409'
-
-@Then "^the amendment self-approval request is rejected with permission denied$"
-    Then failed to 'approve' 'amendment' with status '403'
 
 @Then "^the original trade fields are preserved after amendment rejection$"
     Then response matches current scenario

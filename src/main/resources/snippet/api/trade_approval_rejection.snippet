@@ -1,0 +1,53 @@
+# Checker tasks: what a maker's trade creation, amendment or lifecycle event (Cancellation) leaves for a checker,
+# approved or rejected through /checker/tasks. The task kind and the word approval / rejection / self-approval are for
+# the reader; the stored task ID picks the task, the call step picks approve or reject. A new kind of task adds its
+# name to the alternations below, not a step.
+
+# ── Provisioning ────────────────────────────────────────────────────
+
+@When "^checker (approve|reject)s the pending task$"
+    Given checker $1 a trade by stored taskId 'createdTaskId'
+
+@Given "^checker (approve|reject) a trade by stored taskId '([^']*)'$"
+    Given build json request with path parameter 'taskId' from stored variable '$2' as user 'checker'
+    When post to path '/checker/tasks/{taskId}/$1'
+    Then response status code is '200'
+
+# ── Build request ───────────────────────────────────────────────────
+
+# The task of the precondition (createdTaskId).
+@When "^(maker|checker) has (?:valid|invalid) data for (?:trade creation|cancellation) (?:approval|rejection|self-approval)$"
+    Given build json request with path parameter 'taskId' from stored variable 'createdTaskId' as user '$1'
+
+# The amendment precondition stores its task as createdAmendTaskId. Once it stores it as createdTaskId, amendment joins
+# the step above.
+@When "^(maker|checker) has (?:valid|invalid) data for amendment (?:approval|rejection|self-approval)$"
+    Given build json request with path parameter 'taskId' from stored variable 'createdAmendTaskId' as user '$1'
+
+@When "^checker has valid data for bulk cancellation approval$"
+    Given build json request from current scenario with task ids from stored variables 'createdTaskId1' and 'createdTaskId2' as user 'checker'
+
+# ── Make api call ───────────────────────────────────────────────────
+
+@When "^performs the approval for the request$"
+    When post to path '/checker/tasks/{taskId}/approve'
+    And attach the response body to the report
+
+@When "^performs the rejection for the request$"
+    When post to path '/checker/tasks/{taskId}/reject'
+    And attach the response body to the report
+
+@When "^performs the bulk approval for the request$"
+    When post to path '/checker/tasks/bulk-approve'
+    And attach the response body to the report
+
+# ── Assertions ──────────────────────────────────────────────────────
+
+@Then "^the (?:(?:trade )?creation|amendment|cancellation) (?:approval|rejection) request is processed successfully$"
+    Then the 'checker task' should be 'processed' successfully
+
+@Then "^the (?:trade creation|amendment|cancellation) self-approval request is rejected with permission denied$"
+    Then failed to 'approve' 'checker task' with status '403'
+
+@Then "^all cancellation tasks should be approved successfully$"
+    Then the 'bulk cancellation' should be 'executed' successfully
