@@ -313,11 +313,10 @@ or with `-U`.
   `<-`: such a step is called in a snippet file, but no feature reaches that snippet, so delete the first list, then
   run it again. A Java step marked `[method called from Java]` is used by its method: only the annotation is unused.
   Run it on the company copy before deleting anything: the public copy has fewer features and fewer steps.
-- `coverage`: prints the product x capability matrix: one row per capability, in the two groups, one column per
-  product of `ProductDatFiles`, each cell the layers whose cases test that capability for that product: `API+UI`,
-  `API` (API cases only), `UI` (UI cases only), `NONE` (supported, no case), `-` (not supported). `+wip`: more of its
-  cases carry `@wip` and do not run; `sync`: one of its Outlines has no row for the product yet (`sync-examples`
-  adds it). Whether one layer is enough is the layering standard's question, not this report's. Below the matrix: the gaps (supported, no case,
+- `coverage`: prints the product x capability matrix: one row per capability, one column per product of
+  `ProductDatFiles`, each cell the product Outlines that run for that product, `API/UI` (`@wip` ones counted apart).
+  `-` is a capability the product does not support, `NONE` one it supports with no Outline running for it, `*` an
+  Outline still without the product's row (`sync-examples` adds it). Below the matrix: the gaps (supported, no case,
   and `sync-examples` would not change it: a scenario to write) and the cells to sync. It writes nothing and never
   fails. Only product Outlines are counted: a Scenario with a fixed product says no capability. Whether each case has
   its data and recording is what `check` reports. Run it after `sync-examples` when a product is added, and give the

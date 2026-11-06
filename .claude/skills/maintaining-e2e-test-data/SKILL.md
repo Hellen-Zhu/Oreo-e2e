@@ -41,7 +41,7 @@ not replace it with `test` or `verify` for a data-only operation. The commands b
 | `suggest <event>` | Prints, from the event's recordings, the `dynamicFields` rules they need (values that look generated or changed since the committed recording) with the layer each belongs in, and the `expectedBase` that leaves the fewest characters; writes nothing |
 | `case <case ID>` | Prints the merged data of one case: layers, dat file, request, `dynamicFields`, `sharedFragments`, `expectedBase`, expected file and response |
 | `shared <case ID>` (or the path of its expected file; `<product_type>` in the ID: every product's case with a recording) | Makes the shared parts the case declares (`sharedFragments`) what its recording holds, then compacts every event again against them: each case still expects what it expected, the keys that differ stay beside its reference. A part the case holds as a placeholder, not an object, is kept; nothing written on a problem |
-| `coverage` | Prints the product x capability matrix of the product Outlines (per cell the layers that test it: `API+UI`, `API`, `UI`; `NONE` supported with no case, `-` not supported, `sync` a row `sync-examples` would add, `+wip` cases that do not run), then the gaps and the cells to sync; writes nothing, never fails |
+| `coverage` | Prints the product x capability matrix of the product Outlines (`API/UI` per cell; `-` not supported, `NONE` supported with no case, `*` a row `sync-examples` would add), then the gaps and the cells to sync; writes nothing, never fails |
 
 The imports of the files in `tools/` name the package of `ProductDatFiles` (`com.example.module.oreo.testdata` here): in the company copy, the project's own.
 

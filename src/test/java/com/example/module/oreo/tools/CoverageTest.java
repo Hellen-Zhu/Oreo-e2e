@@ -35,25 +35,19 @@ public class CoverageTest {
     @Test
     public void countsTheOutlinesThatRunByLayer() {
         Coverage.Cell cell = Coverage.cell(ENTRIES, Set.of(), Capability.CANCELLATION, "P1", true);
-        assertEquals("API+UI", cell.text());
-    }
-
-    @Test
-    public void aLayerWithoutCaseIsLeftOut() {
-        Coverage.Cell cell = Coverage.cell(ENTRIES, Set.of(), Capability.ALLOCATION, "P1", true);
-        assertEquals("UI", cell.text());
+        assertEquals("1/1", cell.text());
     }
 
     @Test
     public void aMissingRowIsMarkedForSyncExamples() {
         Coverage.Cell cell = Coverage.cell(ENTRIES, Set.of(), Capability.CANCELLATION, "P2", true);
-        assertEquals("API sync", cell.text());
+        assertEquals("1/0 *", cell.text());
     }
 
     @Test
     public void aWipOutlineDoesNotCountAsRunning() {
         Coverage.Cell cell = Coverage.cell(ENTRIES, WIP, Capability.ALLOCATION, "P1", true);
-        assertEquals(Coverage.NO_CASE + " +wip", cell.text());
+        assertEquals(Coverage.NO_CASE + " +1wip", cell.text());
         assertTrue(cell.gap());
     }
 
@@ -62,7 +56,7 @@ public class CoverageTest {
         List<ProductExamples.Entry> entries = List.of(outline("ui/a.feature", "TC-A-<product_type>-UI-001",
                 Capability.ALLOCATION, "P1"));
         Coverage.Cell cell = Coverage.cell(entries, Set.of(), Capability.ALLOCATION, "P2", true);
-        assertEquals(Coverage.NO_CASE + " sync", cell.text());
+        assertEquals(Coverage.NO_CASE + " *", cell.text());
         assertEquals(false, cell.gap());
     }
 
