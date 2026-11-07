@@ -59,7 +59,9 @@ One `[ok]` or `[FAIL]` line per check, its problems and `[warn]` lines below it:
 6. the expected files resolve and are compacted (warning: a file `compact` would still change);
 7. every setup name the code, snippets or features use has its `data/setup/` file, except `trade-cancellation` and `trade-amendment` (not covered yet: the user's decision, `KNOWN_MISSING`);
 8. the product Outlines' `Examples` match the registry;
-9. every product with a capability has its default dat file.
+9. every product with a capability has its default dat file;
+10. no API snippet only renames a shared outcome of `api/common_api.snippet` (its body one outcome step, or the status
+    check of a status an outcome covers, plus `response matches current scenario`): the feature calls the outcome.
 
 ## When
 

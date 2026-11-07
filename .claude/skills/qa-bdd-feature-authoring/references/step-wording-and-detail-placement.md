@@ -16,9 +16,14 @@ Concerns, in order; not every scenario needs every one:
 | Business action | lifecycle event: `And performs the 'EarlyTermination' event via api`. Other: the feature's own, e.g. `performs the Trade Amendment action via api` |
 | Outcome (response) | lifecycle event: `Then the 'EarlyTermination' event is executed successfully`; `... is rejected with a validation error` (400) / `... with permission denied` (403) / `... as not found` (404) / `... with a conflict` (409). Other: `the '<subject>' is retrieved / created / updated / ... successfully`; `the '<subject>' request is rejected with a validation error` (and the same other outcomes). The word follows the status the system answers, never a synonym |
 | Outcome (state) | `maker retrieves the trade`, then `the trade basic status is '<status>'` / `the trade basic event status is '<status>'` |
+| Outcome (trades the event created) | the event's own business sentence, e.g. `And the allocated trades carry the requested notional amounts`; the implementer builds it on `the new trades of the event have '<path>' as in the request's '<data key>'` |
 
 - The response outcomes already check the status and compare the whole response with the case's recorded file: never
-  add a step for a status code or a response field.
+  add a step for a status code or a response field. A lifecycle event's success is recorded as the trade retrieved
+  after it, so `is executed successfully` already proves the trade's new terms.
+- Never invent a synonym of an outcome (`should be retrieved`, `is accepted`, `fails with a business rule violation`)
+  or a domain step that only renames one: the subject in quotes is what varies, the outcome words do not. An outcome
+  the vocabulary lacks is listed under "New steps" for the implementer, worded like its neighbours.
 - The data and the call are two steps, so that the scenarios of one feature differ in their steps, not only in their
   titles. The event name is the `eventType` of the case data (`EarlyTermination`, `PartialNovationRemaining`); the word
   before `data` says what the case row holds: `valid`, `invalid` or `malformed` (the failure is caused by the input),

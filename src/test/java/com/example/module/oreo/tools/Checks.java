@@ -76,6 +76,8 @@ final class Checks {
                 c::productExamplesMatchTheRegistry);
         problems += c.check("every product with a capability has its dat file", null,
                 c::everyProductWithACapabilityHasItsDatFile);
+        problems += c.check("no API snippet only renames a shared outcome", null,
+                c::noApiSnippetOnlyRenamesASharedOutcome);
         System.out.println(problems == 0 ? "No problem." : problems + " problem(s).");
         return problems;
     }
@@ -276,6 +278,23 @@ final class Checks {
         if (!Files.isDirectory(dir)) return List.of();
         try (Stream<Path> list = Files.list(dir)) {
             return list.filter(p -> p.getFileName().toString().endsWith(".json")).sorted().toList();
+        }
+    }
+
+    /** The outcome wording is the shared vocabulary of {@code api/common_api.snippet}, not a domain synonym. */
+    private void noApiSnippetOnlyRenamesASharedOutcome(Result result) throws IOException {
+        List<UnusedSteps.Definition> snippets = new ArrayList<>();
+        for (Path file : files(project.resolve("src/main/resources/snippet/api"), ".snippet")) {
+            String name = project.relativize(file).toString().replace('\\', '/');
+            snippets.addAll(UnusedSteps.snippets(name, Files.readAllLines(file, StandardCharsets.UTF_8)));
+        }
+        if (UnusedSteps.sharedOutcomes(snippets).isEmpty()) {
+            result.errors.add("no shared outcome found in snippet/api/common_api.snippet");
+            return;
+        }
+        for (UnusedSteps.Definition d : UnusedSteps.renamingWrappers(snippets)) {
+            result.errors.add(d.file() + ":" + d.line() + ": '" + d.pattern().pattern() + "' only renames a shared"
+                    + " outcome of common_api.snippet: call that outcome in the feature and delete this step");
         }
     }
 

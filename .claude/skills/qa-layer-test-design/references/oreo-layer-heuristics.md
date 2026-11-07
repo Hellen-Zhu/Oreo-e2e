@@ -57,7 +57,7 @@ unchanged when that matters.
 ## Mocks and controlled dependencies
 
 The risk engine and other external dependencies may be controlled (setup files such as `risk-calc-success-mock`, the
-`oreo.risk.engine.mode` property). That is fine for dependencies that are not the target. Never use a mocked response
+`risk-metrics-success-mock` of the trade detail page, the `oreo.risk.engine.mode` property). That is fine for dependencies that are not the target. Never use a mocked response
 to prove authorization, persistence, state or audit.
 
 ## Re-routing examples

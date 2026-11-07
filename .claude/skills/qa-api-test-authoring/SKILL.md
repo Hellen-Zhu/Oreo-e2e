@@ -58,6 +58,9 @@ repair round the failure output and `revisionInstructions`.
      `api/common.json`.
    - A rejected case: a row with the `request` change, plus `"dynamicFields": null` when `defaults` has rules for
      success fields the error response lacks.
+   - A lifecycle event's success (`the '<event>' event is executed successfully`) records the trade retrieved after
+     the event, not the event's response: its row says `"use": ["trade-response-parts", "retrieved-trade"]`. Its
+     rejections record the event's response and use neither block.
    - A precondition payload: reuse or `extends` a `data/setup/*.json` before adding one.
    - Dates as `${date:T+N}`; never `basic.productId`, a `datFile` path or a real ID.
    - A case whose evidence is the database or audit, not the response: tag it `@expected#none` (feature authors' tag;
@@ -68,6 +71,17 @@ repair round the failure output and `revisionInstructions`.
    ctx keys camelCase; reuse `ApiRequestSteps` (`build json request with body from current scenario ...`) instead of
    new request builders. A builder that is still needed starts with `start a new api request as user '<user>'`, never
    with `start building a new request` alone (it would miss the required headers).
+   - **Response outcomes are the shared vocabulary of `api/common_api.snippet`**: `the '<subject>' is retrieved /
+     created / updated / approved / processed / executed successfully` (200) and `the '<subject>' request is rejected
+     with a validation error` (400) / `with permission denied` (403) / `as not found` (404) / `with a conflict` (409).
+     Each checks the status and compares the response with the recording. Never write a step whose body is only one
+     of them (a renaming wrapper: `check` reports it); a status the vocabulary lacks (201, 422) is added there, to
+     every phrase's pattern, never in a domain snippet. A domain `@Then` exists only for evidence beyond the response
+     (a stored value, a read-back, the trades an event created) and calls the vocabulary for its response part.
+   - **Trades a lifecycle event created** (allocation, novation, ...) are checked against the request, not recorded:
+     `the new trades of the event have '<response path>' as in the request's '<data key>'`, wrapped in a business
+     `@Then` of the event's own snippet (`the allocated trades carry the requested notional amounts` in
+     `api/trade_allocation.snippet`). It follows the event's success step, which stores `childTradeId1..n`.
 5. **Java** only for `NEW_STEP`: the domain's existing `*ApiSteps` class first; POJO, `RestServiceResolver.from(scenario)`
    in `@Before`, no `@Component`, no inheritance, no RestAssured / other HTTP clients, no `Thread.sleep()`, no
    credentials or URLs; `ctx.write()` for useful report values.
@@ -76,7 +90,7 @@ repair round the failure output and `revisionInstructions`.
 ## Recorded responses (what the first run does)
 
 The first run of a new API case writes `data/api/expected/<event>/<case ID>.json` and fails once: expected, not a
-defect. After it: `mvn -Ptest-data process-test-classes "-Dexec.args=suggest <event>"` lists the values that look generated and where each rule goes; run
+defect. For a lifecycle event's success that file is the retrieved trade (`retrieved-trade` above). After it: `mvn -Ptest-data process-test-classes "-Dexec.args=suggest <event>"` lists the values that look generated and where each rule goes; run
 again for the values a pattern misses (a value that changed between runs); each dynamic value gets a `dynamicFields`
 rule in the event file (`type`, `type-tree`, `regex:`, `var:`, `ignore` last), record again with
 `OREO_EXPECTED=update`, then `mvn -Ptest-data process-test-classes "-Dexec.args=compact <event>"`. Never mask a business message or value to make a case pass. The command reviews every

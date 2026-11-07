@@ -53,9 +53,18 @@ fi
   echo "# $title"
   echo ""
   echo "> Generated from \`${dir#"$root"/}\` by gen-snippet-index.sh; do not edit."
-  echo "> Each line is a regular expression: \`([^']*)\` is a parameter, \`(a|b)\` a choice."
+  echo "> Each line is a regular expression: \`([^']*)\` is a parameter, \`(a|b)\` a choice, \`(?:a|b)\` a choice of words."
+  if [ "$mode" = api ]; then
+    echo ">"
+    echo "> **Shared steps first.** The response outcomes of \`common_api.snippet\` are the only outcome wording:"
+    echo "> \`is retrieved / created / updated / approved / processed / executed successfully\` (200),"
+    echo "> \`is rejected with a validation error\` (400) / \`with permission denied\` (403) / \`as not found\` (404) /"
+    echo "> \`with a conflict\` (409). Older domain steps below that say \`should be ... successfully\` are not a model."
+  fi
 
-  find "$dir" -name "$pattern" | LC_ALL=C sort | while IFS= read -r file; do
+  # common_*.snippet first (shared vocabulary), then the rest, each group sorted
+  { find "$dir" -name "$pattern" -name 'common_*' | LC_ALL=C sort
+    find "$dir" -name "$pattern" ! -name 'common_*' | LC_ALL=C sort; } | while IFS= read -r file; do
     steps="$(sed -n -E "$extract" "$file" | sed -E 's/\$$//')"
     [ -n "$steps" ] || continue
     echo ""

@@ -75,6 +75,14 @@ From `test-agent`: the feature file, the case IDs to implement (only the new or 
    (`assert that '<element>' is eventually visible / hidden / enabled / disabled`, `... eventually has value '...'`),
    Playwright auto-wait, or the response helpers (`ctx.clickAndWaitForResponse(...)`) for server-driven refreshes.
    A page being ready (after login, after navigation) is an element becoming visible, never a request it sends.
+   An action that makes the page call the risk engine (save, book, an event's confirm, opening the trade detail page,
+   which loads `/trades/{id}/risk-metrics`) goes through `ctx.clickUsingRiskEngineMode`,
+   `ctx.doubleClickUsingRiskEngineMode` or `ctx.navigateUsingRiskEngineMode` with a `List<RiskCall>`: in `MOCK` mode
+   each call with a mock name is answered from `data/setup/<name>.json` (`risk-calc-success-mock`,
+   `risk-metrics-success-mock`), a `null` mock only waits; in `REAL` mode they are only awaited, in order. Paths
+   come from `TradeApiClient` (`calculateRiskPath`, `riskMetricsPath`), never a literal in the step. Reuse
+   `TradePortalSteps.doubleClickToViewTradeDetail` and `TradeDetailSteps.navigateToTradeDetails` to open the detail
+   page instead of a plain click or navigation.
    Java glue waits through the Context (`ctx.assertEventuallyContains(...)`, `ctx.waitForVisible(...)`), never with
    `PlaywrightAssertions` or `Locator.waitFor` options; a missing wait goes into the `playwright` package first.
 6. **Data**: follow `.claude/skills/qa-api-test-authoring/references/test-data-decisions.md` sections 1-4 (UI data

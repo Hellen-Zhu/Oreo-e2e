@@ -322,7 +322,8 @@ or with `-U`.
   every API case has its expected file (except those tagged `@expected#none`) and every expected file its case, the rules agree with the expected files,
   every setup name used exists, the expected files resolve and are compacted (a file the compaction would still change
   is a warning), the product Outlines' `Examples` match the registry, every product with a capability has its dat
-  file. Exit code 1 on a problem. Run it before committing a change to the data, the features or the registry.
+  file, no API snippet only renames a shared outcome of `common_api.snippet` (a step whose body is one outcome, or
+  the status check of a status an outcome covers, plus the recording check). Exit code 1 on a problem. Run it before committing a change to the data, the features or the registry.
 - `sync-examples`: writes the product Outlines' `Examples` from `ProductDatFiles` ("Products and capabilities").
 - `unused-steps`: lists the snippets and Java steps no feature reaches, walking from the feature steps through the
   snippet bodies, and the steps nothing here defines (Genie's built-ins, or a step that is missing). It writes nothing

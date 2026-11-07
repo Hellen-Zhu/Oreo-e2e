@@ -43,7 +43,7 @@ Feature: Trade Blotter API
     Given a blotter was created via api
     When maker have valid data to update blotter
     And update the saved blotter to public
-    Then marketplace blotter was updated successfully
+    Then the 'marketplace blotter' is updated successfully
 
   @ADO#positive @ADO#regression
   Scenario: [TC-TRADE-BLOTTER-API-007] Should able to retrieve all blotters with correct total count

@@ -202,6 +202,46 @@ final class UnusedSteps {
         return cells;
     }
 
+    private static final String RECORDING_CHECK = "response matches current scenario";
+    private static final Pattern STATUS_CHECK = Pattern.compile("^response status code is '(\\d{3})'$");
+
+    /** The shared response outcomes: the steps of {@code common_api.snippet} that end with the recording check. */
+    static List<Definition> sharedOutcomes(List<Definition> snippets) {
+        return snippets.stream()
+                .filter(d -> d.file().endsWith("common_api.snippet"))
+                .filter(d -> !d.body().isEmpty() && d.body().get(d.body().size() - 1).equals(RECORDING_CHECK))
+                .toList();
+    }
+
+    /**
+     * The snippets that only rename a shared outcome: without the recording check, their body is one step, and that
+     * step is a shared outcome, or a status check of a status a shared outcome covers. A feature calls the shared
+     * outcome instead ({@code check}). A status no shared outcome covers yet (201) is not flagged.
+     */
+    static List<Definition> renamingWrappers(List<Definition> snippets) {
+        List<Definition> outcomes = sharedOutcomes(snippets);
+        Set<String> covered = new HashSet<>();
+        outcomes.forEach(o -> o.body().forEach(step -> {
+            Matcher status = STATUS_CHECK.matcher(step);
+            if (status.matches()) covered.add(status.group(1));
+        }));
+        return snippets.stream()
+                .filter(d -> !outcomes.contains(d))
+                .filter(d -> {
+                    List<String> rest = d.body().stream().filter(s -> !s.equals(RECORDING_CHECK)).toList();
+                    if (rest.size() != 1) return false;
+                    String step = rest.get(0);
+                    return outcomes.stream().anyMatch(o -> o.pattern().matcher(step).matches())
+                            || (d.body().contains(RECORDING_CHECK) && coveredStatus(step, covered));
+                })
+                .toList();
+    }
+
+    private static boolean coveredStatus(String step, Set<String> covered) {
+        Matcher status = STATUS_CHECK.matcher(step);
+        return status.matches() && covered.contains(status.group(1));
+    }
+
     static List<Definition> snippets(String file, List<String> lines) {
         List<Definition> definitions = new ArrayList<>();
         Pattern pattern = null;

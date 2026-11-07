@@ -43,6 +43,36 @@ public class UnusedStepsTest {
     }
 
     @Test
+    public void findsTheSnippetsThatOnlyRenameASharedOutcome() {
+        List<UnusedSteps.Definition> all = new ArrayList<>(UnusedSteps.snippets("api/common_api.snippet", List.of(
+                "@Then \"^the '([^']*)' is retrieved successfully$\"",
+                "    Then response status code is '200'",
+                "    And response matches current scenario")));
+        all.addAll(UnusedSteps.snippets("api/reason.snippet", List.of(
+                "@Then \"^the reasons should be retrieved$\"",
+                "    Then the 'reasons' is retrieved successfully",
+                "",
+                "@Then \"^the reason is accepted$\"",
+                "    Then response status code is '200'",
+                "    And response matches current scenario",
+                "",
+                "@Then \"^the reason is stored$\"",
+                "    Then the 'reason' is retrieved successfully",
+                "    And store response field 'id' as 'reasonId'",
+                "",
+                "@Then \"^the status is ok$\"",
+                "    Then response status code is '200'",
+                "",
+                "@Then \"^the reason is published$\"",
+                "    Then response status code is '201'",
+                "    And response matches current scenario")));
+        assertEquals(List.of("api/common_api.snippet:1"),
+                UnusedSteps.sharedOutcomes(all).stream().map(d -> d.file() + ":" + d.line()).toList());
+        assertEquals(List.of("api/reason.snippet:1", "api/reason.snippet:4"),
+                UnusedSteps.renamingWrappers(all).stream().map(d -> d.file() + ":" + d.line()).toList());
+    }
+
+    @Test
     public void readsEveryAnnotationAndNoComment() {
         List<UnusedSteps.Definition> steps = UnusedSteps.javaSteps("Steps.java", JAVA);
         assertEquals(List.of("clickBook", "dead", "twoAnnotations", "twoAnnotations"),

@@ -33,8 +33,9 @@ Ask in order; stop at the first yes.
 A case that runs on the defaults has **no row**. One case matches at most one row. The row's `id` is the feature's
 case ID as written: an Outline's `TC-TRADE-CREATION-<product_type>-API-002` is one row for every product.
 
-Example, `data/api/trade_early_termination.json`: the event body is in `defaults`; API-001 has a row only for its
-masking rules; API-002 (malformed) a row that empties `data`; API-003 (duplicate) a row with a message rule.
+Example, `data/api/trade_early_termination.json`: the event body is in `defaults`; API-001 (success) has a row only
+to `use` the retrieved-trade blocks (section 5); API-002 (malformed) a row that empties `data`; API-003 (duplicate) a
+row with a message rule.
 
 ## 3. Merge traps
 
@@ -94,6 +95,12 @@ event's response: `"sharedFragments": { "basic": "data.trade.basic", "instrument
 follow the path. The compaction keeps the part once per product in `expected/_shared/`, taken from the events of
 `sharedSources` (`api/common.json`, `trade_creation`) before any other. A case whose response has no such part (a
 rejected request) says `"sharedFragments": null`, and has none of the parts' rules. See `docs/test-data.md`, "Shared parts".
+
+**`retrieved-trade`** (lifecycle events): a successful event is recorded as the trade retrieved after it, not as the
+event's response. The positive row says `"use": ["trade-response-parts", "retrieved-trade"]`: the block gives the
+retrieved trade's part paths (`data.trade.basic`, `data.trade.instrument`) and masks `data.trade.id`. Other values
+that change between runs are added to the row after the first recording. Rejected rows of the event use neither block.
+The trades an event creates are not recorded: a step compares them with the request (`qa-api-test-authoring`, step 4).
 
 A case whose evidence is the database or audit, not the response, carries `@expected#none` and has no expected file.
 

@@ -7,7 +7,7 @@ Feature: Refdata Sync Management API
   @ADO#positive
   Scenario Outline: [TC-REFDATA-SYNC-MANAGEMENT-API-<case>] <dataset> manual sync request is accepted successfully
     When triggers reference data sync
-    Then the reference data sync should be accepted successfully
+    Then the 'reference data sync' request is processed successfully
 
     Examples:
       | case | dataset      |
