@@ -196,25 +196,22 @@ public final class PlaywrightServiceResolver {
          * MOCK answers each URL that has a setup file with it until all are answered.
          */
         public void clickUsingRiskEngineMode(String locatorKey, List<RiskCall> riskCalls) {
-            usingRiskEngineMode("clicking '" + locatorKey + "'", () -> service.getLocator(locatorKey).click(),
-                    riskCalls);
+            usingRiskEngineMode(() -> service.getLocator(locatorKey).click(), riskCalls);
         }
 
         /** {@link #clickUsingRiskEngineMode(String, List)} with a double click (a blotter row opening its trade). */
         public void doubleClickUsingRiskEngineMode(String locatorKey, List<RiskCall> riskCalls) {
-            usingRiskEngineMode("double-clicking '" + locatorKey + "'", () -> service.getLocator(locatorKey).dblclick(),
-                    riskCalls);
+            usingRiskEngineMode(() -> service.getLocator(locatorKey).dblclick(), riskCalls);
         }
 
         /** {@link #clickUsingRiskEngineMode(String, List)} for {@link #navigateToPath}{@code (path)}. */
         public void navigateUsingRiskEngineMode(String path, List<RiskCall> riskCalls) {
-            usingRiskEngineMode("navigating to '" + path + "'", () -> navigateToPath(path), riskCalls);
+            usingRiskEngineMode(() -> navigateToPath(path), riskCalls);
         }
 
-        private void usingRiskEngineMode(String what, Runnable action, List<RiskCall> riskCalls) {
+        private void usingRiskEngineMode(Runnable action, List<RiskCall> riskCalls) {
             OreoModuleConfiguration.RiskEngineMode mode = riskEngineMode();
-            log.info("[PlaywrightServiceResolver] {} using configured risk engine mode='{}', calls={}",
-                    what, mode, riskCalls);
+            log.info("[PlaywrightServiceResolver] risk engine mode='{}', calls={}", mode, riskCalls);
             ResponseWaiter.Call[] calls = riskCalls.stream()
                     .map(c -> new ResponseWaiter.Call(c.httpMethod(), c.urlFragment()))
                     .toArray(ResponseWaiter.Call[]::new);
