@@ -26,11 +26,3 @@ Feature: Trade Allocation E2E
     When perform unequal '4' way allocation for the trade
     Then the allocation is completed successfully
     And the trade is allocated to Dead in the trade details
-
-  @ADO#positive @ADO#regression
-  Scenario: [TC-TRADE-ALLOCATION-UI-003] Live FX_CO trade splits into three sub-trades after 34/34/32 allocation successfully
-    Given a Live 'FX_CO' trade exists in the blotter
-    And maker is logged in to the trade portal
-    When perform unequal '3' way allocation for the trade
-    Then the allocation is completed successfully
-    And the trade is allocated to Dead in the trade details

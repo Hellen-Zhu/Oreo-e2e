@@ -86,7 +86,7 @@ public class TradeLifecycleEventSteps {
      * case data {@code subTrades}: the item's {@code counterpartyName} is selected and its {@code percentage} typed,
      * each when the item has it. The report shows each row.
      *
-     * <pre>And user fills 3 way sub-trade allocation info</pre>
+     * <pre>And user fills 2 way sub-trade allocation info</pre>
      */
     @When("^user fills (\\d+) way sub-trade allocation info$")
     public void fillSubTradeRows(int legs) {

@@ -1,11 +1,5 @@
-@When "^perform equal '(\d+)' way allocation for the trade$"
-    When opens lifecycle action 'allocation' for current trade
-    And component allocation dialog enters split number '$1'
-    And user fills $1 way sub-trade allocation info
-    And component allocation dialog total pct value is 'Total: 100.00% ✓'
-    And submits '$1' way allocation event and waits for allocation response
-
-@When "^perform unequal '(\d+)' way allocation for the trade$"
+# Equal or unequal is the case's subTrades; the steps are the same.
+@When "^perform (?:equal|unequal) '(\d+)' way allocation for the trade$"
     When opens lifecycle action 'allocation' for current trade
     And component allocation dialog enters split number '$1'
     And user fills $1 way sub-trade allocation info
