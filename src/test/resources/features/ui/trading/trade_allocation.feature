@@ -8,7 +8,7 @@ Feature: Trade Allocation E2E
   Scenario Outline: [TC-TRADE-ALLOCATION-<product_type>-UI-001] Live <product_type> trade splits into two equal sub-trades after 50/50 allocation
     Given a Live '<product_type>' trade exists in the blotter
     And maker is logged in to the trade portal
-    When perform equal '2' way allocation for the trade
+    When perform equal allocation for the trade
     Then the allocation is completed successfully
     And the trade is allocated to Dead in the trade details
 
@@ -23,6 +23,6 @@ Feature: Trade Allocation E2E
   Scenario: [TC-TRADE-ALLOCATION-UI-002] Live trade splits into four sub-trades after 30/30/30/10 allocation successfully
     Given a Live 'FX_TRF' trade exists in the blotter
     And maker is logged in to the trade portal
-    When perform unequal '4' way allocation for the trade
+    When perform unequal allocation for the trade
     Then the allocation is completed successfully
     And the trade is allocated to Dead in the trade details

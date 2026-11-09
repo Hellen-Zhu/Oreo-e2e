@@ -82,15 +82,16 @@ public class TradeLifecycleEventSteps {
     }
 
     /**
-     * Fills the first {@code legs} sub-trade rows of the allocation dialog, which the split number has made, from the
-     * case data {@code subTrades}: the item's {@code counterpartyName} is selected and its {@code percentage} typed,
-     * each when the item has it. The report shows each row.
-     *
-     * <pre>And user fills 2 way sub-trade allocation info</pre>
+     * Splits the allocation dialog into the case's sub-trades ({@code subTrades} of its data): types their number as
+     * the split number, then fills the rows it made, one per item: the item's {@code counterpartyName} is selected
+     * and its {@code percentage} typed, each when the item has it. The report shows each row.
      */
-    @When("^user fills (\\d+) way sub-trade allocation info$")
-    public void fillSubTradeRows(int legs) {
-        JsonNode subTrades = caseSubTrades(legs);
+    @When("^user splits the allocation into the sub-trades of the case$")
+    public void fillSubTradeRows() {
+        JsonNode subTrades = caseSubTrades();
+        int legs = subTrades.size();
+        ctx.innerInput("allocation_dialog.number_split_input").fill(String.valueOf(legs));
+        ctx.write("Split into " + legs + " sub-trades");
         Locator counterparties = ctx.service().getLocator("allocation_dialog.subtrade_counterparty_select");
         Locator percentages = ctx.service().getLocator("allocation_dialog.subtrade_percentage_input");
         for (int i = 0; i < legs; i++) {
@@ -107,12 +108,12 @@ public class TradeLifecycleEventSteps {
         }
     }
 
-    /** The case's {@code subTrades}, which must have at least {@code legs} items. */
-    private JsonNode caseSubTrades(int legs) {
+    /** The case's {@code subTrades}: one item per sub-trade, at least two. */
+    private JsonNode caseSubTrades() {
         JsonNode subTrades = ctx.find("_tc.request.subTrades");
-        if (subTrades == null || !subTrades.isArray() || subTrades.size() < legs) {
-            throw new AssertionError("Case " + ctx.find("_tc.key") + " needs at least " + legs
-                    + " items in its 'subTrades' for a " + legs + "-way allocation, has: " + subTrades);
+        if (subTrades == null || !subTrades.isArray() || subTrades.size() < 2) {
+            throw new AssertionError("Case " + ctx.find("_tc.key") + " needs its 'subTrades' in its test data,"
+                    + " one item per sub-trade (at least two), has: " + subTrades);
         }
         return subTrades;
     }
@@ -122,13 +123,14 @@ public class TradeLifecycleEventSteps {
     }
 
     /**
-     * Clicks Confirm in the allocation form split into {@code legs} sub-trades and waits for
+     * Clicks Confirm in the allocation form split into the case's sub-trades and waits for
      * {@code calculate-allocation-risk}, then calculate-risk. The page rejects an allocation risk whose legs are not
      * those of the form ("Risk calculation failed"), so MOCK answers with the fixed answer of that many legs: setup
-     * {@code risk-calc-allocation-<legs>-legs-success-mock}.
+     * {@code risk-calc-allocation-<legs>-legs-success-mock}, which must exist for the case's number of sub-trades.
      */
-    @When("^confirm '(\\d+)' way allocation form using configured risk engine mode for trade stored as '([^']*)'$")
-    public void confirmAllocationFormUsingConfiguredRiskEngineMode(int legs, String ctxKey) {
+    @When("^confirm allocation form using configured risk engine mode for trade stored as '([^']*)'$")
+    public void confirmAllocationFormUsingConfiguredRiskEngineMode(String ctxKey) {
+        int legs = caseSubTrades().size();
         String tradeId = ctx.get(ctxKey);
         ctx.clickUsingRiskEngineMode("dynamic_action.confirm_btn", List.of(
                 new RiskCall(TradeApiClient.calculateAllocationRiskPath(tradeId),

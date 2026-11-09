@@ -1,8 +1,4 @@
 # ── COMPONENT: ALLOCATION DIALOG ────────────────────────────────────
-@When "^component allocation dialog enters split number '([^']*)'$"
-    When type value '$1' into 'allocation_dialog.number_split_input'
-
-
 @When "^component allocation dialog enters percentage '([^']*)' and clicks allocate$"
     When type value '$1' into 'allocation_dialog.percentage_input'
     And click 'allocation_dialog.allocate_btn'
