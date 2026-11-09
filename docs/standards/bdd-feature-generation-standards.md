@@ -185,7 +185,8 @@ Feature files are business specifications: a reviewer who does not read Java mus
 - Login: `maker is logged in to the trade portal` (also `checker`, `admin`, `user`). **Role names appear only in login
   steps**; other UI steps are role-agnostic and act as the last logged-in user. A second login switches the actor.
 - Preconditions: `a Live '<product_type>' trade exists in the blotter` (also `Draft Pending Approval`, `Dead`,
-  `Draft`). They provision through the API and neither log in nor navigate.
+  `Draft`, `saved Draft`: a Draft is a live trade whose cancellation was rejected, a saved Draft was saved and never
+  submitted). They provision through the API and neither log in nor navigate.
 - One step = one user intent or one business-visible assertion: `creates a new '<product_type>' trade`,
   `the trade has status 'Live' and event status 'New' in the blotter`.
 - Outcome wording: `completed successfully` (lifecycle event), `approved successfully` / `rejected successfully`

@@ -40,7 +40,7 @@ Concerns, in order; not every scenario needs every one:
 
 | Concern | Existing shape |
 |---|---|
-| Precondition | `Given a Live '<product_type>' trade exists in the blotter` (also `Draft`, `Dead`, `Draft Pending Approval`); provisions through the API, does not log in or navigate |
+| Precondition | `Given a Live '<product_type>' trade exists in the blotter` (also `Draft`, `Dead`, `Draft Pending Approval`, `saved Draft`: never submitted, unlike `Draft`); provisions through the API, does not log in or navigate |
 | Actor | `And maker is logged in to the trade portal` (`checker`, `admin`, `user`); a second login switches the actor |
 | Business action | `When perform the Early Termination event on the '<product_type>' trade` |
 | Visible outcome | `Then the early termination is completed successfully`, `And the trade is closed as Terminated`, `the trade has status 'Live' and event status 'New' in the blotter` |

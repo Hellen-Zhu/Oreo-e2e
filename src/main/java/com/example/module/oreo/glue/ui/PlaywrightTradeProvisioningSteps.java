@@ -27,10 +27,12 @@ public class PlaywrightTradeProvisioningSteps {
         this.helper = RestApiUtil.helperFromScenario(scenario);
     }
 
-    @Given("^a draft new '([^']*)' trade is provisioned via playwright api$")
+    /** Saved by the maker, not submitted: a draft with no checker task. */
+    @Given("^a saved Draft '([^']*)' trade exists in the blotter$")
     public void provisionDraftTrade(String product) throws Exception {
         ProductDatFiles p = composition(product);
-        store("createdTradeId", "createdTaskId", TradeApiClient.provisionDraftTrade(helper, "trade-create", p, p.path()));
+        store("createdTradeId", "createdTaskId",
+                TradeApiClient.provisionDraftTrade(helper, "trade-create", p, p.path(ctx.find("_tc.datFile"))));
     }
 
     /** Submitted by the maker: a trade pending the checker's approval. */
