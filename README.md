@@ -37,7 +37,9 @@ This check does not require a browser or a test environment:
 mvn -Ptest-data process-test-classes
 ```
 
-It runs the test-data unit tests, then `TestDataTool check`. There is no `TestDataValidationTest` any more.
+It runs `CapabilityTest`, then `TestDataTool check`. The test data code and `TestDataTool` come from the library
+`com.example.oreo:oreo-test-data` (repository `oreo-test-data`): install it once with `mvn install` in its clone, or take
+it from the team's Maven repository once it is deployed there.
 
 ### Run the configured Genie runner
 
@@ -126,15 +128,18 @@ Step-by-step procedures, with the commands, in [docs/test-data.md](docs/test-dat
 src/main/java/com/example/module/oreo/
   glue/hooks, glue/api, glue/ui       step definitions and hooks
   playwright/                         the UI context of the steps (PlaywrightServiceResolver) and its helpers
-  testdata/                           data loading, products (ProductDatFiles, Capability), recorded responses
+  testdata/                           the product registry (ProductDatFiles, Capability) for the oreo-test-data library
+src/main/resources/META-INF/services/
+  com.example.testdata.ProductRegistry  names ProductDatFiles.Registry
 src/main/resources/snippet/
   api/, ui/{flows,pages,components}/  reusable step sequences
 src/test/java/com/example/module/oreo/
   OreoTest                            the runner
-  testdata/*Test, tools/              unit tests of the data code; the offline tool TestDataTool
+  testdata/CapabilityTest             unit test of the product registry
 src/test/resources/
   features/{api,ui}/<domain>/         feature files
   data/{api,ui,setup,dat}/            test data, recorded responses, dat files
+  test-data.properties                settings of the oreo-test-data library (TestDataTool check)
   elements/{pages,components}/        element repository
 ```
 
@@ -159,7 +164,7 @@ src/test/resources/
   `META-INF/services/com.example.genie.module.GenieModule`, and the dat files
   `data/dat/{FX_TRF,FX_CO,FX_FSB,FX_PSCRIPT_TRF}`.
 - Missing: `qa.properties` and the other environments' properties; the setup files `trade-cancellation` and
-  `trade-amendment` (`KNOWN_MISSING` in `tools/Checks.java`).
+  `trade-amendment` (`check.knownMissingSetups` in `test-data.properties`).
 - Event data files exist for API `trade_creation`, `trade_early_termination`, `trade_allocation`,
   `refdata_sync_management`, `risk_metric_retrieval` and UI `trade_creation`, `trade_early_termination`,
   `trade_novation_remaining`; the other features' cases run without case data until theirs are written.

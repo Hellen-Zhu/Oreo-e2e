@@ -8,8 +8,8 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.example.genie.module.rest.service.RequestResponseHelper;
 import com.example.module.oreo.config.TestUser;
 import com.example.module.oreo.testdata.ProductDatFiles;
-import com.example.module.oreo.testdata.TestData;
-import com.example.module.oreo.testdata.Json;
+import com.example.testdata.TestData;
+import com.example.testdata.Json;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

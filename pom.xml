@@ -19,6 +19,7 @@
         <hamcrest.version>3.0</hamcrest.version>
         <junit.version>4.13.2</junit.version>
         <postgresql.version>42.7.3</postgresql.version>
+        <oreo.test-data.version>1.0.0-SNAPSHOT</oreo.test-data.version>
 
         <!-- ── Plugin versions ── -->
         <surefire.plugin.version>3.2.5</surefire.plugin.version>
@@ -60,6 +61,13 @@
     </dependencyManagement>
 
     <dependencies>
+        <!-- The test data library: case data, setup data, recorded responses, and TestDataTool (check,
+             sync-examples, compact, coverage). Its product registry is ProductDatFiles (META-INF/services). -->
+        <dependency>
+            <groupId>com.example.oreo</groupId>
+            <artifactId>oreo-test-data</artifactId>
+            <version>${oreo.test-data.version}</version>
+        </dependency>
         <!-- ── Logging ── -->
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
@@ -169,14 +177,14 @@
                         <PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD>1</PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD>
                     </environmentVariables>
                     <!-- A plain mvn test (the pipeline) runs the Cucumber suite (OreoTest) only, not the unit tests
-                         of the test data code: those run first in every mvn -Ptest-data command (the profile's
-                         test-data-unit-tests execution), before TestDataTool.
+                         of the product registry (CapabilityTest): those run first in every mvn -Ptest-data command
+                         (the profile's test-data-unit-tests execution), before TestDataTool. The test data code has
+                         its own tests in the oreo-test-data library.
                          The same patterns as the profile's includes, so a new unit test needs no line here.
                          **/*$* is surefire's default exclude (inner classes), which a list of excludes replaces. -->
                     <excludes>
                         <exclude>**/*$*</exclude>
                         <exclude>**/testdata/*Test.java</exclude>
-                        <exclude>**/tools/*Test.java</exclude>
                     </excludes>
                 </configuration>
             </plugin>
@@ -208,9 +216,8 @@
             </properties>
             <build>
                 <plugins>
-                    <!-- The unit tests of the code that decides what a case sends and what its response is compared
-                         with, run before TestDataTool in the same phase (surefire is declared before exec, so it runs
-                         first): a failure stops Maven before the tool reads any data. failIfNoTests fails the build
+                    <!-- The unit tests of the product registry (ProductDatFiles, Capability), run before TestDataTool
+                         in the same phase (surefire is declared before exec, so it runs first): a failure stops Maven before the tool reads any data. failIfNoTests fails the build
                          when none ran (JUnit 4 tests on a JUnit Platform without the vintage engine).
                          -DskipTests skips them. -->
                     <plugin>
@@ -224,7 +231,6 @@
                                 <configuration>
                                     <includes>
                                         <include>**/testdata/*Test.java</include>
-                                        <include>**/tools/*Test.java</include>
                                     </includes>
                                     <excludes combine.self="override">
                                         <exclude>**/*$*</exclude>
@@ -244,7 +250,7 @@
                                 <phase>process-test-classes</phase>
                                 <goals><goal>java</goal></goals>
                                 <configuration>
-                                    <mainClass>com.example.module.oreo.tools.TestDataTool</mainClass>
+                                    <mainClass>com.example.testdata.tools.TestDataTool</mainClass>
                                     <classpathScope>test</classpathScope>
                                     <commandlineArgs>${exec.args}</commandlineArgs>
                                 </configuration>

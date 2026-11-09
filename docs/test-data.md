@@ -290,8 +290,19 @@ part's events together, then `compact all`.
 
 ## Commands
 
-The offline tool is normal test-source code in `src/test/java/com/example/module/oreo/tools/`, entry point
-`TestDataTool.java`.
+The offline tool and the code that loads the data are the library `com.example.oreo:oreo-test-data` (its own
+repository, a dependency in `pom.xml`), entry point `com.example.testdata.tools.TestDataTool`. oreo-e2e gives it two
+things:
+
+- the product registry: `ProductDatFiles` implements the library's `Product`, and its nested `Registry` is named in
+  `src/main/resources/META-INF/services/com.example.testdata.ProductRegistry` (found through `ServiceLoader`); a new
+  product or capability changes only oreo-e2e;
+- `src/test/resources/test-data.properties`: `check.knownMissingSetups` (setup files named but not written yet, the
+  user's decision) and `check.setupNameCalls` (the Java methods whose string arguments are setup names).
+
+A change to a check, a command or the data format is made in the library, released, and taken here by raising
+`oreo.test-data.version` in `pom.xml`. Before the first build on a machine, the library must be in its Maven
+repository: `mvn install` in a clone of `oreo-test-data`, or the team's Maven repository once it is deployed there.
 The `test-data` Maven profile compiles it, refreshes test resources and supplies dependencies automatically.
 The Skill contains usage guidance only. From the project root on the company machine, use the same commands
 in PowerShell, macOS and Linux (each line is a separate operation):
@@ -309,11 +320,9 @@ mvn -Ptest-data process-test-classes "-Dexec.args=coverage"
 mvn -Ptest-data process-test-classes "-Dexec.args=coverage --html"
 ```
 
-The first command defaults to `check`. Each command first runs the ten unit tests of the code that decides what a
-case sends and what its response is compared with (`ResponseMaskerTest`, `ExpectedResponsesTest`, `JsonPatchTest`,
-`TestDataRepositoryTest`, `JsonLayersTest`, `ResponseSuggestionsTest`, `UnusedStepsTest`, `CoverageTest`, `CoverageHtmlTest`, `CapabilityTest`; their data is written in the
-tests themselves, none of it lives under
-`src/test/resources`): a failing one stops Maven before the tool reads any data. The commands stop before the
+The first command defaults to `check`. Each command first runs `CapabilityTest`, the unit test of the product registry
+(the unit tests of the code that decides what a case sends and what its response is compared with run in the library's
+repository): a failure stops Maven before the tool reads any data. The commands stop before the
 `test` phase: they do not run Cucumber. A failed check fails Maven. Plain `mvn test` retains its existing behavior and does not activate
 this profile. The company Maven repository needs `org.codehaus.mojo:exec-maven-plugin:3.6.4`.
 After deleting resource files, add `clean` before `process-test-classes` to remove stale copied files.
@@ -355,7 +364,7 @@ or with `-U`.
   page is one file with nothing loaded from elsewhere: it opens offline, and a pipeline can publish it as a build
   artifact. Its data is written beside it, `coverage.json`, for other tools (and for the planned dashboard,
   [test-dashboard-plan.md](test-dashboard-plan.md)). Both are generated: never commit them. The
-  page's template is `src/test/resources/tools/coverage-report.html`.
+  page's template is in the library (`com/example/testdata/tools/coverage-report.html`).
 - `suggest <event>`: reads the event's recordings and prints, without writing anything, the `dynamicFields` rules
   they need and the `expectedBase` that suits them ("Suggestions", below).
 - `compact <event>` or `compact all`: the compaction of "Base and patch" and "Shared parts". It lists the files it
@@ -370,9 +379,9 @@ or with `-U`.
   beside its reference, or its part in full when it lacks a key of the new part. A part the case holds as a
   placeholder, not an object, is kept, and so are the parts it does not declare. Nothing is written on a problem.
 
-The unit tests stay out of a plain `mvn test` (the pipeline runs `OreoTest` only). They are JUnit 4, and the profile
+The unit test stays out of a plain `mvn test` (the pipeline runs `OreoTest` only). It is JUnit 4, and the profile
 fails when none ran: should it report no tests (a JUnit Platform without the vintage engine), add
-`org.junit.vintage:junit-vintage-engine` in test scope. Change a rule of the data code together with its test.
+`org.junit.vintage:junit-vintage-engine` in test scope. Change a rule of the data code together with its test, in the library.
 
 
 ### Suggestions

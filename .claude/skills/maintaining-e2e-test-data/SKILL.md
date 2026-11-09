@@ -7,7 +7,7 @@ description: Use when the test data, feature files, recorded API responses or pr
 
 ## Overview
 
-The offline tools of the test data are normal Java test code in `src/test/java/com/example/module/oreo/tools/` (entry point `TestDataTool.java`, one class per file), run through the Maven `test-data` profile. A plain `mvn test` (the pipeline) runs only the Cucumber suite `OreoTest`: it does not check the data. Run `check` before every commit that touches `src/test/resources/data/`, `src/test/resources/features/`, `ProductDatFiles`, `Capability`, or a step or snippet that names setup data.
+The offline tools of the test data are the library `com.example.oreo:oreo-test-data` (a dependency in `pom.xml`, its own repository `oreo-test-data`; entry point `com.example.testdata.tools.TestDataTool`), run through the Maven `test-data` profile. oreo-e2e gives it the product registry (`ProductDatFiles`, through `META-INF/services/com.example.testdata.ProductRegistry`) and its settings (`src/test/resources/test-data.properties`). A change to a check or a command is a change of the library: make it there, release it, raise the version in `pom.xml`. A plain `mvn test` (the pipeline) runs only the Cucumber suite `OreoTest`: it does not check the data. Run `check` before every commit that touches `src/test/resources/data/`, `src/test/resources/features/`, `ProductDatFiles`, `Capability`, or a step or snippet that names setup data.
 
 Paths are relative to the oreo-e2e root. Run Maven and the tool only where the user says oreo-e2e builds (the company machine); elsewhere hand over the commands.
 
@@ -28,9 +28,8 @@ mvn -Ptest-data process-test-classes "-Dexec.args=coverage --html"
 
 Each line is a complete command. The first defaults to `check`; choose one command for the task.
 Maven compiles the project, copies test resources and supplies the test classpath automatically.
-Before the tool, the profile runs the ten unit tests of the test data code (`src/test/java/.../testdata/*Test`, `tools/*Test`;
-their data files are written by the tests, into a temporary folder): a failing one stops Maven before the tool reads any data, and the tool's verdict
-is not to be trusted until they pass. Stopping at `process-test-classes` does not execute the Cucumber suite. Do
+Before the tool, the profile runs the unit test of the product registry (`src/test/java/.../testdata/CapabilityTest`): a
+failing one stops Maven before the tool reads any data. The library's own unit tests run in its repository. Stopping at `process-test-classes` does not execute the Cucumber suite. Do
 not replace it with `test` or `verify` for a data-only operation. The commands below are the value of `-Dexec.args`
 (`"-Dexec.args=suggest trade_creation"`), not commands of their own: Maven runs the class `TestDataTool` with them, nothing else does. The company Maven repository must supply `exec-maven-plugin:3.6.4`.
 
@@ -57,7 +56,7 @@ One `[ok]` or `[FAIL]` line per check, its problems and `[warn]` lines below it:
 4. every API case has its expected file, every expected file its case; a case tagged `@expected#none` (on its Scenario / Outline, Rule or Feature line: it checks the database, not the response) has none, and a file left for it is a problem;
 5. the `dynamicFields` rules agree with the expected files (warning: a placeholder without a rule);
 6. the expected files resolve and are compacted (warning: a file `compact` would still change);
-7. every setup name the code, snippets or features use has its `data/setup/` file, except `trade-cancellation` and `trade-amendment` (not covered yet: the user's decision, `KNOWN_MISSING`);
+7. every setup name the code, snippets or features use has its `data/setup/` file, except `trade-cancellation` and `trade-amendment` (not covered yet: the user's decision, `check.knownMissingSetups` in `src/test/resources/test-data.properties`);
 8. the product Outlines' `Examples` match the registry;
 9. every product with a capability has its default dat file;
 10. the recorded trades agree with the composition registry: `_shared/basic/<C>.json` has composition ID `<C>` and
@@ -94,4 +93,4 @@ One `[ok]` or `[FAIL]` line per check, its problems and `[warn]` lines below it:
 | `Examples` rows typed by hand | `sync-examples` |
 | Expected files written or patched by hand | Record them, then `compact` |
 | A case that checks the database fails `check` with `no expected file` | Tag it `@expected#none`; never record a response it does not compare |
-| A check loosened, or a name added to `KNOWN_MISSING`, to get `[ok]` | Fix the data; `KNOWN_MISSING` is the user's decision |
+| A check loosened, or a name added to `check.knownMissingSetups`, to get `[ok]` | Fix the data; `check.knownMissingSetups` is the user's decision |

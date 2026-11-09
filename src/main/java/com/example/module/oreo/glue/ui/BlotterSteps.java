@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.example.genie.module.rest.service.RequestResponseHelper;
 import com.example.module.oreo.utils.CleanupTestDataUtil;
 import com.example.module.oreo.utils.RestApiUtil;
-import com.example.module.oreo.testdata.TestData;
+import com.example.testdata.TestData;
 import com.example.module.oreo.playwright.PlaywrightServiceResolver;
 import com.example.module.oreo.config.TestUser;
 import cucumber.api.Scenario;

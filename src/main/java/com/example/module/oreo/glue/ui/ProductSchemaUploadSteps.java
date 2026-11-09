@@ -3,7 +3,7 @@ package com.example.module.oreo.glue.ui;
 import com.microsoft.playwright.Locator;
 import com.example.genie.module.database.glue.DatabaseGlue;
 import com.example.module.oreo.utils.CleanupTestDataUtil;
-import com.example.module.oreo.utils.DateUtil;
+import com.example.testdata.DateUtil;
 import com.example.module.oreo.utils.ProductApiClient;
 import com.example.module.oreo.playwright.PlaywrightServiceResolver;
 import cucumber.api.Scenario;

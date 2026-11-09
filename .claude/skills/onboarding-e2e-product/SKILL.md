@@ -80,7 +80,7 @@ Apply QA's answers: capabilities off the constant and `sync-examples` again, the
 
 ## 4. Offline check
 
-The tool is `src/test/java/com/example/module/oreo/tools/TestDataTool.java`, documented in `.claude/skills/maintaining-e2e-test-data/SKILL.md`. Every command below is that Maven command, written in full: `mvn -Ptest-data process-test-classes "-Dexec.args=<command>"`; without `exec.args` it runs `check`. The class `TestDataTool` is run only through it. Run them only where the user says oreo-e2e builds (the company machine); elsewhere give them the commands.
+The tool is `TestDataTool` of the library `com.example.oreo:oreo-test-data` (a dependency in `pom.xml`), documented in `.claude/skills/maintaining-e2e-test-data/SKILL.md`. Every command below is that Maven command, written in full: `mvn -Ptest-data process-test-classes "-Dexec.args=<command>"`; without `exec.args` it runs `check`. The class `TestDataTool` is run only through it. Run them only where the user says oreo-e2e builds (the company machine); elsewhere give them the commands.
 
 `mvn -Ptest-data process-test-classes`. Expected before `sync-examples`: "the product Outlines' Examples match the registry" fails with one `add <C>` line per Outline of the product's capabilities. After it, until the recordings: only "every API case has its expected file" fails, one `no expected file` line per new API case. Any other problem (a product that is not in `ProductDatFiles`, a `byProduct` without a dat file, a `remove` line before QA took a capability off) is a mistake in section 2.
 

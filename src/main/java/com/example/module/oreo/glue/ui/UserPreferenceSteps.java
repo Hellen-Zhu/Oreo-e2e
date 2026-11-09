@@ -2,7 +2,7 @@ package com.example.module.oreo.glue.ui;
 
 import com.example.genie.module.rest.service.RequestResponseHelper;
 import com.example.module.oreo.utils.RestApiUtil;
-import com.example.module.oreo.testdata.TestData;
+import com.example.testdata.TestData;
 import com.example.module.oreo.config.TestUser;
 import cucumber.api.Scenario;
 import cucumber.api.java.Before;

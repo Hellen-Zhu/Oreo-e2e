@@ -7,7 +7,7 @@ import com.example.genie.module.playwright.core.PlaywrightService;
 import com.example.module.oreo.glue.ScenarioContext;
 import com.example.module.oreo.config.OreoConfigurationResolver;
 import com.example.module.oreo.config.OreoModuleConfiguration;
-import com.example.module.oreo.testdata.TestData;
+import com.example.testdata.TestData;
 import cucumber.api.Scenario;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

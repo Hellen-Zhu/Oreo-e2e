@@ -1,11 +1,11 @@
 package com.example.module.oreo.glue.api;
 
 import com.example.module.oreo.config.TestUser;
-import com.example.module.oreo.testdata.CaseId;
-import com.example.module.oreo.testdata.ExpectedResponses;
-import com.example.module.oreo.testdata.Json;
-import com.example.module.oreo.testdata.ResponseMasker;
-import com.example.module.oreo.testdata.TestData;
+import com.example.testdata.CaseId;
+import com.example.testdata.ExpectedResponses;
+import com.example.testdata.Json;
+import com.example.testdata.ResponseMasker;
+import com.example.testdata.TestData;
 import com.example.module.oreo.utils.RestApiUtil;
 import com.example.module.oreo.utils.TradeApiClient;
 import com.fasterxml.jackson.databind.JsonNode;
