@@ -6,7 +6,7 @@
     And notification counter is captured
 
 @When "^maker books one trade via api$"
-    When a draft pending approval 'FX_TRF' trade is provisioned via playwright api
+    When a Draft Pending Approval 'FX_TRF' trade exists in the blotter
 
 @Then "^checker notification count updates and content contains booked trade id$"
     Then notification counter bumps up

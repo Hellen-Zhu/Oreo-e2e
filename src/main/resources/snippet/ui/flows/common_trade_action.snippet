@@ -1,21 +1,3 @@
-@Given "^a Draft Pending Approval '([^']*)' trade exists in the blotter$"
-    Given a draft pending approval '$1' trade is provisioned via playwright api
-
-@Given "^a Draft Pending Approval '([^']*)' StepIn Full trade exists in the blotter$"
-    Given a draft pending approval '$1' stepin full trade is provisioned via playwright api
-
-@Given "^a Draft Pending Approval '([^']*)' StepIn Partial trade exists in the blotter$"
-    Given a draft pending approval '$1' stepin partial trade is provisioned via playwright api
-
-@Given "^a Live '([^']*)' trade exists in the blotter$"
-    Given a live '$1' trade is provisioned via playwright api
-
-@Given "^a Dead '([^']*)' trade exists in the blotter$"
-    Given a dead '$1' trade is provisioned via playwright api
-
-@Given "^a Draft '([^']*)' trade exists in the blotter$"
-    Given a rejected draft '$1' trade is provisioned via playwright api
-
 @Then "^the trade has status '([^']*)' and event status '([^']*)' in the blotter$"
     When page trade portal navigates to Trade Portal page
     And page trade portal searches and views trade stored as 'createdTradeId'

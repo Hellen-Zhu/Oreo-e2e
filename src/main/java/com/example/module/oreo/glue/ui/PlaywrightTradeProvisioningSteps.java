@@ -33,22 +33,24 @@ public class PlaywrightTradeProvisioningSteps {
         store("createdTradeId", "createdTaskId", TradeApiClient.provisionDraftTrade(helper, "trade-create", p, p.path()));
     }
 
-    @Given("^a draft pending approval '([^']*)' trade is provisioned via playwright api$")
+    /** Submitted by the maker: a trade pending the checker's approval. */
+    @Given("^a Draft Pending Approval '([^']*)' trade exists in the blotter$")
     public void provisionPendingTrade(String product) throws Exception {
         provisionPending(product, "trade-create");
     }
 
-    @Given("^a draft pending approval '([^']*)' stepin full trade is provisioned via playwright api$")
+    @Given("^a Draft Pending Approval '([^']*)' StepIn Full trade exists in the blotter$")
     public void provisionPendingStepInFullTrade(String product) throws Exception {
         provisionPending(product, "trade-create-stepin-full");
     }
 
-    @Given("^a draft pending approval '([^']*)' stepin partial trade is provisioned via playwright api$")
+    @Given("^a Draft Pending Approval '([^']*)' StepIn Partial trade exists in the blotter$")
     public void provisionPendingStepInPartialTrade(String product) throws Exception {
         provisionPending(product, "trade-create-stepin-partial");
     }
 
-    @Given("^a live '([^']*)' trade is provisioned via playwright api$")
+    /** Submitted by the maker, approved by the checker. */
+    @Given("^a Live '([^']*)' trade exists in the blotter$")
     public void provisionLiveTrade(String product) throws Exception {
         provisionLive(product, "createdTradeId", "createdTaskId");
     }
@@ -76,13 +78,15 @@ public class PlaywrightTradeProvisioningSteps {
         provisionPendingCancellation(product, "createdTradeId", "createdTaskId");
     }
 
-    @Given("^a dead '([^']*)' trade is provisioned via playwright api$")
+    /** A live trade whose cancellation the checker approved. */
+    @Given("^a Dead '([^']*)' trade exists in the blotter$")
     public void provisionDeadTrade(String product) throws Exception {
         CreatedTrade trade = provisionPendingCancellation(product, "createdTradeId", "createdTaskId");
         TradeApiClient.approveTask(helper, trade.taskId(), TestUser.CHECKER.email());
     }
 
-    @Given("^a rejected draft '([^']*)' trade is provisioned via playwright api$")
+    /** A live trade whose cancellation the checker rejected. */
+    @Given("^a Draft '([^']*)' trade exists in the blotter$")
     public void provisionRejectedDraftTrade(String product) throws Exception {
         CreatedTrade trade = provisionPendingCancellation(product, "createdTradeId", "createdTaskId");
         TradeApiClient.rejectTask(helper, trade.taskId(), TestUser.CHECKER.email());
