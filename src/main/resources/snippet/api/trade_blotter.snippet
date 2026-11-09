@@ -83,26 +83,6 @@
 
 # ── Assertions ──────────────────────────────────────────────────────
 
-@Then "^the blotter should be created and persisted successfully$"
-    Then response status code is '201'
-    And response matches current scenario
-
-@Then "^marketplace blotter was published successfully$"
-    Then response status code is '201'
-    And response matches current scenario
-
-@Then "^marketplace blotter was published successfully and version updated$"
-    Then response status code is '201'
-    And response matches current scenario
-
-@Then "^marketplace blotter was re-published successfully$"
-    Then response status code is '201'
-    And response matches current scenario
-
-@Then "^marketplace blotter was imported successfully$"
-    Then response status code is '201'
-    And response matches current scenario
-
 # The database count minus the returned count: 0 when every blotter of the role and the default ones are returned.
 @Then "^every blotter of (maker|checker|admin|user) in the database is returned$"
     When store response field 'data.size()' as 'returnedBlotterCount'

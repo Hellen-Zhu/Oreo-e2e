@@ -170,7 +170,8 @@ Feature files are business specifications: a reviewer who does not read Java mus
   `the 'cancellation self-approval' request is rejected with permission denied`.
 - Shared outcomes (`api/common_api.snippet`), one vocabulary for every API, the quoted subject for the reader and the
   outcome fixing the status: `the '<subject>' [request] is|are retrieved / created / updated / approved / processed /
-  executed successfully` (200); `the '<subject>' request|event is rejected with a validation error` (400),
+  executed successfully` (200); `... is|are saved / published / re-published / imported successfully` (201, a new
+  resource stored); `the '<subject>' request|event is rejected with a validation error` (400),
   `... with permission denied` (403), `... as not found` (404), `... with a conflict` (409). Choose the outcome by what
   the system answers, never by a synonym ("business rule violation" is 400 in one API and 409 in another: say
   `validation error` or `conflict`). They include the status code and the strict comparison with the case's recorded

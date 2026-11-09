@@ -8,28 +8,28 @@ Feature: Trade Blotter API
   Scenario: [TC-TRADE-BLOTTER-API-001] Should able to create and persist a new blotter
     Given maker have valid data for blotter creation
     When create the blotter via api
-    Then the blotter should be created and persisted successfully
+    Then the 'blotter' is saved successfully
 
   @ADO#positive @ADO#regression
   Scenario: [TC-TRADE-BLOTTER-API-002] Should able to publish a saved blotter to marketplace
     Given a blotter was created via api
     When maker have valid data to publish the blotter
     And publish the saved blotter to marketplace
-    Then marketplace blotter was published successfully
+    Then the 'marketplace blotter' is published successfully
 
   @ADO#positive @ADO#regression
   Scenario: [TC-TRADE-BLOTTER-API-003] Should able to re-publish a saved blotter to marketplace and update version
     Given a blotter was published as public via api
     When maker have valid data to publish the blotter
     And re-publish the saved blotter to marketplace
-    Then marketplace blotter was published successfully and version updated
+    Then the 'marketplace blotter' is re-published successfully
 
   @ADO#positive @ADO#regression
   Scenario: [TC-TRADE-BLOTTER-API-004] Should able to import a marketplace blotter
     Given a blotter was published as public via api
     When user have valid data to import the blotter
     And import marketplace blotter as personal copy
-    Then marketplace blotter was imported successfully
+    Then the 'marketplace blotter' is imported successfully
 
   @ADO#positive @ADO#regression
   Scenario: [TC-TRADE-BLOTTER-API-005] Should unable to import a non-public blotter

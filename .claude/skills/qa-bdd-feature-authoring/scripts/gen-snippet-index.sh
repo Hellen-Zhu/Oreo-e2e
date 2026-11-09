@@ -58,6 +58,7 @@ fi
     echo ">"
     echo "> **Shared steps first.** The response outcomes of \`common_api.snippet\` are the only outcome wording:"
     echo "> \`is retrieved / created / updated / approved / processed / executed successfully\` (200),"
+    echo "> \`is saved / published / re-published / imported successfully\` (201),"
     echo "> \`is rejected with a validation error\` (400) / \`with permission denied\` (403) / \`as not found\` (404) /"
     echo "> \`with a conflict\` (409). Older domain steps below that say \`should be ... successfully\` are not a model."
   fi

@@ -72,10 +72,11 @@ repair round the failure output and `revisionInstructions`.
    new request builders. A builder that is still needed starts with `start a new api request as user '<user>'`, never
    with `start building a new request` alone (it would miss the required headers).
    - **Response outcomes are the shared vocabulary of `api/common_api.snippet`**: `the '<subject>' is retrieved /
-     created / updated / approved / processed / executed successfully` (200) and `the '<subject>' request is rejected
+     created / updated / approved / processed / executed successfully` (200), `... is saved / published / re-published
+     / imported successfully` (201) and `the '<subject>' request is rejected
      with a validation error` (400) / `with permission denied` (403) / `as not found` (404) / `with a conflict` (409).
      Each checks the status and compares the response with the recording. Never write a step whose body is only one
-     of them (a renaming wrapper: `check` reports it); a status the vocabulary lacks (201, 422) is added there, to
+     of them (a renaming wrapper: `check` reports it); a status the vocabulary lacks (422, ...) is added there, to
      every phrase's pattern, never in a domain snippet. A domain `@Then` exists only for evidence beyond the response
      (a stored value, a read-back, the trades an event created) and calls the vocabulary for its response part.
    - **Trades a lifecycle event created** (allocation, novation, ...) are checked against the request, not recorded:

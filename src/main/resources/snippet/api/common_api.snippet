@@ -81,11 +81,17 @@
 # The outcome of the request just sent, one vocabulary for every API. The quoted subject is for the reader; the
 # outcome fixes the status, then the response is compared strictly with the case's recording
 # (data/api/expected/<event>/<caseId>.json). A domain step exists only when it checks more than this.
-# Example: the 'counterparties list' is retrieved successfully; the 'trade creation' request is rejected with permission
-# denied; the 'Allocation' event is rejected with a validation error.
+# Example: the 'counterparties list' is retrieved successfully; the 'marketplace blotter' is published successfully
+# (201); the 'trade creation' request is rejected with permission denied; the 'Allocation' event is rejected with a
+# validation error.
 
 @Then "^the '([^']*)'(?: request)? (?:is|are) (?:retrieved|created|updated|approved|processed|executed) successfully$"
     Then response status code is '200'
+    And response matches current scenario
+
+# 201: the API stores a new resource (a saved blotter, a published or imported copy). Its own words, not 'created'.
+@Then "^the '([^']*)'(?: request)? (?:is|are) (?:saved|published|re-published|imported) successfully$"
+    Then response status code is '201'
     And response matches current scenario
 
 @Then "^the '([^']*)' (?:request|event) is rejected with a validation error$"
