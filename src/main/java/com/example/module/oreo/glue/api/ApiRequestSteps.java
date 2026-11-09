@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.example.module.oreo.config.TestUser;
+import com.example.module.oreo.testdata.ProductDatFiles;
 import com.example.module.oreo.testdata.SetupData;
 import com.example.module.oreo.testdata.TestData;
 import com.example.module.oreo.utils.DateUtil;
@@ -113,6 +114,12 @@ public class ApiRequestSteps {
     @Given("^set path parameter '([^']*)' to '([^']*)'$")
     public void setPathParamToValue(String paramName, String value) {
         setPathParam(paramName, value, "literal value");
+    }
+
+    /** The product ID registered for the composition ({@link ProductDatFiles}), as a path parameter. */
+    @Given("^set path parameter '([^']*)' to the product ID of '([^']*)'$")
+    public void setPathParamToProductId(String paramName, String composition) {
+        setPathParam(paramName, ProductDatFiles.of(composition).productId(), "product ID of '" + composition + "'");
     }
 
     @Given("^set query parameter '([^']*)' as '([^']*)'$")

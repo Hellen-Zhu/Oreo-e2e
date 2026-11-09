@@ -1,20 +1,15 @@
 {
-  "_base": "TC-TRADE-CREATION-FX_PSCRIPT-API-001",
+  "_base": "TC-TRADE-CREATION-FX_FSB-API-001",
   "_patch": [
     {
       "op": "replace",
-      "path": "/data/trade/basic/currencyPair",
-      "value": "EURSGD"
+      "path": "/data/trade/basic/notionalCurrency",
+      "value": "${json-unit.any-string}"
     },
     {
       "op": "replace",
       "path": "/data/trade/basic/eventStatus",
-      "value": "StepInPartial"
-    },
-    {
-      "op": "replace",
-      "path": "/data/trade/basic/direction",
-      "value": "Sell"
+      "value": "StepInFull"
     },
     {
       "op": "add",
@@ -22,7 +17,7 @@
       "value": [
         {
           "key": "stepInType",
-          "value": "StepInPartial",
+          "value": "StepInFull",
           "type": "Text"
         },
         {

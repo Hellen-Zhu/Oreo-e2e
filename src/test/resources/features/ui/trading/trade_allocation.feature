@@ -13,11 +13,11 @@ Feature: Trade Allocation E2E
     And the trade is allocated to Dead in the trade details
 
     Examples:
-      | product_type    |
-      | FX_TRF          |
-      | FX_PSCRIPT      |
-      | FX_PSCRIPT_FSKO |
-      | FX_PSCRIPT_TRF  |
+      | product_type   |
+      | FX_TRF         |
+      | FX_CO          |
+      | FX_FSB         |
+      | FX_PSCRIPT_TRF |
 
   @ADO#positive @ADO#regression
   Scenario: [TC-TRADE-ALLOCATION-UI-002] Live trade splits into four sub-trades after 30/30/30/10 allocation successfully
@@ -28,8 +28,8 @@ Feature: Trade Allocation E2E
     And the trade is allocated to Dead in the trade details
 
   @ADO#positive @ADO#regression
-  Scenario: [TC-TRADE-ALLOCATION-UI-003] Live FX_PSCRIPT trade splits into three sub-trades after 34/34/32 allocation successfully
-    Given a Live 'FX_PSCRIPT' trade exists in the blotter
+  Scenario: [TC-TRADE-ALLOCATION-UI-003] Live FX_CO trade splits into three sub-trades after 34/34/32 allocation successfully
+    Given a Live 'FX_CO' trade exists in the blotter
     And maker is logged in to the trade portal
     When perform unequal '3' way allocation for the trade
     Then the allocation is completed successfully

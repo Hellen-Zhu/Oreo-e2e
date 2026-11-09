@@ -131,16 +131,37 @@ public final class TradeApiClient {
 
     private static JsonNode createTrade(RequestResponseHelper helper, String path, String userId, String testDataKey,
                                         ProductDatFiles product, String datPath) throws URISyntaxException {
-        // The setup body carries no product: it is set from the dat file's product
-        String tradeJson = withProductId(TestData.setup(testDataKey).request(), product.name());
+        // The setup body carries no product: the composition's registered product ID is sent
+        String tradeJson = withProductId(TestData.setup(testDataKey).request(), product.productId());
         URL resource = TradeApiClient.class.getClassLoader().getResource(datPath);
         if (resource == null) {
             throw new AssertionError("[TradeApiClient] dat file '" + datPath + "' not found on classpath.");
         }
         log.info("[TradeApiClient] createTrade: path='{}', userId='{}', testDataKey='{}', datFile='{}'",
                 path, userId, testDataKey, datPath);
-        return RestApiUtil.postMultipart(helper, path, userId, "trade", tradeJson, "datFile",
+        JsonNode response = RestApiUtil.postMultipart(helper, path, userId, "trade", tradeJson, "datFile",
                 Paths.get(resource.toURI()));
+        checkComposition(response, product, testDataKey);
+        return response;
+    }
+
+    /**
+     * Fails when the trade the backend created is not of {@code composition}: its {@code basic.compositionId} or
+     * {@code basic.tradeType} disagree with the registry ({@link ProductDatFiles#mismatches}). A response without a
+     * trade is left to the caller.
+     *
+     * @throws AssertionError naming the composition, the setup and each disagreement
+     */
+    public static void checkComposition(JsonNode response, ProductDatFiles composition, String testDataKey) {
+        JsonNode basic = response.at("/data/trade/basic");
+        if (basic.isMissingNode()) return;
+        List<String> problems = composition.mismatches(basic.path("compositionId").asText(""),
+                basic.path("tradeType").asText(""));
+        if (!problems.isEmpty()) {
+            throw new AssertionError("[TradeApiClient] setup " + testDataKey + " with product ID '"
+                    + composition.productId() + "' did not create a " + composition.name() + " trade: "
+                    + String.join("; ", problems) + ". Check the registry entry in ProductDatFiles.");
+        }
     }
 
     /**

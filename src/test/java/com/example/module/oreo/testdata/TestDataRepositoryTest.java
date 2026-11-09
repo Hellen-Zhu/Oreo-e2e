@@ -80,16 +80,16 @@ public class TestDataRepositoryTest {
         // The dat file as case data
         write("api/dat_event.json", """
                 {
-                  "byProduct": { "FX_PSCRIPT": { "datFile": "variant.dat" } },
+                  "byProduct": { "FX_CO": { "datFile": "variant.dat" } },
                   "cases": [
                     { "id": "TC-DAT-EVENT-<product_type>-API-002",
-                      "byProduct": { "FX_TRF": { "datFile": "variant.dat" }, "FX_PSCRIPT": { "datFile": null } } },
+                      "byProduct": { "FX_TRF": { "datFile": "variant.dat" }, "FX_CO": { "datFile": null } } },
                     { "id": "TC-DAT-EVENT-FX_TRF-API-003", "datFile": "missing.dat" },
                     { "id": "TC-DAT-EVENT-API-004", "_comment": "no product: the step's product folder", "datFile": "variant.dat" }
                   ]
                 }""");
         write("dat/FX_TRF/variant.dat", "# a variant dat file of FX_TRF");
-        write("dat/FX_PSCRIPT/variant.dat", "# a variant dat file of FX_PSCRIPT");
+        write("dat/FX_CO/variant.dat", "# a variant dat file of FX_CO");
         // Broken event files, one mistake each
         write("api/two_rows.json", """
                 { "cases": [ { "id": "TC-TWO-ROWS-<product_type>-API-001" }, { "id": "TC-TWO-ROWS-FX_TRF-API-001" } ] }""");
@@ -306,8 +306,8 @@ public class TestDataRepositoryTest {
 
     @Test
     public void rowAddsAndRemovesSharedFragments() {
-        assertEquals(Map.of("data.trade.basic", "basic/FX_PSCRIPT", "data.trade.trace", "trace/common"),
-                repo.forCase("TC-FRAGMENT-EVENT-FX_PSCRIPT-API-002").sharedFragments());
+        assertEquals(Map.of("data.trade.basic", "basic/FX_CO", "data.trade.trace", "trace/common"),
+                repo.forCase("TC-FRAGMENT-EVENT-FX_CO-API-002").sharedFragments());
         assertEquals(Map.of(), repo.forCase("TC-FRAGMENT-EVENT-FX_TRF-API-003").sharedFragments());
     }
 
@@ -418,9 +418,9 @@ public class TestDataRepositoryTest {
     @Test
     public void datFileIsTheProductsDefaultUnlessALayerNamesOne() {
         assertNull(repo.forCase("TC-DAT-EVENT-FX_TRF-API-001").datFile());
-        assertEquals("variant.dat", repo.forCase("TC-DAT-EVENT-FX_PSCRIPT-API-001").datFile());
+        assertEquals("variant.dat", repo.forCase("TC-DAT-EVENT-FX_CO-API-001").datFile());
         assertEquals("variant.dat", repo.forCase("TC-DAT-EVENT-FX_TRF-API-002").datFile());
-        assertNull(repo.forCase("TC-DAT-EVENT-FX_PSCRIPT-API-002").datFile());
+        assertNull(repo.forCase("TC-DAT-EVENT-FX_CO-API-002").datFile());
         assertEquals("variant.dat", repo.forCase("TC-DAT-EVENT-API-004").datFile());
     }
 

@@ -22,7 +22,7 @@
 @When "^page new trade selects basic mandatory info for product '([^']*)'$"
     When page new trade selects counterparty from stored variable 'basic.counterpartyName'
     And page new trade selects portfolio from stored variable 'basic.portfolioId'
-    And store e2e variable value '$1' as 'productId'
+    And store the product ID of '$1' as 'productId'
     And page new trade selects productId from stored variable 'productId'
     And page new trade selects direction from stored variable 'basic.direction'
 

@@ -13,11 +13,11 @@ Feature: Trade Cancellation E2E
     And the cancellation request is pending checker approval
 
     Examples:
-      | product_type    |
-      | FX_TRF          |
-      | FX_PSCRIPT      |
-      | FX_PSCRIPT_FSKO |
-      | FX_PSCRIPT_TRF  |
+      | product_type   |
+      | FX_TRF         |
+      | FX_CO          |
+      | FX_FSB         |
+      | FX_PSCRIPT_TRF |
 
   @ADO#negative @ADO#regression
   Scenario: [TC-TRADE-CANCELLATION-UI-002] Cancellation option is available for a Draft Pending Approval trade for maker

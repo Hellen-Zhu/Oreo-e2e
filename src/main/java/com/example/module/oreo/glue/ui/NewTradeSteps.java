@@ -23,10 +23,18 @@ public class NewTradeSteps {
 
     // ── File upload ─────────────────────────────────────────────────
 
-    /** The case's dat file ({@code datFile} of its test data), else the product's default one. */
+    /** The case's dat file ({@code datFile} of its test data), else the composition's default one. */
     @When("^upload '([^']*)' dat file$")
     public void uploadDatFile(String productType) {
-        uploadDatFileByPath(ProductDatFiles.valueOf(productType).path(ctx.find("_tc.datFile")));
+        ProductDatFiles composition = ProductDatFiles.of(productType);
+        ctx.write("[" + composition.describe() + "]");
+        uploadDatFileByPath(composition.path(ctx.find("_tc.datFile")));
+    }
+
+    /** The product ID registered for the composition, for the new trade page's product list. */
+    @When("^store the product ID of '([^']*)' as '([^']*)'$")
+    public void storeProductId(String composition, String key) {
+        ctx.set(key, ProductDatFiles.of(composition).productId());
     }
 
     @When("^click save using configured risk engine mode for new trade creation$")

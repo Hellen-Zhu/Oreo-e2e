@@ -72,8 +72,8 @@ public class ResponseSuggestionsTest {
         Map<String, JsonNode> responses = Map.of(
                 "TC-EV-FX_TRF-API-001", Json.parse("{\"id\":\"TRD0000001\",\"v\":{\"d\":\"2026-01-01\"},\"l\":[{\"t\":\"2026-01-01\"},{\"t\":\"2026-01-02\"}]}"),
                 "TC-EV-FX_TRF-API-002", Json.parse("{\"id\":\"TRD0000002\",\"v\":{\"d\":\"2026-01-01\"}}"),
-                "TC-EV-FX_PSCRIPT-API-001", Json.parse("{\"id\":\"TRD0000003\"}"),
-                "TC-EV-FX_PSCRIPT-API-002", Json.parse("{\"id\":\"TRD0000004\"}"),
+                "TC-EV-FX_CO-API-001", Json.parse("{\"id\":\"TRD0000003\"}"),
+                "TC-EV-FX_CO-API-002", Json.parse("{\"id\":\"TRD0000004\"}"),
                 "TC-EV-API-003", Json.parse("{\"error\":\"bad\"}"));
         Map<String, List<ResponseSuggestions.Finding>> findings = new java.util.TreeMap<>();
         responses.forEach((c, r) -> findings.put(c, ResponseSuggestions.dynamicValues(r, null, null)));
@@ -99,11 +99,11 @@ public class ResponseSuggestionsTest {
                 "TC-EV-FX_TRF-API-001", Json.parse("{" + big + ",\"s\":\"New\"}"),
                 "TC-EV-FX_TRF-API-002", Json.parse("{" + big + ",\"s\":\"StepIn\"}"),
                 "TC-EV-FX_TRF-API-003", Json.parse("{" + big + ",\"s\":\"StepOut\"}"),
-                "TC-EV-FX_PSCRIPT-API-001", Json.parse("{" + big + ",\"s\":\"New\"}"),
-                "TC-EV-FX_PSCRIPT-API-002", Json.parse("{" + big + ",\"s\":\"StepIn\"}"),
+                "TC-EV-FX_CO-API-001", Json.parse("{" + big + ",\"s\":\"New\"}"),
+                "TC-EV-FX_CO-API-002", Json.parse("{" + big + ",\"s\":\"StepIn\"}"),
                 "TC-EV-API-004", Json.parse("{\"error\":\"bad\"}"));
         List<ResponseSuggestions.Base> bases = ResponseSuggestions.bases(responses);
-        assertEquals(List.of("TC-EV-FX_PSCRIPT-API-001", "TC-EV-FX_TRF-API-001"),
+        assertEquals(List.of("TC-EV-FX_CO-API-001", "TC-EV-FX_TRF-API-001"),
                 bases.stream().map(ResponseSuggestions.Base::caseId).toList());
         assertTrue(bases.getFirst().worthIt());
         assertEquals("TC-EV-<product_type>-API-001", ResponseSuggestions.commonBase(bases));

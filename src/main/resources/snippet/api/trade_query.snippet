@@ -18,10 +18,10 @@
     Then the 'trade details' are retrieved successfully
     And the submitted '$1' trade schedule contains expected review data
 
-@Then "^the submitted 'FX_PSCRIPT' trade schedule contains expected review data$"
+@Then "^the submitted 'FX_CO' trade schedule contains expected review data$"
     And response body contains a non-empty value at key 'data.tradeDetailsSchedule["Fixing Date"][0]'
 
-@Then "^the submitted 'FX_PSCRIPT_FSKO' trade schedule contains expected review data$"
+@Then "^the submitted 'FX_FSB' trade schedule contains expected review data$"
     And response body contains a non-empty value at key 'data.tradeDetailsSchedule.Reset[0]'
     And response body contains a non-empty value at key 'data.tradeDetailsSchedule.Payment[0]'
     And response body contains a non-empty value at key 'data.tradeDetailsSchedule["Strike Fixing"][0]'

@@ -23,7 +23,8 @@ public class TradeApiSteps {
 
     @Given("^set multi-part form parameter '([^']*)' for product '([^']*)' from test data '([^']*)'$")
     public void setMultiPartFormParameterFromTestData(String partName, String product, String key) {
-        String requestWithProductId = setBasicProductId(TestData.setup(key).request(), product, key);
+        String requestWithProductId = setBasicProductId(TestData.setup(key).request(),
+                ProductDatFiles.of(product).productId(), key);
         ctx.helper().request().multiPart(partName, requestWithProductId, "application/json");
         log.info("[TradeApiSteps] set multi-part form parameter '{}' from test data '{}' as '{}'", partName, key,requestWithProductId);
     }
@@ -39,7 +40,8 @@ public class TradeApiSteps {
             throw new AssertionError("[TradeApiSteps] Case '" + ctx.get("_tc.key")
                     + "' has no request in its test data (data/api/<event>.json).");
         }
-        String requestWithProductId = setBasicProductId(requestBody, product, ctx.get("_tc.key"));
+        String requestWithProductId = setBasicProductId(requestBody, ProductDatFiles.of(product).productId(),
+                ctx.get("_tc.key"));
         ctx.helper().request().multiPart(partName, requestWithProductId, "application/json");
         log.info("[TradeApiSteps] set multi-part form parameter '{}' from current scenario ('{}') as '{}'",
                 partName, ctx.get("_tc.key"),requestWithProductId);
@@ -50,27 +52,20 @@ public class TradeApiSteps {
     // ─────────────────────────────────────────────────────────────────────
 
     /**
-     * Attaches the dat file for the given product as the {@code datFile} multipart part: the case's dat file
-     * ({@code datFile} of its test data), else the product's default one. The product name maps to a
-     * {@link ProductDatFiles} enum constant (case-insensitive, spaces replaced with underscores).
+     * Attaches the dat file of the given composition as the {@code datFile} multipart part: the case's dat file
+     * ({@code datFile} of its test data), else the composition's default one; writes the composition, its trade type
+     * and product ID to the report. The name maps to a {@link ProductDatFiles} constant (case-insensitive, spaces
+     * replaced with underscores).
      *
-     * <p>Adding a new product requires only a new {@link ProductDatFiles} constant — no new
-     * step needed.
+     * <p>Adding a new composition requires only a new {@link ProductDatFiles} constant — no new step needed.
      *
      * <pre>And set multi-part dat file for product 'FX_TRF'</pre>
      */
     @Given("^set multi-part dat file for product '([^']*)'$")
     public void setMultiPartDatFileForProduct(String product) {
-        String enumName = product.trim().toUpperCase().replace(' ', '_');
-        ProductDatFiles datFile;
-        try {
-            datFile = ProductDatFiles.valueOf(enumName);
-        } catch (IllegalArgumentException e) {
-            throw new AssertionError(
-                    "[TradeApiSteps] Unknown product '" + product + "' — add '"
-                    + enumName + "' to the ProductDatFiles enum first.");
-        }
-        attachDatFile(datFile.path(ctx.find("_tc.datFile")));
+        ProductDatFiles composition = ProductDatFiles.of(product);
+        ctx.write("[" + composition.describe() + "]");
+        attachDatFile(composition.path(ctx.find("_tc.datFile")));
     }
 
     // ─────────────────────────────────────────────────────────────────────

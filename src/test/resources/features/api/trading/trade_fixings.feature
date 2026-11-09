@@ -11,8 +11,8 @@ Feature: Trade Fixings API
     Then online fixings are returned successfully
 
     Examples:
-      | product_type    |
-      | FX_TRF          |
-      | FX_PSCRIPT      |
-      | FX_PSCRIPT_FSKO |
-      | FX_PSCRIPT_TRF  |
+      | product_type   |
+      | FX_TRF         |
+      | FX_CO          |
+      | FX_FSB         |
+      | FX_PSCRIPT_TRF |

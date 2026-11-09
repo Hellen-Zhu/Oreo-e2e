@@ -20,7 +20,8 @@ Read this before changing files. It holds the rules and the traps; the details l
 - **The case ID is in the scenario name** (`[TC-TRADE-CREATION-FX_TRF-API-001]`), never a tag; it selects the event
   file, product, layer and row of the test data.
 - **Products are rows.** `Examples` of `@capability#` Outlines are written by `mvn -Ptest-data process-test-classes "-Dexec.args=sync-examples"` from
-  `ProductDatFiles`; never by hand.
+  `ProductDatFiles`; never by hand. A product is a composition (`basic.compositionId`: `FX_CO`, not the product ID
+  `FX_PSCRIPT`), registered once with its trade type and the product ID sent; features never name either.
 - **The data checks are `mvn -Ptest-data process-test-classes`** (ten unit tests, then `TestDataTool check`). There is
   no `TestDataValidationTest`, `CompactExpectedFiles` or `SyncProductExamples`: they became `TestDataTool` commands.
 
@@ -60,7 +61,7 @@ Stop at the first that fits:
 | Header every API request needs | that step (`api/common_api.snippet`) and `RestApiUtil`, nowhere else |
 | Locator | `src/test/resources/elements/{pages,components}/*.json` |
 | Request body | `data/{api,ui}/<event>.json` (case), `data/setup/<name>.json` (preconditions) |
-| Product, its dat file, its capabilities | `ProductDatFiles` + `data/dat/<P>/<P>.dat` |
+| Product (a composition: its trade type, product ID, capabilities), its dat file | `ProductDatFiles` + `data/dat/<C>/<C>.dat` |
 | Address, account, mode | the properties files, never code or features; accounts by role through `config/TestUser` |
 
 Trade preconditions already exist; reuse them instead of inlining create + approve (headers and context keys get

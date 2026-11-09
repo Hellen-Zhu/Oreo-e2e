@@ -12,11 +12,11 @@ Feature: Trade Cancellation API
     Then the 'Cancellation' event is executed successfully
 
     Examples:
-      | product_type    |
-      | FX_TRF          |
-      | FX_PSCRIPT      |
-      | FX_PSCRIPT_FSKO |
-      | FX_PSCRIPT_TRF  |
+      | product_type   |
+      | FX_TRF         |
+      | FX_CO          |
+      | FX_FSB         |
+      | FX_PSCRIPT_TRF |
 
   @ADO#negative @ADO#smoke
   Scenario: [TC-TRADE-CANCELLATION-API-002] Backend rejects a cancel request submitted by a checker for FX_TRF trade
@@ -33,11 +33,11 @@ Feature: Trade Cancellation API
     Then the 'Cancellation' event is rejected with a validation error
 
     Examples:
-      | product_type    |
-      | FX_TRF          |
-      | FX_PSCRIPT      |
-      | FX_PSCRIPT_FSKO |
-      | FX_PSCRIPT_TRF  |
+      | product_type   |
+      | FX_TRF         |
+      | FX_CO          |
+      | FX_FSB         |
+      | FX_PSCRIPT_TRF |
 
   @ADO#negative @ADO#regression
   Scenario: [TC-TRADE-CANCELLATION-API-004] Cancellation is rejected for a dead FX_TRF trade

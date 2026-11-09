@@ -29,7 +29,7 @@ public class PlaywrightTradeProvisioningSteps {
 
     @Given("^a draft new '([^']*)' trade is provisioned via playwright api$")
     public void provisionDraftTrade(String product) throws Exception {
-        ProductDatFiles p = ProductDatFiles.valueOf(product);
+        ProductDatFiles p = composition(product);
         store("createdTradeId", "createdTaskId", TradeApiClient.provisionDraftTrade(helper, "trade-create", p, p.path()));
     }
 
@@ -89,13 +89,13 @@ public class PlaywrightTradeProvisioningSteps {
     }
 
     private void provisionPending(String product, String setupName) throws Exception {
-        ProductDatFiles p = ProductDatFiles.valueOf(product);
+        ProductDatFiles p = composition(product);
         store("createdTradeId", "createdTaskId",
                 TradeApiClient.provisionPendingTrade(helper, setupName, p, p.path(ctx.find("_tc.datFile"))));
     }
 
     private CreatedTrade provisionLive(String product, String tradeKey, String taskKey) throws Exception {
-        ProductDatFiles p = ProductDatFiles.valueOf(product);
+        ProductDatFiles p = composition(product);
         return store(tradeKey, taskKey,
                 TradeApiClient.provisionLiveTrade(helper, "trade-create", p, p.path(ctx.find("_tc.datFile"))));
     }
@@ -112,5 +112,12 @@ public class PlaywrightTradeProvisioningSteps {
         ctx.set(taskKey, trade.taskId());
         ctx.write(String.format("[provisioned] %s = %s, %s = %s", tradeKey, trade.tradeId(), taskKey, trade.taskId()));
         return trade;
+    }
+
+    /** The registered composition, written to the report with its trade type and product ID. */
+    private ProductDatFiles composition(String product) {
+        ProductDatFiles composition = ProductDatFiles.of(product);
+        ctx.write("[" + composition.describe() + "]");
+        return composition;
     }
 }

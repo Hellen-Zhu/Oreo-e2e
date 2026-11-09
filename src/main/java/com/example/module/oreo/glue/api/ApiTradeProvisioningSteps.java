@@ -98,18 +98,14 @@ public class ApiTradeProvisioningSteps {
                 TradeApiClient.provisionPendingEvent(ctx.helper(), live.tradeId(), "trade-cancellation"));
     }
 
-    /** As the trade request steps name a product: case-insensitive, spaces as underscores. */
-    private static ProductDatFiles product(String product) {
-        String name = product.trim().toUpperCase().replace(' ', '_');
-        try {
-            return ProductDatFiles.valueOf(name);
-        } catch (IllegalArgumentException e) {
-            throw new AssertionError("[ApiTradeProvisioningSteps] Unknown product '" + product + "' - add '" + name
-                    + "' to the ProductDatFiles enum first.");
-        }
+    /** The registered composition, written to the report with its trade type and product ID. */
+    private ProductDatFiles product(String product) {
+        ProductDatFiles composition = ProductDatFiles.of(product);
+        ctx.write("[" + composition.describe() + "]");
+        return composition;
     }
 
-    /** The case's dat file (datFile of its test data), else the product's default one. */
+    /** The case's dat file (datFile of its test data), else the composition's default one. */
     private String datPath(ProductDatFiles product) {
         return product.path(ctx.find("_tc.datFile"));
     }

@@ -20,7 +20,7 @@
       "_comment": "2-way equal split: 200 ALL_EXECUTED, two child trades; the recording is the allocated trade",
       "use": ["trade-response-parts", "retrieved-trade"],
       "byProduct": {
-        "FX_PSCRIPT": {
+        "FX_CO": {
           "_comment": "Notional 6937.5",
           "request": {
             "data": [
@@ -30,7 +30,7 @@
             ]
           }
         },
-        "FX_PSCRIPT_FSKO": {
+        "FX_FSB": {
           "_comment": "Notional 200000000",
           "request": {
             "data": [
@@ -57,17 +57,17 @@
             "comments": "3-way unequal split: 60% / 30% / 10% of notional 70000"
           }
         },
-        "FX_PSCRIPT": {
+        "FX_CO": {
           "request": {
             "data": [
               { "key": "notionalAmounts", "value": "[3000, 2000, 1937.5]", "type": "Numeric Array" },
               { "key": "counterpartyIds", "value": "[\"900000003\", \"900000004\", \"900000003\"]", "type": "Numeric Array" },
               { "key": "portfolioIds", "value": "[\"EXAMPLE_PORTFOLIO_B\", \"EXAMPLE_PORTFOLIO_C\", \"EXAMPLE_PORTFOLIO_D\"]", "type": "Numeric Array" }
             ],
-            "comments": "3-way unequal split: 3000 / 2000 / 1937.5 summing to FX_PSCRIPT parent notional 6937.5"
+            "comments": "3-way unequal split: 3000 / 2000 / 1937.5 summing to FX_CO parent notional 6937.5"
           }
         },
-        "FX_PSCRIPT_FSKO": {
+        "FX_FSB": {
           "request": {
             "data": [
               { "key": "notionalAmounts", "value": "[120000000, 60000000, 20000000]", "type": "Numeric Array" },

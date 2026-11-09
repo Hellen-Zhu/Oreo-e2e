@@ -13,15 +13,15 @@ Feature: Trade Partial Novation Remaining Party E2E
     Then trade is partially novated with remaining notional retained and counterparty transferred for '<product_type>'
 
     Examples:
-      | product_type    |
-      | FX_TRF          |
-      | FX_PSCRIPT      |
-      | FX_PSCRIPT_FSKO |
-      | FX_PSCRIPT_TRF  |
+      | product_type   |
+      | FX_TRF         |
+      | FX_CO          |
+      | FX_FSB         |
+      | FX_PSCRIPT_TRF |
 
   @ADO#positive @ADO#smoke
-  Scenario: [TC-TRADE-PARTIAL-NOVATION-REMAINING-UI-002] should able to perform Partial Novation event from the trade detail page for FX_PSCRIPT_FSKO trade successfully
-    Given a Live 'FX_PSCRIPT_FSKO' trade exists in the blotter
+  Scenario: [TC-TRADE-PARTIAL-NOVATION-REMAINING-UI-002] should able to perform Partial Novation event from the trade detail page for FX_FSB trade successfully
+    Given a Live 'FX_FSB' trade exists in the blotter
     And maker is logged in to the trade portal
-    When perform the Partial Novation Remaining event on the 'FX_PSCRIPT_FSKO' trade from detail page
-    Then trade is partially novated with remaining notional retained and counterparty transferred for 'FX_PSCRIPT_FSKO'
+    When perform the Partial Novation Remaining event on the 'FX_FSB' trade from detail page
+    Then trade is partially novated with remaining notional retained and counterparty transferred for 'FX_FSB'

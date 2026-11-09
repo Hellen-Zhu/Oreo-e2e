@@ -11,11 +11,11 @@ Feature: Trade Query API
     Then the submitted '<product_type>' trade schedule is available for review
 
     Examples:
-      | product_type    |
-      | FX_TRF          |
-      | FX_PSCRIPT      |
-      | FX_PSCRIPT_FSKO |
-      | FX_PSCRIPT_TRF  |
+      | product_type   |
+      | FX_TRF         |
+      | FX_CO          |
+      | FX_FSB         |
+      | FX_PSCRIPT_TRF |
 
   @ADO#positive @ADO#regression @capability#fixings
   Scenario Outline: [TC-TRADE-QUERY-<product_type>-API-002] Submitted <product_type> trade fixing data is available in the query response
@@ -27,8 +27,8 @@ Feature: Trade Query API
     Then the queried trade contains expected fixing data
 
     Examples:
-      | product_type    |
-      | FX_TRF          |
-      | FX_PSCRIPT      |
-      | FX_PSCRIPT_FSKO |
-      | FX_PSCRIPT_TRF  |
+      | product_type   |
+      | FX_TRF         |
+      | FX_CO          |
+      | FX_FSB         |
+      | FX_PSCRIPT_TRF |

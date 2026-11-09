@@ -1,15 +1,20 @@
 {
-  "_base": "TC-TRADE-CREATION-FX_PSCRIPT_FSKO-API-001",
+  "_base": "TC-TRADE-CREATION-FX_CO-API-001",
   "_patch": [
     {
       "op": "replace",
-      "path": "/data/trade/basic/notionalCurrency",
-      "value": "${json-unit.any-string}"
+      "path": "/data/trade/basic/currencyPair",
+      "value": "EURSGD"
     },
     {
       "op": "replace",
       "path": "/data/trade/basic/eventStatus",
       "value": "StepInPartial"
+    },
+    {
+      "op": "replace",
+      "path": "/data/trade/basic/direction",
+      "value": "Sell"
     },
     {
       "op": "add",

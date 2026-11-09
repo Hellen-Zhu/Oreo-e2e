@@ -18,7 +18,15 @@ API and UI data never read each other; only the code is shared.
 
 ## Products and capabilities
 
-`ProductDatFiles` lists every product with its dat file and the capabilities it supports (`Capability`: `create`,
+`ProductDatFiles` lists every product with its dat file and the capabilities it supports. A product is a
+composition: the constant is named as the trade's `basic.compositionId` (`FX_TRF`, `FX_CO`, `FX_FSB`,
+`FX_PSCRIPT_TRF`), which is one per trade type, and registers that trade type once, as the end of `basic.tradeType` after
+`Tradeable.` (`PayoffScript.Ctrl.CorrOption`), with the one product ID the cases send as `basic.productId`
+(`FX_PSCRIPT`; a trade type can have several product IDs, one covers it). Feature files and data name only the
+composition; the requests, the check after every trade the suite creates (`TradeApiClient.checkComposition`: the
+created trade's composition ID and trade type must be the registered ones), the report line of a case (`composition
+FX_CO: trade type ..., product ID FX_PSCRIPT`) and `check` read the rest from the registry. The capabilities
+(`Capability`: `create`,
 `stepInFull`, `stepInPartial` and one per lifecycle event, `earlyTermination`, `novationRemaining`, `cancellation`,
 `allocation`, `amendment`, `partialTermination`, `partialNovationRemaining`, `stepOutFull`, `stepOutPartial`,
 `portfolioReassignment`, named as in the replay project's `framework/products.ts`; then `fixings`, `cortexFormula` and
@@ -83,7 +91,8 @@ with the columns `| case | dataset |` (`001`, `002` ...); each case is its own r
 - A row exists only for a case that differs from the defaults. Its `id` is the feature's, as written: an Outline's
   `TC-TRADE-CREATION-<product_type>-API-002` covers every product; product differences go into the row's `byProduct`.
   A case matched by two rows is an error.
-- Any other key is a load error. `basic.productId` is never written: the step sets it from the product.
+- Any other key is a load error. `basic.productId` is never written: the step sets it to the product ID the registry
+  gives the composition.
 - A field that only some products' forms have is case data, not an `Examples` column: its value goes into those
   products' `byProduct`, and the step that fills it ends in `if it is set` (`type inner value '<key>' from stored
   variable into '<element>' if it is set` types nothing when the case has no value). Example: `targetAmount` of
@@ -322,7 +331,8 @@ or with `-U`.
   every API case has its expected file (except those tagged `@expected#none`) and every expected file its case, the rules agree with the expected files,
   every setup name used exists, the expected files resolve and are compacted (a file the compaction would still change
   is a warning), the product Outlines' `Examples` match the registry, every product with a capability has its dat
-  file, no API snippet only renames a shared outcome of `common_api.snippet` (a step whose body is one outcome, or
+  file, the recorded trades agree with the registry (`expected/_shared/{basic,instrument}/<C>.json`: composition ID,
+  trade type and `_value._type.ref[0]`; a basic recorded before composition IDs is a warning), no API snippet only renames a shared outcome of `common_api.snippet` (a step whose body is one outcome, or
   the status check of a status an outcome covers, plus the recording check). Exit code 1 on a problem. Run it before committing a change to the data, the features or the registry.
 - `sync-examples`: writes the product Outlines' `Examples` from `ProductDatFiles` ("Products and capabilities").
 - `unused-steps`: lists the snippets and Java steps no feature reaches, walking from the feature steps through the
@@ -393,7 +403,7 @@ every variant differ from it.
 
 | Task | What to change |
 |---|---|
-| New product | `ProductDatFiles` constant with its capabilities, and `data/dat/<P>/<P>.dat`; `mvn -Ptest-data process-test-classes "-Dexec.args=sync-examples"` writes it into the Outlines' Examples; `byProduct` only where its data or dynamic fields differ; run the API cases, compact, review the recorded files, commit (no base to declare: `defaults` covers every product). The skill `.claude/skills/onboarding-e2e-product` walks through it |
+| New product | `ProductDatFiles` constant (composition ID, trade type, product ID) with its capabilities, and `data/dat/<P>/<P>.dat`; `mvn -Ptest-data process-test-classes "-Dexec.args=sync-examples"` writes it into the Outlines' Examples; `byProduct` only where its data or dynamic fields differ; run the API cases, compact, review the recorded files, commit (no base to declare: `defaults` covers every product). The skill `.claude/skills/onboarding-e2e-product` walks through it |
 | New positive case | nothing when it runs on the defaults; otherwise a row with the feature's ID; after the recording, compact |
 | New negative case | a row with the `request` change and `"dynamicFields": null` |
 | New API case that checks the database, not the response | the tag `@expected#none` on it (or on its Feature); no expected file |

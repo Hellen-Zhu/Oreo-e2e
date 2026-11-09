@@ -1,5 +1,5 @@
 {
-  "_base": "TC-TRADE-CREATION-FX_PSCRIPT_FSKO-API-001",
+  "_base": "TC-TRADE-CREATION-FX_FSB-API-001",
   "_patch": [
     {
       "op": "replace",
@@ -9,7 +9,7 @@
     {
       "op": "replace",
       "path": "/data/trade/basic/eventStatus",
-      "value": "StepInFull"
+      "value": "StepInPartial"
     },
     {
       "op": "add",
@@ -17,7 +17,7 @@
       "value": [
         {
           "key": "stepInType",
-          "value": "StepInFull",
+          "value": "StepInPartial",
           "type": "Text"
         },
         {

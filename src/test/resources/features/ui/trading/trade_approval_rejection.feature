@@ -13,11 +13,11 @@ Feature: Trade APPROVAL-REJECTION E2E
     And the trade is Live and marked as New
 
     Examples:
-      | product_type    |
-      | FX_TRF          |
-      | FX_PSCRIPT      |
-      | FX_PSCRIPT_FSKO |
-      | FX_PSCRIPT_TRF  |
+      | product_type   |
+      | FX_TRF         |
+      | FX_CO          |
+      | FX_FSB         |
+      | FX_PSCRIPT_TRF |
 
   @ADO#positive @ADO#regression @capability#create
   Scenario Outline: [TC-TRADE-APPROVAL-REJECTION-<product_type>-UI-002] <product_type> Trade reverts to Draft when Checker rejects the submission
@@ -28,11 +28,11 @@ Feature: Trade APPROVAL-REJECTION E2E
     And the trade is Draft and marked as New
 
     Examples:
-      | product_type    |
-      | FX_TRF          |
-      | FX_PSCRIPT      |
-      | FX_PSCRIPT_FSKO |
-      | FX_PSCRIPT_TRF  |
+      | product_type   |
+      | FX_TRF         |
+      | FX_CO          |
+      | FX_FSB         |
+      | FX_PSCRIPT_TRF |
 
   @ADO#positive @ADO#regression
   Scenario: [TC-TRADE-APPROVAL-REJECTION-UI-003] StepIn Full trade is Live after Maker submits and Checker approves

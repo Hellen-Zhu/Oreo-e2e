@@ -36,11 +36,11 @@ Feature: Trade Checker Approval API
     Then the trade basic status is 'Live'
 
     Examples:
-      | product_type    |
-      | FX_TRF          |
-      | FX_PSCRIPT      |
-      | FX_PSCRIPT_FSKO |
-      | FX_PSCRIPT_TRF  |
+      | product_type   |
+      | FX_TRF         |
+      | FX_CO          |
+      | FX_FSB         |
+      | FX_PSCRIPT_TRF |
 
   @ADO#positive @ADO#regression @capability#create
   Scenario Outline: [TC-TRADE-APPROVAL-REJECTION-<product_type>-API-005] Checker rejection of <product_type> trade creation returns trade to Draft
@@ -51,11 +51,11 @@ Feature: Trade Checker Approval API
     Then the trade basic status is 'Draft'
 
     Examples:
-      | product_type    |
-      | FX_TRF          |
-      | FX_PSCRIPT      |
-      | FX_PSCRIPT_FSKO |
-      | FX_PSCRIPT_TRF  |
+      | product_type   |
+      | FX_TRF         |
+      | FX_CO          |
+      | FX_FSB         |
+      | FX_PSCRIPT_TRF |
 
   @ADO#negative @ADO#regression
   Scenario: [TC-TRADE-APPROVAL-REJECTION-API-006] Maker is blocked from self-approving a trade creation task
@@ -73,11 +73,11 @@ Feature: Trade Checker Approval API
     Then the trade basic status is 'Dead'
 
     Examples:
-      | product_type    |
-      | FX_TRF          |
-      | FX_PSCRIPT      |
-      | FX_PSCRIPT_FSKO |
-      | FX_PSCRIPT_TRF  |
+      | product_type   |
+      | FX_TRF         |
+      | FX_CO          |
+      | FX_FSB         |
+      | FX_PSCRIPT_TRF |
 
   @ADO#positive @ADO#regression @capability#cancellation
   Scenario Outline: [TC-TRADE-APPROVAL-REJECTION-<product_type>-API-008] Checker rejects <product_type> cancellation and trade reverts to Live
@@ -88,11 +88,11 @@ Feature: Trade Checker Approval API
     Then the trade basic status is 'Live'
 
     Examples:
-      | product_type    |
-      | FX_TRF          |
-      | FX_PSCRIPT      |
-      | FX_PSCRIPT_FSKO |
-      | FX_PSCRIPT_TRF  |
+      | product_type   |
+      | FX_TRF         |
+      | FX_CO          |
+      | FX_FSB         |
+      | FX_PSCRIPT_TRF |
 
   @ADO#negative @ADO#regression
   Scenario: [TC-TRADE-APPROVAL-REJECTION-API-009] Maker is blocked from self-approving a FX_TRF cancellation task

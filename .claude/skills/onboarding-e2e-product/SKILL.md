@@ -1,27 +1,32 @@
 ---
 name: onboarding-e2e-product
-description: Use when a new OREO product type has to be covered by the Java + Cucumber (Genie) cases of oreo-e2e - "add product X to the E2E project", "we are launching X", "here is the dat file of X", "which E2E cases does X need", "what do I need to give you for X" - or when a product turns out not to support a scenario there.
+description: Use when a new OREO product type (a composition / trade type) has to be covered by the Java + Cucumber (Genie) cases of oreo-e2e - "add product X to the E2E project", "we are launching X", "here is the dat file of X", "which E2E cases does X need", "what do I need to give you for X" - or when a product turns out not to support a scenario there.
 ---
 
 # Onboarding a product (oreo-e2e)
 
 ## Overview
 
-A product is a row, not code. Steps, snippets, the test data hook and the response check already take the product as a parameter, and `expectedBase` (`<product_type>`) already covers every product. Onboarding is: one `ProductDatFiles` constant listing the capabilities the product supports, its dat file, `byProduct` entries only for values that differ, a tool run that writes the product into the `Examples` of the Outlines tagged with those capabilities, and API responses recorded on the real system.
+A product is a row, not code. Steps, snippets, the test data hook and the response check already take the product as a parameter, and `expectedBase` (`<product_type>`) already covers every product. A product is a composition: one per trade type, named as the trade's `basic.compositionId` (`FX_TRF`, `FX_CO`, `FX_FSB`, `FX_PSCRIPT_TRF`). Onboarding is: one `ProductDatFiles` constant registering its trade type, the product ID the cases send and the capabilities it supports, its dat file, `byProduct` entries only for values that differ, a tool run that writes the product into the `Examples` of the Outlines tagged with those capabilities, and API responses recorded on the real system.
 
-**One input, then a review.** QA gives the dat file; everything else starts from defaults (every capability, the current data) and is shown to QA as one review of the change. QA removes what the product does not support and gives the values that differ; nothing is recorded, run on the real system or committed before QA approves the review.
+**One input, then a review.** QA gives the composition and its dat file; everything else starts from defaults (every capability, the current data) and is shown to QA as one review of the change. QA removes what the product does not support and gives the values that differ; nothing is recorded, run on the real system or committed before QA approves the review.
 
 **Nothing is invented** beyond those stated defaults: no data value, dat content, masking rule or command-line flag. A default QA has not confirmed is marked as such in the review.
 
 Paths below are relative to the oreo-e2e root.
 
-## 1. Ask for the dat file
+## 1. Ask for the composition and its dat file
 
-One question, in the user's language: the product's default dat file, named after the product ID, `<P>.dat`.
+One question, in the user's language, for four things:
 
-- `<P>` is the product type exactly as the system knows it: sent as `basic.productId`, typed into the New Trade Product
-  ID field. New names only (`FX_PSCRIPT`, never `FX_CO`). A file not named that way: ask for the product ID, then name
-  the file `<P>.dat`.
+- `<C>`, the composition ID: `basic.compositionId` of a trade of it, the Product ID column of the product catalogue
+  (`FX_CO`, not the product ID `FX_PSCRIPT`). One per trade type: a composition already in `ProductDatFiles` is
+  already covered, whatever its other product IDs; say so and stop.
+- Its trade type: `basic.tradeType` of a trade of it (the trade detail page's Trade Type). Only the part after
+  `Tradeable.` is registered (`PayoffScript.Ctrl.CorrOption`); the company prefix never goes into the repo.
+- The product ID the cases send: `basic.productId`, the New Trade Product ID field (`FX_PSCRIPT`). A trade type with
+  several product IDs needs one; QA picks it.
+- Its default dat file, a template of that product ID, named `<C>.dat` here whatever its name was.
 - It is a real trade template the business uses. A file of a few bytes or test text is not one: ask again.
 - In the public copy (its `.dat` files are one-line placeholders) the change does not use the file: make it with the
   placeholder (section 2) and keep the real file as an open item; the company copy needs it before any run.
@@ -32,11 +37,11 @@ Nothing else is asked first. With the dat file, make the change (section 2), the
 
 | File | Change |
 |---|---|
-| `src/main/java/com/example/module/oreo/testdata/ProductDatFiles.java` | One constant `<P>(SUPPORT_CAPABILITY, PRODUCT_FEATURES)`, named exactly as the product ID: both groups, every capability (the trade lifecycle: create, step in full / partial, every lifecycle event; the product features: fixings, cortex formula, product upload) until QA's review takes some off, per group: `except(<group>, <the ones it lacks>)`, `only(<the ones it has>)` (`<P>(SUPPORT_CAPABILITY, only(PRODUCT_UPLOAD))`), or the group left out when it has none of it. Added after the last product, never first (`values()[0]` is the data checks' example product; the order of the constants is the order of the `Examples` rows). Its comment: the product's name as QA gives it, else none |
-| `src/test/resources/data/dat/<P>/<P>.dat` (the default; variants QA names go into the same folder) | If the committed `.dat` files are one-line placeholders (`# Placeholder: copy <P>.dat from the E2E project.`), this is the public copy: write the same line for `<P>`, never the real file, and add `<P>` to the placeholder list in `README.md` ("This copy"). Otherwise copy QA's file byte for byte |
-| `byProduct.<P>` of an event file | Nothing at first: the product runs on the defaults. Only values QA gives in the review that differ from them. `dynamicFields` only after a recording shows them (section 5) |
+| `src/main/java/com/example/module/oreo/testdata/ProductDatFiles.java` | One constant `<C>("<trade type after Tradeable.>", "<product ID>", SUPPORT_CAPABILITY, PRODUCT_FEATURES)`, named exactly as the composition ID: both groups, every capability (the trade lifecycle: create, step in full / partial, every lifecycle event; the product features: fixings, cortex formula, product upload) until QA's review takes some off, per group: `except(<group>, <the ones it lacks>)`, `only(<the ones it has>)` (`<C>("...", "...", SUPPORT_CAPABILITY, only(PRODUCT_UPLOAD))`), or the group left out when it has none of it. Added after the last product, never first (`values()[0]` is the data checks' example product; the order of the constants is the order of the `Examples` rows). Its comment: the product's name as QA gives it, else none |
+| `src/test/resources/data/dat/<C>/<C>.dat` (the default; variants QA names go into the same folder) | If the committed `.dat` files are one-line placeholders (`# Placeholder: copy <C>.dat from the E2E project.`), this is the public copy: write the same line for `<C>`, never the real file, and add `<C>` to the placeholder list in `README.md` ("This copy"). Otherwise copy QA's file byte for byte |
+| `byProduct.<C>` of an event file | Nothing at first: the product runs on the defaults. Only values QA gives in the review that differ from them. `dynamicFields` only after a recording shows them (section 5) |
 
-Then the `Examples`, never by hand: `mvn -Ptest-data process-test-classes "-Dexec.args=sync-examples"` (section 4) writes the row `| <P> |` into every Outline tagged with one of the product's capabilities, in registry order, and prints one line per Outline (`add <P>`). It writes nothing when a feature file has a problem. After QA's review, change the constant and run it again: it removes the rows of the capabilities taken off.
+Then the `Examples`, never by hand: `mvn -Ptest-data process-test-classes "-Dexec.args=sync-examples"` (section 4) writes the row `| <C> |` into every Outline tagged with one of the product's capabilities, in registry order, and prints one line per Outline (`add <C>`). It writes nothing when a feature file has a problem. After QA's review, change the constant and run it again: it removes the rows of the capabilities taken off.
 
 Leave alone:
 - steps, snippets, hooks, `expected/` files, `expectedBase`, `Capability.java` and the `@capability#` tags;
@@ -49,7 +54,7 @@ Coverage QA asks for that no Outline has (a capability no Outline carries, an ev
 One message, in the user's language, after section 2 and `sync-examples`; nothing is recorded or committed until QA
 answers. It holds:
 
-1. **Capabilities** (default: all). A table: capability, the Outlines it now runs for `<P>` (case ID with `<P>`,
+1. **Capabilities** (default: all). A table: capability, the Outlines it now runs for `<C>` (case ID with `<C>`,
    title), from `git diff` of the feature files or `grep -rn -A1 "@capability#" src/test/resources/features`; the
    product's column of `mvn -Ptest-data process-test-classes "-Dexec.args=coverage"` shows how many API and UI
    Outlines each capability runs and which have none (`NONE`, listed as gaps; `"-Dexec.args=coverage --html"` writes
@@ -62,7 +67,7 @@ answers. It holds:
    not a registry line. The answer comes from the requirement or the BA.
 2. **Data the product runs on** (default: the current values). Per event the product joins: the `defaults` of
    `src/test/resources/data/api|ui/<event>.json` and the `shared` blocks they `use` (the event file's own `shared`, or
-   `api/common.json`, `ui/common.json`); `mvn -Ptest-data process-test-classes "-Dexec.args=case TC-<EVENT>-<P>-API-001"` prints the merged request. QA gives
+   `api/common.json`, `ui/common.json`); `mvn -Ptest-data process-test-classes "-Dexec.args=case TC-<EVENT>-<C>-API-001"` prints the merged request. QA gives
    only the values that differ (e.g. `earlyTermination.amount` must fit the dat file's notional); a wrong default fails
    the case (the status check runs before any recording).
 3. **Anything the current products do not have**: in the New Trade form, the trade detail page or the setup trade
@@ -71,30 +76,30 @@ answers. It holds:
 4. **The diff**: files created and changed.
 
 Apply QA's answers: capabilities off the constant and `sync-examples` again, the values that differ under
-`byProduct.<P>`. Record and commit only when every capability row has its answer. When QA cannot be reached, stop here: the change stays uncommitted, the review is the report.
+`byProduct.<C>`. Record and commit only when every capability row has its answer. When QA cannot be reached, stop here: the change stays uncommitted, the review is the report.
 
 ## 4. Offline check
 
 The tool is `src/test/java/com/example/module/oreo/tools/TestDataTool.java`, documented in `.claude/skills/maintaining-e2e-test-data/SKILL.md`. Every command below is that Maven command, written in full: `mvn -Ptest-data process-test-classes "-Dexec.args=<command>"`; without `exec.args` it runs `check`. The class `TestDataTool` is run only through it. Run them only where the user says oreo-e2e builds (the company machine); elsewhere give them the commands.
 
-`mvn -Ptest-data process-test-classes`. Expected before `sync-examples`: "the product Outlines' Examples match the registry" fails with one `add <P>` line per Outline of the product's capabilities. After it, until the recordings: only "every API case has its expected file" fails, one `no expected file` line per new API case. Any other problem (a product that is not in `ProductDatFiles`, a `byProduct` without a dat file, a `remove` line before QA took a capability off) is a mistake in section 2.
+`mvn -Ptest-data process-test-classes`. Expected before `sync-examples`: "the product Outlines' Examples match the registry" fails with one `add <C>` line per Outline of the product's capabilities. After it, until the recordings: only "every API case has its expected file" fails, one `no expected file` line per new API case. Any other problem (a product that is not in `ProductDatFiles`, a `byProduct` without a dat file, a `remove` line before QA took a capability off) is a mistake in section 2.
 
-`mvn -Ptest-data process-test-classes "-Dexec.args=case TC-TRADE-CREATION-<P>-API-001"` prints the merged request the case will send.
+`mvn -Ptest-data process-test-classes "-Dexec.args=case TC-TRADE-CREATION-<C>-API-001"` prints the merged request the case will send.
 
 ## 5. Record the API responses (company machine, real system)
 
-Every run books real UAT trades: run only the product's cases. Select them with `-Dcucumber.options` (`docs/standards/bdd-feature-implementation-standards.md` §6.2), e.g. `mvn -B test -Dtest=OreoTest "-Dcucumber.options=--name ^\[TC-[A-Z-]+-<P>-API-\d+\].*$"` for every API case of the product, and `-UI-` in the same pattern for its UI cases. Never `-Dcucumber.filter.tags` / `-Dcucumber.filter.name`: unsupported here, they may be ignored silently and run everything. The risk engine mode is `oreo.risk.engine.mode` in `genie.properties`.
+Every run books real UAT trades: run only the product's cases. Select them with `-Dcucumber.options` (`docs/standards/bdd-feature-implementation-standards.md` §6.2), e.g. `mvn -B test -Dtest=OreoTest "-Dcucumber.options=--name ^\[TC-[A-Z-]+-<C>-API-\d+\].*$"` for every API case of the product, and `-UI-` in the same pattern for its UI cases. Never `-Dcucumber.filter.tags` / `-Dcucumber.filter.name`: unsupported here, they may be ignored silently and run everything. The risk engine mode is `oreo.risk.engine.mode` in `genie.properties`.
 
 1. Run the product's API cases: each records `data/api/expected/<event>/<caseId>.json` and fails once.
-2. Run `mvn -Ptest-data process-test-classes "-Dexec.args=suggest <event>"` for the values that look generated, then run the cases again. A failure on a value that changed between the two runs (an ID, a date, a version, a generated schedule) is a dynamic field. Add a rule under `byProduct.<P>.dynamicFields` of the event file, shaped like the other products' entries (`type`, `type-tree`, `regex:<pattern>`, `var:<name>`, `ignore`: `docs/test-data.md`, "Recorded responses"). Record again with `OREO_EXPECTED=update`, then run once more: it must pass.
+2. Run `mvn -Ptest-data process-test-classes "-Dexec.args=suggest <event>"` for the values that look generated, then run the cases again. A failure on a value that changed between the two runs (an ID, a date, a version, a generated schedule) is a dynamic field. Add a rule under `byProduct.<C>.dynamicFields` of the event file, shaped like the other products' entries (`type`, `type-tree`, `regex:<pattern>`, `var:<name>`, `ignore`: `docs/test-data.md`, "Recorded responses"). Record again with `OREO_EXPECTED=update`, then run once more: it must pass.
 3. Review each recorded file against the requirement: a wrong value recorded is a wrong expectation.
-4. Compact with `mvn -Ptest-data process-test-classes "-Dexec.args=compact <event>"`, then review `git diff`: the product's variants become patches on its `API-001`, and where the event declares shared parts (the block `trade-response-parts` in `use`, the paths in `sharedFragments`) the product gets its own `expected/_shared/basic/<P>.json` and `instrument/<P>.json`, taken from its first recorded case, with references in its files. Nothing to write by hand. If a rule was added after the shared files were written, run `mvn -Ptest-data process-test-classes "-Dexec.args=compact all"` instead: `compact <event>` keeps a shared file as it is, so a value masked later would stay as a key that differs in every case. Run `mvn -Ptest-data process-test-classes` again: no problem.
+4. Compact with `mvn -Ptest-data process-test-classes "-Dexec.args=compact <event>"`, then review `git diff`: the product's variants become patches on its `API-001`, and where the event declares shared parts (the block `trade-response-parts` in `use`, the paths in `sharedFragments`) the product gets its own `expected/_shared/basic/<C>.json` and `instrument/<C>.json`, taken from its first recorded case, with references in its files. Nothing to write by hand. If a rule was added after the shared files were written, run `mvn -Ptest-data process-test-classes "-Dexec.args=compact all"` instead: `compact <event>` keeps a shared file as it is, so a value masked later would stay as a key that differs in every case. Run `mvn -Ptest-data process-test-classes` again: no problem, and "the recorded trades agree with the composition registry" without a warning for `<C>` (a problem there is a wrong trade type or composition ID in the constant, or a dat file of another trade type). The runs themselves already fail on that: every trade the suite creates is checked against the registry, and the report shows `composition <C>: trade type ..., product ID ...`.
 5. Run the product's UI cases.
 
 ## 6. Report
 
 In the user's language:
-1. **Coverage**: one line per capability: yes (its Outlines, as case IDs with `<P>`) / no, and whether QA confirmed it
+1. **Coverage**: one line per capability: yes (its Outlines, as case IDs with `<C>`) / no, and whether QA confirmed it
    in the review or it is still the default.
 2. **Files** created and changed.
 3. **Open**: the real dat file (public copy), review answers still missing, values still on the defaults, recordings
@@ -115,6 +120,8 @@ In the user's language:
 | `dynamicFields` guessed before a recording | A rule whose path is not in the response fails the recording |
 | Expected files written by hand | Record them |
 | The product added to negative scenarios | They are written for one product |
+| A constant named after the product ID (`FX_PSCRIPT`), or a second one for another product ID of a registered trade type | One constant per composition ID; its product ID is the second argument |
+| The full trade type with the company prefix in the constant | Only the part after `Tradeable.` |
 
 ## Never
 

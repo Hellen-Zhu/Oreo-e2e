@@ -1,5 +1,5 @@
 {
-  "_base": "TC-TRADE-CREATION-FX_PSCRIPT-API-001",
+  "_base": "TC-TRADE-CREATION-FX_CO-API-001",
   "_patch": [
     {
       "op": "replace",

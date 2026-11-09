@@ -62,13 +62,13 @@
         "data.trade.instrument.TRF.delivery.DD_Physical.dd_roundings": "type-tree"
       }
     },
-    "FX_PSCRIPT": {
+    "FX_CO": {
       "dynamicFields": {
         "data.trade.instrument.PayoffScript.trdData.DataRec.fixingSched.FS_SchedParams.fs_anchorDate": "type",
         "data.trade.instrument.PayoffScript.trdData.DataRec.fixingSched.FS_SchedParams.fs_end.SE_ByEndDate.se_endDate": "type"
       }
     },
-    "FX_PSCRIPT_FSKO": {
+    "FX_FSB": {
       "dynamicFields": {
         "data.trade.basic.notionalAmount": "type",
         "data.trade.instrument.version": "type",

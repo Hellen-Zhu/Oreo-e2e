@@ -13,11 +13,11 @@ Feature: Trade Allocation Event API
     And the allocated trades carry the requested notional amounts
 
     Examples:
-      | product_type    |
-      | FX_TRF          |
-      | FX_PSCRIPT      |
-      | FX_PSCRIPT_FSKO |
-      | FX_PSCRIPT_TRF  |
+      | product_type   |
+      | FX_TRF         |
+      | FX_CO          |
+      | FX_FSB         |
+      | FX_PSCRIPT_TRF |
 
   @ADO#positive @ADO#regression @capability#allocation
   Scenario Outline: [TC-TRADE-ALLOCATION-<product_type>-API-002] 3-way unequal allocation executes successfully for <product_type> trade
@@ -28,11 +28,11 @@ Feature: Trade Allocation Event API
     And the allocated trades carry the requested notional amounts
 
     Examples:
-      | product_type    |
-      | FX_TRF          |
-      | FX_PSCRIPT      |
-      | FX_PSCRIPT_FSKO |
-      | FX_PSCRIPT_TRF  |
+      | product_type   |
+      | FX_TRF         |
+      | FX_CO          |
+      | FX_FSB         |
+      | FX_PSCRIPT_TRF |
 
   @ADO#negative @ADO#smoke
   Scenario: [TC-TRADE-ALLOCATION-API-003] Allocation rejected with 400 when notional don't sum to parent for FX_TRF trade

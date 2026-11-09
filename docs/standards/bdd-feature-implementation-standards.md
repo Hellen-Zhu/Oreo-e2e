@@ -183,7 +183,7 @@ Full rules: [docs/test-data.md](../test-data.md). The essentials:
   product differences go into `byProduct`.
 - Objects merge, arrays and values replace whole, `null` removes; `${date:T±N}` for dates.
   `dynamicFields` and `expectedBase` are API only.
-- Never write `basic.productId`: the step sets it from the product.
+- Never write `basic.productId`: the step sets it to the product ID the registry gives the composition.
 
 ### 5.2 Setup data — `data/setup/{name}.json`
 
@@ -194,8 +194,14 @@ so that each run creates a product of its own.
 
 ### 5.3 Products — `ProductDatFiles`
 
-- A product is an enum constant with its capabilities and `data/dat/<P>/<P>.dat`; a variant dat file is case data
-  (`datFile`), never a new product.
+- A product is a composition: an enum constant named as its `basic.compositionId`, with its trade type (after
+  `Tradeable.`), the product ID the cases send, its capabilities and `data/dat/<C>/<C>.dat`. Feature files name only
+  the composition; one composition per trade type, never a second constant for another product ID of it. A variant
+  dat file is case data (`datFile`), never a new product.
+- Every trade the suite creates is checked against the registry (`TradeApiClient.checkComposition`), and each case
+  writes `composition <C>: trade type ..., product ID ...` to the report. A step that needs the product ID uses
+  `set path parameter '<name>' to the product ID of '<C>'` (API) or `store the product ID of '<C>' as '<key>'` (UI),
+  never the composition in its place.
 - Product Outlines' `Examples` are written by `mvn -Ptest-data process-test-classes "-Dexec.args=sync-examples"`, never by hand. To leave a product out, take
   the capability off it in the registry.
 - Adding a product: skill `onboarding-e2e-product`.

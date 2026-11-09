@@ -6,10 +6,10 @@
     "trade": {
       "id": "${json-unit.any-string}",
       "basic": {
-        "_shared": "basic/FX_PSCRIPT_FSKO"
+        "_shared": "basic/FX_CO"
       },
       "instrument": {
-        "_shared": "instrument/FX_PSCRIPT_FSKO"
+        "_shared": "instrument/FX_CO"
       },
       "trace": []
     },

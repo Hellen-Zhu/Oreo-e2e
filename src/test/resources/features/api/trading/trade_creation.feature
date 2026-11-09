@@ -11,11 +11,11 @@ Feature: Trade Creation API
     Then the trade is created with status as 'Pending Approval Draft' and persisted successfully
 
     Examples:
-      | product_type    |
-      | FX_TRF          |
-      | FX_PSCRIPT      |
-      | FX_PSCRIPT_FSKO |
-      | FX_PSCRIPT_TRF  |
+      | product_type   |
+      | FX_TRF         |
+      | FX_CO          |
+      | FX_FSB         |
+      | FX_PSCRIPT_TRF |
 
   @ADO#positive @ADO#regression @capability#stepInPartial
   Scenario Outline: [TC-TRADE-CREATION-<product_type>-API-002] Valid <product_type> Step In Partial trade submission enters Pending Approval state
@@ -24,11 +24,11 @@ Feature: Trade Creation API
     Then the trade is created with status as 'Pending Approval Draft' and persisted successfully
 
     Examples:
-      | product_type    |
-      | FX_TRF          |
-      | FX_PSCRIPT      |
-      | FX_PSCRIPT_FSKO |
-      | FX_PSCRIPT_TRF  |
+      | product_type   |
+      | FX_TRF         |
+      | FX_CO          |
+      | FX_FSB         |
+      | FX_PSCRIPT_TRF |
 
   @ADO#positive @ADO#regression @capability#stepInFull
   Scenario Outline: [TC-TRADE-CREATION-<product_type>-API-003] Valid <product_type> Step In Full trade submission enters Pending Approval state
@@ -37,11 +37,11 @@ Feature: Trade Creation API
     Then the trade is created with status as 'Pending Approval Draft' and persisted successfully
 
     Examples:
-      | product_type    |
-      | FX_TRF          |
-      | FX_PSCRIPT      |
-      | FX_PSCRIPT_FSKO |
-      | FX_PSCRIPT_TRF  |
+      | product_type   |
+      | FX_TRF         |
+      | FX_CO          |
+      | FX_FSB         |
+      | FX_PSCRIPT_TRF |
 
   @ADO#negative @ADO#regression
   Scenario: [TC-TRADE-CREATION-API-004] Trade creation is rejected when counterparty is absent for FX_TRF trade

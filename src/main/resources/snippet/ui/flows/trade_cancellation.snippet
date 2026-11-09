@@ -6,7 +6,7 @@
     And perform cancellation for the trade from trade portal
     And the cancellation is submitted successfully
 
-# Product param must match a ProductDatFiles enum name: FX_TRF | FX_PSCRIPT that match a .dat test data file name
+# Product param is a composition registered in ProductDatFiles (FX_TRF, FX_CO, ...): its dat folder and product ID
 
 @Given "^multiple '([^']*)' trades in Pending Approval status with Cancellation tasks are visible in the blotter$"
     Given multiple '$1' trades with pending cancellation are provisioned via playwright api

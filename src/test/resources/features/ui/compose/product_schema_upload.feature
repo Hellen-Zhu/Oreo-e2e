@@ -14,11 +14,11 @@ Feature: Product Schema Upload E2E
     And the product is accessible in the product list and detail page
 
     Examples:
-      | product_type    |
-      | FX_TRF          |
-      | FX_PSCRIPT      |
-      | FX_PSCRIPT_FSKO |
-      | FX_PSCRIPT_TRF  |
+      | product_type   |
+      | FX_TRF         |
+      | FX_CO          |
+      | FX_FSB         |
+      | FX_PSCRIPT_TRF |
 
   @ADO#positive @ADO#regression @ADO#smoke
   Scenario: [TC-PRODUCT-SCHEMA-UPLOAD-UI-002] Re-uploading same CorrOption version requires overwrite confirmation before save

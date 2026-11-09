@@ -14,11 +14,11 @@ Feature: Trade Early Termination API
     Then the trade basic event status is 'Terminated'
 
     Examples:
-      | product_type    |
-      | FX_TRF          |
-      | FX_PSCRIPT      |
-      | FX_PSCRIPT_FSKO |
-      | FX_PSCRIPT_TRF  |
+      | product_type   |
+      | FX_TRF         |
+      | FX_CO          |
+      | FX_FSB         |
+      | FX_PSCRIPT_TRF |
 
   @ADO#negative @ADO#regression @capability#earlyTermination
   Scenario Outline: [TC-TRADE-EARLY-TERMINATION-<product_type>-API-002] Malformed EarlyTermination event is rejected with error recorded for a <product_type> trade
@@ -28,11 +28,11 @@ Feature: Trade Early Termination API
     Then the 'EarlyTermination' event is rejected with a validation error
 
     Examples:
-      | product_type    |
-      | FX_TRF          |
-      | FX_PSCRIPT      |
-      | FX_PSCRIPT_FSKO |
-      | FX_PSCRIPT_TRF  |
+      | product_type   |
+      | FX_TRF         |
+      | FX_CO          |
+      | FX_FSB         |
+      | FX_PSCRIPT_TRF |
 
   @ADO#negative @ADO#regression @capability#earlyTermination
   Scenario Outline: [TC-TRADE-EARLY-TERMINATION-<product_type>-API-003] Duplicate EarlyTermination event is rejected with error recorded for a <product_type> trade
@@ -44,8 +44,8 @@ Feature: Trade Early Termination API
     Then the 'EarlyTermination' event is rejected with a validation error
 
     Examples:
-      | product_type    |
-      | FX_TRF          |
-      | FX_PSCRIPT      |
-      | FX_PSCRIPT_FSKO |
-      | FX_PSCRIPT_TRF  |
+      | product_type   |
+      | FX_TRF         |
+      | FX_CO          |
+      | FX_FSB         |
+      | FX_PSCRIPT_TRF |
