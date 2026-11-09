@@ -20,15 +20,24 @@ public class TradeDetailSteps {
     @Before({"@playwright"})
     public void beforeScenario(Scenario scenario) { this.ctx = PlaywrightServiceResolver.from(scenario); }
 
-    /** Waits for the trade, then its risk metrics, answered by setup risk-metrics-success-mock in MOCK mode. */
+    /**
+     * What the trade detail page loads when it opens trade {@code tradeId}, in order: the trade (the backend answers),
+     * then its risk metrics, answered by setup risk-metrics-success-mock in MOCK mode. Every step that opens the page
+     * waits for these.
+     */
+    static List<RiskCall> openingCalls(String tradeId) {
+        return List.of(
+                new RiskCall("GET", TradeApiClient.tradePath(tradeId), null),
+                new RiskCall("GET", TradeApiClient.riskMetricsPath(tradeId), "risk-metrics-success-mock"));
+    }
+
+    /** Opens the trade detail page by its URL and waits for {@link #openingCalls}. */
     @When("^navigate to trade details for stored trade '([^']*)'$")
     public void navigateToTradeDetails(String ctxKey){
         String tradeId = ctx.get(ctxKey);
         ctx.write("Navigating to trade details for tradeId: " + tradeId);
         log.info("Navigating to trade details for tradeId: {}", tradeId);
-        ctx.navigateUsingRiskEngineMode("/trade/" + tradeId, List.of(
-                new RiskCall("GET", TradeApiClient.tradePath(tradeId), null),
-                new RiskCall("GET", TradeApiClient.riskMetricsPath(tradeId), "risk-metrics-success-mock")));
+        ctx.navigateUsingRiskEngineMode("/trade/" + tradeId, openingCalls(tradeId));
     }
 
     @When("^confirm book trade from detail page for trade '([^']*)'$")

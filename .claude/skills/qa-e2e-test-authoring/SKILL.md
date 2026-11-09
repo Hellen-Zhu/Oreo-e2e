@@ -81,8 +81,9 @@ From `test-agent`: the feature file, the case IDs to implement (only the new or 
    each call with a mock name is answered from `data/setup/<name>.json` (`risk-calc-success-mock`,
    `risk-metrics-success-mock`), a `null` mock only waits; in `REAL` mode they are only awaited, in order. Paths
    come from `TradeApiClient` (`calculateRiskPath`, `riskMetricsPath`), never a literal in the step. Reuse
-   `TradePortalSteps.doubleClickToViewTradeDetail` and `TradeDetailSteps.navigateToTradeDetails` to open the detail
-   page instead of a plain click or navigation.
+   `TradePortalSteps.navigateToTradeDetail` (View Details), `TradePortalSteps.doubleClickToViewTradeDetail` and
+   `TradeDetailSteps.navigateToTradeDetails` (URL) to open the detail page instead of a plain click or navigation; a
+   new way to open it waits for `TradeDetailSteps.openingCalls(tradeId)`.
    Java glue waits through the Context (`ctx.assertEventuallyContains(...)`, `ctx.waitForVisible(...)`), never with
    `PlaywrightAssertions` or `Locator.waitFor` options; a missing wait goes into the `playwright` package first.
 6. **Data**: follow `.claude/skills/qa-api-test-authoring/references/test-data-decisions.md` sections 1-4 (UI data

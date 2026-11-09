@@ -12,7 +12,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.example.module.oreo.utils.TradeApiClient;
 import com.example.module.oreo.playwright.PlaywrightServiceResolver;
-import com.example.module.oreo.playwright.PlaywrightServiceResolver.Context.RiskCall;
 
 import java.util.List;
 
@@ -39,19 +38,18 @@ public class TradePortalSteps {
                 eventName, elementKey, ctxKey, ctx.get(ctxKey));
     }
 
+    /** Opens the trade detail page from the row's View Details action and waits for its trade and risk metrics. */
     @When("^navigate to trade detail and wait for page ready for stored variable '([^']*)'$")
     public void navigateToTradeDetail(String ctxKey) {
-        String tradeId = ctx.get(ctxKey);
-        ctx.clickAndWaitForResponse("trade_portal.row_action_view_details", TradeApiClient.tradePath(tradeId), "GET");
+        ctx.clickUsingRiskEngineMode("trade_portal.row_action_view_details",
+                TradeDetailSteps.openingCalls(ctx.get(ctxKey)));
     }
 
-    /** Waits for the trade, then its risk metrics, answered by setup risk-metrics-success-mock in MOCK mode. */
+    /** Opens the trade detail page by double-clicking the row and waits for its trade and risk metrics. */
     @When("^double click to navigate to trade detail and wait for page ready for stored variable '([^']*)'$")
     public void doubleClickToViewTradeDetail(String ctxKey) {
-        String tradeId = ctx.get(ctxKey);
-        ctx.doubleClickUsingRiskEngineMode("trade_portal.all_trades_blotter_row", List.of(
-                new RiskCall("GET", TradeApiClient.tradePath(tradeId), null),
-                new RiskCall("GET", TradeApiClient.riskMetricsPath(tradeId), "risk-metrics-success-mock")));
+        ctx.doubleClickUsingRiskEngineMode("trade_portal.all_trades_blotter_row",
+                TradeDetailSteps.openingCalls(ctx.get(ctxKey)));
     }
 
     /**
