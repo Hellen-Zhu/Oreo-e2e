@@ -81,17 +81,23 @@ public class TradeLifecycleEventSteps {
                 new RiskCall("GET", TradeApiClient.targetGainPath(ctx.get(ctxKey)), "target-gain-success-mock")));
     }
 
+    /** The number of the case's sub-trades ({@code subTrades} of its data): the allocation dialog's split number. */
+    @When("^the number of sub-trades of the case is stored as '([^']*)'$")
+    public void storeSubTradeCount(String key) {
+        int legs = caseSubTrades().size();
+        ctx.set(key, String.valueOf(legs));
+        ctx.write("Split into " + legs + " sub-trades");
+    }
+
     /**
-     * Splits the allocation dialog into the case's sub-trades ({@code subTrades} of its data): types their number as
-     * the split number, then fills the rows it made, one per item: the item's {@code counterpartyName} is selected
-     * and its {@code percentage} typed, each when the item has it. The report shows each row.
+     * Fills the sub-trade rows of the allocation dialog, which the split number has made, one per item of the case's
+     * {@code subTrades}: the item's {@code counterpartyName} is selected and its {@code percentage} typed, each when
+     * the item has it. The report shows each row.
      */
-    @When("^user splits the allocation into the sub-trades of the case$")
+    @When("^user fills the sub-trade rows of the case$")
     public void fillSubTradeRows() {
         JsonNode subTrades = caseSubTrades();
         int legs = subTrades.size();
-        ctx.innerInput("allocation_dialog.number_split_input").fill(String.valueOf(legs));
-        ctx.write("Split into " + legs + " sub-trades");
         Locator counterparties = ctx.service().getLocator("allocation_dialog.subtrade_counterparty_select");
         Locator percentages = ctx.service().getLocator("allocation_dialog.subtrade_percentage_input");
         for (int i = 0; i < legs; i++) {

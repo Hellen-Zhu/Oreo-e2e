@@ -2,7 +2,9 @@
 # only names the split.
 @When "^perform (?:equal|unequal) allocation for the trade$"
     When opens lifecycle action 'allocation' for current trade
-    And user splits the allocation into the sub-trades of the case
+    And the number of sub-trades of the case is stored as 'subTradeCount'
+    And component allocation dialog enters split number from stored variable 'subTradeCount'
+    And user fills the sub-trade rows of the case
     And component allocation dialog total pct value is 'Total: 100.00% ✓'
     And submits allocation event and waits for allocation response
 
