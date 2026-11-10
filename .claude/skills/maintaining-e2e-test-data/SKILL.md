@@ -57,7 +57,7 @@ One `[ok]` or `[FAIL]` line per check, its problems and `[warn]` lines below it:
 4. every API case has its expected file, every expected file its case; a case tagged `@expected#none` (on its Scenario / Outline, Rule or Feature line: it checks the database, not the response) has none, and a file left for it is a problem;
 5. the `dynamicFields` rules agree with the expected files (warning: a placeholder without a rule);
 6. the expected files resolve and are compacted (warning: a file `compact` would still change);
-7. every setup name the code, snippets or features use has its `data/setup/` file, except `trade-cancellation` and `trade-amendment` (not covered yet: the user's decision, `KNOWN_MISSING`);
+7. every setup name the code, snippets or features use has its `data/setup/` file, except `trade-cancellation` and `trade-amendment` (not covered yet: the user's decision, `check.knownMissingSetups` in `src/test/resources/test-data.properties`);
 8. the product Outlines' `Examples` match the registry;
 9. every product with a capability has its default dat file;
 10. the recorded trades agree with the composition registry: `_shared/basic/<C>.json` has composition ID `<C>` and
@@ -94,4 +94,4 @@ One `[ok]` or `[FAIL]` line per check, its problems and `[warn]` lines below it:
 | `Examples` rows typed by hand | `sync-examples` |
 | Expected files written or patched by hand | Record them, then `compact` |
 | A case that checks the database fails `check` with `no expected file` | Tag it `@expected#none`; never record a response it does not compare |
-| A check loosened, or a name added to `KNOWN_MISSING`, to get `[ok]` | Fix the data; `KNOWN_MISSING` is the user's decision |
+| A check loosened, or a name added to `check.knownMissingSetups`, to get `[ok]` | Fix the data; that list is the user's decision |

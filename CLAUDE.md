@@ -24,6 +24,10 @@ Read this before changing files. It holds the rules and the traps; the details l
   `FX_PSCRIPT`), registered once with its trade type and the product ID sent; features never name either.
 - **The data checks are `mvn -Ptest-data process-test-classes`** (ten unit tests, then `TestDataTool check`). There is
   no `TestDataValidationTest`, `CompactExpectedFiles` or `SyncProductExamples`: they became `TestDataTool` commands.
+- **The test data code has two layers, one direction.** `testdata/` (`src/main`) loads case, setup and expected data
+  for the glue; `tools/` (`src/test`, `TestDataTool`) checks and rewrites it offline and uses `testdata/`. Neither
+  imports glue, `playwright`, `config` or the API clients (`utils.DateUtil` only); the glue calls `testdata/`'s public
+  API and never `tools/`. Decisions about the data, not code, go to `src/test/resources/test-data.properties`.
 
 ## 2. Where to look
 
@@ -116,6 +120,6 @@ a side effect of another change.
 - Transcribed files stay as typed in (only the `com.example` package and the `example.com` e-mail domain are
   substituted); do not complete missing code by guessing. `oreo-company-*-transcribed.md` are reference copies of the
   company's documents: do not edit them.
-- `.dat` files are one-line placeholders; never commit a real dat file. `KNOWN_MISSING` (`tools/Checks.java`) is changed
-  only on the user's decision.
+- `.dat` files are one-line placeholders; never commit a real dat file. `check.knownMissingSetups` (`test-data.properties`) is
+  changed only on the user's decision.
 - Never force-push; never push to or merge into `main` without asking.

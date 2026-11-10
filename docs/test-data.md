@@ -291,7 +291,9 @@ part's events together, then `compact all`.
 ## Commands
 
 The offline tool is normal test-source code in `src/test/java/com/example/module/oreo/tools/`, entry point
-`TestDataTool.java`.
+`TestDataTool.java`. It uses the runtime data code of `src/main/java/com/example/module/oreo/testdata/`, which the glue
+uses too; neither imports the glue (CLAUDE.md, section 1). Decisions about the data that are not code live in
+`src/test/resources/test-data.properties`: `check.knownMissingSetups`, the setup files named but not written yet.
 The `test-data` Maven profile compiles it, refreshes test resources and supplies dependencies automatically.
 The Skill contains usage guidance only. From the project root on the company machine, use the same commands
 in PowerShell, macOS and Linux (each line is a separate operation):

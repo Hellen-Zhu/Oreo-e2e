@@ -27,8 +27,11 @@ import java.util.stream.Stream;
  */
 final class Checks {
 
-    /** Setup files the code names but that do not exist yet: not covered for now (user, 2026-10-16). */
-    private static final Set<String> KNOWN_MISSING = Set.of("trade-cancellation", "trade-amendment");
+    /**
+     * Setup files the code names but that do not exist yet, by the user's decision: {@code check.knownMissingSetups}
+     * of {@link ProjectPaths#SETTINGS_FILE}.
+     */
+    private final Set<String> knownMissing;
 
     private static final String INDENT = "         ";
 
@@ -52,6 +55,8 @@ final class Checks {
         this.project = project;
         this.data = project.resolve("src/test/resources/data");
         this.featureCases = featureCases;
+        this.knownMissing = Set.copyOf(
+                ProjectPaths.listSetting(ProjectPaths.settings(project), "check.knownMissingSetups"));
     }
 
     static int run() throws IOException {
@@ -235,13 +240,13 @@ final class Checks {
             return;
         }
         for (String name : used) {
-            if (KNOWN_MISSING.contains(name)) continue;
+            if (knownMissing.contains(name)) continue;
             if (!Files.isRegularFile(data.resolve("setup").resolve(name + ".json"))) {
                 result.errors.add("setup data '" + name + "' is used but data/setup/" + name
                         + ".json does not exist");
             }
         }
-        result.notes.add("setup names used: " + used + "; known missing: " + new TreeSet<>(KNOWN_MISSING));
+        result.notes.add("setup names used: " + used + "; known missing: " + new TreeSet<>(knownMissing));
     }
 
     private static void collect(Pattern pattern, String text, Set<String> out) {

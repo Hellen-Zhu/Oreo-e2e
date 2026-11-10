@@ -8,6 +8,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
+import java.util.Properties;
 
 /**
  * Finds the {@code oreo-e2e} folder (the one holding {@code pom.xml}) from the classpath, so that files under
@@ -64,5 +65,33 @@ public final class ProjectPaths {
                 && "data".equals(String.valueOf(dir.getFileName()))
                 && "test-classes".equals(String.valueOf(testClasses.getFileName()))
                 && "target".equals(String.valueOf(target.getFileName()));
+    }
+
+    /** The test data settings of the project, a properties file: see {@link #settings(Path)}. */
+    public static final String SETTINGS_FILE = "src/test/resources/test-data.properties";
+
+    /**
+     * The test data settings of {@code project} ({@link #SETTINGS_FILE}), empty when it has none: decisions kept
+     * out of the code, such as the setup files it names but does not have yet ({@code check.knownMissingSetups}).
+     */
+    public static Properties settings(Path project) {
+        Properties settings = new Properties();
+        Path file = project.resolve(SETTINGS_FILE);
+        if (!java.nio.file.Files.isRegularFile(file)) return settings;
+        try (java.io.Reader in = java.nio.file.Files.newBufferedReader(file, java.nio.charset.StandardCharsets.UTF_8)) {
+            settings.load(in);
+        } catch (IOException e) {
+            throw new IllegalStateException("[ProjectPaths] cannot read " + file + ": " + e.getMessage(), e);
+        }
+        return settings;
+    }
+
+    /** The comma-separated values of {@code key} in {@code settings}, trimmed; empty when it is not set. */
+    public static List<String> listSetting(Properties settings, String key) {
+        List<String> values = new ArrayList<>();
+        for (String value : settings.getProperty(key, "").split(",")) {
+            if (!value.isBlank()) values.add(value.trim());
+        }
+        return values;
     }
 }
