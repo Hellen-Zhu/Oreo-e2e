@@ -41,10 +41,8 @@ public final class RestApiUtil {
         String target = normalizeTarget(pathOrUrl);
         log.info("[RestApiUtil] GET start: target='{}', userId='{}'", target, userId);
 
-        prepareRequest(helper, userId, null);
-        helper.get(target);
-
-        return assertAndParse(helper, "GET " + target);
+        String requestId = prepareRequest(helper, userId, null);
+        return send(helper, "GET " + target, requestId, () -> helper.get(target));
     }
 
     public static JsonNode post(RequestResponseHelper helper, String pathOrUrl, String userId, String jsonBody) {
@@ -52,20 +50,16 @@ public final class RestApiUtil {
         int bodyLength = jsonBody == null ? 0 : jsonBody.length();
         log.info("[RestApiUtil] POST start (json): target='{}', userId='{}', bodyLength={}", target, userId, bodyLength);
 
-        prepareRequest(helper, userId, jsonBody);
-        helper.post(target);
-
-        return assertAndParse(helper, "POST " + target);
+        String requestId = prepareRequest(helper, userId, jsonBody);
+        return send(helper, "POST " + target, requestId, () -> helper.post(target));
     }
 
     public static JsonNode post(RequestResponseHelper helper, String pathOrUrl, String userId) {
         String target = normalizeTarget(pathOrUrl);
         log.info("[RestApiUtil] POST start (no-body): target='{}', userId='{}'", target, userId);
 
-        prepareRequest(helper, userId, null);
-        helper.post(target);
-
-        return assertAndParse(helper, "POST " + target);
+        String requestId = prepareRequest(helper, userId, null);
+        return send(helper, "POST " + target, requestId, () -> helper.post(target));
     }
 
     public static JsonNode put(RequestResponseHelper helper, String pathOrUrl, String userId, String jsonBody) {
@@ -73,20 +67,16 @@ public final class RestApiUtil {
         int bodyLength = jsonBody == null ? 0 : jsonBody.length();
         log.info("[RestApiUtil] PUT start: target='{}', userId='{}', bodyLength={}", target, userId, bodyLength);
 
-        prepareRequest(helper, userId, jsonBody);
-        helper.put(target);
-
-        return assertAndParse(helper, "PUT " + target);
+        String requestId = prepareRequest(helper, userId, jsonBody);
+        return send(helper, "PUT " + target, requestId, () -> helper.put(target));
     }
 
     public static JsonNode delete(RequestResponseHelper helper, String pathOrUrl, String userId) {
         String target = normalizeTarget(pathOrUrl);
         log.info("[RestApiUtil] DELETE start: target='{}', userId='{}'", target, userId);
 
-        prepareRequest(helper, userId, null);
-        helper.delete(target);
-
-        return assertAndParse(helper, "DELETE " + target);
+        String requestId = prepareRequest(helper, userId, null);
+        return send(helper, "DELETE " + target, requestId, () -> helper.delete(target));
     }
 
     public static JsonNode postMultipart(
@@ -104,22 +94,38 @@ public final class RestApiUtil {
 
         helper.newRequest();
         setUserHeader(helper, userId);
-        setNewRequestId(helper);
+        String requestId = setNewRequestId(helper);
         helper.request().multiPart(jsonPartName, jsonPartValue, "application/json");
         helper.request().multiPart(filePartName, filePath.toFile());
-        helper.post(target);
-
-        return assertAndParse(helper, "POST " + target);
+        return send(helper, "POST " + target, requestId, () -> helper.post(target));
     }
 
-    private static void prepareRequest(RequestResponseHelper helper, String userId, String jsonBody) {
+    /** Starts a JSON request as {@code userId} and returns its request ID. */
+    private static String prepareRequest(RequestResponseHelper helper, String userId, String jsonBody) {
         helper.newRequest();
         setUserHeader(helper, userId);
-        setNewRequestId(helper);
+        String requestId = setNewRequestId(helper);
         helper.request().header("Content-Type", "application/json");
         if (jsonBody != null) {
             helper.request().body(jsonBody);
         }
+        return requestId;
+    }
+
+    /**
+     * Sends the request and parses its response. Every failure names the request ID, so it can be traced in the
+     * server logs: a non-2xx response, an unparsable body, and an exception before any response (a refused connection,
+     * a terminated TLS handshake, a timeout).
+     */
+    private static JsonNode send(RequestResponseHelper helper, String call, String requestId, Runnable request) {
+        String label = call + " (" + REQUEST_ID_HEADER + " " + requestId + ")";
+        try {
+            request.run();
+        } catch (Exception e) {
+            log.error("[RestApiUtil] No response: label='{}'", label, e);
+            throw new AssertionError(label + " got no response: " + e, e);
+        }
+        return assertAndParse(helper, label);
     }
 
     /**
