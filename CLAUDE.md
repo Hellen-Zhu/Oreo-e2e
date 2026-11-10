@@ -14,7 +14,7 @@ Read this before changing files. It holds the rules and the traps; the details l
   (dev, sit, qa, uat, pt); `genie.properties` holds shared defaults (Edge, headless,
   trace mode, risk engine mode, element paths).
 - **Features run in parallel**: 3 at a time, in separate JVMs. A scenario may not depend on another or on shared mutable
-  state (a fixed trade, portfolio or user setting another feature changes).
+  state (a fixed trade, portfolio or user setting another feature changes). How Genie forks: `docs/genie-parallel-execution.md`.
 - **API runs book real trades** and a case without a recording writes one into `src` and fails once. Run the narrowest
   filter that proves the change.
 - **The case ID is in the scenario name** (`[TC-TRADE-CREATION-FX_TRF-API-001]`), never a tag; it selects the event
@@ -37,6 +37,7 @@ Read this before changing files. It holds the rules and the traps; the details l
 | Write or append feature files | `docs/standards/bdd-feature-generation-standards.md` |
 | Implement steps, snippets, glue, data; verify | `docs/standards/bdd-feature-implementation-standards.md` |
 | Built-in steps | `docs/genie_rest_glue_catalog.md`, `docs/genie_playwright_glue_catalog.md` |
+| Parallel runs: fork mode, fork count, working directory, child logs | `docs/genie-parallel-execution.md` |
 | Test data formats, recorded responses, the tool's commands | `docs/test-data.md` |
 | Change data, features, recordings or the registry | skill `maintaining-e2e-test-data` |
 | Add a product | skill `onboarding-e2e-product` |
