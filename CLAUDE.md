@@ -73,7 +73,8 @@ Stop at the first that fits:
 Trade preconditions already exist; reuse them instead of inlining create + approve (headers and context keys get
 lost): `a live|draft|dead '<product_type>' trade is created via api`, `a '<product_type>' trade is submitted to
 pending approval via api` (API); `a Live|Draft|saved Draft|Dead|Draft Pending Approval '<product_type>' trade exists in the
-blotter` (UI: provisions through the API, neither logs in nor navigates; the trade is in `createdTradeId`).
+blotter`, `a Live '<product_type>' trade with a pending Amendment|Cancellation exists in the blotter` (UI: provisions
+through the API, neither logs in nor navigates; the trade is in `createdTradeId`).
 
 ## 4. Hard stops
 

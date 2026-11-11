@@ -81,7 +81,7 @@ fi
   if [ "$mode" = ui ]; then
     provisioning="$root/src/main/java/com/example/module/oreo/glue/ui/PlaywrightTradeProvisioningSteps.java"
     steps="$(sed -n -E 's/^[[:space:]]*@(Given|When|Then|And)\("\^?(.*)"\).*$/\1 \2/p' "$provisioning" \
-      | sed -E 's/\$$//' | grep 'exists in the blotter' || true)"
+      | sed -E 's/\$$//' | grep -E 'exists? in the blotter' || true)"
     if [ -n "$steps" ]; then
       echo ""
       echo "## UI provisioning (Java: glue/ui/PlaywrightTradeProvisioningSteps.java, called by the feature directly)"

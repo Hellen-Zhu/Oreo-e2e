@@ -9,7 +9,7 @@
 # Product param is a composition registered in ProductDatFiles (FX_TRF, FX_CO, ...): its dat folder and product ID
 
 @Given "^multiple '([^']*)' trades in Pending Approval status with Cancellation tasks are visible in the blotter$"
-    Given multiple '$1' trades with pending cancellation are provisioned via playwright api
+    Given multiple Live '$1' trades with a pending Cancellation exist in the blotter
     And page trade portal clicks refresh button
 
 # ── MAKER ACTIONS ──────────────────────────────────────────────────────────────

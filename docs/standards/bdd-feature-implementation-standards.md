@@ -61,11 +61,13 @@ The layers keep UI mechanics out of the feature: what a scenario calls reads as 
 UI primitive and HTTP detail.
 
 - A scenario calls business steps only: **flow** steps, and the **UI provisioning** steps
-  (`a Live / Draft Pending Approval / Dead / Draft / saved Draft '<product_type>' trade exists in the blotter`, §3.3).
+  (`a Live / Draft Pending Approval / Dead / Draft / saved Draft '<product_type>' trade exists in the blotter`,
+  `a Live '<product_type>' trade with a pending Amendment / Cancellation exists in the blotter`, §3.3).
   Never a page or component step, a built-in, other Java glue, or `snippet/api/`.
 - A provisioning step has no UI: it sets state through the API and neither logs in, navigates nor touches a page.
-  It is Java worded as business, called by the feature directly; no flow only renames it. Its older steps worded
-  `... is provisioned via playwright api` are called from flows until they get business wording.
+  It is Java worded as business, called by the feature directly; no flow only renames it. Blotter and product
+  provisioning (`BlotterSteps`, `ComposeProductSteps`, `... is provisioned via playwright api`) is other Java: flows
+  call it, with the names they generate.
 - A precondition that also uses the UI (provision, then open a page) is a flow: it calls the provisioning step and the
   pages.
 - The only Java a scenario calls directly is such a provisioning step, in `PlaywrightTradeProvisioningSteps`. Any other
@@ -94,7 +96,7 @@ UI primitive and HTTP detail.
 
 | Need | Use | Notes |
 |---|---|---|
-| UI precondition | `a Live / Draft Pending Approval / Dead / Draft / saved Draft '<product_type>' trade exists in the blotter` (`PlaywrightTradeProvisioningSteps`, Java steps with this wording, no snippet in between) | Provisions through the API; does not log in or navigate; stores `createdTradeId` / `createdTaskId` |
+| UI precondition | `a Live / Draft Pending Approval / Dead / Draft / saved Draft '<product_type>' trade exists in the blotter`, `a Live '<product_type>' trade with a pending Amendment / Cancellation exists in the blotter`, `multiple Live '<product_type>' trades with a pending Cancellation exist in the blotter` (`PlaywrightTradeProvisioningSteps`, Java steps with this wording, no snippet in between) | Provisions through the API; does not log in or navigate; stores `createdTradeId` / `createdTaskId` |
 | API precondition | `a live / draft / dead '<product_type>' trade is created via api`, `a '<product_type>' trade is submitted to pending approval via api`, and their `... stored as '<key>'` variants, a pending Cancellation / Amendment, an allocated trade (`ApiTradeProvisioningSteps`) | Never inline create + approve: headers, task IDs and ctx keys are part of the contract |
 | API lifecycle event | `(maker\|checker) has valid / invalid / malformed / duplicate data [with '<what>'] for the '<event>' event [on the trade stored as '<key>']`, `... has data for the '<event>' event on a trade that does not exist`, `performs the '<event>' event via api`, `the '<event>' event is executed successfully` (`api/trade_lifecycle_event.snippet`), `the '<event>' event is rejected with a validation error / permission denied / ...` (the API outcomes) | A success checks the event's response lightly and compares the trade it ran on, retrieved after it, with the recording: its row uses `trade-response-parts` and `retrieved-trade`. A rejection compares the event's response. The trades an event creates are `childTradeId1..n`, checked in the event's own snippet against the request (`the new trades of the event have '<path>' as in the request's '<data key>'`). A new event adds case data, recordings and the feature. A new variant (another status, another trade source) is added there, for every event |
 | API checker task | `(maker\|checker) has valid data for trade creation / amendment / cancellation approval / rejection / self-approval`, `performs the approval / rejection / bulk approval for the request`, `the '<kind> approval / rejection' request is processed successfully`, `the '<kind> self-approval' request is rejected with permission denied` (the API outcomes); provisioning `checker approves / rejects the pending task` (`api/trade_approval_rejection.snippet`) | A new kind of task adds its name to the alternations, not a step |

@@ -57,27 +57,25 @@ public class PlaywrightTradeProvisioningSteps {
         provisionLive(product, "createdTradeId", "createdTaskId");
     }
 
-    @Given("^a '([^']*)' trade with pending cancellation is provisioned via playwright api$")
+    /** A live trade whose cancellation the maker submitted: pending the checker's approval. */
+    @Given("^a Live '([^']*)' trade with a pending Cancellation exists in the blotter$")
     public void provisionPendingCancellation(String product) throws Exception {
         provisionPendingCancellation(product, "createdTradeId", "createdTaskId");
     }
 
-    @Given("^multiple '([^']*)' trades with pending cancellation are provisioned via playwright api$")
+    /** Two of them, stored as createdTradeId1 / createdTaskId1 and createdTradeId2 / createdTaskId2. */
+    @Given("^multiple Live '([^']*)' trades with a pending Cancellation exist in the blotter$")
     public void provisionMultiplePendingCancellation(String product) throws Exception {
         provisionPendingCancellation(product, "createdTradeId1", "createdTaskId1");
         provisionPendingCancellation(product, "createdTradeId2", "createdTaskId2");
     }
 
-    @Given("^a pending approval amendment '([^']*)' trade is provisioned via playwright api$")
+    /** A live trade whose amendment the maker submitted (setup trade-amendment): pending the checker's approval. */
+    @Given("^a Live '([^']*)' trade with a pending Amendment exists in the blotter$")
     public void provisionPendingAmendment(String product) throws Exception {
         CreatedTrade live = provisionLive(product, "createdTradeId", "createdTaskId");
         store("createdTradeId", "createdTaskId",
                 TradeApiClient.provisionPendingAmendment(helper, live.tradeId(), "trade-amendment"));
-    }
-
-    @Given("^a pending approval cancellation '([^']*)' trade is provisioned via playwright api$")
-    public void provisionTradeCancellation(String product) throws Exception {
-        provisionPendingCancellation(product, "createdTradeId", "createdTaskId");
     }
 
     /** A live trade whose cancellation the checker approved. */
