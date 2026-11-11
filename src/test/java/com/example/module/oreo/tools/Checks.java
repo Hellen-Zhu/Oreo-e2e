@@ -14,7 +14,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.regex.Matcher;
@@ -32,6 +35,11 @@ final class Checks {
      * of {@link ProjectPaths#SETTINGS_FILE}.
      */
     private final Set<String> knownMissing;
+
+    /** The most cases a feature file of a layer may run: {@code check.maxCasesPerFeature.<api|ui>}; unset, none. */
+    private final Map<String, Integer> maxCasesPerFeature = new HashMap<>();
+
+    private static final String WIP_TAG = "@wip";
 
     private static final String INDENT = "         ";
 
@@ -55,8 +63,19 @@ final class Checks {
         this.project = project;
         this.data = project.resolve("src/test/resources/data");
         this.featureCases = featureCases;
-        this.knownMissing = Set.copyOf(
-                ProjectPaths.listSetting(ProjectPaths.settings(project), "check.knownMissingSetups"));
+        Properties settings = ProjectPaths.settings(project);
+        this.knownMissing = Set.copyOf(ProjectPaths.listSetting(settings, "check.knownMissingSetups"));
+        for (String channelDir : List.of("api", "ui")) {
+            String key = "check.maxCasesPerFeature." + channelDir;
+            String value = settings.getProperty(key, "").trim();
+            if (value.isEmpty()) continue;
+            try {
+                maxCasesPerFeature.put(channelDir, Integer.parseInt(value));
+            } catch (NumberFormatException e) {
+                throw new IllegalStateException(key + " in " + ProjectPaths.SETTINGS_FILE + " is not a number: "
+                        + value);
+            }
+        }
     }
 
     static int run() throws IOException {
@@ -84,6 +103,8 @@ final class Checks {
                 c::everyProductWithACapabilityHasItsDatFile);
         problems += c.check("the recorded trades agree with the composition registry", "recorded before composition"
                 + " IDs: record again", c::recordedTradesAgreeWithTheRegistry);
+        problems += c.check("no feature file runs more cases than its layer's limit", "split it by business behavior:"
+                + " docs/standards/bdd-feature-generation-standards.md, Feature size", c::noFeatureRunsTooManyCases);
         problems += c.check("no API snippet only renames a shared outcome", null,
                 c::noApiSnippetOnlyRenamesASharedOutcome);
         System.out.println(problems == 0 ? "No problem." : problems + " problem(s).");
@@ -317,6 +338,52 @@ final class Checks {
                         + type.asText("") + "' does not end with '" + composition.tradeType() + "'");
             }
         }
+    }
+
+    // ── Feature size ─────────────────────────────────────────────────────────
+
+    /**
+     * A feature file is one fork's unit of work, run serially: one above its layer's limit
+     * ({@code check.maxCasesPerFeature.<api|ui>}) is a warning, since a new product's rows grow it without a change to
+     * the file.
+     */
+    private void noFeatureRunsTooManyCases(Result result) throws IOException {
+        Path featuresRoot = project.resolve("src/test/resources/features");
+        for (String channelDir : List.of("api", "ui")) {
+            Integer limit = maxCasesPerFeature.get(channelDir);
+            if (limit == null) continue;
+            for (Path file : files(featuresRoot.resolve(channelDir), ".feature")) {
+                int cases = casesRun(FeatureFile.read(file));
+                if (cases > limit) {
+                    result.warnings.add(project.relativize(file).toString().replace('\\', '/') + " runs " + cases
+                            + " cases, the limit for " + channelDir + " is " + limit);
+                }
+            }
+        }
+    }
+
+    /**
+     * The cases {@code feature} runs: a Scenario counts 1, an Outline one per Examples row; {@code @wip} on the
+     * Feature, Rule, scenario or Examples table excludes them, tags inherited as Cucumber does.
+     */
+    static int casesRun(FeatureFile feature) {
+        int cases = 0;
+        boolean featureWip = false;
+        boolean ruleWip = false;
+        for (FeatureFile.Block block : feature.blocks()) {
+            boolean wip = block.tags().contains(WIP_TAG);
+            if (block.kind() == FeatureFile.Kind.FEATURE) featureWip = wip;
+            if (block.kind() == FeatureFile.Kind.RULE) ruleWip = wip;
+            if (featureWip || ruleWip || wip) continue;
+            if (block.kind() == FeatureFile.Kind.SCENARIO) {
+                cases++;
+            } else if (block.kind() == FeatureFile.Kind.OUTLINE) {
+                for (FeatureFile.Table table : block.examples()) {
+                    if (!table.tags().contains(WIP_TAG)) cases += table.rows().size();
+                }
+            }
+        }
+        return cases;
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────────

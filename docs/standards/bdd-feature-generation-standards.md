@@ -85,7 +85,25 @@ src/test/resources/features/{api|ui}/{domain}/{featureName}.feature
   no IDs in file names.
 - Check the actual tree before choosing; a new domain needs a reason (no existing domain fits) and is reported.
 - **Existing file → append mode**: add Scenario blocks only (no Feature header, tags or `Background:`), and continue
-  case numbering from the highest existing number of the same prefix.
+  case numbering from the highest existing number of the same prefix, unless the new cases take the file over its
+  limit (§3.3).
+
+### 3.3 Feature size
+
+A feature file is one fork's unit of work: one JVM runs all its cases serially (`OreoTest`, `forkMode FEATURE`;
+`docs/genie-parallel-execution.md`), so the longest feature sets the tail of a run.
+
+- **Count the cases it runs**: a Scenario is 1, an Outline is one per `Examples` row, `@wip` counts 0. A product
+  Outline grows by one with every product `sync-examples` adds, without a change to the file.
+- **Limit per layer**, in `src/test/resources/test-data.properties`: `check.maxCasesPerFeature.ui` (12) and
+  `check.maxCasesPerFeature.api` (30). A UI case takes minutes, an API case seconds. `TestDataTool check` warns about
+  every feature above its limit; a warning does not fail it.
+- **Before appending**, count the file with the new cases. Over the limit: create a new feature instead and report it.
+- **Split by business behavior**: one event or sub-flow per file (`trade_creation_approval`,
+  `trade_amendment_approval`, `trade_cancellation_approval`). Never by product (products are `Examples` rows), by
+  polarity, or into `_part1` / `_part2`. The new name follows §3.1.
+- **Split early.** The file name is the case-ID prefix and the `@ADO#` feature tag, so a split renames every case it
+  moves. Splitting a file that already ran is the user's decision; report the warning and propose the split.
 
 ## 4. Feature Header
 
@@ -229,4 +247,5 @@ were derived; the TP → scenario grouping with its reason; the AC coverage matr
 - [ ] Exactly one polarity and one suite tag per scenario; no suite/polarity tags at feature level.
 - [ ] No implementation detail in steps; role names only in UI login steps; existing steps reused.
 - [ ] Append mode added scenarios only; numbering continues the prefix.
+- [ ] No created or appended file runs more cases than its layer's limit (§3.3).
 - [ ] Trace comments present and sourced from approved TPs.

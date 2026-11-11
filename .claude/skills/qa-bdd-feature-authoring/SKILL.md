@@ -33,7 +33,9 @@ problem with a TP (it cannot be expressed, its capability does not exist) is rep
    share a scenario; `all supporting products` is one Outline over `<product_type>` with `@capability#<capability>`.
 3. **Name and place each layer's file** (standard §3). Look at the real tree first:
    `ls src/test/resources/features/api/*/ src/test/resources/features/ui/*/`. An established stem wins over a newly
-   derived one (`trade_<event>_approval` for checker decisions, `reason_management` ...). An existing file means `append`.
+   derived one (`trade_<event>_approval` for checker decisions, `reason_management` ...). An existing file means `append`,
+   unless the file with the new cases runs more than its layer's limit (standard §3.3: Scenarios 1, Outlines one per
+   `Examples` row, `@wip` 0; UI 12, API 30): then `create` a new feature split by business behavior, and report it.
    `featureName` = file stem = event data file name = `@ADO#<featureName>` = case-ID prefix; change one, change all.
    For `create`, read one or two sibling features of the same domain and follow their header and title style.
 4. **Assign case IDs.** `TC-{PREFIX}[-<product_type>|-{PRODUCT}]-{API|UI}-{NNN}`, three digits, continuing the highest

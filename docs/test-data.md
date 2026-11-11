@@ -293,7 +293,8 @@ part's events together, then `compact all`.
 The offline tool is normal test-source code in `src/test/java/com/example/module/oreo/tools/`, entry point
 `TestDataTool.java`. It uses the runtime data code of `src/main/java/com/example/module/oreo/testdata/`, which the glue
 uses too; neither imports the glue (CLAUDE.md, section 1). Decisions about the data that are not code live in
-`src/test/resources/test-data.properties`: `check.knownMissingSetups`, the setup files named but not written yet.
+`src/test/resources/test-data.properties`: `check.knownMissingSetups`, the setup files named but not written yet, and
+`check.maxCasesPerFeature.<api|ui>`, the most cases one feature file may run.
 The `test-data` Maven profile compiles it, refreshes test resources and supplies dependencies automatically.
 The Skill contains usage guidance only. From the project root on the company machine, use the same commands
 in PowerShell, macOS and Linux (each line is a separate operation):
@@ -334,7 +335,8 @@ or with `-U`.
   every setup name used exists, the expected files resolve and are compacted (a file the compaction would still change
   is a warning), the product Outlines' `Examples` match the registry, every product with a capability has its dat
   file, the recorded trades agree with the registry (`expected/_shared/{basic,instrument}/<C>.json`: composition ID,
-  trade type and `_value._type.ref[0]`; a basic recorded before composition IDs is a warning), no API snippet only renames a shared outcome of `common_api.snippet` (a step whose body is one outcome, or
+  trade type and `_value._type.ref[0]`; a basic recorded before composition IDs is a warning), no feature file runs more
+  cases than `check.maxCasesPerFeature.<api|ui>` (a warning: split it by business behavior), no API snippet only renames a shared outcome of `common_api.snippet` (a step whose body is one outcome, or
   the status check of a status an outcome covers, plus the recording check). Exit code 1 on a problem. Run it before committing a change to the data, the features or the registry.
 - `sync-examples`: writes the product Outlines' `Examples` from `ProductDatFiles` ("Products and capabilities").
 - `unused-steps`: lists the snippets and Java steps no feature reaches, walking from the feature steps through the
