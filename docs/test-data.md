@@ -253,7 +253,7 @@ it), a value without is the path of the part in this event's response. The block
 // trade_creation.json, trade_query.json
 "defaults": { "use": ["trade-basic", "trade-response-parts"],
               "sharedFragments": { "basic": "data.trade.basic", "instrument": "data.trade.instrument" } }
-// trade_approval_rejection.json: the parts without "trade"
+// trade_creation_approval.json: the parts without "trade"
 "defaults": { "use": ["trade-response-parts"],
               "sharedFragments": { "basic": "data.basic", "instrument": "data.instrument" } }
 ```

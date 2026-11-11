@@ -58,9 +58,9 @@ upper-cased with `_` → `-`, the case-ID prefix (`trade_creation` → `TRADE-CR
   `partial_novation_remaining`, `portfolio_reassignment`). Keep meaningful qualifiers (`partial`, `early`, `remaining`);
   drop product names and generic verbs (`manage`, `handle`, `process`, `validate`, `execute`).
 - **Established stems win.** Reuse the existing name when one exists, even if it breaks the rule above:
-  `trade_approval_rejection` (API), `trade_step_out_full`, `trade_step_out_partial`, `reason_management`,
-  `product_ids_management`, `refdata_sync_management`. The UI checker decisions are split per event:
-  `trade_creation_approval`, `trade_amendment_approval`, `trade_cancellation_approval`.
+  `trade_step_out_full`, `trade_step_out_partial`, `reason_management`, `product_ids_management`,
+  `refdata_sync_management`. Checker decisions have one feature per event, in both layers: `trade_creation_approval`,
+  `trade_amendment_approval`, `trade_cancellation_approval` (`trade_<event>_approval`).
 - Never derive the name from a story ID, module, Java class, endpoint or TP number. If the business identity is still
   unclear, report it.
 
