@@ -60,15 +60,11 @@ One `[ok]` or `[FAIL]` line per check, its problems and `[warn]` lines below it:
 7. every setup name the code, snippets or features use has its `data/setup/` file, except `trade-cancellation` and `trade-amendment` (not covered yet: the user's decision, `check.knownMissingSetups` in `src/test/resources/test-data.properties`);
 8. the product Outlines' `Examples` match the registry;
 9. every product with a capability has its default dat file;
-10. the recorded trades agree with the composition registry: `_shared/basic/<C>.json` has composition ID `<C>` and
-    the registered trade type, `_shared/instrument/<C>.json` the same trade type at `_value._type.ref[0]`, and no
-    shared file is named after anything but a composition (warning: a basic recorded before composition IDs, record
-    again);
-11. no feature file runs more cases than its layer's limit, `check.maxCasesPerFeature.<api|ui>` (UI 12, API 30): a
+10. no feature file runs more cases than its layer's limit, `check.maxCasesPerFeature.<api|ui>` (UI 12, API 30): a
     Scenario counts 1, an Outline one per `Examples` row, `@wip` 0 (warning only: report the feature and propose a
     split by business behavior, standard `bdd-feature-generation-standards.md` §3.3; a split renames case IDs, so it is
     the user's decision);
-12. no API snippet only renames a shared outcome of `api/common_api.snippet` (its body one outcome step, or the status
+11. no API snippet only renames a shared outcome of `api/common_api.snippet` (its body one outcome step, or the status
     check of a status an outcome covers, plus `response matches current scenario`): the feature calls the outcome.
 
 ## When

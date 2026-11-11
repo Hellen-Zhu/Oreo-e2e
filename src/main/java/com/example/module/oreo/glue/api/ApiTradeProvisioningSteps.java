@@ -98,7 +98,7 @@ public class ApiTradeProvisioningSteps {
                 TradeApiClient.provisionPendingEvent(ctx.helper(), live.tradeId(), "trade-cancellation"));
     }
 
-    /** The registered composition, written to the report with its trade type and product ID. */
+    /** The registered composition, written to the report with its product ID. */
     private ProductDatFiles product(String product) {
         ProductDatFiles composition = ProductDatFiles.of(product);
         ctx.write("[" + composition.describe() + "]");

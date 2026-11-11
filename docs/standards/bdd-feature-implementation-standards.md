@@ -209,12 +209,11 @@ so that each run creates a product of its own.
 
 ### 5.3 Products — `ProductDatFiles`
 
-- A product is a composition: an enum constant named as its `basic.compositionId`, with its trade type (after
-  `Tradeable.`), the product ID the cases send, its capabilities and `data/dat/<C>/<C>.dat`. Feature files name only
-  the composition; one composition per trade type, never a second constant for another product ID of it. A variant
+- A product is a composition: an enum constant named as its `basic.compositionId`, with the product ID the cases
+  send, its capabilities and `data/dat/<C>/<C>.dat`. Feature files name only the composition; never a second constant
+  for another product ID of it. A variant
   dat file is case data (`datFile`), never a new product.
-- Every trade the suite creates is checked against the registry (`TradeApiClient.checkComposition`), and each case
-  writes `composition <C>: trade type ..., product ID ...` to the report. A step that needs the product ID uses
+- Each case writes `composition <C>, product ID ...` to the report. A step that needs the product ID uses
   `set path parameter '<name>' to the product ID of '<C>'` (API) or `store the product ID of '<C>' as '<key>'` (UI),
   never the composition in its place.
 - Product Outlines' `Examples` are written by `mvn -Ptest-data process-test-classes "-Dexec.args=sync-examples"`, never by hand. To leave a product out, take

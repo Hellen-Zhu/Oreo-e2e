@@ -141,27 +141,7 @@ public final class TradeApiClient {
                 path, userId, testDataKey, datPath);
         JsonNode response = RestApiUtil.postMultipart(helper, path, userId, "trade", tradeJson, "datFile",
                 Paths.get(resource.toURI()));
-        checkComposition(response, product, testDataKey);
         return response;
-    }
-
-    /**
-     * Fails when the trade the backend created is not of {@code composition}: its {@code basic.compositionId} or
-     * {@code basic.tradeType} disagree with the registry ({@link ProductDatFiles#mismatches}). A response without a
-     * trade is left to the caller.
-     *
-     * @throws AssertionError naming the composition, the setup and each disagreement
-     */
-    public static void checkComposition(JsonNode response, ProductDatFiles composition, String testDataKey) {
-        JsonNode basic = response.at("/data/trade/basic");
-        if (basic.isMissingNode()) return;
-        List<String> problems = composition.mismatches(basic.path("compositionId").asText(""),
-                basic.path("tradeType").asText(""));
-        if (!problems.isEmpty()) {
-            throw new AssertionError("[TradeApiClient] setup " + testDataKey + " with product ID '"
-                    + composition.productId() + "' did not create a " + composition.name() + " trade: "
-                    + String.join("; ", problems) + ". Check the registry entry in ProductDatFiles.");
-        }
     }
 
     /**

@@ -53,8 +53,8 @@ public class TradeApiSteps {
 
     /**
      * Attaches the dat file of the given composition as the {@code datFile} multipart part: the case's dat file
-     * ({@code datFile} of its test data), else the composition's default one; writes the composition, its trade type
-     * and product ID to the report. The name maps to a {@link ProductDatFiles} constant (case-insensitive, spaces
+     * ({@code datFile} of its test data), else the composition's default one; writes the composition and its product ID
+     * to the report. The name maps to a {@link ProductDatFiles} constant (case-insensitive, spaces
      * replaced with underscores).
      *
      * <p>Adding a new composition requires only a new {@link ProductDatFiles} constant — no new step needed.

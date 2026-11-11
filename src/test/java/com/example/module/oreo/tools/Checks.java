@@ -13,7 +13,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -101,8 +100,6 @@ final class Checks {
                 c::productExamplesMatchTheRegistry);
         problems += c.check("every product with a capability has its dat file", null,
                 c::everyProductWithACapabilityHasItsDatFile);
-        problems += c.check("the recorded trades agree with the composition registry", "recorded before composition"
-                + " IDs: record again", c::recordedTradesAgreeWithTheRegistry);
         problems += c.check("no feature file runs more cases than its layer's limit", "split it by business behavior:"
                 + " docs/standards/bdd-feature-generation-standards.md, Feature size", c::noFeatureRunsTooManyCases);
         problems += c.check("no API snippet only renames a shared outcome", null,
@@ -297,45 +294,6 @@ final class Checks {
             if (p.capabilities().isEmpty()) continue;
             if (Thread.currentThread().getContextClassLoader().getResource(p.path()) == null) {
                 result.errors.add(p + " has capabilities but no dat file " + p.path());
-            }
-        }
-    }
-
-    /**
-     * The shared basic and instrument of each composition ({@code api/expected/_shared/{basic,instrument}/<C>.json})
-     * are a trade of that composition: {@code compositionId} is {@code C}, and the trade type of {@code basic} and of
-     * the instrument ({@code _value._type.ref[0]}) ends with the registered one. A shared file named after no
-     * composition fails; a basic without {@code compositionId} (recorded before composition IDs) is a warning.
-     */
-    private void recordedTradesAgreeWithTheRegistry(Result result) throws IOException {
-        Path shared = data.resolve("api/expected/_shared");
-        for (String part : List.of("basic", "instrument")) {
-            for (Path file : jsonFiles(shared.resolve(part))) {
-                String name = baseName(file);
-                if (Arrays.stream(ProductDatFiles.values()).noneMatch(c -> c.name().equals(name))) {
-                    result.errors.add("_shared/" + part + "/" + file.getFileName() + ": " + name
-                            + " is not a composition of ProductDatFiles");
-                }
-            }
-        }
-        for (ProductDatFiles composition : ProductDatFiles.values()) {
-            Path basicFile = shared.resolve("basic/" + composition.name() + ".json");
-            if (!Files.isRegularFile(basicFile)) continue;
-            JsonNode basic = Json.parse(Files.readString(basicFile, StandardCharsets.UTF_8));
-            String compositionId = basic.path("compositionId").asText("");
-            if (compositionId.isBlank()) {
-                result.warnings.add("_shared/basic/" + composition.name() + ".json has no compositionId");
-                continue;
-            }
-            composition.mismatches(compositionId, basic.path("tradeType").asText(""))
-                    .forEach(p -> result.errors.add("_shared/basic/" + composition.name() + ".json: " + p));
-            Path instrumentFile = shared.resolve("instrument/" + composition.name() + ".json");
-            if (!Files.isRegularFile(instrumentFile)) continue;
-            JsonNode type = Json.parse(Files.readString(instrumentFile, StandardCharsets.UTF_8))
-                    .at("/_value/_type/ref/0");
-            if (!type.isMissingNode() && !composition.isTradeType(type.asText(""))) {
-                result.errors.add("_shared/instrument/" + composition.name() + ".json: _value._type.ref[0] '"
-                        + type.asText("") + "' does not end with '" + composition.tradeType() + "'");
             }
         }
     }
