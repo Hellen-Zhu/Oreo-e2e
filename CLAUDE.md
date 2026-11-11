@@ -21,8 +21,8 @@ Read this before changing files. It holds the rules and the traps; the details l
   file, product, layer and row of the test data.
 - **Products are rows.** `Examples` of `@capability#` Outlines are written by `mvn -Ptest-data process-test-classes "-Dexec.args=sync-examples"` from
   `ProductDatFiles`; never by hand. A product is a composition (`basic.compositionId`: `FX_CO`, not the product ID
-  `FX_PSCRIPT`), registered once with the product IDs it may send (the first is the default; a case sends another
-  with `productId` in its data); features never name a product ID.
+  `FX_PSCRIPT`), registered once with its default product ID (a case sends another with `productId` in its data, as
+  `datFile`); features never name a product ID.
 - **The data checks are `mvn -Ptest-data process-test-classes`** (ten unit tests, then `TestDataTool check`). There is
   no `TestDataValidationTest`, `CompactExpectedFiles` or `SyncProductExamples`: they became `TestDataTool` commands.
 - **The test data code has two layers, one direction.** `testdata/` (`src/main`) loads case, setup and expected data

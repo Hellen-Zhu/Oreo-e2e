@@ -88,14 +88,13 @@ public class TestDataRepositoryTest {
                     { "id": "TC-DAT-EVENT-API-004", "_comment": "no product: the step's product folder", "datFile": "variant.dat" }
                   ]
                 }""");
-        // The product ID as case data: one registered for the composition, or null for its default
+        // The product ID as case data, or null for the composition's default
         write("api/product_id_event.json", """
                 {
-                  "byProduct": { "FX_CO": { "productId": "FX_PSCRIPT" } },
+                  "byProduct": { "FX_CO": { "productId": "FX_PSCRIPT_OTHER" } },
                   "cases": [
                     { "id": "TC-PRODUCT-ID-EVENT-<product_type>-API-002", "byProduct": { "FX_CO": { "productId": null } } },
-                    { "id": "TC-PRODUCT-ID-EVENT-FX_TRF-API-003", "productId": "FX_PSCRIPT" },
-                    { "id": "TC-PRODUCT-ID-EVENT-API-004", "_comment": "no product: checked by the step", "productId": "X" }
+                    { "id": "TC-PRODUCT-ID-EVENT-API-004", "productId": "FX_TRF_OTHER" }
                   ]
                 }""");
         write("api/bad_product_id.json", """
@@ -450,16 +449,9 @@ public class TestDataRepositoryTest {
     @Test
     public void productIdIsTheCompositionsDefaultUnlessALayerNamesOne() {
         assertNull(repo.forCase("TC-PRODUCT-ID-EVENT-FX_TRF-API-001").productId());
-        assertEquals("FX_PSCRIPT", repo.forCase("TC-PRODUCT-ID-EVENT-FX_CO-API-001").productId());
+        assertEquals("FX_PSCRIPT_OTHER", repo.forCase("TC-PRODUCT-ID-EVENT-FX_CO-API-001").productId());
         assertNull(repo.forCase("TC-PRODUCT-ID-EVENT-FX_CO-API-002").productId());
-        assertEquals("X", repo.forCase("TC-PRODUCT-ID-EVENT-API-004").productId());
-    }
-
-    @Test
-    public void unregisteredProductIdNamesTheLayerAndTheRegistry() {
-        assertFailsWith(() -> repo.forCase("TC-PRODUCT-ID-EVENT-FX_TRF-API-003"),
-                "[row TC-PRODUCT-ID-EVENT-FX_TRF-API-003 productId]",
-                "'FX_PSCRIPT' is not registered for composition FX_TRF");
+        assertEquals("FX_TRF_OTHER", repo.forCase("TC-PRODUCT-ID-EVENT-API-004").productId());
     }
 
     @Test

@@ -101,7 +101,6 @@ public final class TestDataRepository {
             }
         }
         checkDatFileExists(merged, id, eventPath);
-        checkProductIdRegistered(merged, id, eventPath);
         return merged.toCaseData(id, eventPath);
     }
 
@@ -112,25 +111,6 @@ public final class TestDataRepository {
         if (classLoader().getResource(datPath) == null) {
             throw error(eventPath, merged.datFileFrom + " datFile", "no dat file " + datPath
                     + " on the classpath: a variant is a file of the product's folder");
-        }
-    }
-
-    /**
-     * The {@code productId} the layers chose is registered for the case's product (a case without a product: by the
-     * step that sends it, {@link ProductDatFiles#productId(String)}).
-     */
-    private static void checkProductIdRegistered(Merged merged, CaseId id, String eventPath) {
-        if (merged.productId == null || id.product() == null) return;
-        ProductDatFiles composition;
-        try {
-            composition = ProductDatFiles.valueOf(id.product());
-        } catch (IllegalArgumentException e) {
-            return; // an unknown product fails elsewhere, with its own message
-        }
-        if (!composition.productIds().contains(merged.productId)) {
-            throw error(eventPath, merged.productIdFrom + " productId", "'" + merged.productId
-                    + "' is not registered for composition " + id.product() + " " + composition.productIds()
-                    + ": add it to its productIds(...) in ProductDatFiles");
         }
     }
 
@@ -174,7 +154,6 @@ public final class TestDataRepository {
         }
         if (layer.has("productId")) {
             merged.productId = layer.get("productId").isNull() ? null : layer.get("productId").asText();
-            merged.productIdFrom = label;
         }
         merged.layers.add(uses.isEmpty() ? label : label + " (use " + String.join(", ", uses) + ")");
     }
@@ -191,7 +170,6 @@ public final class TestDataRepository {
         String datFile;
         String datFileFrom;
         String productId;
-        String productIdFrom;
         final List<String> layers = new ArrayList<>();
 
         void add(JsonNode part) {
@@ -476,8 +454,8 @@ public final class TestDataRepository {
         JsonNode productId = layer.get("productId");
         if (productId == null || productId.isNull()) return;
         if (!productId.isTextual() || productId.asText().isBlank()) {
-            throw error(path, where + ".productId", "must be a product ID registered for the case's composition"
-                    + " (ProductDatFiles), or null for its default");
+            throw error(path, where + ".productId", "must be a product ID, or null for the composition's default"
+                    + " (ProductDatFiles)");
         }
     }
 

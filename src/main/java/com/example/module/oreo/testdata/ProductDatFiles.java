@@ -1,6 +1,5 @@
 package com.example.module.oreo.testdata;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -12,12 +11,11 @@ import static com.example.module.oreo.testdata.Capability.*;
 
 /**
  * The composition registry: each composition the suite covers, registered once. A constant is named as the trade's
- * composition ID ({@code basic.compositionId}) and gives the product IDs the cases may send for it
- * ({@code basic.productId}; a product ID may serve several compositions and a composition have several product IDs:
- * only those a case sends are registered, the first is the default) and the capabilities it supports. Feature files
- * name only the composition (the {@code <product_type>} of the {@code Examples} rows); the product ID is read from
- * here by the requests and by the report line of each case. A case sends another registered product ID with
- * {@code productId} in its test data ({@link #productId(String)}).
+ * composition ID ({@code basic.compositionId}) and gives the default product ID the cases send for it
+ * ({@code basic.productId}) and the capabilities it supports. Feature files name only the composition (the
+ * {@code <product_type>} of the {@code Examples} rows); the product ID is read from here by the requests and by the
+ * report line of each case. Composition and product ID are many to many: a case sends another product ID with
+ * {@code productId} in its test data ({@link #productId(String)}), as it sends another dat file with {@code datFile}.
  *
  * <p>Its dat files are in one folder per composition, {@code src/test/resources/data/dat/<C>/}: {@code <C>.dat} is the
  * default one, the others are variants (same composition, another structure) that a case chooses with {@code datFile}
@@ -26,8 +24,8 @@ import static com.example.module.oreo.testdata.Capability.*;
  * <h3>Adding a composition</h3>
  * <ol>
  *   <li>Add its default dat file as {@code src/test/resources/data/dat/<C>/<C>.dat}</li>
- *   <li>Add a new enum constant here, named as the composition ID: {@code productIds(<default>, <others>...)},
- *       then one entry per group of {@link Capability#GROUPS} it has: the trade lifecycle
+ *   <li>Add a new enum constant here, named as the composition ID: its default product ID, then one entry per
+ *       group of {@link Capability#GROUPS} it has: the trade lifecycle
  *       {@link Capability#SUPPORT_CAPABILITY} and the product features {@link Capability#PRODUCT_FEATURES}, each
  *       whole, {@code except(<group>, ...)} or {@code only(...)}; a group it has none of is left out (the order of
  *       the constants is the order of the {@code Examples} rows; never put one first)</li>
@@ -39,36 +37,35 @@ import static com.example.module.oreo.testdata.Capability.*;
 public enum ProductDatFiles {
 
     /** FX Total Return Forward. */
-    FX_TRF(productIds("FX_TRF"), SUPPORT_CAPABILITY, PRODUCT_FEATURES),
+    FX_TRF("FX_TRF", SUPPORT_CAPABILITY, PRODUCT_FEATURES),
 
     /** FX Correlation Option. */
-    FX_CO(productIds("FX_PSCRIPT"), SUPPORT_CAPABILITY, PRODUCT_FEATURES),
+    FX_CO("FX_PSCRIPT", SUPPORT_CAPABILITY, PRODUCT_FEATURES),
 
     /** FX Floating Strike Barrier. */
-    FX_FSB(productIds("FX_PSCRIPT_FSKO"), SUPPORT_CAPABILITY, PRODUCT_FEATURES),
+    FX_FSB("FX_PSCRIPT_FSKO", SUPPORT_CAPABILITY, PRODUCT_FEATURES),
 
     /** FX TRF on the payoff script. */
-    FX_PSCRIPT_TRF(productIds("FX_PSCRIPT_TRF"), SUPPORT_CAPABILITY, PRODUCT_FEATURES);
+    FX_PSCRIPT_TRF("FX_PSCRIPT_TRF", SUPPORT_CAPABILITY, PRODUCT_FEATURES);
 
     /** Placeholder for FX Option: add data/dat/FX_OPT/FX_OPT.dat when its template is available. Supports nothing. */
-//    FX_OPT(productIds("FX_OPT"), except(SUPPORT_CAPABILITY, ALLOCATION, PORTFOLIO_REASSIGNMENT),
-//            only(PRODUCT_UPLOAD));
+//    FX_OPT("FX_OPT", except(SUPPORT_CAPABILITY, ALLOCATION, PORTFOLIO_REASSIGNMENT), only(PRODUCT_UPLOAD));
 
     /** The classpath folder of the dat files, one folder per composition. */
     public static final String DAT_DIR = "data/dat/";
     private static final Pattern FILE_NAME = Pattern.compile("[A-Za-z0-9][A-Za-z0-9_.-]*\\.dat");
 
-    private final List<String> productIds;
+    private final String productId;
     private final Set<Capability> capabilities;
 
     /**
-     * {@code productIds}: the product IDs the cases may send, the default first. The capabilities of
+     * {@code productId}: the product ID the cases send by default. The capabilities of
      * {@code groups}: each a group of {@link Capability#GROUPS} ({@code SUPPORT_CAPABILITY},
      * {@code PRODUCT_FEATURES}), or part of one ({@code except(...)}, {@code only(...)}).
      */
     @SafeVarargs
-    ProductDatFiles(List<String> productIds, Set<Capability>... groups) {
-        this.productIds = productIds;
+    ProductDatFiles(String productId, Set<Capability>... groups) {
+        this.productId = productId;
         EnumSet<Capability> set = EnumSet.noneOf(Capability.class);
         for (Set<Capability> group : groups) set.addAll(group);
         this.capabilities = Collections.unmodifiableSet(set);
@@ -89,37 +86,17 @@ public enum ProductDatFiles {
         }
     }
 
-    /** The product IDs of a constant: {@code defaultId} first, then the others a case may send. */
-    private static List<String> productIds(String defaultId, String... others) {
-        List<String> ids = new ArrayList<>();
-        ids.add(defaultId);
-        ids.addAll(Arrays.asList(others));
-        return List.copyOf(ids);
-    }
-
-    /** The product IDs registered for this composition, the default first (unmodifiable). */
-    public List<String> productIds() {
-        return productIds;
-    }
-
     /** The product ID the cases send for this composition by default ({@code basic.productId}). */
     public String productId() {
-        return productIds.get(0);
+        return productId;
     }
 
     /**
      * The product ID a case sends: {@code fromCase} ({@code productId} of its test data, the context key
      * {@code _tc.productId}) when given, else the default {@link #productId()}.
-     *
-     * @throws AssertionError when {@code fromCase} is not registered for this composition
      */
     public String productId(String fromCase) {
-        if (fromCase == null || fromCase.isBlank()) return productId();
-        if (!productIds.contains(fromCase)) {
-            throw new AssertionError("Product ID '" + fromCase + "' is not registered for composition " + name()
-                    + " " + productIds + ": add it to its productIds(...) in ProductDatFiles first.");
-        }
-        return fromCase;
+        return fromCase == null || fromCase.isBlank() ? productId : fromCase;
     }
 
     /** The report line of a case: {@code composition FX_CO, product ID FX_PSCRIPT}, {@link #productId(String)}. */

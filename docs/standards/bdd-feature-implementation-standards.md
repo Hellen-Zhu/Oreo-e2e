@@ -210,8 +210,8 @@ so that each run creates a product of its own.
 
 ### 5.3 Products — `ProductDatFiles`
 
-- A product is a composition: an enum constant named as its `basic.compositionId`, with the product IDs the cases
-  may send (`productIds(<default>, <others>...)`), its capabilities and `data/dat/<C>/<C>.dat`. Feature files name
+- A product is a composition: an enum constant named as its `basic.compositionId`, with the default product ID the
+  cases send, its capabilities and `data/dat/<C>/<C>.dat`. Feature files name
   only the composition; never a second constant for another product ID of it. A variant dat file is case data
   (`datFile`), and so is another product ID (`productId`): never a new product.
 - Each case writes `composition <C>, product ID ...` to the report. A step that needs the product ID uses

@@ -45,7 +45,7 @@ final class Lookup {
                 : "(the default of the step's product)").append('\n');
         out.append("Product ID: ").append(id.product() != null
                 ? ProductDatFiles.valueOf(id.product()).productId(data.productId())
-                : data.productId() != null ? data.productId() + " (registered for the step's product)"
+                : data.productId() != null ? data.productId()
                 : "(the default of the step's product)").append('\n');
         out.append("Request:\n").append(Json.pretty(Json.parse(data.request())));
         if (id.channelDir().equals("api") && noExpected) {

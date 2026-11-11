@@ -7,7 +7,7 @@ description: Use when a new OREO product type (a composition) has to be covered 
 
 ## Overview
 
-A product is a row, not code. Steps, snippets, the test data hook and the response check already take the product as a parameter, and `expectedBase` (`<product_type>`) already covers every product. A product is a composition, named as the trade's `basic.compositionId` (`FX_TRF`, `FX_CO`, `FX_FSB`, `FX_PSCRIPT_TRF`). Onboarding is: one `ProductDatFiles` constant registering the product IDs the cases send (the default first) and the capabilities it supports, its dat file, `byProduct` entries only for values that differ, a tool run that writes the product into the `Examples` of the Outlines tagged with those capabilities, and API responses recorded on the real system.
+A product is a row, not code. Steps, snippets, the test data hook and the response check already take the product as a parameter, and `expectedBase` (`<product_type>`) already covers every product. A product is a composition, named as the trade's `basic.compositionId` (`FX_TRF`, `FX_CO`, `FX_FSB`, `FX_PSCRIPT_TRF`). Onboarding is: one `ProductDatFiles` constant registering the default product ID the cases send and the capabilities it supports, its dat file, `byProduct` entries only for values that differ, a tool run that writes the product into the `Examples` of the Outlines tagged with those capabilities, and API responses recorded on the real system.
 
 **One input, then a review.** QA gives the composition and its dat file; everything else starts from defaults (every capability, the current data) and is shown to QA as one review of the change. QA removes what the product does not support and gives the values that differ; nothing is recorded, run on the real system or committed before QA approves the review.
 
@@ -21,10 +21,10 @@ One question, in the user's language, for three things:
 
 - `<C>`, the composition ID: `basic.compositionId` of a trade of it, the Product ID column of the product catalogue
   (`FX_CO`, not the product ID `FX_PSCRIPT`). A composition already in `ProductDatFiles` is already covered; say so
-  and stop. Another product ID of it is not a new product: add it to its `productIds(...)` and add a case that names
-  it with `productId` in its data (`docs/test-data.md`).
+  and stop. Another product ID of it is not a new product: add a case that names it with `productId` in its data
+  (`docs/test-data.md`).
 - The product ID the cases send by default: `basic.productId`, the New Trade Product ID field (`FX_PSCRIPT`). A
-  composition with several product IDs needs one default; QA picks it, and names the others a case must send.
+  composition with several product IDs needs one default; QA picks it. The others are case data (`productId`).
 - Its default dat file, a template of that product ID, named `<C>.dat` here whatever its name was.
 - It is a real trade template the business uses. A file of a few bytes or test text is not one: ask again.
 - In the public copy (its `.dat` files are one-line placeholders) the change does not use the file: make it with the
@@ -36,7 +36,7 @@ Nothing else is asked first. With the dat file, make the change (section 2), the
 
 | File | Change |
 |---|---|
-| `src/main/java/com/example/module/oreo/testdata/ProductDatFiles.java` | One constant `<C>(productIds("<default product ID>"), SUPPORT_CAPABILITY, PRODUCT_FEATURES)`, named exactly as the composition ID: both groups, every capability (the trade lifecycle: create, step in full / partial, every lifecycle event; the product features: fixings, cortex formula, product upload) until QA's review takes some off, per group: `except(<group>, <the ones it lacks>)`, `only(<the ones it has>)` (`<C>(productIds("..."), SUPPORT_CAPABILITY, only(PRODUCT_UPLOAD))`), or the group left out when it has none of it. Added after the last product, never first (`values()[0]` is the data checks' example product; the order of the constants is the order of the `Examples` rows). Its comment: the product's name as QA gives it, else none |
+| `src/main/java/com/example/module/oreo/testdata/ProductDatFiles.java` | One constant `<C>("<default product ID>", SUPPORT_CAPABILITY, PRODUCT_FEATURES)`, named exactly as the composition ID: both groups, every capability (the trade lifecycle: create, step in full / partial, every lifecycle event; the product features: fixings, cortex formula, product upload) until QA's review takes some off, per group: `except(<group>, <the ones it lacks>)`, `only(<the ones it has>)` (`<C>("...", SUPPORT_CAPABILITY, only(PRODUCT_UPLOAD))`), or the group left out when it has none of it. Added after the last product, never first (`values()[0]` is the data checks' example product; the order of the constants is the order of the `Examples` rows). Its comment: the product's name as QA gives it, else none |
 | `src/test/resources/data/dat/<C>/<C>.dat` (the default; variants QA names go into the same folder) | If the committed `.dat` files are one-line placeholders (`# Placeholder: copy <C>.dat from the E2E project.`), this is the public copy: write the same line for `<C>`, never the real file, and add `<C>` to the placeholder list in `README.md` ("This copy"). Otherwise copy QA's file byte for byte |
 | `byProduct.<C>` of an event file | Nothing at first: the product runs on the defaults. Only values QA gives in the review that differ from them. `dynamicFields` only after a recording shows them (section 5) |
 
@@ -119,7 +119,7 @@ In the user's language:
 | `dynamicFields` guessed before a recording | A rule whose path is not in the response fails the recording |
 | Expected files written by hand | Record them |
 | The product added to negative scenarios | They are written for one product |
-| A constant named after the product ID (`FX_PSCRIPT`), or a second one for another product ID of a registered composition | One constant per composition ID; its product IDs are the first argument, `productIds(<default>, <others>...)` |
+| A constant named after the product ID (`FX_PSCRIPT`), or a second one for another product ID of a registered composition | One constant per composition ID with its default product ID; another product ID is `productId` in a case's data |
 
 ## Never
 

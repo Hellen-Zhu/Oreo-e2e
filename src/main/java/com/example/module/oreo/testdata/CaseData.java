@@ -62,7 +62,7 @@ public final class CaseData {
     public String datFile() { return datFile; }
 
     /**
-     * The product ID the case sends, one registered for its composition; {@code null} for the composition's default.
+     * The product ID the case sends; {@code null} for its composition's default.
      * See {@link ProductDatFiles#productId(String)}.
      */
     public String productId() { return productId; }
