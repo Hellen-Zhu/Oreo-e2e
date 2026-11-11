@@ -13,7 +13,8 @@ Scenario: [TC-TRADE-CREATION-FX_TRF-API-002] ...
    ▼
 ScenarioLifecycleHooks (@Before)  ── TestData.forCase(id) merges data/api/trade_creation.json:
    │                                  defaults → byProduct[FX_TRF] → the case's row → the row's byProduct[FX_TRF]
-   │ puts _tc.key, _tc.request, _tc.request.<field>, flat leaves (basic.counterpartyName), _tc.datFile into ctx
+   │ puts _tc.key, _tc.request, _tc.request.<field>, flat leaves (basic.counterpartyName), _tc.datFile,
+   │ _tc.productId into ctx
    ▼
 feature step → snippet (business step) → snippets / Genie built-ins / focused Java glue
    ▼
@@ -192,7 +193,7 @@ Full rules: [docs/test-data.md](../test-data.md). The essentials:
 ### 5.1 Case data — `data/{api|ui}/{event}.json`
 
 - Keys: `shared`, `defaults`, `byProduct`, `cases`; a layer has `use`, `request`, `dynamicFields`, `expectedBase`,
-  `datFile`. Shared blocks come from the channel's `common.json` (applied only where `use` names them) or the file's own
+  `datFile`, `productId`. Shared blocks come from the channel's `common.json` (applied only where `use` names them) or the file's own
   `shared`.
 - A case without a row runs on the defaults: add a row only for a case that differs. One case matches at most one row;
   product differences go into `byProduct`.
@@ -209,10 +210,10 @@ so that each run creates a product of its own.
 
 ### 5.3 Products — `ProductDatFiles`
 
-- A product is a composition: an enum constant named as its `basic.compositionId`, with the product ID the cases
-  send, its capabilities and `data/dat/<C>/<C>.dat`. Feature files name only the composition; never a second constant
-  for another product ID of it. A variant
-  dat file is case data (`datFile`), never a new product.
+- A product is a composition: an enum constant named as its `basic.compositionId`, with the product IDs the cases
+  may send (`productIds(<default>, <others>...)`), its capabilities and `data/dat/<C>/<C>.dat`. Feature files name
+  only the composition; never a second constant for another product ID of it. A variant dat file is case data
+  (`datFile`), and so is another product ID (`productId`): never a new product.
 - Each case writes `composition <C>, product ID ...` to the report. A step that needs the product ID uses
   `set path parameter '<name>' to the product ID of '<C>'` (API) or `store the product ID of '<C>' as '<key>'` (UI),
   never the composition in its place.

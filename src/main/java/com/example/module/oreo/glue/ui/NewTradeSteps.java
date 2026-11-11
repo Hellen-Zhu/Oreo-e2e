@@ -27,14 +27,14 @@ public class NewTradeSteps {
     @When("^upload '([^']*)' dat file$")
     public void uploadDatFile(String productType) {
         ProductDatFiles composition = ProductDatFiles.of(productType);
-        ctx.write("[" + composition.describe() + "]");
+        ctx.write("[" + composition.describe(ctx.find("_tc.productId")) + "]");
         uploadDatFileByPath(composition.path(ctx.find("_tc.datFile")));
     }
 
-    /** The product ID registered for the composition, for the new trade page's product list. */
+    /** The case's product ID (productId of its test data), else the composition's default one, for the product list. */
     @When("^store the product ID of '([^']*)' as '([^']*)'$")
     public void storeProductId(String composition, String key) {
-        ctx.set(key, ProductDatFiles.of(composition).productId());
+        ctx.set(key, ProductDatFiles.of(composition).productId(ctx.find("_tc.productId")));
     }
 
     @When("^click save using configured risk engine mode for new trade creation$")

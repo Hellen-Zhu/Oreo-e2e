@@ -88,6 +88,18 @@ public class TestDataRepositoryTest {
                     { "id": "TC-DAT-EVENT-API-004", "_comment": "no product: the step's product folder", "datFile": "variant.dat" }
                   ]
                 }""");
+        // The product ID as case data: one registered for the composition, or null for its default
+        write("api/product_id_event.json", """
+                {
+                  "byProduct": { "FX_CO": { "productId": "FX_PSCRIPT" } },
+                  "cases": [
+                    { "id": "TC-PRODUCT-ID-EVENT-<product_type>-API-002", "byProduct": { "FX_CO": { "productId": null } } },
+                    { "id": "TC-PRODUCT-ID-EVENT-FX_TRF-API-003", "productId": "FX_PSCRIPT" },
+                    { "id": "TC-PRODUCT-ID-EVENT-API-004", "_comment": "no product: checked by the step", "productId": "X" }
+                  ]
+                }""");
+        write("api/bad_product_id.json", """
+                { "defaults": { "productId": "" } }""");
         write("dat/FX_TRF/variant.dat", "# a variant dat file of FX_TRF");
         write("dat/FX_CO/variant.dat", "# a variant dat file of FX_CO");
         // Broken event files, one mistake each
@@ -433,6 +445,26 @@ public class TestDataRepositoryTest {
     @Test
     public void datFileWithAFolderIsALoadError() {
         assertFailsWith(() -> repo.forCase("TC-BAD-DAT-FX_TRF-API-001"), "[defaults.datFile]", "'../FX_TRF.dat'");
+    }
+
+    @Test
+    public void productIdIsTheCompositionsDefaultUnlessALayerNamesOne() {
+        assertNull(repo.forCase("TC-PRODUCT-ID-EVENT-FX_TRF-API-001").productId());
+        assertEquals("FX_PSCRIPT", repo.forCase("TC-PRODUCT-ID-EVENT-FX_CO-API-001").productId());
+        assertNull(repo.forCase("TC-PRODUCT-ID-EVENT-FX_CO-API-002").productId());
+        assertEquals("X", repo.forCase("TC-PRODUCT-ID-EVENT-API-004").productId());
+    }
+
+    @Test
+    public void unregisteredProductIdNamesTheLayerAndTheRegistry() {
+        assertFailsWith(() -> repo.forCase("TC-PRODUCT-ID-EVENT-FX_TRF-API-003"),
+                "[row TC-PRODUCT-ID-EVENT-FX_TRF-API-003 productId]",
+                "'FX_PSCRIPT' is not registered for composition FX_TRF");
+    }
+
+    @Test
+    public void blankProductIdIsALoadError() {
+        assertFailsWith(() -> repo.forCase("TC-BAD-PRODUCT-ID-FX_TRF-API-001"), "[defaults.productId]");
     }
 
     @Test

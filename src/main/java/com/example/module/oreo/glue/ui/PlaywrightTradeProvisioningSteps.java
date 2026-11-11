@@ -32,7 +32,7 @@ public class PlaywrightTradeProvisioningSteps {
     public void provisionDraftTrade(String product) throws Exception {
         ProductDatFiles p = composition(product);
         store("createdTradeId", "createdTaskId",
-                TradeApiClient.provisionDraftTrade(helper, "trade-create", p, p.path(ctx.find("_tc.datFile"))));
+                TradeApiClient.provisionDraftTrade(helper, "trade-create", productId(p), datPath(p)));
     }
 
     /** Submitted by the maker: a trade pending the checker's approval. */
@@ -95,13 +95,13 @@ public class PlaywrightTradeProvisioningSteps {
     private void provisionPending(String product, String setupName) throws Exception {
         ProductDatFiles p = composition(product);
         store("createdTradeId", "createdTaskId",
-                TradeApiClient.provisionPendingTrade(helper, setupName, p, p.path(ctx.find("_tc.datFile"))));
+                TradeApiClient.provisionPendingTrade(helper, setupName, productId(p), datPath(p)));
     }
 
     private CreatedTrade provisionLive(String product, String tradeKey, String taskKey) throws Exception {
         ProductDatFiles p = composition(product);
         return store(tradeKey, taskKey,
-                TradeApiClient.provisionLiveTrade(helper, "trade-create", p, p.path(ctx.find("_tc.datFile"))));
+                TradeApiClient.provisionLiveTrade(helper, "trade-create", productId(p), datPath(p)));
     }
 
     private CreatedTrade provisionPendingCancellation(String product, String tradeKey, String taskKey)
@@ -118,10 +118,20 @@ public class PlaywrightTradeProvisioningSteps {
         return trade;
     }
 
-    /** The registered composition, written to the report with its product ID. */
+    /** The registered composition, written to the report with the product ID the case sends. */
     private ProductDatFiles composition(String product) {
         ProductDatFiles composition = ProductDatFiles.of(product);
-        ctx.write("[" + composition.describe() + "]");
+        ctx.write("[" + composition.describe(ctx.find("_tc.productId")) + "]");
         return composition;
+    }
+
+    /** The case's product ID (productId of its test data), else the composition's default one. */
+    private String productId(ProductDatFiles composition) {
+        return composition.productId(ctx.find("_tc.productId"));
+    }
+
+    /** The case's dat file (datFile of its test data), else the composition's default one. */
+    private String datPath(ProductDatFiles composition) {
+        return composition.path(ctx.find("_tc.datFile"));
     }
 }

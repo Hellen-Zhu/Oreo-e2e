@@ -7,7 +7,6 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.example.genie.module.rest.service.RequestResponseHelper;
 import com.example.module.oreo.config.TestUser;
-import com.example.module.oreo.testdata.ProductDatFiles;
 import com.example.module.oreo.testdata.TestData;
 import com.example.module.oreo.testdata.Json;
 import org.slf4j.Logger;
@@ -108,16 +107,21 @@ public final class TradeApiClient {
         return tradePath(tradeId) + "/target-gain";
     }
 
-    /** Submits the setup body {@code testDataKey} for {@code product} with the dat file at classpath {@code datPath}. */
+    /**
+     * Submits the setup body {@code testDataKey} as a trade of product ID {@code productId}
+     * ({@link com.example.module.oreo.testdata.ProductDatFiles#productId(String)}) with the dat file at classpath
+     * {@code datPath}.
+     */
     public static CreatedTrade submitTrade(RequestResponseHelper helper, String userId, String testDataKey,
-                                           ProductDatFiles product, String datPath) throws URISyntaxException {
-        return createdTrade(createTrade(helper, SUBMIT_TRADE_PATH, userId, testDataKey, product, datPath), testDataKey);
+                                           String productId, String datPath) throws URISyntaxException {
+        return createdTrade(createTrade(helper, SUBMIT_TRADE_PATH, userId, testDataKey, productId, datPath),
+                testDataKey);
     }
 
-    /** Saves the setup body {@code testDataKey} as a draft of {@code product}. */
+    /** Saves the setup body {@code testDataKey} as a draft of product ID {@code productId}. */
     public static CreatedTrade saveTrade(RequestResponseHelper helper, String userId, String testDataKey,
-                                         ProductDatFiles product, String datPath) throws URISyntaxException {
-        return createdTrade(createTrade(helper, SAVE_TRADE_PATH, userId, testDataKey, product, datPath), testDataKey);
+                                         String productId, String datPath) throws URISyntaxException {
+        return createdTrade(createTrade(helper, SAVE_TRADE_PATH, userId, testDataKey, productId, datPath), testDataKey);
     }
 
     /** @throws AssertionError when the response names no trade */
@@ -130,9 +134,9 @@ public final class TradeApiClient {
     }
 
     private static JsonNode createTrade(RequestResponseHelper helper, String path, String userId, String testDataKey,
-                                        ProductDatFiles product, String datPath) throws URISyntaxException {
-        // The setup body carries no product: the composition's registered product ID is sent
-        String tradeJson = withProductId(TestData.setup(testDataKey).request(), product.productId());
+                                        String productId, String datPath) throws URISyntaxException {
+        // The setup body carries no product: the step resolves the product ID from the registry and the case
+        String tradeJson = withProductId(TestData.setup(testDataKey).request(), productId);
         URL resource = TradeApiClient.class.getClassLoader().getResource(datPath);
         if (resource == null) {
             throw new AssertionError("[TradeApiClient] dat file '" + datPath + "' not found on classpath.");
@@ -220,22 +224,22 @@ public final class TradeApiClient {
 
     // ── Provisioning: maker submits, checker decides ─────────────────────
 
-    /** The setup body {@code testDataKey} of {@code product} submitted by the maker: a trade pending approval. */
+    /** The setup body {@code testDataKey} of product ID {@code productId} submitted by the maker: pending approval. */
     public static CreatedTrade provisionPendingTrade(RequestResponseHelper helper, String testDataKey,
-                                                     ProductDatFiles product, String datPath) throws URISyntaxException {
-        return submitTrade(helper, TestUser.MAKER.email(), testDataKey, product, datPath);
+                                                     String productId, String datPath) throws URISyntaxException {
+        return submitTrade(helper, TestUser.MAKER.email(), testDataKey, productId, datPath);
     }
 
-    /** The setup body {@code testDataKey} of {@code product} saved by the maker: a draft. */
+    /** The setup body {@code testDataKey} of product ID {@code productId} saved by the maker: a draft. */
     public static CreatedTrade provisionDraftTrade(RequestResponseHelper helper, String testDataKey,
-                                                   ProductDatFiles product, String datPath) throws URISyntaxException {
-        return saveTrade(helper, TestUser.MAKER.email(), testDataKey, product, datPath);
+                                                   String productId, String datPath) throws URISyntaxException {
+        return saveTrade(helper, TestUser.MAKER.email(), testDataKey, productId, datPath);
     }
 
     /** {@link #provisionPendingTrade} approved by the checker: a live trade; its task is the approved one. */
     public static CreatedTrade provisionLiveTrade(RequestResponseHelper helper, String testDataKey,
-                                                  ProductDatFiles product, String datPath) throws URISyntaxException {
-        CreatedTrade trade = provisionPendingTrade(helper, testDataKey, product, datPath);
+                                                  String productId, String datPath) throws URISyntaxException {
+        CreatedTrade trade = provisionPendingTrade(helper, testDataKey, productId, datPath);
         approveTask(helper, trade.taskId(), TestUser.CHECKER.email());
         log.info("[TradeApiClient] live trade provisioned: tradeId='{}'", trade.tradeId());
         return trade;

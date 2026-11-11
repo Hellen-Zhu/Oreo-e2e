@@ -32,7 +32,8 @@ public class ApiTradeProvisioningSteps {
     @Given("^a '([^']*)' trade pending checker approval is created with trade stored as '([^']*)' and task stored as '([^']*)'$")
     public void pendingTradeStoredAs(String product, String tradeKey, String taskKey) throws Exception {
         ProductDatFiles p = product(product);
-        store(tradeKey, taskKey, TradeApiClient.provisionPendingTrade(ctx.helper(), "trade-create", p, datPath(p)));
+        store(tradeKey, taskKey,
+                TradeApiClient.provisionPendingTrade(ctx.helper(), "trade-create", productId(p), datPath(p)));
     }
 
     @Given("^a live '([^']*)' trade is created via api$")
@@ -89,7 +90,8 @@ public class ApiTradeProvisioningSteps {
 
     private CreatedTrade live(String product, String tradeKey, String taskKey) throws Exception {
         ProductDatFiles p = product(product);
-        return store(tradeKey, taskKey, TradeApiClient.provisionLiveTrade(ctx.helper(), "trade-create", p, datPath(p)));
+        return store(tradeKey, taskKey,
+                TradeApiClient.provisionLiveTrade(ctx.helper(), "trade-create", productId(p), datPath(p)));
     }
 
     private CreatedTrade pendingCancellation(String product, String tradeKey, String taskKey) throws Exception {
@@ -98,11 +100,16 @@ public class ApiTradeProvisioningSteps {
                 TradeApiClient.provisionPendingEvent(ctx.helper(), live.tradeId(), "trade-cancellation"));
     }
 
-    /** The registered composition, written to the report with its product ID. */
+    /** The registered composition, written to the report with the product ID the case sends. */
     private ProductDatFiles product(String product) {
         ProductDatFiles composition = ProductDatFiles.of(product);
-        ctx.write("[" + composition.describe() + "]");
+        ctx.write("[" + composition.describe(ctx.find("_tc.productId")) + "]");
         return composition;
+    }
+
+    /** The case's product ID (productId of its test data), else the composition's default one. */
+    private String productId(ProductDatFiles product) {
+        return product.productId(ctx.find("_tc.productId"));
     }
 
     /** The case's dat file (datFile of its test data), else the composition's default one. */

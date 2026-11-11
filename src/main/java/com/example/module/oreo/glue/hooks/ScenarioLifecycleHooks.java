@@ -106,6 +106,11 @@ public class ScenarioLifecycleHooks {
             genieScenario.setAttribute("_tc.datFile", data.datFile());
             genieScenario.write("[test-data:datFile] " + data.datFile());
         }
+        if (data.productId() != null) {
+            // Read by the steps that send a product ID (ProductDatFiles.productId(fromCase))
+            genieScenario.setAttribute("_tc.productId", data.productId());
+            genieScenario.write("[test-data:productId] " + data.productId());
+        }
 
         if (!data.hasRequest()) {
             log.debug("[ScenarioLifecycleHooks] No request data for '{}'", tcId);

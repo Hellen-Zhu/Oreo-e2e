@@ -116,10 +116,14 @@ public class ApiRequestSteps {
         setPathParam(paramName, value, "literal value");
     }
 
-    /** The product ID registered for the composition ({@link ProductDatFiles}), as a path parameter. */
+    /**
+     * The case's product ID ({@code productId} of its test data), else the composition's default one
+     * ({@link ProductDatFiles#productId(String)}), as a path parameter.
+     */
     @Given("^set path parameter '([^']*)' to the product ID of '([^']*)'$")
     public void setPathParamToProductId(String paramName, String composition) {
-        setPathParam(paramName, ProductDatFiles.of(composition).productId(), "product ID of '" + composition + "'");
+        setPathParam(paramName, ProductDatFiles.of(composition).productId(ctx.find("_tc.productId")),
+                "product ID of '" + composition + "'");
     }
 
     @Given("^set query parameter '([^']*)' as '([^']*)'$")

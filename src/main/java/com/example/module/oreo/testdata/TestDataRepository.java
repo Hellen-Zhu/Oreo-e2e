@@ -35,9 +35,9 @@ public final class TestDataRepository {
     private static final Set<String> BLOCK_KEYS = Set.of("request", "dynamicFields", "sharedFragments");
     private static final Set<String> EVENT_KEYS = Set.of("shared", "defaults", "byProduct", "cases");
     private static final Set<String> LAYER_KEYS = Set.of("use", "request", "dynamicFields", "sharedFragments",
-            "expectedBase", "datFile");
+            "expectedBase", "datFile", "productId");
     private static final Set<String> ROW_KEYS = Set.of("id", "use", "request", "dynamicFields", "sharedFragments",
-            "expectedBase", "datFile", "byProduct");
+            "expectedBase", "datFile", "productId", "byProduct");
     private static final Pattern RESPONSE_PATH = Pattern.compile("[A-Za-z0-9_]+(\\.[A-Za-z0-9_]+)*");
     /** A rule path that starts at a shared part: {@code {basic}.dealDate}, {@code {instrument}} (the whole part). */
     private static final Pattern PART_NAME = Pattern.compile("[A-Za-z0-9_-]+");
@@ -101,6 +101,7 @@ public final class TestDataRepository {
             }
         }
         checkDatFileExists(merged, id, eventPath);
+        checkProductIdRegistered(merged, id, eventPath);
         return merged.toCaseData(id, eventPath);
     }
 
@@ -111,6 +112,25 @@ public final class TestDataRepository {
         if (classLoader().getResource(datPath) == null) {
             throw error(eventPath, merged.datFileFrom + " datFile", "no dat file " + datPath
                     + " on the classpath: a variant is a file of the product's folder");
+        }
+    }
+
+    /**
+     * The {@code productId} the layers chose is registered for the case's product (a case without a product: by the
+     * step that sends it, {@link ProductDatFiles#productId(String)}).
+     */
+    private static void checkProductIdRegistered(Merged merged, CaseId id, String eventPath) {
+        if (merged.productId == null || id.product() == null) return;
+        ProductDatFiles composition;
+        try {
+            composition = ProductDatFiles.valueOf(id.product());
+        } catch (IllegalArgumentException e) {
+            return; // an unknown product fails elsewhere, with its own message
+        }
+        if (!composition.productIds().contains(merged.productId)) {
+            throw error(eventPath, merged.productIdFrom + " productId", "'" + merged.productId
+                    + "' is not registered for composition " + id.product() + " " + composition.productIds()
+                    + ": add it to its productIds(...) in ProductDatFiles");
         }
     }
 
@@ -152,10 +172,14 @@ public final class TestDataRepository {
             merged.datFile = layer.get("datFile").isNull() ? null : layer.get("datFile").asText();
             merged.datFileFrom = label;
         }
+        if (layer.has("productId")) {
+            merged.productId = layer.get("productId").isNull() ? null : layer.get("productId").asText();
+            merged.productIdFrom = label;
+        }
         merged.layers.add(uses.isEmpty() ? label : label + " (use " + String.join(", ", uses) + ")");
     }
 
-    /** The request, dynamic fields, shared fragments, expected base and dat file merged so far. */
+    /** The request, dynamic fields, shared fragments, expected base, dat file and product ID merged so far. */
     private static final class Merged {
         ObjectNode request = Json.MAPPER.createObjectNode();
         final Map<String, String> dynamicFields = new LinkedHashMap<>();
@@ -166,6 +190,8 @@ public final class TestDataRepository {
         String expectedBase;
         String datFile;
         String datFileFrom;
+        String productId;
+        String productIdFrom;
         final List<String> layers = new ArrayList<>();
 
         void add(JsonNode part) {
@@ -235,7 +261,8 @@ public final class TestDataRepository {
                             + "', a part no block declares (\"" + name + "\": \"" + name + "/<product_type>\")");
                 }
             }
-            return new CaseData(id, request, resolveRules(), resolveFragments(id), resolveBase(id), datFile, layers);
+            return new CaseData(id, request, resolveRules(), resolveFragments(id), resolveBase(id), datFile,
+                    productId, layers);
         }
 
         /**
@@ -442,6 +469,16 @@ public final class TestDataRepository {
         checkSharedFragments(layer, path, where, channelDir);
         checkExpectedBase(layer, path, where, id);
         checkDatFile(layer, path, where);
+        checkProductId(layer, path, where);
+    }
+
+    private static void checkProductId(JsonNode layer, String path, String where) {
+        JsonNode productId = layer.get("productId");
+        if (productId == null || productId.isNull()) return;
+        if (!productId.isTextual() || productId.asText().isBlank()) {
+            throw error(path, where + ".productId", "must be a product ID registered for the case's composition"
+                    + " (ProductDatFiles), or null for its default");
+        }
     }
 
     private static void checkDatFile(JsonNode layer, String path, String where) {

@@ -17,16 +17,18 @@ public final class CaseData {
     private final Map<String, String> sharedFragments;
     private final String expectedBase;
     private final String datFile;
+    private final String productId;
     private final List<String> layers;
 
     CaseData(CaseId id, ObjectNode request, Map<String, String> dynamicFields, Map<String, String> sharedFragments,
-             String expectedBase, String datFile, List<String> layers) {
+             String expectedBase, String datFile, String productId, List<String> layers) {
         this.id = id;
         this.request = request.deepCopy();
         this.dynamicFields = Collections.unmodifiableMap(new LinkedHashMap<>(dynamicFields));
         this.sharedFragments = Collections.unmodifiableMap(new LinkedHashMap<>(sharedFragments));
         this.expectedBase = expectedBase;
         this.datFile = datFile;
+        this.productId = productId;
         this.layers = List.copyOf(layers);
     }
 
@@ -58,6 +60,12 @@ public final class CaseData {
      * for the product's default {@code <P>.dat}. See {@link ProductDatFiles#path(String)}.
      */
     public String datFile() { return datFile; }
+
+    /**
+     * The product ID the case sends, one registered for its composition; {@code null} for the composition's default.
+     * See {@link ProductDatFiles#productId(String)}.
+     */
+    public String productId() { return productId; }
 
     /** The layers applied, in order, e.g. {@code trade_creation.json defaults (use trade-basic)}. */
     public List<String> layers() { return layers; }

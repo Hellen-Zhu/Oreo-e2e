@@ -24,7 +24,7 @@ public class TradeApiSteps {
     @Given("^set multi-part form parameter '([^']*)' for product '([^']*)' from test data '([^']*)'$")
     public void setMultiPartFormParameterFromTestData(String partName, String product, String key) {
         String requestWithProductId = setBasicProductId(TestData.setup(key).request(),
-                ProductDatFiles.of(product).productId(), key);
+                ProductDatFiles.of(product).productId(ctx.find("_tc.productId")), key);
         ctx.helper().request().multiPart(partName, requestWithProductId, "application/json");
         log.info("[TradeApiSteps] set multi-part form parameter '{}' from test data '{}' as '{}'", partName, key,requestWithProductId);
     }
@@ -40,7 +40,8 @@ public class TradeApiSteps {
             throw new AssertionError("[TradeApiSteps] Case '" + ctx.get("_tc.key")
                     + "' has no request in its test data (data/api/<event>.json).");
         }
-        String requestWithProductId = setBasicProductId(requestBody, ProductDatFiles.of(product).productId(),
+        String requestWithProductId = setBasicProductId(requestBody,
+                ProductDatFiles.of(product).productId(ctx.find("_tc.productId")),
                 ctx.get("_tc.key"));
         ctx.helper().request().multiPart(partName, requestWithProductId, "application/json");
         log.info("[TradeApiSteps] set multi-part form parameter '{}' from current scenario ('{}') as '{}'",
@@ -64,7 +65,7 @@ public class TradeApiSteps {
     @Given("^set multi-part dat file for product '([^']*)'$")
     public void setMultiPartDatFileForProduct(String product) {
         ProductDatFiles composition = ProductDatFiles.of(product);
-        ctx.write("[" + composition.describe() + "]");
+        ctx.write("[" + composition.describe(ctx.find("_tc.productId")) + "]");
         attachDatFile(composition.path(ctx.find("_tc.datFile")));
     }
 

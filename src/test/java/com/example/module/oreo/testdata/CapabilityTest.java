@@ -42,7 +42,21 @@ public class CapabilityTest {
     @Test
     public void aCompositionSendsItsRegisteredProductId() {
         assertEquals("FX_PSCRIPT", ProductDatFiles.FX_CO.productId());
-        assertEquals("composition FX_CO, product ID FX_PSCRIPT", ProductDatFiles.FX_CO.describe());
+        assertEquals("FX_PSCRIPT", ProductDatFiles.FX_CO.productIds().get(0));
+        assertEquals("composition FX_CO, product ID FX_PSCRIPT", ProductDatFiles.FX_CO.describe(null));
+    }
+
+    @Test
+    public void aCaseSendsARegisteredProductIdOrTheDefault() {
+        assertEquals("FX_PSCRIPT", ProductDatFiles.FX_CO.productId(null));
+        assertEquals("FX_PSCRIPT", ProductDatFiles.FX_CO.productId(" "));
+        assertEquals("FX_PSCRIPT", ProductDatFiles.FX_CO.productId("FX_PSCRIPT"));
+        try {
+            ProductDatFiles.FX_CO.productId("FX_PSCRIPT_FSKO");
+            fail("FX_PSCRIPT_FSKO is not registered for FX_CO");
+        } catch (AssertionError expected) {
+            assertTrue(expected.getMessage(), expected.getMessage().contains("not registered for composition FX_CO"));
+        }
     }
 
     @Test

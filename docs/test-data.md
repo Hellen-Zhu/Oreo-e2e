@@ -20,9 +20,11 @@ API and UI data never read each other; only the code is shared.
 
 `ProductDatFiles` lists every product with its dat file and the capabilities it supports. A product is a
 composition: the constant is named as the trade's `basic.compositionId` (`FX_TRF`, `FX_CO`, `FX_FSB`,
-`FX_PSCRIPT_TRF`) and registers the one product ID the cases send as `basic.productId` (`FX_PSCRIPT`; a composition
-can have several product IDs, one covers it). Feature files and data name only the composition; the requests and the
-report line of a case (`composition FX_CO, product ID FX_PSCRIPT`) read the product ID from the registry. Nothing
+`FX_PSCRIPT_TRF`) and registers the product IDs the cases may send as `basic.productId`, the default first:
+`productIds("FX_PSCRIPT")`, `productIds("FX_PSCRIPT", "<another>")`. Composition and product ID are many to many; only
+the product IDs a case sends are registered. Feature files name only the composition; a case that sends another of
+its product IDs names it with `productId` in its data (below). The requests and the report line of a case
+(`composition FX_CO, product ID FX_PSCRIPT`) read the product ID from the registry and the case. Nothing
 checks that the trade created is of that composition. The capabilities
 (`Capability`: `create`,
 `stepInFull`, `stepInPartial` and one per lifecycle event, `earlyTermination`, `novationRemaining`, `cancellation`,
@@ -115,6 +117,14 @@ with the columns `| case | dataset |` (`001`, `002` ...); each case is its own r
   built (the file exists for the case's product); a case without a product uses the folder of its step's product.
   `upload '<P>' dat file`, `set multi-part dat file for product '<P>'` and the trade provisioning steps read it, and
   the report shows `[test-data:datFile]` and the `[dat file]` sent.
+- `productId`: the product ID the case sends, one registered for its composition (`productIds(...)` in
+  `ProductDatFiles`); without it (or `null`) the composition's default, the first. It works as `datFile`: `byProduct`
+  for every case of that product in the file, a row or the row's `byProduct` for one case. To test a composition with
+  another of its product IDs, register the ID, then add a case (a new row with a new case ID) that names it; the
+  `Examples` and the other cases do not change. Checked when the case's data is built (registered for the case's
+  product); a case without a product is checked by the step that sends it. The hook stores it as `_tc.productId`; the
+  trade creation and provisioning steps, `set path parameter '<name>' to the product ID of '<C>'` and `store the
+  product ID of '<C>' as '<key>'` read it, and the report shows `[test-data:productId]`.
 - The hook puts the request into ctx as before (`_tc.key`, `_tc.request`, `_tc.request.<field>`, flat leaves such as
   `basic.counterpartyName`) and writes the applied layers to the report (`[test-data:layers]`).
 
@@ -404,7 +414,7 @@ every variant differ from it.
 
 | Task | What to change |
 |---|---|
-| New product | `ProductDatFiles` constant (composition ID, product ID) with its capabilities, and `data/dat/<P>/<P>.dat`; `mvn -Ptest-data process-test-classes "-Dexec.args=sync-examples"` writes it into the Outlines' Examples; `byProduct` only where its data or dynamic fields differ; run the API cases, compact, review the recorded files, commit (no base to declare: `defaults` covers every product). The skill `.claude/skills/onboarding-e2e-product` walks through it |
+| New product | `ProductDatFiles` constant (composition ID, `productIds(...)`) with its capabilities, and `data/dat/<P>/<P>.dat`; `mvn -Ptest-data process-test-classes "-Dexec.args=sync-examples"` writes it into the Outlines' Examples; `byProduct` only where its data or dynamic fields differ; run the API cases, compact, review the recorded files, commit (no base to declare: `defaults` covers every product). The skill `.claude/skills/onboarding-e2e-product` walks through it |
 | New positive case | nothing when it runs on the defaults; otherwise a row with the feature's ID; after the recording, compact |
 | New negative case | a row with the `request` change and `"dynamicFields": null` |
 | New API case that checks the database, not the response | the tag `@expected#none` on it (or on its Feature); no expected file |
