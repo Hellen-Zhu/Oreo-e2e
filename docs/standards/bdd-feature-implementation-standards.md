@@ -43,6 +43,7 @@ Work down the list and stop at the first that fits:
 | The step is... | It goes into |
 |---|---|
 | A business action / assertion a scenario calls (UI) | `snippet/ui/flows/<feature or shared>.snippet` |
+| A UI precondition that only provisions through the API | a business-worded Java step of `PlaywrightTradeProvisioningSteps` (§3.1), no snippet around it |
 | A page's atomic action / assertion | `snippet/ui/pages/<page>_page.snippet` |
 | Behavior of a dialog, toast or panel used on several pages | `snippet/ui/components/<component>_component.snippet` |
 | An API business action / assertion | `snippet/api/<feature or common_*>.snippet` |
@@ -53,13 +54,25 @@ Work down the list and stop at the first that fits:
 
 ```text
 .feature ──► Flow ──► Flow / Page / Component ──► Component / built-ins / focused glue
+    └──────► UI provisioning (Java, PlaywrightTradeProvisioningSteps) ──► TradeApiClient
 ```
 
-- A scenario calls flow steps only; flows orchestrate business actions and never contain element keys or UI primitives
-  (`click`, `type`, `fill`, `select`, visible/hidden checks).
+The layers keep UI mechanics out of the feature: what a scenario calls reads as business and hides every element key,
+UI primitive and HTTP detail.
+
+- A scenario calls business steps only: **flow** steps, and the **UI provisioning** steps
+  (`a Live / Draft Pending Approval / Dead / Draft / saved Draft '<product_type>' trade exists in the blotter`, §3.3).
+  Never a page or component step, a built-in, other Java glue, or `snippet/api/`.
+- A provisioning step has no UI: it sets state through the API and neither logs in, navigates nor touches a page.
+  It is Java worded as business, called by the feature directly; no flow only renames it. Its older steps worded
+  `... is provisioned via playwright api` are called from flows until they get business wording.
+- A precondition that also uses the UI (provision, then open a page) is a flow: it calls the provisioning step and the
+  pages.
+- The only Java a scenario calls directly is such a provisioning step, in `PlaywrightTradeProvisioningSteps`. Any other
+  Java step is reached through a snippet.
+- Flows orchestrate business actions and never contain element keys or UI primitives (`click`, `type`, `fill`,
+  `select`, visible/hidden checks).
 - Page and component snippets own element keys and UI mechanics; they never call a flow.
-- A `@playwright` scenario never calls `snippet/api/`. Its API-based setup goes through the UI provisioning steps
-  (§3.3).
 
 ### 3.2 API snippets
 

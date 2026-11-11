@@ -108,7 +108,8 @@ writes traces to `target/traces` (`npx playwright show-trace <zip>`). Never comm
 - **API cases compare the whole response** with `data/api/expected/<event>/<caseId>.json`, masking run-dependent
   values by `dynamicFields` rules. A missing file is recorded on the first run.
 - **UI steps are layered**: scenario (business language) → flow snippet → page / component snippet → element
-  repository (locators).
+  repository (locators). A precondition that only provisions through the API is a business-worded Java step
+  (`a Live '<product_type>' trade exists in the blotter`) the scenario calls directly: it has no UI to layer.
 
 ## Updating recorded responses
 

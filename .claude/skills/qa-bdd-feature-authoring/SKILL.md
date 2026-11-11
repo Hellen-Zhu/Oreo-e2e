@@ -55,7 +55,7 @@ problem with a TP (it cannot be expressed, its capability does not exist) is rep
 
    Read `target/ai/api-step-index.md` / `target/ai/ui-step-index.md`. For each intended step, reuse a pattern whose
    business meaning matches, filling only its parameters; keep its wording and tense. A `@playwright` scenario uses
-   only `ui` (flow) steps; an `@api` scenario only `api` steps. The index, not a search of other feature files, is the
+   only `ui` steps (flows and the UI provisioning steps listed with them); an `@api` scenario only `api` steps. The index, not a search of other feature files, is the
    vocabulary: features may contain steps that have no definition.
 6. **New wording** only when nothing matches. Keep it business-level and general enough to be reused, follow the
    patterns of `references/step-wording-and-detail-placement.md`, and list every new step in the output for the

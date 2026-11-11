@@ -60,6 +60,7 @@ Stop at the first that fits:
 | What | Where |
 |---|---|
 | Business step a UI scenario calls | `snippet/ui/flows/` (no element keys, no UI primitives) |
+| UI precondition that only provisions through the API | a Java step of `PlaywrightTradeProvisioningSteps` worded as business (`... exists in the blotter`), called by the feature with no snippet around it |
 | Atomic page action / assertion | `snippet/ui/pages/<page>_page.snippet` |
 | Dialog, toast, panel used on several pages | `snippet/ui/components/<component>_component.snippet` |
 | API action / outcome | `snippet/api/`; a request starts with `start a new api request as user '<role>'` (`maker`, ...) |

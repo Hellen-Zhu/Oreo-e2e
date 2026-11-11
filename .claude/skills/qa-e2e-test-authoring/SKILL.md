@@ -27,7 +27,14 @@ From `test-agent`: the feature file, the case IDs to implement (only the new or 
 
 ```text
 .feature -> flows/*.snippet -> flows / pages/*_page.snippet / components/*_component.snippet -> built-ins / focused glue
+.feature -> UI provisioning (Java, PlaywrightTradeProvisioningSteps) -> TradeApiClient
 ```
+
+- A scenario calls flow steps and the UI provisioning steps (`... exists in the blotter`), nothing else. A provisioning
+  step only sets state through the API (no login, navigation or page): it is Java worded as business, with no flow
+  that only renames it. A precondition that also uses the UI is a flow calling it and the pages. A new precondition
+  of that kind goes into `PlaywrightTradeProvisioningSteps` with business wording; any other Java is called from a
+  snippet.
 
 - Flows: business orchestration only; no element keys, no `click` / `type` / `fill` / `select` / visible checks.
 - Pages own a page's element keys and atomic actions / assertions; components own dialogs, toasts, panels used on
