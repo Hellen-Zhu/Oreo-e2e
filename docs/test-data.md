@@ -161,10 +161,6 @@ recorded:
 A path is keys joined by `.`, `[n]` for one array element, `[*]` for all. `*` as a key is every
 value of an object, for keys that change per product or that a path cannot name (`FX:EURSGD@[BFIX]-1500-JP TYO`):
 `"data.fixings.*": "type"` checks that each fixing is an array while every key stays in the file, compared exactly. A rule whose path is not in the response fails the recording.
-An empty object where the path takes every key has no key to keep yet: it is recorded `${json-unit.ignore}`, so a
-later response with keys still matches (`data.fixings` is `{}` while every fixing date of a trade is in the future,
-and fills as the dates pass); its values are then checked by a step, not the recording. The key before `*` must
-exist, so a misspelt path still fails.
 
 A path may start at a shared part instead of the response root: `{basic}.dealDate`, or `{instrument}` for the whole
 part. It takes the part's path in the case's event (`sharedFragments`, "Shared parts"): `data.trade.basic.dealDate`
