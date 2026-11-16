@@ -18,11 +18,10 @@ public final class CaseData {
     private final String expectedBase;
     private final String datFile;
     private final String productId;
-    private final ObjectNode checkData;
     private final List<String> layers;
 
     CaseData(CaseId id, ObjectNode request, Map<String, String> dynamicFields, Map<String, String> sharedFragments,
-             String expectedBase, String datFile, String productId, ObjectNode checkData, List<String> layers) {
+             String expectedBase, String datFile, String productId, List<String> layers) {
         this.id = id;
         this.request = request.deepCopy();
         this.dynamicFields = Collections.unmodifiableMap(new LinkedHashMap<>(dynamicFields));
@@ -30,7 +29,6 @@ public final class CaseData {
         this.expectedBase = expectedBase;
         this.datFile = datFile;
         this.productId = productId;
-        this.checkData = (ObjectNode) JsonLayers.withoutComments(checkData);
         this.layers = List.copyOf(layers);
     }
 
@@ -68,18 +66,6 @@ public final class CaseData {
      * See {@link ProductDatFiles#productId(String)}.
      */
     public String productId() { return productId; }
-
-    /**
-     * A value of the case's {@code checkData} (what a check step reads, never sent), e.g. {@code fixingDates}, the
-     * response paths of the trade's fixing dates; {@code null} when no layer gives it.
-     */
-    public JsonNode checkData(String name) {
-        JsonNode value = checkData.get(name);
-        return value == null ? null : value.deepCopy();
-    }
-
-    /** The whole {@code checkData} of the case, {@code {}} when no layer gives one. */
-    public ObjectNode checkData() { return checkData.deepCopy(); }
 
     /** The layers applied, in order, e.g. {@code trade_creation.json defaults (use trade-basic)}. */
     public List<String> layers() { return layers; }

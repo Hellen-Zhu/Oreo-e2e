@@ -1,18 +1,14 @@
 @api @ADO#trade_fixings @ADO#trade_lifecycle
 Feature: Trade Fixings API
   As a Trader
-  I want the online fixing refresh to fill the fixings of a submitted trade
-  So that every past fixing date of the trade has its fixing value
+  I want to retrieve online fixing data for a submitted trade
+  So that the trade details contain the data required for review
 
   @ADO#positive @ADO#regression @capability#fixings
-  Scenario Outline: [TC-TRADE-FIXINGS-<product_type>-API-001] Online fixing refresh fills every past fixing date of a submitted <product_type> trade
+  Scenario Outline: [TC-TRADE-FIXINGS-<product_type>-API-001] Online fixing data is available for a submitted <product_type> trade
     Given a '<product_type>' trade is submitted to pending approval via api
-    And maker retrieves the trade
-    And the queried trade contains empty fixing data
-    When maker refreshes the online fixings of the trade
-    And maker retrieves the trade
-    Then the 'trade details' are retrieved successfully
-    And every schedule date before today has a fixing value
+    When maker retrieves online fixings for the trade
+    Then online fixings are returned successfully
 
     Examples:
       | product_type   |

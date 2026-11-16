@@ -124,13 +124,6 @@ with the columns `| case | dataset |` (`001`, `002` ...); each case is its own r
   list to check it against: a wrong product ID fails on the system). The hook stores it as `_tc.productId`; the
   trade creation and provisioning steps, `set path parameter '<name>' to the product ID of '<C>'` and `store the
   product ID of '<C>' as '<key>'` read it, and the report shows `[test-data:productId]`.
-- `checkData`: values a check step reads, never sent: an object of name -> value, merged as `request` (key by key,
-  lists replace whole, `null` removes a name, `"checkData": null` removes all). For knowledge a check needs that
-  differs per product: `fixingDates` of `api/trade_fixings.json`, the response paths (rule-path syntax) of the trade's
-  fixing dates, `data.tradeDetailsSchedule.Fixing Date` in `defaults` and another column in a product's `byProduct`;
-  the step `every schedule date before today has a fixing value` reads it (`CaseData.checkData("fixingDates")`).
-  Checked at load (an object or null); `case <ID>` prints it. A step that needs a value the case does not give fails
-  and names the key.
 - The hook puts the request into ctx as before (`_tc.key`, `_tc.request`, `_tc.request.<field>`, flat leaves such as
   `basic.counterpartyName`) and writes the applied layers to the report (`[test-data:layers]`).
 
@@ -168,9 +161,6 @@ recorded:
 A path is keys joined by `.`, `[n]` for one array element, `[*]` for all. `*` as a key is every
 value of an object, for keys that change per product or that a path cannot name (`FX:EURSGD@[BFIX]-1500-JP TYO`):
 `"data.fixings.*": "type"` checks that each fixing is an array while every key stays in the file, compared exactly. A rule whose path is not in the response fails the recording.
-What the array holds (one value per past fixing date, a number that grows as dates pass) is not the recording's: the
-step `every schedule date before today has a fixing value` checks it against the trade's schedule (`checkData`, "Case
-data").
 
 A path may start at a shared part instead of the response root: `{basic}.dealDate`, or `{instrument}` for the whole
 part. It takes the part's path in the case's event (`sharedFragments`, "Shared parts"): `data.trade.basic.dealDate`

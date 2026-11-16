@@ -317,20 +317,6 @@ public final class ResponseMasker {
         return out.toString();
     }
 
-    /**
-     * Every value of {@code root} at {@code path}, written as a rule path ({@code data.fixings.*},
-     * {@code data.tradeDetailsSchedule.Fixing Date}); empty when the path is not in it.
-     */
-    public static List<JsonNode> select(JsonNode root, String path, String caseLabel) {
-        List<List<Object>> found = new ArrayList<>();
-        collect(root, parsePath(path, caseLabel), 0, new ArrayList<>(), found);
-        List<JsonNode> out = new ArrayList<>();
-        for (List<Object> at : found) {
-            out.add(at(root, at));
-        }
-        return out;
-    }
-
     /** Every concrete path (keys and indexes) in {@code node} that {@code steps} matches. */
     private static void collect(JsonNode node, List<Object> steps, int i, List<Object> at, List<List<Object>> out) {
         if (i == steps.size()) {

@@ -99,18 +99,6 @@ public class TestDataRepositoryTest {
                 }""");
         write("api/bad_product_id.json", """
                 { "defaults": { "productId": "" } }""");
-        // Values a check step reads, merged like the request
-        write("api/check_data_event.json", """
-                {
-                  "defaults": { "checkData": { "fixingDates": ["data.tradeDetailsSchedule.Fixing Date"], "limit": 2 } },
-                  "byProduct": { "FX_TRF": { "checkData": { "_comment": "x", "fixingDates": ["data.trade.resetDates"] } } },
-                  "cases": [
-                    { "id": "TC-CHECK-DATA-EVENT-<product_type>-API-002", "checkData": { "limit": null } },
-                    { "id": "TC-CHECK-DATA-EVENT-API-003", "checkData": null }
-                  ]
-                }""");
-        write("api/bad_check_data.json", """
-                { "defaults": { "checkData": ["data.x"] } }""");
         write("dat/FX_TRF/variant.dat", "# a variant dat file of FX_TRF");
         write("dat/FX_CO/variant.dat", "# a variant dat file of FX_CO");
         // Broken event files, one mistake each
@@ -456,23 +444,6 @@ public class TestDataRepositoryTest {
     @Test
     public void datFileWithAFolderIsALoadError() {
         assertFailsWith(() -> repo.forCase("TC-BAD-DAT-FX_TRF-API-001"), "[defaults.datFile]", "'../FX_TRF.dat'");
-    }
-
-    @Test
-    public void checkDataMergesKeyByKeyAndNullRemoves() {
-        CaseData co = repo.forCase("TC-CHECK-DATA-EVENT-FX_CO-API-001");
-        assertEquals("[\"data.tradeDetailsSchedule.Fixing Date\"]", Json.compact(co.checkData("fixingDates")));
-        assertEquals(2, co.checkData("limit").asInt());
-        CaseData trf = repo.forCase("TC-CHECK-DATA-EVENT-FX_TRF-API-001");
-        assertEquals("{\"fixingDates\":[\"data.trade.resetDates\"],\"limit\":2}", Json.compact(trf.checkData()));
-        assertNull(repo.forCase("TC-CHECK-DATA-EVENT-FX_TRF-API-002").checkData("limit"));
-        assertEquals("{}", Json.compact(repo.forCase("TC-CHECK-DATA-EVENT-API-003").checkData()));
-        assertNull(repo.forCase("TC-SAMPLE-EVENT-FX_TRF-API-001").checkData("fixingDates"));
-    }
-
-    @Test
-    public void checkDataIsAnObject() {
-        assertFailsWith(() -> repo.forCase("TC-BAD-CHECK-DATA-FX_TRF-API-001"), "[defaults.checkData]");
     }
 
     @Test

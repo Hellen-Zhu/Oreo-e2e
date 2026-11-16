@@ -193,7 +193,7 @@ Full rules: [docs/test-data.md](../test-data.md). The essentials:
 ### 5.1 Case data — `data/{api|ui}/{event}.json`
 
 - Keys: `shared`, `defaults`, `byProduct`, `cases`; a layer has `use`, `request`, `dynamicFields`, `expectedBase`,
-  `datFile`, `productId`, `checkData` (values a check step reads, never sent). Shared blocks come from the channel's `common.json` (applied only where `use` names them) or the file's own
+  `datFile`, `productId`. Shared blocks come from the channel's `common.json` (applied only where `use` names them) or the file's own
   `shared`.
 - A case without a row runs on the defaults: add a row only for a case that differs. One case matches at most one row;
   product differences go into `byProduct`.

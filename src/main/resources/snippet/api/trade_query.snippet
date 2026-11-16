@@ -33,3 +33,12 @@
 @Then "^the submitted 'FX_PSCRIPT_TRF' trade schedule contains expected review data$"
     And response body contains a non-empty value at key 'data.tradeDetailsSchedule["Fixing Date"][0]'
     And response body contains a non-empty value at key 'data.tradeDetailsSchedule["Payment Date"][0]'
+
+@Then "^the queried trade contains empty fixing data$"
+    Then response status code is '200'
+    And response body contains a key 'data.fixings' as '{}'
+
+@Then "^the queried trade contains expected fixing data$"
+    Then response status code is '200'
+    And response matches current scenario
+    And response body contains a non-empty value at key 'data.fixings.values()[0][0].value'
