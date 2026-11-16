@@ -154,15 +154,16 @@ final class ExpectedFileChecks {
     }
 
     /** A value a rule path reaches in an expected file; {@code underPlaceholder}: an ancestor is a placeholder. */
-    private record Hit(String path, JsonNode value, boolean underPlaceholder) {}
+    /** {@code atAnyKey}: the placeholder stands where the path takes every key ({@code *}). */
+    private record Hit(String path, JsonNode value, boolean underPlaceholder, boolean atAnyKey) {}
 
     private static void select(JsonNode node, List<Object> steps, int i, String at, List<Hit> out) {
         if (i == steps.size()) {
-            out.add(new Hit(at, node, false));
+            out.add(new Hit(at, node, false, false));
             return;
         }
         if (isPlaceholder(node)) {
-            out.add(new Hit(at, node, true));
+            out.add(new Hit(at, node, true, ResponseMasker.isAnyKey(steps.get(i))));
             return;
         }
         Object step = steps.get(i);
@@ -193,6 +194,9 @@ final class ExpectedFileChecks {
     private static void checkHit(String label, String rule, Hit hit, List<String> errors, List<String> warnings) {
         JsonNode value = hit.value();
         String at = " (at " + hit.path() + ")";
+        if (hit.underPlaceholder() && hit.atAnyKey() && ResponseMasker.IGNORE.equals(value.asText(""))) {
+            return; // an empty object at '*' when recorded: ResponseMasker writes it ignore
+        }
         if (hit.underPlaceholder()) {
             warnings.add(label + ": under the placeholder " + value.asText() + at + "; record again");
             return;

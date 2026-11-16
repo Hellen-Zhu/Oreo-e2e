@@ -91,6 +91,23 @@ public class ResponseMaskerTest {
     }
 
     @Test
+    public void anEmptyObjectAtAStarIsIgnored() {
+        String empty = "{\"data\":{\"tradeId\":\"T1\",\"fixings\":{}}}";
+        assertJson("{\"data\":{\"tradeId\":\"T1\",\"fixings\":\"" + ResponseMasker.IGNORE + "\"}}",
+                ResponseMasker.mask(empty, rules("data.fixings.*", "type"), "x"));
+        assertJson("{\"data\":{\"tradeId\":\"T1\",\"fixings\":\"" + ResponseMasker.IGNORE + "\"}}",
+                ResponseMasker.mask(empty, rules("data.fixings.*[*].value", "type"), "x"));
+        // The recording of the empty object matches a later response with keys
+        JsonAssert.assertJsonEquals(ResponseMasker.mask(empty, rules("data.fixings.*", "type"), "x"),
+                "{\"data\":{\"tradeId\":\"T1\",\"fixings\":{\"FX:A\":[{\"value\":1}]}}}");
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void aStarUnderAMissingKeyStillFails() {
+        ResponseMasker.mask("{\"data\":{\"fixings\":{}}}", rules("data.fixngs.*", "type"), "x");
+    }
+
+    @Test
     public void pathsParseAndRenderBack() {
         for (String path : List.of("data.trade.udf[*].value", "data.fixings.*", "[0].id", "a.b[2][*]",
                 "data.fixings.*[0]")) {

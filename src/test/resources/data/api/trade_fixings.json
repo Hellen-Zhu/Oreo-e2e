@@ -1,5 +1,5 @@
 {
-  "_comment": "features/api/trading/trade_fixings.feature. The recording is the online fixings response (GET /trades/{id}/fixings/online): data.fixings.* keeps the fixing sources a product has (two for FX_CO), each any array, as its dates grow with today. A product whose fixing dates are all in the future returns {}: its byProduct gives \"dynamicFields\": { \"data.fixings.*\": null }. request.fixingDates (read by 'every fixing date up to today has a value', never sent: the case sends no body): the response path of the product's fixing dates in the retrieved trade, when not tradeDetailsSchedule[\"Fixing Date\"]",
+  "_comment": "features/api/trading/trade_fixings.feature. The recording is the online fixings response (GET /trades/{id}/fixings/online): data.fixings.* keeps the fixing sources a product has (two for FX_CO), each any array, as its dates grow with today; {} (every fixing date in the future) is recorded as ignore, and its fixings appear as the dates pass. request.fixingDates (read by 'every fixing date up to today has a value', never sent: the case sends no body): the response path of the product's fixing dates in the retrieved trade, when not tradeDetailsSchedule[\"Fixing Date\"]",
   "defaults": {
     "dynamicFields": {
       "data.tradeId": "var:createdTradeId",

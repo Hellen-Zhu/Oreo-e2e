@@ -31,7 +31,9 @@ import java.util.regex.PatternSyntaxException;
  *
  * A path is keys joined by {@code .}, with {@code [n]} for one array element and {@code [*]} for every element;
  * {@code *} as a key is every value of an object, {@code data.fixings.*} (also for keys a path cannot name, such as
- * {@code FX:EURSGD@[BFIX]-1500-JP TYO}).
+ * {@code FX:EURSGD@[BFIX]-1500-JP TYO}). An empty object at a {@code *} has no key to keep yet: it is written
+ * {@code ${json-unit.ignore}}, so a later response with keys still matches ({@code data.fixings} is {@code {}} while
+ * every fixing date of the trade is in the future); an object with keys keeps them exactly.
  */
 public final class ResponseMasker {
 
@@ -83,7 +85,8 @@ public final class ResponseMasker {
         List<Object> steps = parsePath(path, caseLabel);
         List<List<Object>> targets = new ArrayList<>();
         collect(actual, steps, 0, new ArrayList<>(), targets);
-        if (targets.isEmpty()) {
+        List<List<Object>> emptyObjects = emptyObjectsAtAnyKey(actual, steps);
+        if (targets.isEmpty() && emptyObjects.isEmpty()) {
             throw new IllegalStateException("[ResponseMasker] rule " + path + " matches nothing in the response of "
                     + caseLabel + " (a typo, or a rule this case should not inherit: set it to null for the case)");
         }
@@ -92,7 +95,28 @@ public final class ResponseMasker {
             JsonNode replacement = replacement(value, path, rule, variables, caseLabel);
             masked = set(masked, target, replacement);
         }
+        for (List<Object> empty : emptyObjects) {
+            masked = set(masked, empty, TextNode.valueOf(IGNORE));
+        }
         return masked;
+    }
+
+    /**
+     * The empty objects of {@code root} where {@code steps} takes every key ({@code *}): the keys they will have are
+     * not known yet ({@code data.fixings} of a trade whose fixing dates are all in the future).
+     */
+    private static List<List<Object>> emptyObjectsAtAnyKey(JsonNode root, List<Object> steps) {
+        List<List<Object>> out = new ArrayList<>();
+        for (int i = 0; i < steps.size(); i++) {
+            if (steps.get(i) != ANY_KEY) continue;
+            List<List<Object>> parents = new ArrayList<>();
+            collect(root, steps.subList(0, i), 0, new ArrayList<>(), parents);
+            for (List<Object> parent : parents) {
+                JsonNode node = at(root, parent);
+                if (node.isObject() && node.isEmpty()) out.add(parent);
+            }
+        }
+        return out;
     }
 
     private static JsonNode replacement(JsonNode value, String path, String rule,
