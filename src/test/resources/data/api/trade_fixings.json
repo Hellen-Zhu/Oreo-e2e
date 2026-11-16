@@ -1,9 +1,19 @@
 {
-  "_comment": "features/api/trading/trade_fixings.feature. The recording is the online fixings response (GET /trades/{id}/fixings/online). data.fixings is ignored there: its dates and values change as fixing dates pass, and it is {} for a trade whose fixing dates are all in the future; the step 'every schedule date before today has a fixing value' checks it on the trade retrieved afterwards",
+  "_comment": "features/api/trading/trade_fixings.feature. The recording is the online fixings response (GET /trades/{id}/fixings/online): data.fixings.* keeps the fixing sources a product has (two for FX_CO), each any array, as its dates grow with today. A product whose fixing dates are all in the future returns {}: its byProduct gives \"dynamicFields\": { \"data.fixings.*\": null }. request.fixingDates (read by 'every fixing date up to today has a value', never sent: the case sends no body): the response path of the product's fixing dates in the retrieved trade, when not tradeDetailsSchedule[\"Fixing Date\"]",
   "defaults": {
     "dynamicFields": {
       "data.tradeId": "var:createdTradeId",
-      "data.fixings": "ignore"
+      "data.fixings.*": "type"
+    }
+  },
+  "byProduct": {
+    "FX_FSB": {
+      "_comment": "Fixings on the reset dates",
+      "request": { "fixingDates": "data.tradeDetailsSchedule.Reset" }
+    },
+    "FX_TRF": {
+      "_comment": "No tradeDetailsSchedule: the reset dates of the instrument's schedule",
+      "request": { "fixingDates": "data.trade.instrument._value.schedule.SD_JustResetAndPayDates.resetDates" }
     }
   }
 }

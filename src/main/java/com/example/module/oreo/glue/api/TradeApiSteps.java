@@ -17,10 +17,8 @@ import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.SortedSet;
 import java.util.TreeSet;
 
 public class TradeApiSteps {
@@ -82,133 +80,101 @@ public class TradeApiSteps {
     }
 
     // ─────────────────────────────────────────────────────────────────────
-    // Fixings — every past fixing date of the retrieved trade has its value
+    // Fixings — every schedule date up to today has its fixing value
     // ─────────────────────────────────────────────────────────────────────
 
     /**
-     * On the trade just retrieved ({@code GET /trades/{id}}, after the online fixings): every date of the trade's
-     * fixing schedule before today has a numeric value in {@code data.fixings}, for every observable, and no other
-     * date has one. Today is left out (its fixing may not be published yet when the case runs).
+     * On the trade just retrieved ({@code GET /trades/{id}}): every date of the trade's fixing schedule up to today
+     * (today included) has a numeric value in {@code data.fixings}, for every fixing source, and no later date has
+     * one. The schedule is the gold source: its dates are read at the response path {@code defaultPath}, or at the
+     * path the case data gives as {@code overrideVar} (a product whose fixing dates are elsewhere, in its
+     * {@code byProduct}), if it is set. Which fixing sources a product has is fixed by the recording of its online
+     * fixings ({@code data.fixings.*}).
      *
-     * <p>The fixing schedule is found in the response, so no product needs a setting: it is the date list of the
-     * response (a {@code tradeDetailsSchedule} column, the instrument's {@code resetDates} ...) that holds every
-     * {@code fixingDate}. A trade without fixings ({@code {}}) has no date before today in any of its date lists.
-     *
-     * <pre>Then every schedule date before today has a fixing value</pre>
+     * <pre>And every date at 'data.tradeDetailsSchedule["Fixing Date"]' up to today has a fixing value, unless 'fixingDates' is set</pre>
      */
-    @Then("^every schedule date before today has a fixing value$")
-    public void everyScheduleDateBeforeTodayHasAFixingValue() {
+    @Then("^every date at '([^']*)' up to today has a fixing value, unless '([^']*)' is set$")
+    public void everyDateUpToTodayHasAFixingValue(String defaultPath, String overrideVar) {
+        String override = ctx.find(overrideVar);
+        String path = override == null || override.isBlank() ? defaultPath : override;
         ctx.helper().response().statusCode(200);
-        JsonNode body = Json.parse(ctx.helper().response().extract().asString());
+        Object schedule = ctx.helper().response().extract().path(path);
+        JsonNode fixings = Json.parse(ctx.helper().response().extract().asString()).path("data").path("fixings");
         LocalDate today = DateUtil.today();
-        List<String> report = new ArrayList<>();
-        List<String> problems = pastFixingProblems(body, today, report);
-        report.forEach(line -> ctx.write("[fixings] " + line));
+        List<String> problems = fixingProblems(schedule, path, fixings, today);
         if (!problems.isEmpty()) {
             throw new AssertionError("[TradeApiSteps] fixings of trade " + ctx.find("createdTradeId") + " (today "
-                    + today + "):\n  " + String.join("\n  ", problems));
+                    + today + ", schedule at " + path + "):\n  " + String.join("\n  ", problems));
         }
+        ctx.write("[fixings] every date up to " + today + " at " + path + " has a value for "
+                + fieldNames(fixings));
     }
 
-    /** The problems of the step above; empty when there is none. {@code report} gets what was compared. */
-    static List<String> pastFixingProblems(JsonNode body, LocalDate today, List<String> report) {
+    /** The problems of the step above: {@code schedule} is what the response holds at {@code path}. */
+    static List<String> fixingProblems(Object schedule, String path, JsonNode fixings, LocalDate today) {
         List<String> problems = new ArrayList<>();
-        JsonNode fixings = body.path("data").path("fixings");
+        if (!(schedule instanceof List<?> list) || list.isEmpty()) {
+            problems.add("no schedule dates at " + path + " (" + schedule + "): the path is wrong for this product");
+            return problems;
+        }
+        TreeSet<LocalDate> expected = new TreeSet<>();
+        for (Object date : list) {
+            LocalDate parsed = parseDate(date);
+            if (parsed == null) {
+                problems.add(path + ": '" + date + "' is not a date (yyyy-MM-dd)");
+            } else if (!parsed.isAfter(today)) {
+                expected.add(parsed);
+            }
+        }
         if (!fixings.isObject()) {
             problems.add("data.fixings is not an object: " + fixings);
             return problems;
         }
-        Map<String, TreeSet<LocalDate>> dateLists = new LinkedHashMap<>();
-        collectDateLists(body.path("data"), "data", dateLists);
-
-        if (fixings.isEmpty()) {
-            dateLists.forEach((path, dates) -> {
-                if (!dates.headSet(today, false).isEmpty()) {
-                    problems.add("data.fixings is {}, but " + path + " has dates before today "
-                            + dates.headSet(today, false));
-                }
-            });
-            if (problems.isEmpty()) report.add("no fixings, and no date list has a date before " + today);
-            return problems;
+        if (expected.isEmpty() && !fixings.isEmpty()) {
+            problems.add("no schedule date up to today, but data.fixings has " + fieldNames(fixings));
         }
-
-        Map<String, TreeSet<LocalDate>> valued = new LinkedHashMap<>();
-        TreeSet<LocalDate> listed = new TreeSet<>();
-        for (Map.Entry<String, JsonNode> observable : fixings.properties()) {
-            TreeSet<LocalDate> dates = new TreeSet<>();
-            for (JsonNode fixing : observable.getValue()) {
-                LocalDate date = parseDate(fixing.path("fixingDate"));
+        if (!expected.isEmpty() && fixings.isEmpty()) {
+            problems.add("data.fixings is {}, but " + expected.size() + " schedule dates are up to today: " + expected);
+        }
+        for (Map.Entry<String, JsonNode> source : fixings.properties()) {
+            TreeSet<LocalDate> valued = new TreeSet<>();
+            for (JsonNode fixing : source.getValue()) {
+                JsonNode fixingDate = fixing.path("fixingDate");
+                LocalDate date = parseDate(fixingDate.isTextual() ? fixingDate.asText() : null);
                 if (date == null) {
-                    problems.add(observable.getKey() + ": a fixing without a fixingDate: " + fixing);
-                    continue;
+                    problems.add(source.getKey() + ": a fixing without a fixingDate: " + fixing);
+                } else if (fixing.path("value").isNumber()) {
+                    valued.add(date);
                 }
-                listed.add(date);
-                if (fixing.path("value").isNumber()) dates.add(date);
             }
-            dates.remove(today);
-            valued.put(observable.getKey(), dates);
-        }
-
-        // The fixing schedule: of the date lists holding every listed date, the one with the fewest dates before today
-        String schedulePath = null;
-        for (Map.Entry<String, TreeSet<LocalDate>> list : dateLists.entrySet()) {
-            if (list.getValue().containsAll(listed) && (schedulePath == null
-                    || list.getValue().headSet(today).size() < dateLists.get(schedulePath).headSet(today).size())) {
-                schedulePath = list.getKey();
-            }
-        }
-        if (schedulePath == null) {
-            problems.add("no date list of the trade holds every fixingDate " + listed + ": a fixing on a date"
-                    + " that is not in the schedule");
-            return problems;
-        }
-        SortedSet<LocalDate> expected = dateLists.get(schedulePath).headSet(today, false);
-        report.add(expected.size() + " schedule dates before " + today + " at " + schedulePath + ", observables "
-                + valued.keySet());
-        for (Map.Entry<String, TreeSet<LocalDate>> observable : valued.entrySet()) {
             TreeSet<LocalDate> missing = new TreeSet<>(expected);
-            missing.removeAll(observable.getValue());
-            TreeSet<LocalDate> unexpected = new TreeSet<>(observable.getValue());
+            missing.removeAll(valued);
+            TreeSet<LocalDate> unexpected = new TreeSet<>(valued);
             unexpected.removeAll(expected);
             if (!missing.isEmpty()) {
-                problems.add(observable.getKey() + ": no value for the past schedule dates " + missing + " ("
-                        + schedulePath + ")");
+                problems.add(source.getKey() + ": no value for " + missing.size() + " schedule dates " + missing);
             }
             if (!unexpected.isEmpty()) {
-                problems.add(observable.getKey() + ": a value for dates not before today " + unexpected);
+                problems.add(source.getKey() + ": a value for dates that are not schedule dates up to today "
+                        + unexpected);
             }
         }
         return problems;
     }
 
-    /** Every non-empty array of the response, outside {@code data.fixings}, whose elements are all dates. */
-    private static void collectDateLists(JsonNode node, String path, Map<String, TreeSet<LocalDate>> out) {
-        if (path.equals("data.fixings")) return;
-        if (node.isObject()) {
-            node.properties().forEach(field -> collectDateLists(field.getValue(), path + "." + field.getKey(), out));
-        } else if (node.isArray() && !node.isEmpty()) {
-            TreeSet<LocalDate> dates = new TreeSet<>();
-            for (JsonNode element : node) {
-                LocalDate date = parseDate(element);
-                if (date == null) {
-                    for (int i = 0; i < node.size(); i++) {
-                        collectDateLists(node.get(i), path + "[" + i + "]", out);
-                    }
-                    return;
-                }
-                dates.add(date);
-            }
-            out.put(path, dates);
-        }
-    }
-
-    private static LocalDate parseDate(JsonNode node) {
-        if (!node.isTextual()) return null;
+    private static LocalDate parseDate(Object value) {
+        if (!(value instanceof String text)) return null;
         try {
-            return LocalDate.parse(node.asText());
+            return LocalDate.parse(text);
         } catch (DateTimeParseException e) {
             return null;
         }
+    }
+
+    private static List<String> fieldNames(JsonNode object) {
+        List<String> names = new ArrayList<>();
+        object.fieldNames().forEachRemaining(names::add);
+        return names;
     }
 
     // ─────────────────────────────────────────────────────────────────────
