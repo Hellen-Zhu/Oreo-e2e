@@ -6,8 +6,8 @@
 
 # ── Outcomes ────────────────────────────────────────────────────────
 
-# The online fixings: 200 + the recording (data.fixings.*: the fixing sources the product has, each any array; {} for
-# a trade whose dates are all in the future), kept to compare with the trade afterwards.
+# The online fixings: 200 + the recording (data.fixings ignored: its dates fill as they pass), kept to compare with
+# the trade afterwards.
 @Then "^the online fixings of the trade are returned$"
     Then the 'online fixings' are retrieved successfully
     And store response field 'data.fixings' as 'onlineFixings'
@@ -17,8 +17,9 @@
     Then response status code is '200'
     And response body contains a key 'data.fixings' with stored variable 'onlineFixings'
 
-# On the same trade: every schedule date up to today (the schedule is the gold source) has a fixing value. The
-# schedule's fixing dates are tradeDetailsSchedule["Fixing Date"], or where request.fixingDates of the product's
-# byProduct in data/api/trade_fixings.json says.
+# On the same trade: every schedule date up to today (the schedule is the gold source) has a fixing value, for each
+# fixing source. The schedule's fixing dates are tradeDetailsSchedule["Fixing Date"], or where request.fixingDates of
+# the product's byProduct in data/api/trade_fixings.json says; a product with several sources names them there
+# (request.fixingSources).
 @Then "^every fixing date up to today has a value$"
     Then every date at 'data.tradeDetailsSchedule["Fixing Date"]' up to today has a fixing value, unless 'fixingDates' is set

@@ -1,12 +1,21 @@
 {
-  "_comment": "features/api/trading/trade_fixings.feature. The recording is the online fixings response (GET /trades/{id}/fixings/online): data.fixings.* keeps the fixing sources a product has (two for FX_CO), each any array, as its dates grow with today. A product whose fixing dates are all in the future returns {}: its byProduct gives \"dynamicFields\": { \"data.fixings.*\": null }. request.fixingDates (read by 'every fixing date up to today has a value', never sent: the case sends no body): the response path of the product's fixing dates in the retrieved trade, when not tradeDetailsSchedule[\"Fixing Date\"]",
+  "_comment": "features/api/trading/trade_fixings.feature. The recording is the online fixings response (GET /trades/{id}/fixings/online) with data.fixings ignored: its dates fill as they pass ({} while every fixing date is in the future). The trade retrieved afterwards is checked instead: it holds the online fixings, and every schedule date up to today has a value for each fixing source. request.* below is read by that check, never sent (the case sends no body): fixingDates, the response path of the product's fixing dates when not tradeDetailsSchedule[\"Fixing Date\"]; fixingSources, the response paths of the source names of a product with several (one entry per source in data.fixings)",
   "defaults": {
     "dynamicFields": {
       "data.tradeId": "var:createdTradeId",
-      "data.fixings.*": "type"
+      "data.fixings": "ignore"
     }
   },
   "byProduct": {
+    "FX_CO": {
+      "_comment": "Two fixing sources",
+      "request": {
+        "fixingSources": [
+          "data.trade.instrument._value.fixingSource1",
+          "data.trade.instrument._value.fixingSource2"
+        ]
+      }
+    },
     "FX_FSB": {
       "_comment": "Fixings on the reset dates",
       "request": { "fixingDates": "data.tradeDetailsSchedule.Reset" }

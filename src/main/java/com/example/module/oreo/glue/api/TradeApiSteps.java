@@ -17,6 +17,7 @@ import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeSet;
@@ -88,8 +89,10 @@ public class TradeApiSteps {
      * (today included) has a numeric value in {@code data.fixings}, for every fixing source, and no later date has
      * one. The schedule is the gold source: its dates are read at the response path {@code defaultPath}, or at the
      * path the case data gives as {@code overrideVar} (a product whose fixing dates are elsewhere, in its
-     * {@code byProduct}), if it is set. Which fixing sources a product has is fixed by the recording of its online
-     * fixings ({@code data.fixings.*}).
+     * {@code byProduct}), if it is set. A product with several fixing sources gives the response paths of their
+     * names as {@code request.fixingSources} of its {@code byProduct} (FX_CO: {@code fixingSource1},
+     * {@code fixingSource2}): when the schedule has a date up to today, {@code data.fixings} has exactly one entry
+     * per source ({@code FX:<source>}). A product with one source needs none: without it the fixings are {}.
      *
      * <pre>And every date at 'data.tradeDetailsSchedule["Fixing Date"]' up to today has a fixing value, unless 'fixingDates' is set</pre>
      */
@@ -100,8 +103,16 @@ public class TradeApiSteps {
         ctx.helper().response().statusCode(200);
         Object schedule = ctx.helper().response().extract().path(path);
         JsonNode fixings = Json.parse(ctx.helper().response().extract().asString()).path("data").path("fixings");
+        Map<String, Object> sources = null;
+        JsonNode sourcePaths = ctx.find("_tc.request.fixingSources");
+        if (sourcePaths != null) {
+            sources = new LinkedHashMap<>();
+            for (JsonNode sourcePath : sourcePaths) {
+                sources.put(sourcePath.asText(), ctx.helper().response().extract().path(sourcePath.asText()));
+            }
+        }
         LocalDate today = DateUtil.today();
-        List<String> problems = fixingProblems(schedule, path, fixings, today);
+        List<String> problems = fixingProblems(schedule, path, fixings, sources, today);
         if (!problems.isEmpty()) {
             throw new AssertionError("[TradeApiSteps] fixings of trade " + ctx.find("createdTradeId") + " (today "
                     + today + ", schedule at " + path + "):\n  " + String.join("\n  ", problems));
@@ -110,8 +121,12 @@ public class TradeApiSteps {
                 + fieldNames(fixings));
     }
 
-    /** The problems of the step above: {@code schedule} is what the response holds at {@code path}. */
-    static List<String> fixingProblems(Object schedule, String path, JsonNode fixings, LocalDate today) {
+    /**
+     * The problems of the step above: {@code schedule} is what the response holds at {@code path}; {@code sources}
+     * the fixing source names by their response path, {@code null} when the case gives none.
+     */
+    static List<String> fixingProblems(Object schedule, String path, JsonNode fixings, Map<String, Object> sources,
+                                       LocalDate today) {
         List<String> problems = new ArrayList<>();
         if (!(schedule instanceof List<?> list) || list.isEmpty()) {
             problems.add("no schedule dates at " + path + " (" + schedule + "): the path is wrong for this product");
@@ -135,6 +150,19 @@ public class TradeApiSteps {
         }
         if (!expected.isEmpty() && fixings.isEmpty()) {
             problems.add("data.fixings is {}, but " + expected.size() + " schedule dates are up to today: " + expected);
+        }
+        if (sources != null && !expected.isEmpty()) {
+            List<String> keys = fieldNames(fixings);
+            for (Map.Entry<String, Object> source : sources.entrySet()) {
+                if (!(source.getValue() instanceof String name) || name.isBlank()) {
+                    problems.add("no fixing source at " + source.getKey() + " (" + source.getValue() + ")");
+                } else if (!keys.removeIf(key -> key.equals(name) || key.endsWith(":" + name))) {
+                    problems.add("no fixings for the source " + name + " (" + source.getKey() + ")");
+                }
+            }
+            if (!keys.isEmpty()) {
+                problems.add("fixings for sources the trade does not name: " + keys);
+            }
         }
         for (Map.Entry<String, JsonNode> source : fixings.properties()) {
             TreeSet<LocalDate> valued = new TreeSet<>();
