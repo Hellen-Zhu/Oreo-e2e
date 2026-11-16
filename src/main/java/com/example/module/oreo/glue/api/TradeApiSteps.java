@@ -87,19 +87,22 @@ public class TradeApiSteps {
     /**
      * On the trade just retrieved ({@code GET /trades/{id}}): every date of the trade's fixing schedule up to today
      * (today included) has a numeric value in {@code data.fixings}, for every fixing source, and no later date has
-     * one. The schedule is the gold source: its dates are read at the response path {@code defaultPath}, or at the
-     * path the case data gives as {@code overrideVar} (a product whose fixing dates are elsewhere, in its
-     * {@code byProduct}), if it is set. A product with several fixing sources gives the response paths of their
+     * one. The schedule is the gold source: its dates are read at the response path the case data stores as
+     * {@code pathVar} ({@code request.fixingDates}: the default in {@code defaults}, a product whose fixing dates are
+     * elsewhere overrides it in its {@code byProduct}). A product with several fixing sources gives the response paths of their
      * names as {@code request.fixingSources} of its {@code byProduct} (FX_CO: {@code fixingSource1},
      * {@code fixingSource2}): when the schedule has a date up to today, {@code data.fixings} has exactly one entry
      * per source ({@code FX:<source>}). A product with one source needs none: without it the fixings are {}.
      *
-     * <pre>And every date at 'data.tradeDetailsSchedule["Fixing Date"]' up to today has a fixing value, unless 'fixingDates' is set</pre>
+     * <pre>And every date at the stored path 'fixingDates' up to today has a fixing value</pre>
      */
-    @Then("^every date at '([^']*)' up to today has a fixing value, unless '([^']*)' is set$")
-    public void everyDateUpToTodayHasAFixingValue(String defaultPath, String overrideVar) {
-        String override = ctx.find(overrideVar);
-        String path = override == null || override.isBlank() ? defaultPath : override;
+    @Then("^every date at the stored path '([^']*)' up to today has a fixing value$")
+    public void everyDateUpToTodayHasAFixingValue(String pathVar) {
+        String path = ctx.find(pathVar);
+        if (path == null || path.isBlank()) {
+            throw new AssertionError("[TradeApiSteps] no '" + pathVar + "' in the case data of " + ctx.find("_tc.key")
+                    + ": the response path of the schedule's fixing dates (request." + pathVar + ", in defaults)");
+        }
         ctx.helper().response().statusCode(200);
         Object schedule = ctx.helper().response().extract().path(path);
         JsonNode fixings = Json.parse(ctx.helper().response().extract().asString()).path("data").path("fixings");

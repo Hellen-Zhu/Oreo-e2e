@@ -18,8 +18,8 @@
     And response body contains a key 'data.fixings' with stored variable 'onlineFixings'
 
 # On the same trade: every schedule date up to today (the schedule is the gold source) has a fixing value, for each
-# fixing source. The schedule's fixing dates are tradeDetailsSchedule["Fixing Date"], or where request.fixingDates of
-# the product's byProduct in data/api/trade_fixings.json says; a product with several sources names them there
+# fixing source. Where the schedule's fixing dates are is request.fixingDates of data/api/trade_fixings.json (the
+# default in defaults, a product's own in its byProduct); a product with several sources names them there
 # (request.fixingSources).
 @Then "^every fixing date up to today has a value$"
-    Then every date at 'data.tradeDetailsSchedule["Fixing Date"]' up to today has a fixing value, unless 'fixingDates' is set
+    Then every date at the stored path 'fixingDates' up to today has a fixing value

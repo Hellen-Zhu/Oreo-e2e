@@ -1,6 +1,7 @@
 {
-  "_comment": "features/api/trading/trade_fixings.feature. The recording is the online fixings response (GET /trades/{id}/fixings/online) with data.fixings ignored: its dates fill as they pass ({} while every fixing date is in the future). The trade retrieved afterwards is checked instead: it holds the online fixings, and every schedule date up to today has a value for each fixing source. request.* below is read by that check, never sent (the case sends no body): fixingDates, the response path of the product's fixing dates when not tradeDetailsSchedule[\"Fixing Date\"]; fixingSources, the response paths of the source names of a product with several (one entry per source in data.fixings)",
+  "_comment": "features/api/trading/trade_fixings.feature. The recording is the online fixings response (GET /trades/{id}/fixings/online) with data.fixings ignored: its dates fill as they pass ({} while every fixing date is in the future). The trade retrieved afterwards is checked instead: it holds the online fixings, and every schedule date up to today has a value for each fixing source. request.* below is read by that check, never sent (the case sends no body): fixingDates, the response path of the schedule's fixing dates (the default here, a product whose dates are elsewhere overrides it); fixingSources, the response paths of the source names of a product with several (one entry per source in data.fixings)",
   "defaults": {
+    "request": { "fixingDates": "data.tradeDetailsSchedule[\"Fixing Date\"]" },
     "dynamicFields": {
       "data.tradeId": "var:createdTradeId",
       "data.fixings": "ignore"
