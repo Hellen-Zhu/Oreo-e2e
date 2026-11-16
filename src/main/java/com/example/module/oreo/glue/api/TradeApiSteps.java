@@ -1,15 +1,27 @@
 package com.example.module.oreo.glue.api;
 
+import com.example.module.oreo.testdata.Json;
 import com.example.module.oreo.testdata.ProductDatFiles;
+import com.example.module.oreo.testdata.ResponseMasker;
 import com.example.module.oreo.testdata.TestData;
+import com.example.module.oreo.utils.DateUtil;
 import com.example.module.oreo.utils.TradeApiClient;
+import com.fasterxml.jackson.databind.JsonNode;
 import cucumber.api.Scenario;
 import cucumber.api.java.Before;
 import cucumber.api.java.en.Given;
+import cucumber.api.java.en.Then;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.net.URL;
 import java.nio.file.Paths;
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 public class TradeApiSteps {
 
@@ -67,6 +79,119 @@ public class TradeApiSteps {
         ProductDatFiles composition = ProductDatFiles.of(product);
         ctx.write("[" + composition.describe(ctx.find("_tc.productId")) + "]");
         attachDatFile(composition.path(ctx.find("_tc.datFile")));
+    }
+
+    // ─────────────────────────────────────────────────────────────────────
+    // Fixings — every past fixing date of the queried trade has its value
+    // ─────────────────────────────────────────────────────────────────────
+
+    /**
+     * On the trade just retrieved ({@code GET /trades/{id}}): the dates of the trade's fixing schedule before today
+     * are exactly the dates that have a numeric value, for every observable of {@code data.fixings}. A missing or
+     * {@code null} value fails, and so does a value for a date that is not a past schedule date; a trade with no past
+     * fixing date has {@code data.fixings} {@code {}}. Today is left out on both sides (its fixing may not be
+     * published yet when the case runs).
+     *
+     * <p>Where the schedule's fixing dates are is product knowledge, so it is case data:
+     * {@code checkData.fixingDates}, a list of response paths ({@code data.tradeDetailsSchedule.Fixing Date}),
+     * per product in {@code byProduct}. A path that gives no date fails: the check never passes on an empty schedule.
+     *
+     * <pre>Then every schedule date before today has a fixing value</pre>
+     */
+    @Then("^every schedule date before today has a fixing value$")
+    public void everyScheduleDateBeforeTodayHasAFixingValue() {
+        String tcKey = ctx.get("_tc.key");
+        JsonNode paths = TestData.forCase(tcKey).checkData("fixingDates");
+        if (paths == null || !paths.isArray() || paths.isEmpty()) {
+            throw new AssertionError("[TradeApiSteps] " + tcKey + " has no checkData.fixingDates: give the response"
+                    + " paths of the trade's fixing dates in its data file (defaults, or byProduct of its product)");
+        }
+        List<String> datePaths = new ArrayList<>();
+        paths.forEach(p -> datePaths.add(p.asText()));
+        JsonNode body = Json.parse(ctx.helper().response().extract().asString());
+        LocalDate today = DateUtil.today();
+        List<String> problems = pastFixingProblems(body, datePaths, today, tcKey);
+        if (!problems.isEmpty()) {
+            throw new AssertionError("[TradeApiSteps] fixings of " + tcKey + " (today " + today + "):\n  "
+                    + String.join("\n  ", problems));
+        }
+        ctx.write("[fixings] every schedule date before " + today + " at " + datePaths + " has a value for "
+                + fieldNames(body.path("data").path("fixings")));
+    }
+
+    /** The problems of {@link #everyScheduleDateBeforeTodayHasAFixingValue}; empty when there is none. */
+    static List<String> pastFixingProblems(JsonNode body, List<String> datePaths, LocalDate today, String label) {
+        List<String> problems = new ArrayList<>();
+        TreeSet<LocalDate> scheduled = new TreeSet<>();
+        for (String path : datePaths) {
+            for (JsonNode found : ResponseMasker.select(body, path, label)) {
+                for (JsonNode date : found.isArray() ? found : List.of(found)) {
+                    LocalDate parsed = parseDate(date);
+                    if (parsed == null) {
+                        problems.add(path + ": '" + date.asText() + "' is not a date (yyyy-MM-dd)");
+                    } else {
+                        scheduled.add(parsed);
+                    }
+                }
+            }
+        }
+        if (scheduled.isEmpty()) {
+            problems.add("no fixing date at " + datePaths + ": checkData.fixingDates does not match this response");
+            return problems;
+        }
+        SortedSet<LocalDate> expected = scheduled.headSet(today, false);
+        JsonNode fixings = body.path("data").path("fixings");
+        if (!fixings.isObject()) {
+            problems.add("data.fixings is not an object: " + fixings);
+            return problems;
+        }
+        if (expected.isEmpty() && !fixings.isEmpty()) {
+            problems.add("no schedule date before today (first " + scheduled.first() + "), but data.fixings has "
+                    + fieldNames(fixings));
+        }
+        if (!expected.isEmpty() && fixings.isEmpty()) {
+            problems.add("data.fixings is {}, but " + expected.size() + " schedule dates are before today: "
+                    + expected);
+        }
+        for (Map.Entry<String, JsonNode> observable : fixings.properties()) {
+            TreeSet<LocalDate> valued = new TreeSet<>();
+            for (JsonNode fixing : observable.getValue()) {
+                LocalDate date = parseDate(fixing.path("fixingDate"));
+                if (date == null) {
+                    problems.add(observable.getKey() + ": a fixing without a fixingDate: " + fixing);
+                } else if (fixing.path("value").isNumber()) {
+                    valued.add(date);
+                }
+            }
+            valued.remove(today);
+            TreeSet<LocalDate> missing = new TreeSet<>(expected);
+            missing.removeAll(valued);
+            TreeSet<LocalDate> unexpected = new TreeSet<>(valued);
+            unexpected.removeAll(expected);
+            if (!missing.isEmpty()) {
+                problems.add(observable.getKey() + ": no value for the past schedule dates " + missing);
+            }
+            if (!unexpected.isEmpty()) {
+                problems.add(observable.getKey() + ": a value for dates that are not past schedule dates "
+                        + unexpected);
+            }
+        }
+        return problems;
+    }
+
+    private static LocalDate parseDate(JsonNode node) {
+        if (!node.isTextual()) return null;
+        try {
+            return LocalDate.parse(node.asText());
+        } catch (DateTimeParseException e) {
+            return null;
+        }
+    }
+
+    private static List<String> fieldNames(JsonNode object) {
+        List<String> names = new ArrayList<>();
+        object.fieldNames().forEachRemaining(names::add);
+        return names;
     }
 
     // ─────────────────────────────────────────────────────────────────────

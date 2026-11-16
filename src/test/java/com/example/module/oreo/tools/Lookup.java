@@ -48,6 +48,9 @@ final class Lookup {
                 : data.productId() != null ? data.productId()
                 : "(the default of the step's product)").append('\n');
         out.append("Request:\n").append(Json.pretty(Json.parse(data.request())));
+        if (!data.checkData().isEmpty()) {
+            out.append("Check data:\n").append(Json.pretty(data.checkData()));
+        }
         if (id.channelDir().equals("api") && noExpected) {
             out.append("Expected file: none (the case is tagged ").append(ExpectedResponses.NONE_TAG)
                     .append(": its response is not compared with a recording)\n");

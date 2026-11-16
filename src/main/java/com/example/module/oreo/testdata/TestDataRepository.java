@@ -35,9 +35,9 @@ public final class TestDataRepository {
     private static final Set<String> BLOCK_KEYS = Set.of("request", "dynamicFields", "sharedFragments");
     private static final Set<String> EVENT_KEYS = Set.of("shared", "defaults", "byProduct", "cases");
     private static final Set<String> LAYER_KEYS = Set.of("use", "request", "dynamicFields", "sharedFragments",
-            "expectedBase", "datFile", "productId");
+            "expectedBase", "datFile", "productId", "checkData");
     private static final Set<String> ROW_KEYS = Set.of("id", "use", "request", "dynamicFields", "sharedFragments",
-            "expectedBase", "datFile", "productId", "byProduct");
+            "expectedBase", "datFile", "productId", "checkData", "byProduct");
     private static final Pattern RESPONSE_PATH = Pattern.compile("[A-Za-z0-9_]+(\\.[A-Za-z0-9_]+)*");
     /** A rule path that starts at a shared part: {@code {basic}.dealDate}, {@code {instrument}} (the whole part). */
     private static final Pattern PART_NAME = Pattern.compile("[A-Za-z0-9_-]+");
@@ -155,10 +155,17 @@ public final class TestDataRepository {
         if (layer.has("productId")) {
             merged.productId = layer.get("productId").isNull() ? null : layer.get("productId").asText();
         }
+        if (layer.has("checkData")) {
+            JsonNode check = layer.get("checkData");
+            merged.checkData = check.isNull() ? Json.MAPPER.createObjectNode()
+                    : JsonLayers.merge(merged.checkData, (ObjectNode) check);
+        }
         merged.layers.add(uses.isEmpty() ? label : label + " (use " + String.join(", ", uses) + ")");
     }
 
-    /** The request, dynamic fields, shared fragments, expected base, dat file and product ID merged so far. */
+    /**
+     * The request, dynamic fields, shared fragments, expected base, dat file, product ID and check data merged so far.
+     */
     private static final class Merged {
         ObjectNode request = Json.MAPPER.createObjectNode();
         final Map<String, String> dynamicFields = new LinkedHashMap<>();
@@ -170,6 +177,7 @@ public final class TestDataRepository {
         String datFile;
         String datFileFrom;
         String productId;
+        ObjectNode checkData = Json.MAPPER.createObjectNode();
         final List<String> layers = new ArrayList<>();
 
         void add(JsonNode part) {
@@ -240,7 +248,7 @@ public final class TestDataRepository {
                 }
             }
             return new CaseData(id, request, resolveRules(), resolveFragments(id), resolveBase(id), datFile,
-                    productId, layers);
+                    productId, checkData, layers);
         }
 
         /**
@@ -448,6 +456,16 @@ public final class TestDataRepository {
         checkExpectedBase(layer, path, where, id);
         checkDatFile(layer, path, where);
         checkProductId(layer, path, where);
+        checkCheckData(layer, path, where);
+    }
+
+    private static void checkCheckData(JsonNode layer, String path, String where) {
+        JsonNode checkData = layer.get("checkData");
+        if (checkData == null || checkData.isNull()) return;
+        if (!checkData.isObject()) {
+            throw error(path, where + ".checkData", "must be an object of name -> value (what a check step reads),"
+                    + " or null");
+        }
     }
 
     private static void checkProductId(JsonNode layer, String path, String where) {

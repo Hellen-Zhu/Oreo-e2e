@@ -1,5 +1,6 @@
 package com.example.module.oreo.testdata;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import net.javacrumbs.jsonunit.JsonAssert;
 import org.junit.Test;
 
@@ -88,6 +89,18 @@ public class ResponseMaskerTest {
         String masked = ResponseMasker.mask(FIXINGS, rules("data.fixings.*", "type"), "x");
         assertJson("{\"data\":{\"fixings\":{\"FX:EURSGD@[BFIX]-1500-JP TYO\":\"" + ResponseMasker.ANY_ARRAY + "\","
                 + "\"FX:EURUSD@[BFIX]-1500-JP TYO\":\"" + ResponseMasker.ANY_ARRAY + "\"}}}", masked);
+    }
+
+    @Test
+    public void selectGivesEveryValueAtAPath() {
+        JsonNode root = Json.parse(FIXINGS);
+        assertEquals(2, ResponseMasker.select(root, "data.fixings.*", "x").size());
+        assertEquals("[\"2026-01-02\",\"2026-01-03\"]",
+                Json.compact(ResponseMasker.select(root, "data.fixings.*", "x").get(1)));
+        assertEquals(3, ResponseMasker.select(root, "data.fixings.*[*]", "x").size());
+        assertEquals(1, ResponseMasker.select(Json.parse("{\"s\":{\"Fixing Date\":[\"2026-01-02\"]}}"),
+                "s.Fixing Date", "x").size());
+        assertTrue(ResponseMasker.select(root, "data.missing", "x").isEmpty());
     }
 
     @Test
