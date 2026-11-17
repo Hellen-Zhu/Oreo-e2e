@@ -84,9 +84,19 @@ final class Coverage {
         String generated = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm 'UTC'")
                 .format(OffsetDateTime.now(ZoneOffset.UTC));
         String json = CoverageHtml.json(CoverageHtml.model(entries, wip, products, supports, generated));
+        Path templateFile = project.resolve(CoverageHtml.TEMPLATE);
+        if (!Files.isRegularFile(templateFile)) {
+            throw new IllegalStateException("[Coverage] no page template " + CoverageHtml.TEMPLATE + " in " + project
+                    + ": --html fills it with the matrix; it is part of the repository, copy it from there");
+        }
         Path dir = project.resolve(OUTPUT_DIR);
+        String template;
         try {
-            String template = Files.readString(project.resolve(CoverageHtml.TEMPLATE), StandardCharsets.UTF_8);
+            template = Files.readString(templateFile, StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            throw new UncheckedIOException("[Coverage] cannot read the page template " + templateFile, e);
+        }
+        try {
             Files.createDirectories(dir);
             Files.writeString(dir.resolve("coverage.json"), json, StandardCharsets.UTF_8);
             Files.writeString(dir.resolve("coverage.html"), CoverageHtml.page(template, json), StandardCharsets.UTF_8);
