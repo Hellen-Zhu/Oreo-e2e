@@ -1,6 +1,8 @@
 package com.example.module.oreo.glue.ui;
 
 import com.example.module.oreo.config.TestUser;
+import com.example.module.oreo.testdata.Json;
+import com.example.module.oreo.testdata.TestData;
 import com.example.module.oreo.utils.TradeApiClient;
 import com.example.module.oreo.playwright.PlaywrightServiceResolver;
 import com.microsoft.playwright.TimeoutError;
@@ -8,7 +10,13 @@ import cucumber.api.Scenario;
 import cucumber.api.java.Before;
 import cucumber.api.java.en.Given;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
+
 public class LoginSteps {
+
+    /** Set in the tab's session storage once the sign-in is written: a reload or a logout never writes it again. */
+    private static final String SIGNED_IN_MARK = "oreo-e2e-storage-sign-in";
 
     private PlaywrightServiceResolver.Context ctx;
 
@@ -44,5 +52,38 @@ public class LoginSteps {
         ctx.innerInput("login.password").fill(user.password());
         ctx.clickAndWaitForResponse("login.submit", TradeApiClient.BLOTTER_TRADES_PATH, "POST");
         ctx.write("Signed in as " + user.role() + " (" + email + ")");
+    }
+
+    /**
+     * Signs in as a {@link TestUser} role without the login page. The portal's legacy sign-in
+     * ({@code fx-auth-mode=legacy}) is the user held in local storage; the context gets it before the portal loads,
+     * with that user's preferences ({@code fx-portal-preferences:<e-mail>}) at the defaults of the setup
+     * {@code user-preference-defaults}, so every scenario opens the same blotters whatever an earlier one changed.
+     * Written once per tab: after a logout the portal stays signed out, and signing in again goes through the login
+     * page ({@code login through the login page as '<role>'}). Then opens the portal.
+     *
+     * <pre>Given page login signs in as 'maker' through the browser storage</pre>
+     */
+    @Given("^page login signs in as '([^']*)' through the browser storage$")
+    public void signInThroughBrowserStorage(String role) {
+        TestUser user = TestUser.of(role);
+        String email = user.email();
+        Map<String, String> entries = new LinkedHashMap<>();
+        entries.put("fx-auth-mode", "legacy");
+        entries.put("fx-auth-session-version", "1");
+        entries.put("fx-portal-user", Json.compact(Json.MAPPER.createObjectNode()
+                .put("email", email).put("name", user.role())));
+        entries.put("fx-portal-preferences:" + email, TestData.setup("user-preference-defaults").request());
+        String values = Json.compact(Json.MAPPER.valueToTree(entries));
+        // about:blank has no storage: the try leaves it alone, the portal's first page writes the entries
+        ctx.service().getPage().context().addInitScript("(() => { try {"
+                + " if (window.sessionStorage.getItem('" + SIGNED_IN_MARK + "')) return;"
+                + " const entries = " + values + ";"
+                + " for (const key of Object.keys(entries)) window.localStorage.setItem(key, entries[key]);"
+                + " window.sessionStorage.setItem('" + SIGNED_IN_MARK + "', '1');"
+                + " } catch (e) { } })();");
+        ctx.navigateToPath("/");
+        ctx.write("Signed in as " + user.role() + " (" + email + ") through the browser storage, preferences at"
+                + " the defaults");
     }
 }

@@ -1,5 +1,5 @@
 {
-  "_comment": "User preferences reset before every UI scenario (E2EScenarioHooks)",
+  "_comment": "The default user preferences: the browser sign-in of every UI scenario writes them to local storage (LoginSteps, fx-portal-preferences:<e-mail>); a scenario about preferences also puts them on the server (user preferences are set to application defaults)",
   "request": {
     "theme": "light",
     "numberFormat": "en-US",
