@@ -150,12 +150,18 @@ Step-by-step procedures, with the commands, in [docs/test-data.md](docs/test-dat
 
 ```
 src/main/java/com/example/module/oreo/
-  glue/hooks, glue/api, glue/ui       step definitions and hooks
+  OreoModule                          the Genie module: registers the suite's configuration
+  config/                             the configuration (OreoModuleConfiguration), its resolver, the test users by
+                                      role (TestUser)
+  glue/hooks, glue/api, glue/ui       step definitions and hooks; glue/ScenarioContext, the base of the steps' context
   playwright/                         the UI context of the steps (PlaywrightServiceResolver) and its helpers
+  utils/                              API clients the glue calls (TradeApiClient, ProductApiClient, RestApiUtil), dates
+                                      (DateUtil), database queries and cleanup
   testdata/                           data loading, products (ProductDatFiles, Capability), recorded responses;
                                       no glue imports (CLAUDE.md, section 1)
-src/main/resources/snippet/
-  api/, ui/{flows,pages,components}/  reusable step sequences
+src/main/resources/
+  snippet/api/, snippet/ui/{flows,pages,components}/  reusable step sequences
+  cucumber.xml, META-INF/             Spring and Genie module wiring
 src/test/java/com/example/module/oreo/
   OreoTest                            the runner
   testdata/*Test, tools/              unit tests of the data code; the offline tool TestDataTool (uses testdata/)
@@ -163,6 +169,9 @@ src/test/resources/
   features/{api,ui}/<domain>/         feature files
   data/{api,ui,setup,dat}/            test data, recorded responses, dat files
   elements/{pages,components}/        element repository
+  genie.properties                    shared defaults (browser, timeouts, users, modes); an environment's file overrides
+  test-data.properties                decisions about the data the checks read (CLAUDE.md, section 1)
+  tools/                              the page template of coverage --html
 ```
 
 ## Documentation
