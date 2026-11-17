@@ -1,5 +1,5 @@
 {
-  "_comment": "The default user preferences: the browser sign-in of every UI scenario writes them to local storage (LoginSteps, fx-portal-preferences:<e-mail>); a scenario about preferences also puts them on the server (user preferences are set to application defaults)",
+  "_comment": "The default user preferences: every UI sign-in puts them on the server for the user who signs in (LoginSteps), as does 'user preferences are set to application defaults'",
   "request": {
     "theme": "light",
     "numberFormat": "en-US",
