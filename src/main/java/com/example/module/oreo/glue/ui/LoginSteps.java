@@ -2,8 +2,6 @@ package com.example.module.oreo.glue.ui;
 
 import com.example.module.oreo.config.TestUser;
 import com.example.module.oreo.testdata.Json;
-import com.example.module.oreo.testdata.TestData;
-import com.example.module.oreo.utils.RestApiUtil;
 import com.example.module.oreo.utils.TradeApiClient;
 import com.example.module.oreo.playwright.PlaywrightServiceResolver;
 import com.microsoft.playwright.TimeoutError;
@@ -20,13 +18,9 @@ public class LoginSteps {
     private static final String SIGNED_IN_MARK = "oreo-e2e-storage-sign-in";
 
     private PlaywrightServiceResolver.Context ctx;
-    private Scenario scenario;
 
     @Before({"@playwright"})
-    public void beforeScenario(Scenario scenario) {
-        this.ctx = PlaywrightServiceResolver.from(scenario);
-        this.scenario = scenario;
-    }
+    public void beforeScenario(Scenario scenario) { this.ctx = PlaywrightServiceResolver.from(scenario); }
 
     /** Always opens /login, whatever the page shows, and waits for the login form. */
     @Given("^navigate to login page$")
@@ -62,9 +56,8 @@ public class LoginSteps {
     /**
      * Signs in as a {@link TestUser} role without the login page. The portal's legacy sign-in
      * ({@code fx-auth-mode=legacy}) is the user held in local storage; the context gets it before the portal loads.
-     * The portal takes the user's preferences from the server, so they are put back there first, to the defaults of
-     * the setup {@code user-preference-defaults}: every scenario opens the same blotters whatever an earlier one
-     * changed.
+     * The preferences come from the server: a role that needs the defaults gets them before it signs in
+     * ({@code atomic preferences of '<role>' are set to application defaults}).
      * Written once per tab: after a logout the portal stays signed out, and signing in again goes through the login
      * page ({@code login through the login page as '<role>'}). Then opens the portal.
      *
@@ -79,8 +72,6 @@ public class LoginSteps {
         entries.put("fx-auth-session-version", "1");
         entries.put("fx-portal-user", Json.compact(Json.MAPPER.createObjectNode()
                 .put("email", email).put("name", user.role())));
-        RestApiUtil.put(RestApiUtil.helperFromScenario(scenario), "/uc/api/user-preferences", email,
-                TestData.setup("user-preference-defaults").request());
         String values = Json.compact(Json.MAPPER.valueToTree(entries));
         // about:blank has no storage: the try leaves it alone, the portal's first page writes the entries
         ctx.service().getPage().context().addInitScript("(() => { try {"
@@ -90,7 +81,6 @@ public class LoginSteps {
                 + " window.sessionStorage.setItem('" + SIGNED_IN_MARK + "', '1');"
                 + " } catch (e) { } })();");
         ctx.navigateToPath("/");
-        ctx.write("Signed in as " + user.role() + " (" + email + ") through the browser storage, preferences reset"
-                + " to the defaults");
+        ctx.write("Signed in as " + user.role() + " (" + email + ") through the browser storage");
     }
 }

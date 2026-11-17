@@ -1,7 +1,6 @@
 # ── FLOW: AUTHENTICATION ────────────────────────────────────────────
 
-# Signed in without the login page (the portal's legacy sign-in is held in the browser), the user's preferences reset
-# to the defaults first
+# Signed in without the login page (the portal's legacy sign-in is held in the browser)
 @Given "^login in application as '([^']*)'$"
     Given page login signs in as '$1' through the browser storage
     And page trade portal is displayed
@@ -14,7 +13,13 @@
     And page trade portal is displayed
     And page trade portal New Today Blotter view is visible
 
-@When "^(maker|checker|admin|user) is logged in to the trade portal$"
+# Maker and checker verify on the New Today blotter: their preferences go back to the defaults (that blotter only)
+# before they sign in, whatever an earlier scenario changed
+@When "^(maker|checker) is logged in to the trade portal$"
+    Given atomic preferences of '$1' are set to application defaults
+    When login in application as '$1'
+
+@When "^(admin|user) is logged in to the trade portal$"
     When login in application as '$1'
 
 @When "^user logs out and re-login$"

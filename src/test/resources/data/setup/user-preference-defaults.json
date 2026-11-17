@@ -1,5 +1,5 @@
 {
-  "_comment": "The default user preferences: every UI sign-in puts them on the server for the user who signs in (LoginSteps), as does 'user preferences are set to application defaults'",
+  "_comment": "The default user preferences: put on the server for maker and checker before they sign in (they verify on the New Today blotter), and for user by 'user preferences are set to application defaults'",
   "request": {
     "theme": "light",
     "numberFormat": "en-US",

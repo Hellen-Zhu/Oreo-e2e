@@ -16,9 +16,10 @@ public class UserPreferenceSteps {
         this.helper = RestApiUtil.helperFromScenario(scenario);
     }
 
-    @Given("^atomic user preferences are set to application defaults$")
-    public void setUserPreferencesToDefaults() {
+    /** Puts a role's preferences on the server back to the defaults of the setup {@code user-preference-defaults}. */
+    @Given("^atomic preferences of '([^']*)' are set to application defaults$")
+    public void setUserPreferencesToDefaults(String role) {
         String payload = TestData.setup("user-preference-defaults").request();
-        RestApiUtil.put(helper, "/uc/api/user-preferences", TestUser.USER.email(), payload);
+        RestApiUtil.put(helper, "/uc/api/user-preferences", TestUser.of(role).email(), payload);
     }
 }
