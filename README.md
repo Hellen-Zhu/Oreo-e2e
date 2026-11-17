@@ -69,6 +69,31 @@ placed in a tracked file, treat it as exposed and follow the team rotation proce
 | Add a product | skill `.claude/skills/onboarding-e2e-product` |
 | Change data, features, recordings or the registry | skill `.claude/skills/maintaining-e2e-test-data` |
 
+### Test data commands (`TestDataTool`)
+
+Every command of the offline tool, each a complete command to run from the project root. Each one first runs the
+test-data unit tests; none needs a browser or an environment. In PowerShell keep each `-D` argument quoted whole.
+`-o` (offline) or `-nsu` (no snapshot updates) after `mvn` skips checking for new dependencies.
+
+| Command | What it does | Writes |
+|---|---|---|
+| `mvn -Ptest-data process-test-classes` | `check`, the default: every offline check of the data against the features and the code; fails on a problem | nothing |
+| `mvn -Ptest-data process-test-classes "-Dexec.args=check"` | The same, named | nothing |
+| `mvn -Ptest-data process-test-classes "-Dexec.args=sync-examples"` | Writes the `Examples` of every product Outline from `ProductDatFiles` | feature files |
+| `mvn -Ptest-data process-test-classes "-Dexec.args=case <case ID>"` | Prints the merged data of one case: layers, dat file, request, `dynamicFields`, expected file | nothing |
+| `mvn -Ptest-data process-test-classes "-Dexec.args=suggest <event>"` | Suggests the `dynamicFields` rules and the `expectedBase` of an event from its recordings | nothing |
+| `mvn -Ptest-data process-test-classes "-Dexec.args=compact <event>"` | Turns an event's recorded responses into patches on their base and references to the shared parts | expected files |
+| `mvn -Ptest-data process-test-classes "-Dexec.args=compact all"` | The same for every event; also rebuilds the shared parts and deletes unused ones | expected files |
+| `mvn -Ptest-data process-test-classes "-Dexec.args=shared <case ID>"` | Takes the shared parts (`basic`, `instrument`) from that case's recording, then compacts every event again | expected files |
+| `mvn -Ptest-data process-test-classes "-Dexec.args=shared TC-<EVENT>-<product_type>-API-001"` | The same from every product's case of that ID | expected files |
+| `mvn -Ptest-data process-test-classes "-Dexec.args=unused-steps"` | Lists the snippets and Java steps no feature reaches; never fails | nothing |
+| `mvn -Ptest-data process-test-classes "-Dexec.args=coverage"` | Prints the product x capability matrix of the product Outlines and its gaps; never fails | nothing |
+| `mvn -Ptest-data process-test-classes "-Dexec.args=coverage --html"` | The same, and writes it as a page: `target/coverage/coverage.html` (with `coverage.json`) | `target/` only |
+
+Examples: `"-Dexec.args=case TC-TRADE-CREATION-FX_TRF-API-001"`, `"-Dexec.args=compact trade_creation"`. After a
+data file was deleted, add `clean` (`mvn -Ptest-data clean process-test-classes ...`). Details of each command:
+[docs/test-data.md, "Commands"](docs/test-data.md#commands).
+
 ## Running
 
 The runner `src/test/java/com/example/module/oreo/OreoTest.java` decides the default scope:
