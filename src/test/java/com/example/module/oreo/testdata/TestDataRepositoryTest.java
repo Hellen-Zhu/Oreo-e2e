@@ -1,6 +1,7 @@
 package com.example.module.oreo.testdata;
 
 import com.example.module.oreo.utils.DateUtil;
+import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -14,6 +15,7 @@ import java.net.URLClassLoader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
@@ -112,6 +114,9 @@ public class TestDataRepositoryTest {
                 { "defaults": { "expectedBase": "TC-OTHER-EVENT-<product_type>-API-001" } }""");
         write("api/bad_date.json", """
                 { "defaults": { "request": { "trade": { "tradeDate": "${date:tomorrow}" } } } }""");
+        write("api/settlement_event.json", """
+                { "defaults": { "request": { "data": [
+                  { "key": "effectiveDate", "value": "${date:S-5}", "type": "Date" } ] } } }""");
         write("api/bad_dat.json", """
                 { "defaults": { "datFile": "../FX_TRF.dat" } }""");
         write("api/clash_block.json", """
@@ -399,6 +404,29 @@ public class TestDataRepositoryTest {
     public void unknownDateIsALoadErrorNamingTheField() {
         assertFailsWith(() -> repo.forCase("TC-BAD-DATE-FX_TRF-API-001"),
                 "bad_date.json [defaults.request]", "trade.tradeDate", "${date:tomorrow}");
+    }
+
+    @Test
+    public void settlementDatesCountFromTheGivenDate() {
+        JsonNode resolved = DataPlaceholders.resolve(Json.parse("""
+                { "a": "${date:S-5}", "b": "${date:S}", "c": "from ${date:s+1} to ${date:T}" }"""),
+                LocalDate.of(2027, 1, 3), "a case");
+        assertEquals("2026-12-29", resolved.get("a").asText());
+        assertEquals("2027-01-03", resolved.get("b").asText());
+        assertEquals("from 2027-01-04 to " + day(0), resolved.get("c").asText());
+    }
+
+    @Test
+    public void settlementDateOfAProductWithoutOneFailsNamingTheCase() {
+        // the check accepts S; reading the request needs the product's date (none registered here)
+        CaseData data = repo.forCase("TC-SETTLEMENT-EVENT-FX_TRF-API-001");
+        assertFailsWith(data::request, "${date:S-5}", "TC-SETTLEMENT-EVENT-FX_TRF-API-001", "ProductDatFiles");
+    }
+
+    @Test
+    public void settlementDateInDataWithoutAProductFails() {
+        assertFailsWith(() -> DataPlaceholders.resolve(Json.parse("{ \"a\": \"${date:S}\" }")),
+                "${date:S}", "without a product");
     }
 
     @Test

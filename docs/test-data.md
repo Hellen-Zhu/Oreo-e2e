@@ -111,6 +111,11 @@ with the columns `| case | dataset |` (`001`, `002` ...); each case is its own r
   calendar days, `yyyy-MM-dd`, this machine's time zone (`DateUtil.resolveDate`), filled in each time a step reads the
   data (`request()`, `flattenRequest()`, a setup's `request()` / `response()`). Any other `${...}` is left for the step
   that fills it. Another expression (`${date:tomorrow}`) is a load error. Not business days.
+- `${date:S}`, `${date:S+N}`, `${date:S-N}`: the same from the final settlement date of the case's product
+  (`ProductDatFiles`, the constant's second value) instead of today. A trade's own dates come from its dat file and
+  stay fixed, so a date that must stay before them, such as an event's `effectiveDate` (which may be in the past), is
+  written `${date:S-5}`: it never passes the settlement date as the days go by, and needs no `byProduct` value. A case
+  without a product, or a product without the date, fails when its request is read.
 - A row exists only for a case that differs from the defaults. Its `id` is the feature's, as written: an Outline's
   `TC-TRADE-CREATION-<product_type>-API-002` covers every product; product differences go into the row's `byProduct`.
   A case matched by two rows is an error.
