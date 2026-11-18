@@ -68,7 +68,12 @@ Ask in order; stop at the first yes.
 5. **For one case and one product?** → the row's `byProduct.<P>`.
 
 A value a step fills keeps its placeholder (`"tradeIds": ["PLACEHOLDER"]`) or a `${...}` the step resolves; never a
-real trade or task ID, credentials, an address or a real counterparty. Example, `api/trade_early_termination.json`:
+real trade or task ID, credentials, an address or a real counterparty. An amount that depends on the trade's
+notional is a share of it, never a `byProduct` value per product: an event's `data` value `"50%"` or
+`"[60%, 30%, 10%]"` is sent as the amounts of the trade's `basic.notionalAmount` (each rounded to the cent; in a
+list whose shares sum to 100%, the last one is the rest), when the request is built with `build json request from
+current scenario with trade id from stored variable '<var>' as user '<role>'` (`api/trade_allocation.json`, API-001
+and API-002). A rejection that needs a wrong amount can be a share too (`"120%"`). Example, `api/trade_early_termination.json`:
 the event body is in `defaults`; API-001 (success) has a row only to `use` the retrieved-trade blocks; API-002
 (malformed) a row that empties `data`; API-003 (duplicate) a row with a message rule.
 

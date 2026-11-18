@@ -52,8 +52,10 @@
     And set header 'Content-Type' to 'application/json'
     And set json request body from test data '$1' with trade id from stored variable '$2'
 
+# An amount the case gives as a share of the trade's notional ("50%", "[60%, 30%, 10%]") is sent as the amount.
 @Given "^build json request from current scenario with trade id from stored variable '([^']*)' as user '([^']*)'$"
-    Given start a new api request as user '$2'
+    Given the notional of the trade stored as '$1' is read when the request gives shares of it
+    And start a new api request as user '$2'
     And set header 'Content-Type' to 'application/json'
     And set json request body from current scenario with trade id from stored variable '$1'
 

@@ -9,16 +9,27 @@ import com.example.module.oreo.testdata.SetupData;
 import com.example.module.oreo.testdata.TestData;
 import com.example.module.oreo.utils.DateUtil;
 import com.example.module.oreo.utils.RestApiUtil;
+import com.example.module.oreo.utils.TradeApiClient;
 import cucumber.api.Scenario;
 import cucumber.api.java.Before;
 import cucumber.api.java.en.Given;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 public class ApiRequestSteps {
 
     private static final Logger log = LoggerFactory.getLogger(ApiRequestSteps.class);
     private static final ObjectMapper MAPPER = new ObjectMapper();
+    /** A share of the trade's notional in a case request's data value: {@code 50%}. */
+    private static final Pattern SHARE = Pattern.compile("^\\s*(-?\\d+(?:\\.\\d+)?)\\s*%\\s*$");
+    private static final BigDecimal HUNDRED = BigDecimal.valueOf(100);
 
     private RestServiceResolver.Context ctx;
 
@@ -189,6 +200,31 @@ public class ApiRequestSteps {
         );
     }
 
+    /**
+     * When the case request gives an amount as a share of the trade's notional ({@code "50%"}, {@code "[60%, 30%,
+     * 10%]"} in a {@code data} value), reads the notional of the stored trade ({@code data.trade.basic.notionalAmount})
+     * for the body step to compute the amounts from; else does nothing. A step of its own, before the request is
+     * started: the read is a request too.
+     *
+     * <pre>Given the notional of the trade stored as 'createdTradeId' is read when the request gives shares of it</pre>
+     */
+    @Given("^the notional of the trade stored as '([^']*)' is read when the request gives shares of it$")
+    public void readNotionalForShares(String varName) throws Exception {
+        String request = ctx.find("_tc.request");
+        if (request == null || request.isBlank() || !hasShares(MAPPER.readTree(request))) {
+            return;
+        }
+        String tradeId = ctx.get(varName);
+        JsonNode notional = RestApiUtil.get(ctx.helper(), TradeApiClient.tradePath(tradeId), TestUser.MAKER.email())
+                .path("data").path("trade").path("basic").path("notionalAmount");
+        if (!notional.isNumber()) {
+            throw new AssertionError("[ApiRequestSteps] the request of " + ctx.get("_tc.key") + " gives shares of the"
+                    + " notional, and trade " + tradeId + " has no numeric data.trade.basic.notionalAmount: " + notional);
+        }
+        ctx.set(notionalKey(tradeId), notional.decimalValue().toPlainString());
+        ctx.write("[request] notional of trade " + tradeId + " = " + notional.decimalValue().toPlainString());
+    }
+
     @Given("^set json request body from current scenario with trade id from stored variable '([^']*)'$")
     public void setEventRequestBodyFromCurrentScenarioWithTradeId(String varName) {
         setJsonRequestBodyWithTradeId(
@@ -349,7 +385,23 @@ public class ApiRequestSteps {
         try {
             ObjectNode body = (ObjectNode) MAPPER.readTree(requestBody);
             body.putArray("tradeIds").add(tradeId);
+            if (hasShares(body)) {
+                String notional = ctx.find(notionalKey(tradeId));
+                if (notional == null) {
+                    throw new AssertionError("[ApiRequestSteps] the request gives shares of the notional of trade "
+                            + tradeId + ", which was not read: build the request with 'build json request from"
+                            + " current scenario with trade id from stored variable ...'");
+                }
+                for (JsonNode entry : body.path("data")) {
+                    String value = entry.path("value").asText();
+                    if (isShares(value)) {
+                        ((ObjectNode) entry).put("value", amountsOfShares(value, new BigDecimal(notional)));
+                    }
+                }
+            }
             String finalRequestBody = MAPPER.writeValueAsString(body);
+            // what was sent, amounts included: the assertions on the event compare with it
+            ctx.set("_tc.sentRequest", finalRequestBody);
 
             ctx.helper().request().body(finalRequestBody);
             ctx.write("[request:body] source=" + sourceLabel + "\n" + finalRequestBody);
@@ -360,5 +412,76 @@ public class ApiRequestSteps {
                     "[ApiRequestSteps] Failed to inject tradeId into request body from "
                     + sourceLabel + ": " + e.getMessage(), e);
         }
+    }
+
+    private static String notionalKey(String tradeId) {
+        return "_notional." + tradeId;
+    }
+
+    /** Whether a {@code data} value of the request is a share or a list of shares of the notional. */
+    private static boolean hasShares(JsonNode request) {
+        for (JsonNode entry : request.path("data")) {
+            if (isShares(entry.path("value").asText())) return true;
+        }
+        return false;
+    }
+
+    /** {@code 50%}, or a list of them, {@code [60%, 30%, 10%]}. */
+    static boolean isShares(String value) {
+        List<String> items = listItems(value);
+        if (items == null) return SHARE.matcher(value).matches();
+        if (items.isEmpty()) return false;
+        for (String item : items) {
+            if (!SHARE.matcher(item).matches()) return false;
+        }
+        return true;
+    }
+
+    /**
+     * The amounts of {@code value}'s shares of {@code notional}, as the request writes numbers ({@code 35000},
+     * {@code 3468.75}): each rounded to the cent; when a list's shares sum to 100%, its last amount is the rest of the
+     * notional rounded to the cent, so that the amounts sum to it.
+     */
+    static String amountsOfShares(String value, BigDecimal notional) {
+        List<String> items = listItems(value);
+        if (items == null) return plain(share(value, notional));
+        List<BigDecimal> percents = new ArrayList<>();
+        for (String item : items) percents.add(percent(item));
+        boolean whole = percents.stream().reduce(BigDecimal.ZERO, BigDecimal::add).compareTo(HUNDRED) == 0;
+        List<String> amounts = new ArrayList<>();
+        BigDecimal allocated = BigDecimal.ZERO;
+        for (int i = 0; i < items.size(); i++) {
+            BigDecimal amount = whole && i == items.size() - 1
+                    ? notional.setScale(2, RoundingMode.HALF_UP).subtract(allocated)
+                    : share(items.get(i), notional);
+            allocated = allocated.add(amount);
+            amounts.add(plain(amount));
+        }
+        return "[" + String.join(", ", amounts) + "]";
+    }
+
+    /** The items of a list written {@code [a, b]}, else null. */
+    private static List<String> listItems(String value) {
+        String text = value.trim();
+        if (!text.startsWith("[") || !text.endsWith("]")) return null;
+        String inner = text.substring(1, text.length() - 1).trim();
+        List<String> items = new ArrayList<>();
+        if (inner.isEmpty()) return items;
+        for (String item : inner.split(",")) items.add(item.trim());
+        return items;
+    }
+
+    private static BigDecimal percent(String share) {
+        Matcher m = SHARE.matcher(share);
+        if (!m.matches()) throw new AssertionError("[ApiRequestSteps] not a share of the notional: " + share);
+        return new BigDecimal(m.group(1));
+    }
+
+    private static BigDecimal share(String share, BigDecimal notional) {
+        return notional.multiply(percent(share)).divide(HUNDRED).setScale(2, RoundingMode.HALF_UP);
+    }
+
+    private static String plain(BigDecimal amount) {
+        return amount.stripTrailingZeros().toPlainString();
     }
 }

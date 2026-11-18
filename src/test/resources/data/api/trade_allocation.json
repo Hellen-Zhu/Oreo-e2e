@@ -1,5 +1,5 @@
 {
-  "_comment": "features/api/trading/trade_allocation.feature. Body of POST /trades/trigger-event; the step replaces tradeIds with the created trade. A success records the allocated trade retrieved after the event (retrieved-trade); a rejection the event's response. The defaults are the 2-way equal split of an FX_TRF trade (notional 70000), the trade of every case without a product. The amounts must sum to the trade's notional, which comes from the product's dat file: API-001 and API-002 give every product of the allocation capability its own split in their byProduct, and a new product needs one there too.",
+  "_comment": "features/api/trading/trade_allocation.feature. Body of POST /trades/trigger-event; the step replaces tradeIds with the created trade. A success records the allocated trade retrieved after the event (retrieved-trade); a rejection the event's response. API-001 and API-002 give the amounts as shares of the trade's notional ([60%, 30%, 10%]): the step reads the notional and sends the amounts, each rounded to the cent and the last one the rest, so no product needs data of its own. The defaults and the rejections give amounts for an FX_TRF trade (notional 70000).",
   "defaults": {
     "expectedBase": "TC-TRADE-ALLOCATION-<product_type>-API-001",
     "request": {
@@ -17,66 +17,27 @@
   "cases": [
     {
       "id": "TC-TRADE-ALLOCATION-<product_type>-API-001",
-      "_comment": "2-way equal split: 200 ALL_EXECUTED, two child trades; the recording is the allocated trade",
+      "_comment": "2-way equal split of the trade's notional, whatever the product: 200 ALL_EXECUTED, two child trades; the recording is the allocated trade",
       "use": ["trade-response-parts", "retrieved-trade"],
-      "byProduct": {
-        "FX_CO": {
-          "_comment": "Notional 6937.5",
-          "request": {
-            "data": [
-              { "key": "notionalAmounts", "value": "[3468.75, 3468.75]", "type": "Numeric Array" },
-              { "key": "counterpartyIds", "value": "[\"900000003\", \"900000004\"]", "type": "Numeric Array" },
-              { "key": "portfolioIds", "value": "[\"EXAMPLE_PORTFOLIO_B\", \"EXAMPLE_PORTFOLIO_C\"]", "type": "Numeric Array" }
-            ]
-          }
-        },
-        "FX_FSB": {
-          "_comment": "Notional 200000000",
-          "request": {
-            "data": [
-              { "key": "notionalAmounts", "value": "[100000000, 100000000]", "type": "Numeric Array" },
-              { "key": "counterpartyIds", "value": "[\"900000003\", \"900000004\"]", "type": "Numeric Array" },
-              { "key": "portfolioIds", "value": "[\"EXAMPLE_PORTFOLIO_B\", \"EXAMPLE_PORTFOLIO_C\"]", "type": "Numeric Array" }
-            ]
-          }
-        }
+      "request": {
+        "data": [
+          { "key": "notionalAmounts", "value": "[50%, 50%]", "type": "Numeric Array" },
+          { "key": "counterpartyIds", "value": "[\"900000003\", \"900000004\"]", "type": "Numeric Array" },
+          { "key": "portfolioIds", "value": "[\"EXAMPLE_PORTFOLIO_B\", \"EXAMPLE_PORTFOLIO_C\"]", "type": "Numeric Array" }
+        ]
       }
     },
     {
       "id": "TC-TRADE-ALLOCATION-<product_type>-API-002",
-      "_comment": "3-way unequal split: 200 ALL_EXECUTED, three child trades; the recording is the allocated trade",
+      "_comment": "3-way unequal split of the trade's notional, whatever the product: 200 ALL_EXECUTED, three child trades; the recording is the allocated trade",
       "use": ["trade-response-parts", "retrieved-trade"],
-      "byProduct": {
-        "FX_TRF": {
-          "request": {
-            "data": [
-              { "key": "notionalAmounts", "value": "[42000, 21000, 7000]", "type": "Numeric Array" },
-              { "key": "counterpartyIds", "value": "[\"900000003\", \"900000004\", \"900000003\"]", "type": "Numeric Array" },
-              { "key": "portfolioIds", "value": "[\"EXAMPLE_PORTFOLIO_B\", \"EXAMPLE_PORTFOLIO_C\", \"EXAMPLE_PORTFOLIO_B\"]", "type": "Numeric Array" }
-            ],
-            "comments": "3-way unequal split: 60% / 30% / 10% of notional 70000"
-          }
-        },
-        "FX_CO": {
-          "request": {
-            "data": [
-              { "key": "notionalAmounts", "value": "[3000, 2000, 1937.5]", "type": "Numeric Array" },
-              { "key": "counterpartyIds", "value": "[\"900000003\", \"900000004\", \"900000003\"]", "type": "Numeric Array" },
-              { "key": "portfolioIds", "value": "[\"EXAMPLE_PORTFOLIO_B\", \"EXAMPLE_PORTFOLIO_C\", \"EXAMPLE_PORTFOLIO_D\"]", "type": "Numeric Array" }
-            ],
-            "comments": "3-way unequal split: 3000 / 2000 / 1937.5 summing to FX_CO parent notional 6937.5"
-          }
-        },
-        "FX_FSB": {
-          "request": {
-            "data": [
-              { "key": "notionalAmounts", "value": "[120000000, 60000000, 20000000]", "type": "Numeric Array" },
-              { "key": "counterpartyIds", "value": "[\"900000003\", \"900000004\", \"900000003\"]", "type": "Numeric Array" },
-              { "key": "portfolioIds", "value": "[\"EXAMPLE_PORTFOLIO_B\", \"EXAMPLE_PORTFOLIO_C\", \"EXAMPLE_PORTFOLIO_B\"]", "type": "Numeric Array" }
-            ],
-            "comments": "3-way unequal split: 60% / 30% / 10% of notional 200000000"
-          }
-        }
+      "request": {
+        "data": [
+          { "key": "notionalAmounts", "value": "[60%, 30%, 10%]", "type": "Numeric Array" },
+          { "key": "counterpartyIds", "value": "[\"900000003\", \"900000004\", \"900000003\"]", "type": "Numeric Array" },
+          { "key": "portfolioIds", "value": "[\"EXAMPLE_PORTFOLIO_B\", \"EXAMPLE_PORTFOLIO_C\", \"EXAMPLE_PORTFOLIO_B\"]", "type": "Numeric Array" }
+        ],
+        "comments": "3-way unequal split: 60% / 30% / 10% of the notional"
       }
     },
     {

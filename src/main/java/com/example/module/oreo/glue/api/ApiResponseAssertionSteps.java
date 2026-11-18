@@ -192,9 +192,11 @@ public class ApiResponseAssertionSteps {
         ctx.write("[event] new trades' " + responsePath + " = " + actual + " as in the request's " + dataKey);
     }
 
-    /** The values of the case request's {@code data} entry {@code key}: its {@code value} is a JSON array as text. */
+    /** The values of the sent request's {@code data} entry {@code key}: its {@code value} is a JSON array as text. */
     private List<JsonNode> requestDataArray(String key) {
-        JsonNode request = Json.parse(TestData.forCase(ctx.find("_tc.key")).request());
+        // what was sent (shares of the notional resolved to amounts), else the case data
+        String sent = ctx.find("_tc.sentRequest");
+        JsonNode request = Json.parse(sent != null ? sent : TestData.forCase(ctx.find("_tc.key")).request());
         for (JsonNode entry : request.path("data")) {
             if (key.equals(entry.path("key").asText())) {
                 JsonNode values = Json.parse(entry.path("value").asText());
