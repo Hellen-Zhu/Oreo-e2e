@@ -54,10 +54,10 @@
 
 # An amount the case gives as a share of the trade's notional ("50%", "[60%, 30%, 10%]") is sent as the amount.
 @Given "^build json request from current scenario with trade id from stored variable '([^']*)' as user '([^']*)'$"
-    Given the request body of the current scenario is prepared for the trade stored as '$1'
+    Given the notional of the trade stored as '$1' is read when the request gives shares of it
     And start a new api request as user '$2'
     And set header 'Content-Type' to 'application/json'
-    And set the prepared request body
+    And set json request body from current scenario with trade id from stored variable '$1'
 
 @Given "^build multipart request with parameter '([^']*)' from test data '([^']*)' for product '([^']*)' as user '([^']*)'$"
     Given start a new api request as user '$4'
