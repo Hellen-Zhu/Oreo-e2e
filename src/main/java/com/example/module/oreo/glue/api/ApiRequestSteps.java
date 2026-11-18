@@ -201,48 +201,68 @@ public class ApiRequestSteps {
     }
 
     /**
-     * When the case request gives an amount as a share of the trade's notional ({@code "50%"}, {@code "[60%, 30%,
-     * 10%]"} in a {@code data} value), reads the notional of the stored trade ({@code data.trade.basic.notionalAmount})
-     * for the body step to compute the amounts from; else does nothing. A step of its own, before the request is
-     * started: the read is a request too.
+     * The body of the case's event request, kept to be set by {@code set the prepared request body}: the case
+     * request with its {@code tradeIds} replaced by the stored trade. An amount the case gives as a share of the
+     * trade's notional ({@code "50%"}, {@code "[60%, 30%, 10%]"} in a {@code data} value) becomes the amount: only
+     * then is the trade's {@code data.trade.basic.notionalAmount} read. A step of its own, before the request is
+     * started, because that read is a request too. The body is stored as {@code _tc.sentRequest}, which the event's
+     * assertions compare with.
      *
-     * <pre>Given the notional of the trade stored as 'createdTradeId' is read when the request gives shares of it</pre>
+     * <pre>Given the request body of the current scenario is prepared for the trade stored as 'createdTradeId'</pre>
      */
-    @Given("^the notional of the trade stored as '([^']*)' is read when the request gives shares of it$")
-    public void readNotionalForShares(String varName) throws Exception {
-        String request = ctx.find("_tc.request");
-        if (request == null || request.isBlank() || !hasShares(MAPPER.readTree(request))) {
-            return;
-        }
+    @Given("^the request body of the current scenario is prepared for the trade stored as '([^']*)'$")
+    public void prepareRequestBodyForTrade(String varName) {
         String tradeId = ctx.get(varName);
+        ObjectNode body = bodyWithTradeId(requestBodyFromCurrentScenario(), tradeId, currentScenarioLabel(), varName);
+        if (hasShares(body)) {
+            BigDecimal notional = tradeNotional(tradeId);
+            for (JsonNode entry : body.path("data")) {
+                String value = entry.path("value").asText();
+                if (isShares(value)) {
+                    ((ObjectNode) entry).put("value", amountsOfShares(value, notional));
+                }
+            }
+        }
+        try {
+            ctx.set("_tc.sentRequest", MAPPER.writeValueAsString(body));
+        } catch (Exception e) {
+            throw new AssertionError("[ApiRequestSteps] cannot write the request body of " + currentScenarioLabel()
+                    + ": " + e.getMessage(), e);
+        }
+    }
+
+    /** Sets the body {@code the request body of the current scenario is prepared ...} kept. */
+    @Given("^set the prepared request body$")
+    public void setPreparedRequestBody() {
+        String body = ctx.find("_tc.sentRequest");
+        if (body == null) {
+            throw new AssertionError("[ApiRequestSteps] no prepared request body: run 'the request body of the current"
+                    + " scenario is prepared for the trade stored as ...' before the request is started");
+        }
+        ctx.helper().request().body(body);
+        ctx.write("[request:body] source=" + currentScenarioLabel() + "\n" + body);
+        log.info("[ApiRequestSteps] set the prepared request body: {}", body);
+    }
+
+    /** The trade's {@code data.trade.basic.notionalAmount}, read through the API as the maker. */
+    private BigDecimal tradeNotional(String tradeId) {
         JsonNode notional = RestApiUtil.get(ctx.helper(), TradeApiClient.tradePath(tradeId), TestUser.MAKER.email())
                 .path("data").path("trade").path("basic").path("notionalAmount");
         if (!notional.isNumber()) {
             throw new AssertionError("[ApiRequestSteps] the request of " + ctx.get("_tc.key") + " gives shares of the"
                     + " notional, and trade " + tradeId + " has no numeric data.trade.basic.notionalAmount: " + notional);
         }
-        ctx.set(notionalKey(tradeId), notional.decimalValue().toPlainString());
         ctx.write("[request] notional of trade " + tradeId + " = " + notional.decimalValue().toPlainString());
-    }
-
-    @Given("^set json request body from current scenario with trade id from stored variable '([^']*)'$")
-    public void setEventRequestBodyFromCurrentScenarioWithTradeId(String varName) {
-        setJsonRequestBodyWithTradeId(
-                requestBodyFromCurrentScenario(),
-                ctx.get(varName),
-                currentScenarioLabel(),
-                varName
-        );
+        return notional.decimalValue();
     }
 
     @Given("^set json request body from test data '([^']*)' with trade id from stored variable '([^']*)'$")
     public void setEventRequestBodyFromTestDataWithTradeId(String key, String varName) {
-        setJsonRequestBodyWithTradeId(
-                TestData.setup(key).request(),
-                ctx.get(varName),
-                "test data '" + key + "'",
-                varName
-        );
+        String source = "test data '" + key + "'";
+        String body = bodyWithTradeId(TestData.setup(key).request(), ctx.get(varName), source, varName).toString();
+        ctx.helper().request().body(body);
+        ctx.write("[request:body] source=" + source + "\n" + body);
+        log.info("[ApiRequestSteps] set event request body from {} with trade id of '{}': {}", source, varName, body);
     }
 
     @Given("^set json request body from current scenario with task ids from stored variables '([^']*)' and '([^']*)'$")
@@ -371,51 +391,22 @@ public class ApiRequestSteps {
         return "current scenario (TC-ID='" + ctx.get("_tc.key") + "')";
     }
 
-    private void setJsonRequestBodyWithTradeId(
-            String requestBody,
-            String tradeId,
-            String sourceLabel,
-            String varName) {
+    /** {@code requestBody} with its {@code tradeIds} replaced by {@code tradeId} (stored as {@code varName}). */
+    private static ObjectNode bodyWithTradeId(String requestBody, String tradeId, String sourceLabel, String varName) {
         if (tradeId == null || tradeId.isBlank()) {
             throw new AssertionError(
                     "[ApiRequestSteps] stored variable '" + varName
                     + "' is null/blank — cannot inject tradeId into request body from " + sourceLabel);
         }
-
         try {
             ObjectNode body = (ObjectNode) MAPPER.readTree(requestBody);
             body.putArray("tradeIds").add(tradeId);
-            if (hasShares(body)) {
-                String notional = ctx.find(notionalKey(tradeId));
-                if (notional == null) {
-                    throw new AssertionError("[ApiRequestSteps] the request gives shares of the notional of trade "
-                            + tradeId + ", which was not read: build the request with 'build json request from"
-                            + " current scenario with trade id from stored variable ...'");
-                }
-                for (JsonNode entry : body.path("data")) {
-                    String value = entry.path("value").asText();
-                    if (isShares(value)) {
-                        ((ObjectNode) entry).put("value", amountsOfShares(value, new BigDecimal(notional)));
-                    }
-                }
-            }
-            String finalRequestBody = MAPPER.writeValueAsString(body);
-            // what was sent, amounts included: the assertions on the event compare with it
-            ctx.set("_tc.sentRequest", finalRequestBody);
-
-            ctx.helper().request().body(finalRequestBody);
-            ctx.write("[request:body] source=" + sourceLabel + "\n" + finalRequestBody);
-            log.info("[ApiRequestSteps] set event request body from {} with tradeId='{}' (varName='{}'): {}",
-                    sourceLabel, tradeId, varName, finalRequestBody);
+            return body;
         } catch (Exception e) {
             throw new AssertionError(
                     "[ApiRequestSteps] Failed to inject tradeId into request body from "
                     + sourceLabel + ": " + e.getMessage(), e);
         }
-    }
-
-    private static String notionalKey(String tradeId) {
-        return "_notional." + tradeId;
     }
 
     /** Whether a {@code data} value of the request is a share or a list of shares of the notional. */
