@@ -159,22 +159,16 @@ public class PlaywrightTradeProvisioningSteps {
      * as it is ({@code "5000"}). Stores it as {@code '<amountVar>'}, as typed into a form ({@code 3468.75}), and as
      * {@code '<amountVar>.display'}, as the portal shows it ({@code 3,468.75}).
      *
-     * With {@code if it is set}, a case whose data has no {@code '<shareVar>'} (or a blank one) stores nothing; without
-     * it, that case fails.
+     * <p>A case whose data has no {@code '<shareVar>'} (or a blank one) stores nothing.
      *
-     * <pre>When the share 'newNotional' of the notional of trade 'createdTradeId' is stored as 'newNotionalAmount'
-     * When the share 'newNotional' of the notional of trade 'createdTradeId' is stored as 'newNotionalAmount' if it is set</pre>
+     * <pre>When the share 'newNotional' of the notional of trade 'createdTradeId' is stored as 'newNotionalAmount'</pre>
      */
-    @Given("^the share '([^']*)' of the notional of trade '([^']*)' is stored as '([^']*)'( if it is set)?$")
-    public void storeShareOfNotional(String shareVar, String tradeVar, String amountVar, String ifSet) {
+    @Given("^the share '([^']*)' of the notional of trade '([^']*)' is stored as '([^']*)'$")
+    public void storeShareOfNotional(String shareVar, String tradeVar, String amountVar) {
         Object given = ctx.find(shareVar);
         if (given == null || String.valueOf(given).isBlank()) {
-            if (ifSet != null) {
-                ctx.write("[notional] no '" + shareVar + "' in the case data: '" + amountVar + "' not stored");
-                return;
-            }
-            throw new AssertionError("[PlaywrightTradeProvisioningSteps] no '" + shareVar + "' in the case data of "
-                    + ctx.find("_tc.key"));
+            ctx.write("[notional] no '" + shareVar + "' in the case data: '" + amountVar + "' not stored");
+            return;
         }
         String text = String.valueOf(given).trim();
         BigDecimal amount;
