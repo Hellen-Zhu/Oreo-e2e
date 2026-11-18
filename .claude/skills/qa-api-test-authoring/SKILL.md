@@ -6,29 +6,28 @@ description: Use when the scenarios of an oreo-e2e @api feature file have to be 
 # QA API test authoring (oreo-e2e)
 
 Makes `@api` scenarios run: test data, snippets, and Java only when nothing else can. The feature file is the approved
-scope.
+scope. This skill is the procedure and the report; the rules are elsewhere and are read, not repeated:
 
-**The rules are `docs/standards/bdd-feature-implementation-standards.md` (read §1-§5 and §7 before starting) and
-`docs/test-data.md` for the data format.** This skill is the procedure and the report. Where they disagree with the code,
-the code wins: say so in the report.
+- `docs/standards/bdd-feature-implementation-standards.md` §1, §3.2-§3.4 (API snippets, shared steps), §4.2-§4.4 (glue)
+- `docs/test-data.md`, "Where a value goes", "Case data", "Recorded responses"
+- `CLAUDE.md` §3-§4 (where a change goes, hard stops)
+
+Where they disagree with the code, the code wins: say so in the report.
 
 ## Inputs
 
-From `test-agent`: the feature file, the case IDs to implement (only the new or changed scenarios), `where`
-(`company` = the project builds and the environment is reachable; `offline` = this copy, nothing runs), and on a
-repair round the failure output and `revisionInstructions`.
+From `test-agent`: the feature file, the case IDs to implement (only these), `where` (`company` or `offline`), and on
+a repair round the classified failures and `revisionInstructions`.
 
 ## Boundary
 
-- Change only oreo-e2e test assets: `src/test/resources/data/`, `src/main/resources/snippet/api/`,
-  `src/main/java/.../glue/api/` (last resort). Never the feature's business wording, never FE / BE code.
-- A feature step whose meaning is wrong or unimplementable is reported back, not rewritten.
-- Never create or edit `data/api/expected/` files, `Examples` rows or `ProductDatFiles` here: recordings come from a
-  run, rows from `sync-examples`, products from the onboarding skill.
+Change only `src/test/resources/data/`, `src/main/resources/snippet/api/` and, last, `glue/api/`. Never the feature's
+wording, `data/api/expected/`, `Examples` rows, `ProductDatFiles` or FE / BE code. A step whose meaning is wrong or
+unimplementable is reported back, not rewritten.
 
 ## Procedure
 
-1. **Map every step** of the target scenarios to an implementation, before writing anything:
+1. **Map every step** of the target scenarios before writing anything:
 
    ```shell
    bash .claude/skills/qa-bdd-feature-authoring/scripts/gen-snippet-index.sh api
@@ -38,75 +37,26 @@ repair round the failure output and `revisionInstructions`.
    | Step | Status | Source |
    |---|---|---|
    | `a live '<product_type>' trade is created via api` | REUSE | `glue/api/ApiTradeProvisioningSteps` |
-   | `maker has valid data for the 'EarlyTermination' event` | REUSE | `api/trade_lifecycle_event.snippet` |
    | `performs the 'EarlyTermination' event via api` | REUSE | `api/trade_lifecycle_event.snippet` |
-   | `the trade notional is reduced by the terminated amount` | NEW_SNIPPET | `api/trade_partial_termination.snippet`, from existing snippet steps + REST built-ins |
+   | `the trade notional is reduced by the terminated amount` | NEW_SNIPPET | `api/trade_partial_termination.snippet` |
 
-   Statuses, in the order they must be tried: `REUSE` (an existing snippet step), `NEW_SNIPPET` (composed of existing
-   snippet steps, REST built-ins `docs/genie_rest_glue_catalog.md`, existing glue), `NEW_STEP` (Java, only for one
-   capability none of those has). A step you cannot map with confidence stops the work: report it.
-2. **Contract.** For a `NEW_SNIPPET` that calls an endpoint no existing snippet calls, take method, path, headers and
-   body shape from `solutionDesign` or the story. When `where: company` and the environment is reachable, confirm them
-   against `{rest.base.url}/v3/api-docs` (read `rest.base.url` from `genie.properties`; never print or copy the address
-   into a file). When neither gives them, stop and list exactly what is missing; never copy a neighbouring snippet and
-   hope.
-3. **Data**: follow `references/test-data-decisions.md` for every value (which file, which layer, merge traps,
-   dates, masking rules). In short:
-   - A case that runs on the event file's `defaults` needs no row; a row only for a case that differs, its `id` as the
-     feature writes it; product differences in `byProduct`.
-   - A new event needs `data/api/<event>.json` named after the feature, with `use` for shared blocks of
-     `api/common.json`.
-   - A rejected case: a row with the `request` change, plus `"dynamicFields": null` when `defaults` has rules for
-     success fields the error response lacks.
-   - A lifecycle event's success (`the '<event>' event is executed successfully`) records the trade retrieved after
-     the event, not the event's response: its row says `"use": ["trade-response-parts", "retrieved-trade"]`. Its
-     rejections record the event's response and use neither block.
-   - A precondition payload: reuse or `extends` a `data/setup/*.json` before adding one.
-   - Dates as `${date:T+N}`; never `basic.productId`, a `datFile` path or a real ID.
-   - A case whose evidence is the database or audit, not the response: tag it `@expected#none` (feature authors' tag;
-     report it if missing), no recording.
-   - Read `mvn -Ptest-data process-test-classes "-Dexec.args=case <ID>"` for every case you added a row for (company machine).
-4. **Snippets** (`snippet/api/<featureName>.snippet`, or `common_*.snippet` for cross-feature steps): sections
-   `Build request / Make api call / Assertions`; HTTP only behind business steps; an assertion never changes state;
-   ctx keys camelCase; reuse `ApiRequestSteps` (`build json request with body from current scenario ...`) instead of
-   new request builders. A builder that is still needed starts with `start a new api request as user '<user>'`, never
-   with `start building a new request` alone (it would miss the required headers).
-   - **Response outcomes are the shared vocabulary of `api/common_api.snippet`**: `the '<subject>' is retrieved /
-     created / updated / approved / processed / executed successfully` (200), `... is saved / published / re-published
-     / imported successfully` (201) and `the '<subject>' request is rejected
-     with a validation error` (400) / `with permission denied` (403) / `as not found` (404) / `with a conflict` (409).
-     Each checks the status and compares the response with the recording. Never write a step whose body is only one
-     of them (a renaming wrapper: `check` reports it); a status the vocabulary lacks (422, ...) is added there, to
-     every phrase's pattern, never in a domain snippet. A domain `@Then` exists only for evidence beyond the response
-     (a stored value, a read-back, the trades an event created) and calls the vocabulary for its response part.
-   - **Trades a lifecycle event created** (allocation, novation, ...) are checked against the request, not recorded:
-     `the new trades of the event have '<response path>' as in the request's '<data key>'`, wrapped in a business
-     `@Then` of the event's own snippet (`the allocated trades carry the requested notional amounts` in
-     `api/trade_allocation.snippet`). It follows the event's success step, which stores `childTradeId1..n`.
-5. **Java** only for `NEW_STEP`: the domain's existing `*ApiSteps` class first; POJO, `RestServiceResolver.from(scenario)`
-   in `@Before`, no `@Component`, no inheritance, no RestAssured / other HTTP clients, no `Thread.sleep()`, no
-   credentials or URLs; `ctx.write()` for useful report values.
-6. **Report** (below). Validation is the caller's job (`qa-bdd-test-execution`).
-
-## Recorded responses (what the first run does)
-
-The first run of a new API case writes `data/api/expected/<event>/<case ID>.json` and fails once: expected, not a
-defect. For a lifecycle event's success that file is the retrieved trade (`retrieved-trade` above). After it: `mvn -Ptest-data process-test-classes "-Dexec.args=suggest <event>"` lists the values that look generated and where each rule goes; run
-again for the values a pattern misses (a value that changed between runs); each dynamic value gets a `dynamicFields`
-rule in the event file (`type`, `type-tree`, `regex:`, `var:`, `ignore` last), record again with
-`OREO_EXPECTED=update`, then `mvn -Ptest-data process-test-classes "-Dexec.args=compact <event>"`. Never mask a business message or value to make a case pass. The command reviews every
-recording against the requirement before it is committed.
+   Statuses in the order of `CLAUDE.md` §3: `REUSE`, `NEW_SNIPPET`, `NEW_STEP` (Java). A step you cannot map with
+   confidence stops the work: report it.
+2. **Contract.** For an endpoint no snippet calls yet, take method, path, headers and body from `solutionDesign` or
+   the story; on the company machine confirm them against `{rest.base.url}/v3/api-docs` (never copy the address into
+   a file). Neither gives them: stop and list what is missing; never copy a neighbouring snippet and hope.
+3. **Data**, by `docs/test-data.md`: a row only for a case that differs from `defaults`; a new event gets
+   `data/api/<event>.json` named after the feature. Then `case <ID>` for every case you added a row for (company
+   machine).
+4. **Snippets** in `snippet/api/<featureName>.snippet` (or `common_*.snippet`), by the implementation standard §3.2-§3.4.
+5. **Java** only for `NEW_STEP`, in the domain's existing `*ApiSteps` class, by §4.2.
+6. **Report** (below). Validation is the caller's (`qa-bdd-test-execution`). A new API case's first run records its
+   response and fails once: expected, handled by the command.
 
 ## Repair round
 
-Fix only what the failure implicates (the case ID, its row, its snippet, its glue). Classify first:
-
-| Signal | Fix here? |
-|---|---|
-| `Undefined step`, compile error, `check` problem on data you wrote | Yes |
-| `no expected file` / first-run mismatch on a new case | No: recording workflow (above) |
-| Status or value differs from the requirement | No: possible product defect, report it; never change the expectation |
-| Connection, login, 5xx, timeout | No: environment, report it |
+Fix only what an `automation` failure implicates (its row, snippet or glue). Other classes are not fixed here
+(`qa-bdd-test-execution`, "Reading the result"); never change an expectation to match the system.
 
 ## Report
 

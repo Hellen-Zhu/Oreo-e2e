@@ -79,20 +79,26 @@ Apply QA's answers: capabilities off the constant and `sync-examples` again, the
 
 ## 4. Offline check
 
-The tool is `src/test/java/com/example/module/oreo/tools/TestDataTool.java`, documented in `.claude/skills/maintaining-e2e-test-data/SKILL.md`. Every command below is that Maven command, written in full: `mvn -Ptest-data process-test-classes "-Dexec.args=<command>"`; without `exec.args` it runs `check`. The class `TestDataTool` is run only through it. Run them only where the user says oreo-e2e builds (the company machine); elsewhere give them the commands.
+The commands are `TestDataTool`'s (`docs/test-data.md`, "Commands"); run them only on the company machine, elsewhere
+give them.
 
-`mvn -Ptest-data process-test-classes`. Expected before `sync-examples`: "the product Outlines' Examples match the registry" fails with one `add <C>` line per Outline of the product's capabilities. After it, until the recordings: only "every API case has its expected file" fails, one `no expected file` line per new API case. Any other problem (a product that is not in `ProductDatFiles`, a `byProduct` without a dat file, a `remove` line before QA took a capability off) is a mistake in section 2. Every new row makes its feature run one more case: a warning of "no feature file runs more cases than its layer's limit" is not a problem, but report each feature it names to the user with a proposed split by business behavior (standard `bdd-feature-generation-standards.md` §3.3); splitting renames its case IDs, so it is the user's decision.
+`mvn -Ptest-data process-test-classes`. Expected before `sync-examples`: "the product Outlines' Examples match the registry" fails with one `add <C>` line per Outline of the product's capabilities. After it, until the recordings: only "every API case has its expected file" fails, one `no expected file` line per new API case. Any other problem (a product that is not in `ProductDatFiles`, a `byProduct` without a dat file, a `remove` line before QA took a capability off) is a mistake in section 2. A feature-size warning is not a problem: report each feature it names with a proposed split (the user decides).
 
 `mvn -Ptest-data process-test-classes "-Dexec.args=case TC-TRADE-CREATION-<C>-API-001"` prints the merged request the case will send.
 
 ## 5. Record the API responses (company machine, real system)
 
-Every run books real UAT trades: run only the product's cases. Select them with `-Dcucumber.options` (`docs/standards/bdd-feature-implementation-standards.md` §6.2), e.g. `mvn -B test -Dtest=OreoTest "-Dcucumber.options=--name ^\[TC-[A-Z-]+-<C>-API-\d+\].*$"` for every API case of the product, and `-UI-` in the same pattern for its UI cases. Never `-Dcucumber.filter.tags` / `-Dcucumber.filter.name`: unsupported here, they may be ignored silently and run everything. The risk engine mode is `oreo.risk.engine.mode` in `genie.properties`.
+Every run books real trades: select only the product's cases (selection syntax: skill `qa-bdd-test-execution`), e.g.
+`--name ^\[TC-[A-Z-]+-<C>-API-\d+\].*$`, and `-UI-` for its UI cases. The recording procedure and the rule types are
+in `docs/test-data.md`, "Recorded responses"; the product's rules go under `byProduct.<C>.dynamicFields`.
 
 1. Run the product's API cases: each records `data/api/expected/<event>/<caseId>.json` and fails once.
-2. Run `mvn -Ptest-data process-test-classes "-Dexec.args=suggest <event>"` for the values that look generated, then run the cases again. A failure on a value that changed between the two runs (an ID, a date, a version, a generated schedule) is a dynamic field. Add a rule under `byProduct.<C>.dynamicFields` of the event file, shaped like the other products' entries (`type`, `type-tree`, `regex:<pattern>`, `var:<name>`, `ignore`: `docs/test-data.md`, "Recorded responses"). Record again with `OREO_EXPECTED=update`, then run once more: it must pass.
+2. Run `mvn -Ptest-data process-test-classes "-Dexec.args=suggest <event>"` for the values that look generated, then run the cases again. A failure on a value that changed between the two runs (an ID, a date, a version, a generated schedule) is a dynamic field. Add its rule under `byProduct.<C>.dynamicFields`. Record again with `OREO_EXPECTED=update`, then run once more: it must pass.
 3. Review each recorded file against the requirement: a wrong value recorded is a wrong expectation.
-4. Compact with `mvn -Ptest-data process-test-classes "-Dexec.args=compact <event>"`, then review `git diff`: the product's variants become patches on its `API-001`, and where the event declares shared parts (the block `trade-response-parts` in `use`, the paths in `sharedFragments`) the product gets its own `expected/_shared/basic/<C>.json` and `instrument/<C>.json`, taken from its first recorded case, with references in its files. Nothing to write by hand. If a rule was added after the shared files were written, run `mvn -Ptest-data process-test-classes "-Dexec.args=compact all"` instead: `compact <event>` keeps a shared file as it is, so a value masked later would stay as a key that differs in every case. Run `mvn -Ptest-data process-test-classes` again: no problem. Read `basic.compositionId` in `_shared/basic/<C>.json`: it must be `<C>`; another one means the product ID or the dat file of the constant creates another composition (nothing checks this automatically). The report of each case shows `composition <C>, product ID ...`.
+4. `compact <event>` (`compact all` when a rule was added after the product's shared files were written:
+   `docs/test-data.md`, "Shared parts"), review `git diff`, then `check`: no problem. Read `basic.compositionId` in
+   `_shared/basic/<C>.json`: it must be `<C>`; another one means the constant's product ID or dat file creates another
+   composition (nothing checks this automatically).
 5. Run the product's UI cases.
 
 ## 6. Report
@@ -110,17 +116,7 @@ In the user's language:
 | Mistake | Instead |
 |---|---|
 | Every capability recorded or committed "like the other products", or on a general "looks fine" | All capabilities are the starting point of the review; record and commit only after QA answered every capability row |
-| `Examples` rows typed by hand | `sync-examples` writes them; a row the registry does not back fails `check` |
 | A new `Capability` constant or `@capability#` tag for the product | A new scenario: report it |
-| A row commented out to skip the product for a while | Take the capability off its constant, then `sync-examples`; a comment inside a product table stops it |
 | QA's real dat file committed to the public copy | The placeholder line |
-| `-Dcucumber.filter.tags=...` / `-Dcucumber.filter.name=...` (unsupported), `-Doreo.risk.engine.mode=...` | `-Dcucumber.options=--tags ...` / `--name ...`; the mode is in `genie.properties` |
-| A run without a filter | It runs every feature and books UAT trades for all of them: always filter to the product's cases |
-| `dynamicFields` guessed before a recording | A rule whose path is not in the response fails the recording |
-| Expected files written by hand | Record them |
 | The product added to negative scenarios | They are written for one product |
 | A constant named after the product ID (`FX_PSCRIPT`), or a second one for another product ID of a registered composition | One constant per composition ID with its default product ID; another product ID is `productId` in a case's data |
-
-## Never
-
-Commit a server address, IP, account, password, company name or real trade / task ID; write anything but English in the repo. Commit and push as set for this project, after scanning the diff for those; never force-push or merge into main without asking.

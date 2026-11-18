@@ -5,9 +5,10 @@ description: Use when oreo-e2e cases have to be checked or run - offline data ch
 
 # QA BDD test execution (oreo-e2e)
 
-Builds the narrowest command for the cases given, runs it where the project runs, and reports per case. The facts it
-relies on are in `CLAUDE.md` §1 and `docs/standards/bdd-feature-implementation-standards.md` §6; read `OreoTest.java`
-before the first run of a session.
+Builds the narrowest command for the cases given, runs it where the project runs, and reports per case. The runner's
+facts (fixed tags, `-Dcucumber.options` only, forks, environment) are in
+`docs/standards/bdd-feature-implementation-standards.md` §6.2; read it and `OreoTest.java` before the first run of a
+session. The `check` command is `docs/test-data.md`, "Commands".
 
 ## Where it runs
 
@@ -24,7 +25,7 @@ say they are for the company machine.
 
 | Mode | Command | Proves | Books trades |
 |---|---|---|---|
-| `check` | `mvn -Ptest-data process-test-classes` | data files, case rows, expected files, setup names, product `Examples` (skill `maintaining-e2e-test-data`) | No |
+| `check` | `mvn -Ptest-data process-test-classes` | the data against the features and the code | No |
 | `dry-run` | `mvn -B test -Dtest=OreoTest "-Dcucumber.options=<selection> --dry-run --strict"` | every step of the selection has a definition; compile and startup | No |
 | `real-run` | `mvn -B test -Dtest=OreoTest "-Dcucumber.options=<selection>"` | the cases pass against `qa.properties`' environment | **Yes** |
 | `record` | `real-run` with `OREO_EXPECTED=update` set for the command (PowerShell: `$env:OREO_EXPECTED = "update"`, then `Remove-Item Env:OREO_EXPECTED`) | rewrites the selected cases' recordings without comparing | **Yes** |
@@ -46,12 +47,9 @@ Narrowest first: case IDs, then a feature, never the whole suite.
 - A suite within a feature: repeated `--tags` (all must match), `--tags @ADO#<featureName> --tags @ADO#smoke`
 
 - Combine several cases into one `--name` alternation: one Maven invocation, not one per case.
-- Quote each `-D` argument whole (PowerShell too). Never `-Dcucumber.filter.*`: unsupported here, possibly ignored,
-  running everything.
-- `OreoTest` fixes `not @wip` and `@ADO#trade_creation`, and this project combines a command-line filter with them. A
-  selection outside trade creation can therefore come back empty. **`Tests run: 0` is not a pass**: report "nothing
-  selected", show the runner's tags, and ask the user whether to widen the runner's tags locally for this run (never
-  committed).
+- A selection outside trade creation can come back empty (the runner's fixed tags). **`Tests run: 0` is not a
+  pass**: report "nothing selected", show the runner's tags, and ask the user whether to widen them locally for this
+  run (never committed).
 - Announce each command, with its mode, before running it. Run long commands in the background with a 10-minute
   budget, one at a time (the runner already forks 3 features in parallel).
 

@@ -31,19 +31,12 @@ The story is the authority. A missing field is not filled in: it becomes an assu
 Nothing else in the repository: existing features, snippets, data or glue do not decide what must be tested
 ("the other events have it" is not a requirement). Reuse is decided in phase 2.
 
-## Senior QA stance
+## Stance (beyond the standard)
 
-- Test each behavior on the lowest layer that can produce its evidence. In this repository the layers are `@api` and
-  `@playwright` only.
-- Split before you design: compound ACs, role × status × action × product combinations are decomposed, not flattened
-  into UI rows.
 - UI coverage is sparse but not one-per-feature: a separate `@playwright` TP only where a variant changes what the user
   sees or does (screens, dialogs, maker-checker handoff, end state).
-- Real behavior needs real evidence: authorization, persistence, workflow state and audit are proven against the real
-  backend (API), never by a mocked UI state.
-- Data conditions and environment control are inputs to the design: a TP whose evidence cannot be observed in the test
-  environment is a gap, not a TP with an invented oracle.
-- Say what will not be tested and why.
+- A TP whose evidence cannot be observed in the test environment is a gap, not a TP with an invented oracle. Say what
+  will not be tested and why.
 
 ## Procedure
 
@@ -141,6 +134,5 @@ Then stop. The command asks for approval.
 ## Checks before returning
 
 - Standard §7 checklist passes.
-- Every TP has exactly one layer, one polarity and one suite tag; no case IDs, `@TC-` or business tags.
 - `capability` exists in `Capability.java` for every `all supporting products` TP.
 - The artifact is valid JSON and the summary matches it.

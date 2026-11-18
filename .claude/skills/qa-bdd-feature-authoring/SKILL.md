@@ -11,8 +11,8 @@ scenario needs come later from `/codetestcases`. Its job is business language, t
 `@capability#`, trace comments) and the list of steps the implementation must provide.
 
 **The rules are `docs/standards/bdd-feature-generation-standards.md`. Read it in full before starting**; this skill is
-the procedure, the step vocabulary and the output around it. Where they disagree, the standard wins. Also read
-`references/step-wording-and-detail-placement.md`.
+the procedure and the output around it (§6 is the step language, §7 the trace and handoff comments). Where they
+disagree, the standard wins.
 
 ## Inputs
 
@@ -32,44 +32,23 @@ problem with a TP (it cannot be expressed, its capability does not exist) is rep
 2. **Group TPs into scenarios** (standard §2): one behavior per scenario; TPs with the same Given, When and polarity
    share a scenario; `all supporting products` is one Outline over `<product_type>` with `@capability#<capability>`.
 3. **Name and place each layer's file** (standard §3). Look at the real tree first:
-   `ls src/test/resources/features/api/*/ src/test/resources/features/ui/*/`. An established stem wins over a newly
-   derived one (`trade_<event>_approval` for checker decisions, `reason_management` ...). An existing file means `append`,
-   unless the file with the new cases runs more than its layer's limit (standard §3.3: Scenarios 1, Outlines one per
-   `Examples` row, `@wip` 0; UI 12, API 30): then `create` a new feature split by business behavior, and report it.
-   `featureName` = file stem = event data file name = `@ADO#<featureName>` = case-ID prefix; change one, change all.
-   For `create`, read one or two sibling features of the same domain and follow their header and title style.
-4. **Assign case IDs.** `TC-{PREFIX}[-<product_type>|-{PRODUCT}]-{API|UI}-{NNN}`, three digits, continuing the highest
-   number of the same full prefix found in features **and** case data:
-
-   ```shell
-   grep -rhoE "TC-TRADE-EARLY-TERMINATION(-[A-Z_<>a-z]+)?-API-[0-9]{3}" src/test/resources/features src/test/resources/data | sort -u
-   ```
-
-   On revision, keep every ID that was already shown; new scenarios take the next number.
-5. **Build the step index and reuse first.** Regenerate it every run (it is cheap and never stale):
-
-   ```shell
-   bash .claude/skills/qa-bdd-feature-authoring/scripts/gen-snippet-index.sh api
-   bash .claude/skills/qa-bdd-feature-authoring/scripts/gen-snippet-index.sh ui
-   ```
-
-   Read `target/ai/api-step-index.md` / `target/ai/ui-step-index.md`. For each intended step, reuse a pattern whose
-   business meaning matches, filling only its parameters; keep its wording and tense. A `@playwright` scenario uses
-   only `ui` steps (flows and the UI provisioning steps listed with them); an `@api` scenario only `api` steps. The index, not a search of other feature files, is the
-   vocabulary: features may contain steps that have no definition.
-6. **New wording** only when nothing matches. Keep it business-level and general enough to be reused, follow the
-   patterns of `references/step-wording-and-detail-placement.md`, and list every new step in the output for the
-   implementer. Never bend the business intent to fit an existing step.
-7. **Write the content** (standard §4-§7): header (create only), scenario tags, case ID and title, steps, trace
-   comments, optional `# handoff:` notes (reference). A product Outline ends with an `Examples` table that has the
-   header only; `mvn -Ptest-data process-test-classes "-Dexec.args=sync-examples"` writes the rows:
+   `ls src/test/resources/features/api/*/ src/test/resources/features/ui/*/`. An existing file means `append` unless
+   the new cases take it over its limit (§3.3): then `create` a split by business behavior, and report it. For
+   `create`, follow the header and title style of one or two sibling features of the same domain.
+4. **Assign case IDs** (standard §5.1, with its grep over features and data). On revision, keep every ID already
+   shown; new scenarios take the next number.
+5. **Reuse steps from the index** (standard §6): regenerate it every run (`scripts/gen-snippet-index.sh api` / `ui`,
+   cheap and never stale) and fill only the parameters of a matching pattern. New wording only when nothing matches;
+   list every new step for the implementer.
+6. **Write the content** (standard §4-§7). A product Outline ends with a header-only `Examples`; `sync-examples`
+   writes the rows:
 
    ```gherkin
        Examples:
          | product_type |
    ```
 
-8. **Check** (below), then return the output.
+7. **Check** (below), then return the output.
 
 ## Output
 
@@ -106,9 +85,5 @@ blocks, at the paths and in the modes listed.
 ## Checks before returning
 
 - Standard §9 checklist passes.
-- Every approved `@api` / `@playwright` TP is in exactly one scenario; no scenario without a TP.
 - Append blocks contain no `Feature:`, feature tags, description or `Background:`.
 - Each step either matches an index pattern of its layer or is listed under "New steps".
-- Case IDs are new (step 4), three digits, in `[...]` at the start of the name; no `@TC-` tag anywhere.
-- Every `@capability#` name exists in `Capability.java`; product Outlines have the header-only `Examples`.
-- No endpoint, HTTP verb, payload, status code, element key, file name or UI mechanic in a step.

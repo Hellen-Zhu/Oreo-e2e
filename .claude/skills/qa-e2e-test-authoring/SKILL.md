@@ -5,41 +5,26 @@ description: Use when the scenarios of an oreo-e2e @playwright feature file have
 
 # QA E2E (Playwright) test authoring (oreo-e2e)
 
-Makes `@playwright` scenarios run through the layered snippets. The feature file is the approved scope.
+Makes `@playwright` scenarios run through the layered snippets. The feature file is the approved scope. This skill is
+the procedure and the report; the rules are read, not repeated:
 
-**The rules are `docs/standards/bdd-feature-implementation-standards.md` (read §1-§4 and §7 before starting),
-`docs/test-data.md` for case data, `docs/genie_playwright_glue_catalog.md` for built-ins.** This skill is the procedure
-and the report. Where they disagree with the code, the code wins: say so in the report.
+- `docs/standards/bdd-feature-implementation-standards.md` §1, §3.1 (UI layering), §3.3-§3.4, §4 (elements, glue,
+  waiting, existing capabilities)
+- `docs/test-data.md`, "Where a value goes", "Case data", "Setup data"; built-ins: `docs/genie_playwright_glue_catalog.md`
+- `CLAUDE.md` §3-§4 (where a change goes, hard stops)
+
+Where they disagree with the code, the code wins: say so in the report.
 
 ## Inputs
 
-From `test-agent`: the feature file, the case IDs to implement (only the new or changed scenarios), `where`
-(`company` or `offline`), and on a repair round the failure output and `revisionInstructions`.
+From `test-agent`: the feature file, the case IDs to implement (only these), `where` (`company` or `offline`), and on
+a repair round the classified failures and `revisionInstructions`.
 
 ## Boundary
 
-- Change only oreo-e2e test assets: `snippet/ui/{flows,pages,components}/`, `src/test/resources/elements/`,
-  `data/ui/`, `data/setup/`, `glue/ui/` (last resort). Never the feature's business wording, never FE / BE code.
-- A `@playwright` scenario never calls `snippet/api/`. Its preconditions use the UI provisioning steps
-  (`a Live '<product_type>' trade exists in the blotter` ..., Java steps of `PlaywrightTradeProvisioningSteps`).
-
-## Layers (hard rules)
-
-```text
-.feature -> flows/*.snippet -> flows / pages/*_page.snippet / components/*_component.snippet -> built-ins / focused glue
-.feature -> UI provisioning (Java, PlaywrightTradeProvisioningSteps) -> TradeApiClient
-```
-
-- A scenario calls flow steps and the UI provisioning steps (`... exists in the blotter`), nothing else. A provisioning
-  step only sets state through the API (no login, navigation or page): it is Java worded as business, with no flow
-  that only renames it. A precondition that also uses the UI is a flow calling it and the pages. A new precondition
-  of that kind goes into `PlaywrightTradeProvisioningSteps` with business wording; any other Java is called from a
-  snippet.
-
-- Flows: business orchestration only; no element keys, no `click` / `type` / `fill` / `select` / visible checks.
-- Pages own a page's element keys and atomic actions / assertions; components own dialogs, toasts, panels used on
-  several pages. Neither calls a flow.
-- `@Then` blocks only assert (read-only refresh / search inside an assertion is fine).
+Change only `snippet/ui/{flows,pages,components}/`, `src/test/resources/elements/`, `data/ui/`, `data/setup/` and,
+last, `glue/ui/`. Never the feature's wording or FE / BE code. Preconditions use the UI provisioning steps, never
+`snippet/api/`.
 
 ## Procedure
 
@@ -50,67 +35,31 @@ From `test-agent`: the feature file, the case IDs to implement (only the new or 
    bash .claude/skills/qa-bdd-feature-authoring/scripts/gen-snippet-index.sh glue
    ```
 
-   Then read the page and component snippets the flow will need (`ls src/main/resources/snippet/ui/pages
-   src/main/resources/snippet/ui/components`). Statuses, in order: `REUSE` (existing flow step), `NEW_SNIPPET`
-   (flow composed of existing page / component steps, built-ins, existing glue), `NEW_STEP` (Java). For each
-   `NEW_SNIPPET`, decompose to interaction rows:
+   Read the page and component snippets the flow will need. Statuses in the order of `CLAUDE.md` §3: `REUSE` (flow
+   step), `NEW_SNIPPET` (flow from existing page / component steps, built-ins, glue), `NEW_STEP` (Java). Decompose each
+   `NEW_SNIPPET` into interaction rows:
 
    | Sub-action | Page / component | Element | Action | Exists? |
    |---|---|---|---|---|
    | open the row's action menu | trade portal page | `trade_portal.row_actions_btn` | click | element exists |
-   | enter the amount | dynamic action dialog | `dynamic_action.amount_input` | fill | element exists |
    | choose the new direction | dynamic action dialog | (none yet) | select | new element: see step 2 |
 
-   The element prefix is the one already used in the file (`dynamic_action.` in `dynamic_action_dialog.json`), not
-   the file name.
-
-2. **See the real UI before writing mechanics** (new element, new page / component step, changed locator). When
-   `where: company` and a browser tool is available, open `playwright.base.url` (from `genie.properties`; never copy
-   the address into a file), log in with the configured test account, reach the exact state (dialog open, row action
-   menu, conditional section) and read the accessibility tree for test IDs, roles and labels. Record which state you
-   checked. When the UI cannot be seen (offline, no access), take the test IDs from the FE source or the story; if
-   neither has them, the element is an open item, not a guessed selector.
-3. **Elements** (`elements/pages/<page>.json` for a surface with its own URL, `elements/components/<component>.json`
-   otherwise): `{"name": "<page_or_component>.<element>", "lookupDetails": {"findBy": "testId", "value": "..."}}`;
-   priority `testId` -> role (unique only) -> label -> CSS; never XPath; button by text with
-   `findBy: "locator"` and `button:has-text('...')`. Add to the existing file of that page / component.
-4. **Snippets**: flow sections `PRECONDITIONS / BUSINESS ACTIONS / BUSINESS ASSERTIONS`; page / component
-   `ACTIONS / ASSERTIONS`. A shared business step goes into the existing shared flow (`common_trade_action`,
-   `lifecycle_event`, `trade_portal`) rather than a copy. Three or more `Then` lines on the same object become one
-   aggregated `@Then`.
-5. **Waiting**: never `Thread.sleep()` or `waitForTimeout`. Eventual assertions of `CommonE2EAssertion`
-   (`assert that '<element>' is eventually visible / hidden / enabled / disabled`, `... eventually has value '...'`),
-   Playwright auto-wait, or the response helpers (`ctx.clickAndWaitForResponse(...)`) for server-driven refreshes.
-   A page being ready (after login, after navigation) is an element becoming visible, never a request it sends.
-   An action that makes the page call the risk engine (save, book, an event's confirm, opening the trade detail page,
-   which loads `/trades/{id}/risk-metrics`) goes through `ctx.clickUsingRiskEngineMode`,
-   `ctx.doubleClickUsingRiskEngineMode` or `ctx.navigateUsingRiskEngineMode` with a `List<RiskCall>`: in `MOCK` mode
-   each call with a mock name is answered from `data/setup/<name>.json` (`risk-calc-success-mock`,
-   `risk-metrics-success-mock`), a `null` mock only waits; in `REAL` mode they are only awaited, in order. Paths
-   come from `TradeApiClient` (`calculateRiskPath`, `riskMetricsPath`), never a literal in the step. Reuse
-   `TradePortalSteps.navigateToTradeDetail` (View Details), `TradePortalSteps.doubleClickToViewTradeDetail` and
-   `TradeDetailSteps.navigateToTradeDetails` (URL) to open the detail page instead of a plain click or navigation; a
-   new way to open it waits for `TradeDetailSteps.openingCalls(tradeId)`.
-   Java glue waits through the Context (`ctx.assertEventuallyContains(...)`, `ctx.waitForVisible(...)`), never with
-   `PlaywrightAssertions` or `Locator.waitFor` options; a missing wait goes into the `playwright` package first.
-6. **Data**: follow `.claude/skills/qa-api-test-authoring/references/test-data-decisions.md` sections 1-4 (UI data
-   has no `dynamicFields`, `expectedBase` or recordings). The hook flattens the case's `request` into ctx, and a flow
-   reads it by path: `defaults.request.earlyTermination.amount` in `data/ui/trade_early_termination.json` is read as
-   `from stored variable 'earlyTermination.amount'`. Rows only for cases that differ from `defaults`; a field only
-   some products' forms have goes into their `byProduct` with an `... if it is set` step. Trade preparation goes
-   through the `data/setup/` names the provisioning steps already use. UI and API data never read each other.
-7. **Java** only for `NEW_STEP` (runtime-scoped row selection, a value captured into ctx, a response-aware helper):
-   the domain's existing `*Steps` class first; POJO, `PlaywrightServiceResolver.from(scenario)` in `@Before`;
-   `ctx.service().getLocator("<name>")` or parameterized locators, never a selector or a test ID built in Java; a step
-   that only clicks, fills, reads or checks visibility is a built-in, not Java.
-8. **Report** (below). Validation is the caller's job.
+2. **See the real UI before writing mechanics** (a new element, page / component step or changed locator). On the
+   company machine with a browser tool: open `playwright.base.url` (from `genie.properties`; never copy the address
+   into a file), log in with the configured test account, reach the exact state (dialog open, row menu, conditional
+   section) and read the accessibility tree for test IDs, roles and labels. Otherwise take the test IDs from the FE
+   source or the story; neither has them: the element is an open item, never a guessed selector.
+3. **Elements, snippets, waits, Java**, by the implementation standard §3-§4. A shared business step goes into the
+   existing shared flow (`common_trade_action`, `lifecycle_event`, `trade_portal`) rather than a copy.
+4. **Data**, by `docs/test-data.md`: rows only for cases that differ from `defaults`; trade preparation through the
+   `data/setup/` names the provisioning steps already use.
+5. **Report** (below). Validation is the caller's.
 
 ## Repair round
 
-Fix only what the failure implicates. `Undefined step`, a locator that matches nothing or several elements, a wrong
-layer: fix here, after seeing the real state again. A business outcome that differs from the requirement: possible
-defect, report it. Login failure, environment down, timeouts across unrelated cases: environment, report it. Flaky
-(passes on retry): find the missing wait condition; never add a sleep or a retry.
+Fix only what an `automation` failure implicates (undefined step, a locator matching nothing or several elements, a
+wrong layer), after seeing the real state again. Other classes are not fixed here (`qa-bdd-test-execution`,
+"Reading the result").
 
 ## Report
 

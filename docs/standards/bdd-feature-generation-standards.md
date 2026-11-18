@@ -118,7 +118,7 @@ Feature: Trade Early Termination API
 - Layer tag: `@api` or `@playwright`. Title: `{Business Capability} API` or `{Business Capability} E2E`, as in every
   existing feature.
 - `@expected#none` on the Feature line when its API cases verify other evidence (database, audit) instead of the
-  response (implementation standard §5.4).
+  response ([test data, "Recorded responses"](../test-data.md#recorded-responses)).
 - API features have no `Background:`. A UI feature may move an identical leading `Given` (typically the login) shared
   by 2+ scenarios into `Background:`; assertions and data preparation stay in the scenarios.
 - Suite and polarity tags are never feature-level (they would select the whole file).
@@ -136,8 +136,12 @@ Scenario Outline: [TC-TRADE-EARLY-TERMINATION-<product_type>-API-001] Maker term
   what binds the scenario to its test data; it is never a tag (`@TC-...`).
 - Product Outline: `<product_type>` in the ID. Product-independent case: no product segment
   (`TC-TRADE-CREATION-API-004`). Numbered dataset Outline: `-API-<case>` at the end.
-- `NNN` is three digits, unique per full prefix; check existing features **and** the case rows in `data/api` and
-  `data/ui` before assigning one.
+- `NNN` is three digits, unique per full prefix, continuing the highest number found in the features **and** the case
+  rows (`TestDataTool check` does not catch a duplicate):
+
+  ```shell
+  grep -rhoE "TC-TRADE-EARLY-TERMINATION(-[A-Z_<>a-z]+)?-API-[0-9]{3}" src/test/resources/features src/test/resources/data | sort -u
+  ```
 - Title: what the actor does and what results, in business words, understandable without the code. One behavior, so no
   "and"; a negative title names the rejected condition (`...is rejected when the counterparty is missing`).
 
@@ -169,7 +173,10 @@ Feature files are business specifications: a reviewer who does not read Java mus
   | the Allocation tab is visible | can view trade allocations |
 
 - **Reuse before inventing.** Use an existing public step when it expresses the same intent; a new synonym splits the
-  vocabulary and the glue. Changing the business intent to fit an existing step is not allowed either.
+  vocabulary and the glue. Changing the business intent to fit an existing step is not allowed either. The vocabulary
+  is the generated step index (`bash .claude/skills/qa-bdd-feature-authoring/scripts/gen-snippet-index.sh api|ui|glue`
+  → `target/ai/*-step-index.md`), not other feature files, which may hold steps without a definition. A `@playwright`
+  scenario uses only `ui` steps (flows and the UI provisioning steps), an `@api` scenario only `api` steps.
 
 ### 6.1 API steps
 
@@ -181,7 +188,12 @@ Feature files are business specifications: a reviewer who does not read Java mus
   `maker has data for the '<event>' event on a trade that does not exist`); the call,
   `performs the 'EarlyTermination' event via api`; the outcome, `the 'EarlyTermination' event is executed successfully`,
   `... is rejected with a validation error`, `... with permission denied`, `... as not found`, `... with a conflict`. Data
-  and call stay two steps, as in every API feature: the data step is where two scenarios of a feature differ.
+  and call stay two steps, as in every API feature: the data step is where two scenarios of a feature differ. The word
+  before `data` says what the case row holds: `valid`, `invalid` or `malformed` (the input causes the failure),
+  `duplicate` (the same event again); when two scenarios would still read the same, `with '<what>'` sets them apart
+  (`invalid data with 'an empty sub-trade list'`). A forbidden state, a role or a duplicate comes from a precondition
+  (`a dead ...`, an earlier `has valid data` + `performs`), and the data is then `valid`. A lifecycle event's success
+  is recorded as the trade retrieved after it, so `is executed successfully` already proves the trade's new terms.
 - Checker tasks (`/checker/tasks`) use `api/trade_approval_rejection.snippet`, the task kind named in the step:
   `checker has valid data for cancellation approval` (`trade creation`, `amendment`; `rejection`; a maker approving
   their own task: `maker has valid data for ... self-approval`), then `performs the approval for the request`
@@ -196,8 +208,12 @@ Feature files are business specifications: a reviewer who does not read Java mus
   `validation error` or `conflict`). They include the status code and the strict comparison with the case's recorded
   response, so neither appears as a step of its own; no feature gets a wrapper step that only renames one of them.
 - Evidence beyond the response (state, persistence, audit, rejection reason) is its own business `Then`, written only
-  when the TP asks for it: `the trade basic status is '<status>'`, `exactly one new audit record exists for action 'SUBMIT'
-  on the created trade`.
+  when the TP asks for it: `maker retrieves the trade`, then `the trade basic status is '<status>'`;
+  `exactly one new audit record exists for action 'SUBMIT' on the created trade`; for the trades an event created,
+  the event's own sentence (`the allocated trades carry the requested notional amounts`).
+- Never invent a synonym of an outcome (`should be retrieved`, `is accepted`, `fails with a business rule violation`)
+  or a domain step that only renames one. An outcome the vocabulary lacks is listed as a new step, worded like its
+  neighbours.
 
 ### 6.2 UI steps
 
@@ -212,6 +228,20 @@ Feature files are business specifications: a reviewer who does not read Java mus
 - Outcome wording: `completed successfully` (lifecycle event), `approved successfully` / `rejected successfully`
   (checker decision), `submitted successfully` (into pending approval only), `request is rejected with an error`
   (negative execution).
+
+### 6.3 Where the detail goes
+
+Actors are only `maker`, `checker`, `admin`, `user`, one label per concept within a feature. When a step starts to
+name fields, values or mechanics, compress it back to a business sentence and move the specifics down:
+
+| Detail | Home | Not in |
+|---|---|---|
+| Request values, IDs, amounts, dates, counterparty, dat file | case data `data/{api,ui}/<event>.json` ([test data](../test-data.md)) | steps, `Examples` columns |
+| Expected response | the recording `data/api/expected/<event>/<case ID>.json` | steps, comments |
+| Data that prepares a precondition | `data/setup/<name>.json` | the case data |
+| Endpoint, headers, HTTP verb | API snippets and configuration | feature files |
+| Selector, page or component mechanics | element repository, page / component snippets | feature files, flows |
+| Why a broad sentence was chosen, what the implementer must not miss | a `# handoff:` comment (§7) | the step text |
 
 ## 7. Traceability Comments
 
@@ -231,6 +261,10 @@ one feature-level block below the description. They are for reviewers, never rea
   `ac`, `validationTarget`, `observableEvidence`, `testDataIntent`.
 - Values come from the approved TPs; never invent TP or AC IDs, and never name artifacts (classes, snippets, endpoints,
   files, tables) in them.
+- `# handoff:` is optional and temporary: one short line for the implementer, directly above the scenario's tags or
+  the one step it concerns, when the Gherkin leaves real ambiguity (the case data it needs, evidence the outcome must
+  include, a precondition no step provides yet, async behavior). Never payloads, SQL, code, selectors or click
+  sequences; never a feature-level block. It is removed once the automation runs.
 
 ## 8. Generation Context (returned with the files)
 

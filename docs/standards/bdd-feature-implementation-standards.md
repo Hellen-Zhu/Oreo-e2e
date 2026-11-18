@@ -32,22 +32,9 @@ Three consequences shape everything below:
 
 ## 2. Where a New Step Goes
 
-Work down the list and stop at the first that fits:
-
-1. An existing flow / API snippet already expresses the step → reuse it.
-2. A Genie built-in does it → use it inside a snippet ([REST catalog](../genie_rest_glue_catalog.md),
-   [Playwright catalog](../genie_playwright_glue_catalog.md)).
-3. Existing project glue does it (§4.4) → call it from a snippet.
-4. Compose a new snippet from the above.
-5. Only then write Java, for one capability none of the above has.
-
-| The step is... | It goes into |
-|---|---|
-| A business action / assertion a scenario calls (UI) | `snippet/ui/flows/<feature or shared>.snippet` |
-| A UI precondition that only provisions through the API | a business-worded Java step of `PlaywrightTradeProvisioningSteps` (§3.1), no snippet around it |
-| A page's atomic action / assertion | `snippet/ui/pages/<page>_page.snippet` |
-| Behavior of a dialog, toast or panel used on several pages | `snippet/ui/components/<component>_component.snippet` |
-| An API business action / assertion | `snippet/api/<feature or common_*>.snippet` |
+The reuse order (existing snippet → Genie built-in → existing glue (§4.4) → new snippet → new Java) and where each
+kind of step goes are in [CLAUDE.md §3](../../CLAUDE.md#3-where-a-change-goes). Built-ins:
+[REST catalog](../genie_rest_glue_catalog.md), [Playwright catalog](../genie_playwright_glue_catalog.md).
 
 ## 3. Snippets
 
@@ -95,6 +82,9 @@ UI primitive and HTTP detail.
 
 ### 3.3 Reuse provisioning and outcomes
 
+Where each shared step lives and what it checks; how a feature words them is the
+[generation standard §6](bdd-feature-generation-standards.md#6-step-language).
+
 | Need | Use | Notes |
 |---|---|---|
 | UI precondition | `a Live / Draft Pending Approval / Dead / Draft / saved Draft '<product_type>' trade exists in the blotter`, `a Live '<product_type>' trade with a pending Amendment / Cancellation exists in the blotter`, `multiple Live '<product_type>' trades with a pending Cancellation exist in the blotter` (`PlaywrightTradeProvisioningSteps`, Java steps with this wording, no snippet in between) | Provisions through the API; does not log in or navigate; stores `createdTradeId` / `createdTaskId` |
@@ -125,7 +115,9 @@ Every element is registered in JSON and reached through it:
 ```
 
 - `elements/pages/<page>.json` for a surface with its own URL; `elements/components/<component>.json` for dialogs,
-  overlays and panels. Name: `<page_or_component>.<element>`, snake_case.
+  overlays and panels. Name: `<page_or_component>.<element>`, snake_case, with the prefix the file already uses
+  (`dynamic_action.` in `dynamic_action_dialog.json`), not the file name. Add to the existing file of that page or
+  component.
 - Selector priority: `testId` → role (only when unique) → label → CSS as a last resort; never XPath. For a button by
   its text use `findBy: "locator"` with `button:has-text('Confirm')` (a role with a name filter is not supported).
 - In Java: `ctx.service().getLocator("<name>")`, or a scoped chain from a registered parent. `getPage()` only for
@@ -156,6 +148,15 @@ Every element is registered in JSON and reached through it:
   of reloading or searching again. A response is not a redrawn page: after a refresh, also wait for the view's
   loading state to go. The
   login waits for the trade portal and its New Today blotter, not for `blotter/trades`.
+- An action that makes the page call the risk engine (save, book, an event's confirm, opening the trade detail page,
+  which loads `/trades/{id}/risk-metrics`) goes through `ctx.clickUsingRiskEngineMode`,
+  `ctx.doubleClickUsingRiskEngineMode` or `ctx.navigateUsingRiskEngineMode` with a `List<RiskCall>`: in `MOCK` mode
+  each call with a mock name is answered from `data/setup/<name>.json`, a `null` mock only waits; in `REAL` mode they
+  are only awaited, in order. Paths come from `TradeApiClient` (`calculateRiskPath`, `riskMetricsPath`), never a
+  literal. Open the detail page with `TradePortalSteps.navigateToTradeDetail` (View Details),
+  `TradePortalSteps.doubleClickToViewTradeDetail` or `TradeDetailSteps.navigateToTradeDetails` (URL); a new way to
+  open it waits for `TradeDetailSteps.openingCalls(tradeId)`.
+- A flaky step (passes on retry) lacks a wait condition: find it; never add a sleep or a retry.
 - Form values are asserted with `eventually has value` (Playwright `hasValue`), not text content.
 - Glue waits and asserts through `PlaywrightServiceResolver.Context` (`ctx.assertEventuallyContains(...)`,
   `ctx.waitForVisible(...)`, ...), never with `PlaywrightAssertions` or `Locator.waitFor` options itself. Playwright
@@ -188,63 +189,22 @@ designing a new one.
 
 ## 5. Test Data
 
-Full rules: [docs/test-data.md](../test-data.md). The essentials:
+The format and every rule of the test data are in [docs/test-data.md](../test-data.md):
 
-### 5.1 Case data — `data/{api|ui}/{event}.json`
-
-- Keys: `shared`, `defaults`, `byProduct`, `cases`; a layer has `use`, `request`, `dynamicFields`, `expectedBase`,
-  `datFile`, `productId`. Shared blocks come from the channel's `common.json` (applied only where `use` names them) or the file's own
-  `shared`.
-- A case without a row runs on the defaults: add a row only for a case that differs. One case matches at most one row;
-  product differences go into `byProduct`.
-- Objects merge, arrays and values replace whole, `null` removes; `${date:T±N}` for dates.
-  `dynamicFields` and `expectedBase` are API only.
-- Never write `basic.productId`: the step sets it to the product ID the registry gives the composition.
-
-### 5.2 Setup data — `data/setup/{name}.json`
-
-`request` and/or `response`, optional `extends`; names are lower case with `-`. Reuse before adding. API case data and
-UI setup data stay apart on purpose, so that an API case change never alters how a UI case prepares its trade.
-`{currentSysSeconds}` in `product-create` and in a schema file becomes a second of the run (`ProductApiClient`),
-so that each run creates a product of its own.
-
-### 5.3 Products — `ProductDatFiles`
-
-- A product is a composition: an enum constant named as its `basic.compositionId`, with the default product ID the
-  cases send, its capabilities and `data/dat/<C>/<C>.dat`. Feature files name
-  only the composition; never a second constant for another product ID of it. A variant dat file is case data
-  (`datFile`), and so is another product ID (`productId`): never a new product.
-- Each case writes `composition <C>, product ID ...` to the report. A step that needs the product ID uses
-  `set path parameter '<name>' to the product ID of '<C>'` (API) or `store the product ID of '<C>' as '<key>'` (UI),
-  never the composition in its place.
-- Product Outlines' `Examples` are written by `mvn -Ptest-data process-test-classes "-Dexec.args=sync-examples"`, never by hand. To leave a product out, take
-  the capability off it in the registry.
-- Adding a product: skill `onboarding-e2e-product`.
-
-### 5.4 Recorded responses — `data/api/expected/{event}/{case ID}.json`
-
-- First run of a new API case records the response and fails once: review the file **against the requirement**, then
-  commit. A recording is not a requirement.
-- Values that change per run are masked by `dynamicFields` rules: `type` (presence and type; an array of any length
-  becomes `${json-unit.any-array}`), `type-tree` (structure and leaf types), `regex:<p>`, `var:<name>` (equals a
-  scenario variable), `ignore` (last resort). Mask only what is truly dynamic; never business messages.
-- Never edit an expected file by hand: change the rule, record again (`OREO_EXPECTED=update`), then
-  `mvn -Ptest-data process-test-classes "-Dexec.args=compact <event>"` turns variants into patches on their base.
-- An API case that verifies other evidence (database, audit) instead of its response is tagged `@expected#none`; it has
-  no expected file and `response matches current scenario` fails in it (`trade_audit`).
+| Need | Section |
+|---|---|
+| Which file and layer a value goes into | "Where a value goes" |
+| Case data: layers, `use`, merge rules, dates, `datFile`, `productId` | "Case data" |
+| Setup data, `extends` | "Setup data" |
+| Products and capabilities, `sync-examples` | "Products and capabilities"; a new product: skill `onboarding-e2e-product` |
+| Recordings, `dynamicFields`, `@expected#none`, re-recording | "Recorded responses", "Updating a recorded response" |
 
 ## 6. Verification
 
 ### 6.1 Offline — before every commit that touches data, features, the registry or setup names
 
-```shell
-mvn -Ptest-data process-test-classes
-```
-
-Runs the unit tests of the test data code, then `TestDataTool check`: data files load, every case resolves, every row
-has its scenario, expected files and rules agree, setup names exist, product `Examples` match the registry. Other
-commands: `"-Dexec.args=case <case ID>"` (what a case sends and is compared with), `"-Dexec.args=sync-examples"`,
-`"-Dexec.args=compact <event>|all"`, `"-Dexec.args=suggest <event>"`, `"-Dexec.args=shared <case ID>"`. Usage: skill `maintaining-e2e-test-data`.
+`mvn -Ptest-data process-test-classes` (the unit tests of the data code, then `TestDataTool check`). What it checks
+and the other commands: [docs/test-data.md, "Commands"](../test-data.md#commands).
 
 ### 6.2 Against an environment
 
@@ -288,21 +248,5 @@ mvn -B test -Dtest=OreoTest "-Dcucumber.options=--name ^\[TC-TRADE-CREATION-FX_T
 
 ## 7. Hard Stops
 
-| Never in new work | Instead |
-|---|---|
-| HTTP step, endpoint, body, dat path or expected response in a feature | Business step; details in snippets, configuration and JSON |
-| `@playwright` scenario calling an API snippet | UI provisioning steps |
-| Element key or UI primitive in a flow snippet or a feature | Page / component snippet |
-| Java wrapper around a built-in (click, fill, text, visible, URL, wait) | Built-in in a snippet |
-| Selector hard-coded in Java, test ID built from runtime values | Element repository, parameterized locator |
-| `Thread.sleep()`, direct RestAssured, glue `@Component` or inheritance | Auto-wait / eventual assertion / response wait; Genie helpers; POJO + resolver |
-| `PlaywrightAssertions` or `Locator.waitFor` options in glue | A Context method backed by the `playwright` package |
-| State change inside an assertion | Separate action and assertion |
-| Two rows matching one case, a duplicated setup name, an unregistered product | One row with `byProduct`; reuse setup; register the product first |
-| Hand-edited expected file or `Examples` row | Record + compact; `sync-examples` |
-| `@TC-...` tag, feature-level suite/polarity tag, removing `@wip` to force a run | Case ID in the scenario name; scenario-level tags |
-
-**Legacy.** Existing code still has UI primitive wrappers, direct JsonPath/RestAssured, direct Playwright assertions
-and waits in glue, two `Thread.sleep` calls,
-locator-bearing flows, mixed-phase snippets, fixed provisioning keys and older wording. They are exceptions, not
-templates; do not extend them, and do not refactor them as a side effect of a test change.
+The hard stops are in [CLAUDE.md §4](../../CLAUDE.md#4-hard-stops), with the note on legacy code: existing wrappers,
+sleeps, direct JsonPath / RestAssured and Playwright assertions in glue are exceptions, not templates.

@@ -128,7 +128,7 @@ html{scroll-behavior:smooth}
     <div class="layer"><div class="name">Command<small>.claude/commands/</small></div><p>编排顺序、审批关口、写最终文件、保存进度。你直接用 <code>/writebddfeatures</code>、<code>/codetestcases</code> 调用。</p></div>
     <div class="layer"><div class="name">Agent<small>.claude/agents/</small></div><p>拿到一份干净的上下文，选对 skill 去执行，把结果原样交回。<code>bdd-agent</code> 做设计，<code>test-agent</code> 做实现和校验。</p></div>
     <div class="layer"><div class="name">Skill<small>.claude/skills/qa-*</small></div><p>具体步骤、允许读哪些文件、输出格式（交接合同）。每个 skill 开头写明"规则在哪份标准里，先读完"。</p></div>
-    <div class="layer"><div class="name">Standard<small>CLAUDE.md · docs/standards/</small></div><p>规则本身：分层、命名、标签、case ID、测试数据、录制、硬性禁止项。改规则只改这里。</p></div>
+    <div class="layer"><div class="name">Standard<small>CLAUDE.md · docs/standards/ · docs/test-data.md</small></div><p>规则本身：分层、命名、标签、case ID、测试数据、录制、硬性禁止项。改规则只改这里。</p></div>
   </div>
   <div class="note">command 调 agent 时只传结构化字段（<code>phase</code>、<code>artifactPath</code>、<code>caseIds</code>、<code>where</code>），不附加额外说明。多加的文字会和 skill 自己的指令抢优先级。这是公司版里最好的一条约定，保留了下来。</div>
 </section>
@@ -233,7 +233,7 @@ flowchart LR
       <dl>
         <dt>规则</dt><dd>实现标准 §1–§5、§7，<code>docs/test-data.md</code></dd>
         <dt>做</dt><dd>先给每个步骤定实现方式（REUSE → NEW_SNIPPET → NEW_STEP），再写 case 数据行、API snippet，最后才写 Java</dd>
-        <dt>数据</dt><dd>JSON，不是 YAML：按 <code>references/test-data-decisions.md</code> 决定每个值放哪一层（setup → defaults → byProduct → 行 → 行的 byProduct），UI skill 也用它；用 <code>case &lt;ID&gt;</code> 看每个新行合并出的请求</dd>
+        <dt>数据</dt><dd>JSON，不是 YAML：按 <code>docs/test-data.md</code> 的 “Where a value goes” 决定每个值放哪一层（setup → defaults → byProduct → 行 → 行的 byProduct），UI skill 也用它；用 <code>case &lt;ID&gt;</code> 看每个新行合并出的请求</dd>
         <dt>录制</dt><dd><code>suggest</code> 建议 <code>dynamicFields</code> 和 <code>expectedBase</code>，由人判断；响应里和别的事件共有的部分通过 <code>sharedFragments</code> 共享</dd>
         <dt>交出</dt><dd>authoring 报告（含新接口的契约来源）</dd>
       </dl>
@@ -336,7 +336,7 @@ flowchart LR
     <div>.claude/agents/bdd-agent.md</div>
     <div>.claude/agents/test-agent.md</div>
     <div>.claude/skills/qa-layer-test-design/ <span class="c">+ references/oreo-layer-heuristics.md</span></div>
-    <div>.claude/skills/qa-bdd-feature-authoring/ <span class="c">+ references/、scripts/gen-snippet-index.sh</span></div>
+    <div>.claude/skills/qa-bdd-feature-authoring/ <span class="c">+ scripts/gen-snippet-index.sh</span></div>
     <div>.claude/skills/qa-api-test-authoring/</div>
     <div>.claude/skills/qa-e2e-test-authoring/</div>
     <div>.claude/skills/qa-bdd-test-execution/</div>

@@ -13,10 +13,8 @@ only after the user approves that draft. Nothing in the repository changes.
 
 Raise a Bug only when all of these hold; otherwise stop and say which one is missing:
 
-- **Class `behavior`**: a status or business value differs from what the requirement says (the classes are in
-  `.claude/skills/qa-bdd-test-execution/SKILL.md`, "Reading the result"). `automation` and `recording` failures are
-  fixed in the repository; `environment` (login, connection, 5xx across unrelated cases, timeouts) is reported to whoever
-  runs the environment, not as a product Bug, unless the user says otherwise.
+- **Class `behavior`** (the classes: skill `qa-bdd-test-execution`, "Reading the result"). `environment` failures go
+  to whoever runs the environment, not into a product Bug, unless the user says otherwise.
 - **A requirement says what should happen**: the acceptance criterion, story or BA answer, quoted with its source. A
   recorded response shows what the system did, not what it should do (`CLAUDE.md` §5): a case that only disagrees
   with its recording is a question for the user, not a Bug.
@@ -109,7 +107,6 @@ change a Bug's state, assignee or another work item without asking.
 
 | Mistake | Instead |
 |---|---|
-| A Bug for a missing step, a wrong locator or an unmasked dynamic value | Those are `automation` / `recording`: fix them in the repository |
 | "Expected" taken from the old recording | Expected comes from the requirement; without one, ask |
 | A Bug created right after drafting it | Show the draft, wait for "create" |
 | One Bug per product for the same wrong value | One Bug, every case listed |

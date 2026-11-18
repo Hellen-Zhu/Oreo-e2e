@@ -19,12 +19,11 @@ Read this before changing files. It holds the rules and the traps; the details l
   filter that proves the change.
 - **The case ID is in the scenario name** (`[TC-TRADE-CREATION-FX_TRF-API-001]`), never a tag; it selects the event
   file, product, layer and row of the test data.
-- **Products are rows.** `Examples` of `@capability#` Outlines are written by `mvn -Ptest-data process-test-classes "-Dexec.args=sync-examples"` from
-  `ProductDatFiles`; never by hand. A product is a composition (`basic.compositionId`: `FX_CO`, not the product ID
-  `FX_PSCRIPT`), registered once with its default product ID (a case sends another with `productId` in its data, as
-  `datFile`); features never name a product ID.
-- **The data checks are `mvn -Ptest-data process-test-classes`** (ten unit tests, then `TestDataTool check`). There is
-  no `TestDataValidationTest`, `CompactExpectedFiles` or `SyncProductExamples`: they became `TestDataTool` commands.
+- **Products are rows.** `Examples` of `@capability#` Outlines are written by `sync-examples`, never by hand; a product
+  is a composition (`FX_CO`), not a product ID (`FX_PSCRIPT`). Details: `docs/test-data.md`, "Products and capabilities".
+- **The data checks are `mvn -Ptest-data process-test-classes`** (unit tests, then `TestDataTool check`); every
+  `TestDataTool` command and what `check` covers: `docs/test-data.md`, "Commands". There is no
+  `TestDataValidationTest`, `CompactExpectedFiles` or `SyncProductExamples`.
 - **The test data code has two layers, one direction.** `testdata/` (`src/main`) loads case, setup and expected data
   for the glue; `tools/` (`src/test`, `TestDataTool`) checks and rewrites it offline and uses `testdata/`. Neither
   imports glue, `playwright`, `config` or the API clients (`utils.DateUtil` only); the glue calls `testdata/`'s public
@@ -46,7 +45,9 @@ Read this before changing files. It holds the rules and the traps; the details l
 | Story → feature files, feature files → running cases | `/writebddfeatures`, `/codetestcases`; overview `docs/ai-workflow.md` |
 
 The executable truth is the code and the feature tree; when a document disagrees with them, trust the code and fix the
-document.
+document. Each fact lives in one place: rules and facts in this file, `docs/standards/` and `docs/test-data.md`;
+skills, agents and commands hold only their procedure and output and link to those. Change a rule where it lives and
+never copy it into a skill.
 
 ## 3. Where a change goes
 
@@ -71,11 +72,8 @@ Stop at the first that fits:
 | Product (a composition: its product ID, capabilities), its dat file | `ProductDatFiles` + `data/dat/<C>/<C>.dat` |
 | Address, account, mode | the properties files, never code or features; accounts by role through `config/TestUser` |
 
-Trade preconditions already exist; reuse them instead of inlining create + approve (headers and context keys get
-lost): `a live|draft|dead '<product_type>' trade is created via api`, `a '<product_type>' trade is submitted to
-pending approval via api` (API); `a Live|Draft|saved Draft|Dead|Draft Pending Approval '<product_type>' trade exists in the
-blotter`, `a Live '<product_type>' trade with a pending Amendment|Cancellation exists in the blotter` (UI: provisions
-through the API, neither logs in nor navigates; the trade is in `createdTradeId`).
+Trade preconditions and the API outcomes already exist; reuse them instead of inlining create + approve (headers and
+context keys get lost): `docs/standards/bdd-feature-implementation-standards.md` §3.3.
 
 ## 4. Hard stops
 
@@ -83,7 +81,8 @@ Never in new work:
 
 - HTTP verbs, endpoints, bodies, dat paths, expected responses, selectors or UI primitives in a feature file.
 - A `@playwright` scenario calling an API snippet (use the UI provisioning steps).
-- A Java wrapper around a built-in UI step, or a selector hard-coded in Java.
+- An element key or UI primitive in a flow snippet; a state change inside an assertion.
+- A Java wrapper around a built-in UI step, a selector hard-coded in Java, or a test ID built from runtime values.
 - `Thread.sleep()`, direct RestAssured, `@Component` on glue, or glue inheritance.
 - `PlaywrightAssertions` or `Locator.waitFor` options in glue: wait and assert through a
   `PlaywrightServiceResolver.Context` method, added in the `playwright` package when missing.

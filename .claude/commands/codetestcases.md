@@ -67,14 +67,13 @@ Show, from `VALIDATION_HANDOFF.targets`, the exact command(s) and the cases they
 
 With the skill `qa-bdd-test-execution`, mode `real-run`, one invocation for all targets.
 
-- New API cases (`expectedRecordings`): their first run writes `data/api/expected/<event>/<case ID>.json` and fails.
-  Run the same selection a second time. A case that fails again on a value that changed between the runs (an ID, a
-  date, a version) needs a `dynamicFields` rule: add it to the event file (`docs/test-data.md`, "Recorded responses"),
-  then run once with mode `record` (ask first) and once more normally.
+- New API cases (`expectedRecordings`): their first run records and fails once; run the same selection a second
+  time. A value that changed between the runs gets a `dynamicFields` rule (`docs/test-data.md`, "Recorded
+  responses"), then one run in mode `record` (ask first) and one more normally.
 - **Review every new recording with the user before it is trusted**: for each file, show the business values that
   matter to the scenario (status, trade state, amounts, messages) next to what the requirement says. A value the
   requirement contradicts is a `behavior` finding, never "the expected value".
-- Then `mvn -Ptest-data process-test-classes "-Dexec.args=compact <event>"` per event and the offline check.
+- Then `compact <event>` per event and the offline check (`docs/test-data.md`, "Commands").
 - Done when each selected case passes twice in a row.
 
 ## Step 5 - Failures

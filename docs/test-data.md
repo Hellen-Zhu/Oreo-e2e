@@ -1,7 +1,8 @@
 # Test Data
 
-The reference for the JSON test data, the recorded API responses and `TestDataTool`. The [README](../README.md) has
-the overview; the skills `maintaining-e2e-test-data` and `onboarding-e2e-product` have the step-by-step workflows.
+The reference for the JSON test data, the recorded API responses and `TestDataTool`: the one place for their format,
+their rules and the tool's commands. Skills and standards link here instead of repeating it. The
+[README](../README.md) has the overview; the skill `onboarding-e2e-product` walks through adding a product.
 
 ## Files
 
@@ -53,6 +54,23 @@ every Outline the tool would change; a capability no Outline carries is only a w
 Scenarios without `<product_type>` (negative and permission cases) carry no tag and are not touched. To leave a product
 out of an Outline for a while, take the capability off the product in `ProductDatFiles` and run the tool: a row
 commented out, or a blank line, inside a product table stops the tool and fails the check.
+
+## Where a value goes
+
+Ask in order; stop at the first yes.
+
+1. **Does it prepare a precondition rather than the action under test?** → `data/setup/` ("Setup data"). Reuse an
+   existing file or `extends` one before adding one.
+2. **Is it the same for every case of the event?** → the event file's `defaults`. When other events of the channel
+   share the block, a `shared` block in `common.json` and `"use": ["<block>"]`.
+3. **Does it differ by product, for every case of that product?** → `byProduct.<P>`.
+4. **Does it differ for one case?** → a row in `cases` with that case's `id`.
+5. **For one case and one product?** → the row's `byProduct.<P>`.
+
+A value a step fills keeps its placeholder (`"tradeIds": ["PLACEHOLDER"]`) or a `${...}` the step resolves; never a
+real trade or task ID, credentials, an address or a real counterparty. Example, `api/trade_early_termination.json`:
+the event body is in `defaults`; API-001 (success) has a row only to `use` the retrieved-trade blocks; API-002
+(malformed) a row that empties `data`; API-003 (duplicate) a row with a message rule.
 
 ## Case data
 
@@ -125,7 +143,9 @@ with the columns `| case | dataset |` (`001`, `002` ...); each case is its own r
   trade creation and provisioning steps, `set path parameter '<name>' to the product ID of '<C>'` and `store the
   product ID of '<C>' as '<key>'` read it, and the report shows `[test-data:productId]`.
 - The hook puts the request into ctx as before (`_tc.key`, `_tc.request`, `_tc.request.<field>`, flat leaves such as
-  `basic.counterpartyName`) and writes the applied layers to the report (`[test-data:layers]`).
+  `basic.counterpartyName`) and writes the applied layers to the report (`[test-data:layers]`). A UI flow reads a
+  value by its path: `defaults.request.earlyTermination.amount` of `ui/trade_early_termination.json` is
+  `from stored variable 'earlyTermination.amount'`. UI data has no `dynamicFields`, `expectedBase` or recordings.
 
 ## Setup data
 
@@ -135,6 +155,8 @@ under this one, its lists replaced whole; `${date:...}` as in case data). Read b
 asks `hasRequest()` / `hasResponse()` only when the part is optional. The setup trade
 and the API case blocks hold the same values but are kept apart on purpose: what an API case sends must not change
 how a UI case prepares its trade. `trade-cancellation` and `trade-amendment` have no file yet (not covered).
+Names are lower case with `-`. `{currentSysSeconds}` in `product-create` and in a schema file becomes a second of the
+run (`ProductApiClient`), so that each run creates a product of its own.
 
 ## Recorded responses
 
@@ -160,7 +182,11 @@ recorded:
 
 A path is keys joined by `.`, `[n]` for one array element, `[*]` for all. `*` as a key is every
 value of an object, for keys that change per product or that a path cannot name (`FX:EURSGD@[BFIX]-1500-JP TYO`):
-`"data.fixings.*": "type"` checks that each fixing is an array while every key stays in the file, compared exactly. A rule whose path is not in the response fails the recording.
+`"data.fixings.*": "type"` checks that each fixing is an array while every key stays in the file, compared exactly. A rule whose path is not in the response fails the recording, so rules are written after a run
+shows what changes (`suggest <event>`), never guessed; the exception is a new field the requirement says is dynamic
+("A new response field"). Mask only what is truly dynamic: never a business message or value, and never to make a
+case pass. A rule goes into the narrowest layer that covers it ("Where a value goes"): every case → `defaults`, one
+product → `byProduct`, one case → the row.
 
 A path may start at a shared part instead of the response root: `{basic}.dealDate`, or `{instrument}` for the whole
 part. It takes the part's path in the case's event (`sharedFragments`, "Shared parts"): `data.trade.basic.dealDate`
@@ -303,7 +329,7 @@ uses too; neither imports the glue (CLAUDE.md, section 1). Decisions about the d
 `src/test/resources/test-data.properties`: `check.knownMissingSetups`, the setup files named but not written yet, and
 `check.maxCasesPerFeature.<api|ui>`, the most cases one feature file may run.
 The `test-data` Maven profile compiles it, refreshes test resources and supplies dependencies automatically.
-The Skill contains usage guidance only. From the project root on the company machine, use the same commands
+From the project root on the company machine, use the same commands
 in PowerShell, macOS and Linux (each line is a separate operation):
 
 ```shell
@@ -337,13 +363,27 @@ machine, set the environment variable `MAVEN_ARGS=-nsu` (Maven 3.9 or later); ne
 `.mvn/maven.config`, as the pipeline needs the latest SNAPSHOTs. To take a new Genie SNAPSHOT, run once without them,
 or with `-U`.
 
-- `check`: every data file loads, every case of every feature resolves, every row and event file has its feature,
-  every API case has its expected file (except those tagged `@expected#none`) and every expected file its case, the rules agree with the expected files,
-  every setup name used exists, the expected files resolve and are compacted (a file the compaction would still change
-  is a warning), the product Outlines' `Examples` match the registry, every product with a capability has its dat
-  file, no feature file runs more
-  cases than `check.maxCasesPerFeature.<api|ui>` (a warning: split it by business behavior), no API snippet only renames a shared outcome of `common_api.snippet` (a step whose body is one outcome, or
-  the status check of a status an outcome covers, plus the recording check). Exit code 1 on a problem. Run it before committing a change to the data, the features or the registry.
+- `check`: one `[ok]` or `[FAIL]` line per check, its problems and `[warn]` lines below it; exit code 1 on a problem.
+  Run it before committing a change to the data, the features, `ProductDatFiles`, `Capability`, or a step or snippet
+  that names setup data. It checks that:
+  1. every data file loads (event files, `common.json`, setup files); every `byProduct` product has its dat file;
+  2. every case of every feature resolves; its event file and channel match the feature;
+  3. every row and event file has its feature;
+  4. every API case has its expected file and every expected file its case; a case tagged `@expected#none` has none,
+     and a file left for it is a problem;
+  5. the `dynamicFields` rules agree with the expected files (warning: a placeholder without a rule);
+  6. the expected files resolve and are compacted (warning: a file `compact` would still change);
+  7. every setup name the code, snippets or features use has its `data/setup/` file, except those of
+     `check.knownMissingSetups` (the user's decision; never add a name to get `[ok]`);
+  8. the product Outlines' `Examples` match the registry ("Products and capabilities");
+  9. every product with a capability has its default dat file;
+  10. no feature file runs more cases than `check.maxCasesPerFeature.<api|ui>` (warning only; a split by business
+      behavior renames case IDs, so it is the user's decision:
+      [generation standard §3.3](standards/bdd-feature-generation-standards.md#33-feature-size));
+  11. no API snippet only renames a shared outcome of `api/common_api.snippet` (its body one outcome step, or the
+      status check of a status an outcome covers, plus `response matches current scenario`).
+
+  It does not check case-ID uniqueness across features, scenario tags or step wording.
 - `sync-examples`: writes the product Outlines' `Examples` from `ProductDatFiles` ("Products and capabilities").
 - `unused-steps`: lists the snippets and Java steps no feature reaches, walking from the feature steps through the
   snippet bodies, and the steps nothing here defines (Genie's built-ins, or a step that is missing). It writes nothing
@@ -382,7 +422,12 @@ or with `-U`.
 
 The unit tests stay out of a plain `mvn test` (the pipeline runs `OreoTest` only). They are JUnit 4, and the profile
 fails when none ran: should it report no tests (a JUnit Platform without the vintage engine), add
-`org.junit.vintage:junit-vintage-engine` in test scope. Change a rule of the data code together with its test.
+`org.junit.vintage:junit-vintage-engine` in test scope. Change a rule of the data code together with its test; a
+failing one is fixed, never skipped with `-DskipTests`.
+
+Run from the project root (the tool finds the project through `target/test-classes/data`), always through the Maven
+command, never the compiled class directly (it would read stale classes and resources). In PowerShell quote each `-D`
+argument whole.
 
 
 ### Suggestions

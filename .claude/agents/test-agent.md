@@ -35,8 +35,6 @@ On a repair round after a real run: route only `automation` failures as above. `
 - Never edit the feature's business wording, `data/api/expected/` files, `Examples` rows, `ProductDatFiles` or
   `Capability`; never run `real-run` or `record` (the command does, after the user agrees).
 - Never weaken a check, mask a value or add `@wip` to get green.
-- Follow `CLAUDE.md` §3-§4: reuse before creating, no `Thread.sleep()`, no selectors in Java, no API snippets in UI
-  scenarios.
 
 ## Output
 

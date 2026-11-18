@@ -45,9 +45,7 @@ It runs the test-data unit tests, then `TestDataTool check`. There is no `TestDa
 mvn -B test -Dtest=OreoTest
 ```
 
-The default tag declaration is in `src/test/java/com/example/module/oreo/OreoTest.java` and currently contains
-`not @wip` and `@ADO#trade_creation`. Therefore, do not describe this command as an unrestricted full-suite run
-without first checking the runner configuration ("Running", below). API runs book real trades.
+It runs trade creation only and books real trades: read "Running", below, before you rely on it.
 
 ### Credentials and secrets
 
@@ -71,51 +69,15 @@ placed in a tracked file, treat it as exposed and follow the team rotation proce
 
 ### Test data commands (`TestDataTool`)
 
-Every command of the offline tool, each a complete command to run from the project root. Each one first runs the
-test-data unit tests; none needs a browser or an environment. In PowerShell keep each `-D` argument quoted whole.
-`-o` (offline) or `-nsu` (no snapshot updates) after `mvn` skips checking for new dependencies.
-
-| Command | What it does | Writes |
-|---|---|---|
-| `mvn -Ptest-data process-test-classes` | `check`, the default: every offline check of the data against the features and the code; fails on a problem | nothing |
-| `mvn -Ptest-data process-test-classes "-Dexec.args=check"` | The same, named | nothing |
-| `mvn -Ptest-data process-test-classes "-Dexec.args=sync-examples"` | Writes the `Examples` of every product Outline from `ProductDatFiles` | feature files |
-| `mvn -Ptest-data process-test-classes "-Dexec.args=case <case ID>"` | Prints the merged data of one case: layers, dat file, request, `dynamicFields`, expected file | nothing |
-| `mvn -Ptest-data process-test-classes "-Dexec.args=suggest <event>"` | Suggests the `dynamicFields` rules and the `expectedBase` of an event from its recordings | nothing |
-| `mvn -Ptest-data process-test-classes "-Dexec.args=compact <event>"` | Turns an event's recorded responses into patches on their base and references to the shared parts | expected files |
-| `mvn -Ptest-data process-test-classes "-Dexec.args=compact all"` | The same for every event; also rebuilds the shared parts and deletes unused ones | expected files |
-| `mvn -Ptest-data process-test-classes "-Dexec.args=shared <case ID>"` | Takes the shared parts (`basic`, `instrument`) from that case's recording, then compacts every event again | expected files |
-| `mvn -Ptest-data process-test-classes "-Dexec.args=shared TC-<EVENT>-<product_type>-API-001"` | The same from every product's case of that ID | expected files |
-| `mvn -Ptest-data process-test-classes "-Dexec.args=unused-steps"` | Lists the snippets and Java steps no feature reaches; never fails | nothing |
-| `mvn -Ptest-data process-test-classes "-Dexec.args=coverage"` | Prints the product x capability matrix of the product Outlines and its gaps; never fails | nothing |
-| `mvn -Ptest-data process-test-classes "-Dexec.args=coverage --html"` | The same, and writes it as a page: `target/coverage/coverage.html` (with `coverage.json`) | `target/` only |
-
-Examples: `"-Dexec.args=case TC-TRADE-CREATION-FX_TRF-API-001"`, `"-Dexec.args=compact trade_creation"`. After a
-data file was deleted, add `clean` (`mvn -Ptest-data clean process-test-classes ...`). Details of each command:
-[docs/test-data.md, "Commands"](docs/test-data.md#commands).
+Every command of the offline tool (`check`, `sync-examples`, `case`, `suggest`, `compact`, `shared`, `unused-steps`,
+`coverage`), with what it does and what `check` covers: [docs/test-data.md, "Commands"](docs/test-data.md#commands).
 
 ## Running
 
-The runner `src/test/java/com/example/module/oreo/OreoTest.java` decides the default scope:
-
-- **Fixed tags** `not @wip` and `@ADO#trade_creation`: `mvn test` is **not** the whole suite, and a command-line
-  filter is combined with them. An empty run is not a pass.
-- **Environment** `src/test/resources/qa.properties`; `genie.properties` holds shared defaults (browser, timeout,
-  trace mode, risk engine mode).
-- **Parallel**: 3 features at a time in separate JVMs, so scenarios must not share mutable state.
-
-Select with `-Dcucumber.options`: `--tags` (repeated `--tags` must all match) or `--name` (a regular expression on
-the scenario name, which starts with the case ID). **Not** `-Dcucumber.filter.*`: unsupported here, it may be
-ignored silently and run everything. Every API run books real trades: filter to what you need.
-
-| Tag | Level | Values |
-|---|---|---|
-| Layer | Feature | `@api`, `@playwright` |
-| Business | Feature | `@ADO#<featureName>`, optional group `@ADO#trade_lifecycle` |
-| Polarity, suite | Scenario | one of `@ADO#positive` / `@ADO#negative`, one of `@ADO#smoke` / `@ADO#regression` |
-| Capability | Product Outline | one `@capability#<name>` |
-| No response check | Feature or Scenario | `@expected#none` |
-| Exclusion | any | `@wip` |
+`mvn test` is **not** the whole suite, an empty run is not a pass, and every API run books real trades. Before
+running, read the runner's settings and the selection syntax:
+[implementation standard §6.2](docs/standards/bdd-feature-implementation-standards.md#62-against-an-environment);
+the tags: [generation standard §5.2](docs/standards/bdd-feature-generation-standards.md#52-tags).
 
 UI debugging: `PWDEBUG=1` opens the Playwright Inspector; `-Doreo.playwright.trace.mode=ON|RETAIN_ON_FAILURE|OFF`
 writes traces to `target/traces` (`npx playwright show-trace <zip>`). Never commit or upload traces.
@@ -135,16 +97,6 @@ writes traces to `target/traces` (`npx playwright show-trace <zip>`). Never comm
 - **UI steps are layered**: scenario (business language) → flow snippet → page / component snippet → element
   repository (locators). A precondition that only provisions through the API is a business-worded Java step
   (`a Live '<product_type>' trade exists in the blotter`) the scenario calls directly: it has no UI to layer.
-
-## Updating recorded responses
-
-Step-by-step procedures, with the commands, in [docs/test-data.md](docs/test-data.md):
-
-- [Updating a recorded response](docs/test-data.md#updating-a-recorded-response): the API changed a response on
-  purpose and a case fails its comparison (re-record in update mode, compact, check, review, run again).
-- [Updating a shared part](docs/test-data.md#updating-a-shared-part): `basic` / `instrument` in
-  `data/api/expected/_shared/` has to change, because the API changed it (`shared <case ID>`) or because a masking
-  rule or a new field changed it (`compact all`).
 
 ## Layout
 
@@ -176,16 +128,9 @@ src/test/resources/
 
 ## Documentation
 
-| Document | For |
-|---|---|
-| [CLAUDE.md](CLAUDE.md) | Working rules: where a change goes, hard stops, checks |
-| [docs/test-data.md](docs/test-data.md) | Test data format, recorded responses, `TestDataTool` commands |
-| [test-layering-standards.md](docs/standards/test-layering-standards.md) | Story → test points and their layer |
-| [bdd-feature-generation-standards.md](docs/standards/bdd-feature-generation-standards.md) | Test points → feature files |
-| [bdd-feature-implementation-standards.md](docs/standards/bdd-feature-implementation-standards.md) | Feature files → steps, snippets, glue, data |
-| [REST](docs/genie_rest_glue_catalog.md) / [Playwright](docs/genie_playwright_glue_catalog.md) catalogs | Genie built-in steps |
-| [ai-workflow.md](docs/ai-workflow.md) | The agent pipeline: `/writebddfeatures`, `/codetestcases`, their agents and skills |
-| [test-dashboard-plan.md](docs/test-dashboard-plan.md) | Plan, not scheduled: a dashboard of run history and coverage for the test lead |
+The map of the documents and skills is [CLAUDE.md §2](CLAUDE.md#2-where-to-look). Also
+[test-dashboard-plan.md](docs/test-dashboard-plan.md): a plan, not scheduled, for a dashboard of run history and
+coverage for the test lead.
 
 ## This copy
 

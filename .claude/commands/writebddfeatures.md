@@ -86,8 +86,8 @@ From the approved output only; do not re-derive names, paths, modes or IDs.
 
 - `create`: write the complete content. If the file exists by now, stop and ask.
 - `append`: add the approved Scenario / Scenario Outline blocks at the end of the file, one blank line before each;
-  nothing else. Before writing, check that none of their case IDs exists yet
-  (`grep -rn "<case ID>" src/test/resources/features src/test/resources/data`); if one does, stop and ask.
+  nothing else. Before writing, check that none of their case IDs exists yet (generation standard §5.1); if one
+  does, stop and ask.
 - `not generated`: nothing.
 
 Keep the file's line endings and the two-space indentation of the existing features.
