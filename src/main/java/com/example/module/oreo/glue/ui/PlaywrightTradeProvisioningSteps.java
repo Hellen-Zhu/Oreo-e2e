@@ -9,7 +9,13 @@ import com.example.module.oreo.utils.TradeApiClient;
 import com.example.module.oreo.utils.TradeApiClient.CreatedTrade;
 import cucumber.api.Scenario;
 import cucumber.api.java.Before;
+import com.fasterxml.jackson.databind.JsonNode;
 import cucumber.api.java.en.Given;
+
+import java.math.BigDecimal;
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
+import java.util.Locale;
 
 /**
  * The trade preconditions of UI scenarios, provisioned through the API ({@link TradeApiClient}'s
@@ -116,6 +122,45 @@ public class PlaywrightTradeProvisioningSteps {
         ctx.set(taskKey, trade.taskId());
         ctx.write(String.format("[provisioned] %s = %s, %s = %s", tradeKey, trade.tradeId(), taskKey, trade.taskId()));
         return trade;
+    }
+
+    /**
+     * The notionals a partial novation remaining leaves, from the trade's own notional ({@code basic.notionalAmount},
+     * read through the API) and the remaining notional the case gives: stores {@code originalNotional},
+     * {@code newNotional} (original - remaining: the novated trade's) and {@code equationLineValue} (the event form's
+     * line, {@code Notional: <original> - <remaining> = <new>}), each as the portal shows amounts ({@code 69,000.00}:
+     * en-US, the preference maker and checker sign in with).
+     *
+     * <pre>When the novated notional of trade 'createdTradeId' is computed from the remaining notional 'remainingNotional'</pre>
+     */
+    @Given("^the novated notional of trade '([^']*)' is computed from the remaining notional '([^']*)'$")
+    public void computeNovatedNotional(String tradeVar, String remainingVar) {
+        String tradeId = ctx.find(tradeVar);
+        JsonNode notional = RestApiUtil.get(helper, TradeApiClient.tradePath(tradeId), TestUser.MAKER.email())
+                .path("data").path("trade").path("basic").path("notionalAmount");
+        if (!notional.isNumber()) {
+            throw new AssertionError("[PlaywrightTradeProvisioningSteps] trade " + tradeId
+                    + " has no numeric data.trade.basic.notionalAmount: " + notional);
+        }
+        Object remainingValue = ctx.find(remainingVar);
+        if (remainingValue == null) {
+            throw new AssertionError("[PlaywrightTradeProvisioningSteps] no '" + remainingVar + "' in the case data of "
+                    + ctx.find("_tc.key"));
+        }
+        BigDecimal original = notional.decimalValue();
+        BigDecimal remaining = new BigDecimal(String.valueOf(remainingValue).replace(",", "").trim());
+        BigDecimal novated = original.subtract(remaining);
+        ctx.set("originalNotional", amount(original));
+        ctx.set("newNotional", amount(novated));
+        ctx.set("equationLineValue", "Notional: " + amount(original) + " - " + amount(remaining) + " = "
+                + amount(novated));
+        ctx.write("[notional] trade " + tradeId + ": " + amount(original) + " - " + amount(remaining) + " = "
+                + amount(novated));
+    }
+
+    /** An amount as the portal shows it with the en-US number format: grouped, two decimals. */
+    static String amount(BigDecimal value) {
+        return new DecimalFormat("#,##0.00", DecimalFormatSymbols.getInstance(Locale.US)).format(value);
     }
 
     /** The registered composition, written to the report with the product ID the case sends. */

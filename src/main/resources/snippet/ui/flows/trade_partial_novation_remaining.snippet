@@ -11,9 +11,11 @@
     And fills Partial Novation Remaining event form with required values for '$1' product type
     And confirms Partial Novation Remaining event from trade details and stores new trade id
 
+# The novated notional and the form's equation line come from the trade's own notional less request.remainingNotional
 @When "^fills Partial Novation Remaining event form with required values for '([^']*)' product type$"
-    When component dynamic action types remaining notional from stored variable 'remainingNotional'
-    And component dynamic action equation line contains stored variable 'equationLineValue.$1'
+    When the novated notional of trade 'createdTradeId' is computed from the remaining notional 'remainingNotional'
+    And component dynamic action types remaining notional from stored variable 'remainingNotional'
+    And component dynamic action equation line contains stored variable 'equationLineValue'
     And component dynamic action selects counterparty from stored variable 'newCptyName'
     And confirm 'partial novation remaining' event form using configured risk engine mode for trade stored as 'createdTradeId'
 
@@ -32,7 +34,7 @@
 @Then "^trade is partially novated with remaining notional retained and counterparty transferred for '([^']*)'$"
     Then trade details show 'LIVE' status with correct notional 'remainingNotional' and counterparty 'basic.counterpartyName' for trade 'createdTradeId'
     When navigate to trade details for stored trade 'newTradeId'
-    Then trade details show 'LIVE' status with correct notional 'newNotional.$1' and counterparty 'newCptyName' for trade 'newTradeId'
+    Then trade details show 'LIVE' status with correct notional 'newNotional' and counterparty 'newCptyName' for trade 'newTradeId'
 
 @Then "^trade details show '([^']*)' status with correct notional '([^']*)' and counterparty '([^']*)' for trade '([^']*)'$"
     When navigate to trade details for stored trade '$4'
