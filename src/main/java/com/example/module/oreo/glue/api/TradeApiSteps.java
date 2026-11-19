@@ -26,7 +26,6 @@ public class TradeApiSteps {
         String requestWithProductId = setBasicProductId(TestData.setup(key).request(),
                 ProductDatFiles.of(product).productId(ctx.find("_tc.productId")), key);
         ctx.helper().request().multiPart(partName, requestWithProductId, "application/json");
-        rememberTradeRequest(partName, requestWithProductId);
         log.info("[TradeApiSteps] set multi-part form parameter '{}' from test data '{}' as '{}'", partName, key,requestWithProductId);
     }
 
@@ -45,16 +44,8 @@ public class TradeApiSteps {
                 ProductDatFiles.of(product).productId(ctx.find("_tc.productId")),
                 ctx.get("_tc.key"));
         ctx.helper().request().multiPart(partName, requestWithProductId, "application/json");
-        rememberTradeRequest(partName, requestWithProductId);
         log.info("[TradeApiSteps] set multi-part form parameter '{}' from current scenario ('{}') as '{}'",
                 partName, ctx.get("_tc.key"),requestWithProductId);
-    }
-
-    /** The trade part is the body the case's trade is created with: the response rule {@code trade:<path>}. */
-    private void rememberTradeRequest(String partName, String body) {
-        if ("trade".equals(partName)) {
-            ctx.set(TradeApiClient.TRADE_REQUEST_KEY, body);
-        }
     }
 
     // ─────────────────────────────────────────────────────────────────────

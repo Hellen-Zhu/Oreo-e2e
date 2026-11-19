@@ -209,8 +209,9 @@ final class ExpectedFileChecks {
         } else if (rule.startsWith("var:")) {
             if ((ResponseMasker.VAR_START + rule.substring("var:".length()) + "}").equals(value.asText(""))) return;
             wrongValue(label + at, value, errors, warnings);
-        } else if (rule.startsWith(ResponseMasker.REQUEST_PREFIX) || rule.startsWith(ResponseMasker.TRADE_PREFIX)) {
-            if (("${" + rule + "}").equals(value.asText(""))) return;
+        } else if (rule.startsWith(ResponseMasker.REQUEST_PREFIX)) {
+            String placeholder = ResponseMasker.REQUEST_START + rule.substring(ResponseMasker.REQUEST_PREFIX.length()) + "}";
+            if (placeholder.equals(value.asText(""))) return;
             wrongValue(label + at, value, errors, warnings);
         } else if (rule.equals("type-tree")) {
             if (isPlaceholder(value)) {
@@ -223,7 +224,7 @@ final class ExpectedFileChecks {
                 errors.add(label + ": leaves without a placeholder " + plain + "; record again");
             }
         } else {
-            errors.add(label + ": unknown rule (type, type-tree, regex:<pattern>, var:<name>, request:<path>, trade:<path>, ignore)");
+            errors.add(label + ": unknown rule (type, type-tree, regex:<pattern>, var:<name>, request:<path>, ignore)");
         }
     }
 
@@ -295,7 +296,6 @@ final class ExpectedFileChecks {
     private static boolean isPlaceholder(JsonNode node) {
         return node.isTextual()
                 && (node.textValue().startsWith(PLACEHOLDER) || node.textValue().startsWith(ResponseMasker.VAR_START)
-                || node.textValue().startsWith(ResponseMasker.REQUEST_START)
-                || node.textValue().startsWith(ResponseMasker.TRADE_START));
+                || node.textValue().startsWith(ResponseMasker.REQUEST_START));
     }
 }

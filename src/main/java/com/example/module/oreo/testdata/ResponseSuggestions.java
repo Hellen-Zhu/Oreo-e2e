@@ -123,8 +123,7 @@ public final class ResponseSuggestions {
     private static boolean isPlaceholder(JsonNode node) {
         return node.isTextual() && (node.textValue().startsWith("${json-unit.")
                 || node.textValue().startsWith(ResponseMasker.VAR_START)
-                || node.textValue().startsWith(ResponseMasker.REQUEST_START)
-                || node.textValue().startsWith(ResponseMasker.TRADE_START));
+                || node.textValue().startsWith(ResponseMasker.REQUEST_START));
     }
 
     /** A suggested rule and where it goes: {@code defaults}, {@code byProduct.<P>}, or the row of a case. */

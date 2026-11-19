@@ -52,18 +52,9 @@ public final class TradeApiClient {
 
     /**
      * A provisioned trade: its ID and the ID of its latest checker task, blank when it has none. After
-     * {@link #submitTrade} or {@link #saveTrade} they are {@code data.trade.id} and {@code data.checkerContext.taskId},
-     * and {@code request} is the trade body sent (dates resolved, {@code basic.productId} set), for the response rule
-     * {@code trade:<path>}; {@code null} after an event or an amendment, which create no trade.
+     * {@link #submitTrade} or {@link #saveTrade} they are {@code data.trade.id} and {@code data.checkerContext.taskId}.
      */
-    public record CreatedTrade(String tradeId, String taskId, String request) {
-        public CreatedTrade(String tradeId, String taskId) {
-            this(tradeId, taskId, null);
-        }
-    }
-
-    /** The scenario variable holding the body the scenario's trade was created with (response rule {@code trade:}). */
-    public static final String TRADE_REQUEST_KEY = "_tc.tradeRequest";
+    public record CreatedTrade(String tradeId, String taskId) {}
 
     /**
      * One result of a lifecycle event, in the response's order: the trade it ran on ({@code tradeId}), the checker
@@ -123,35 +114,29 @@ public final class TradeApiClient {
      */
     public static CreatedTrade submitTrade(RequestResponseHelper helper, String userId, String testDataKey,
                                            String productId, String datPath) throws URISyntaxException {
-        String tradeJson = tradeJson(testDataKey, productId);
-        return createdTrade(createTrade(helper, SUBMIT_TRADE_PATH, userId, testDataKey, tradeJson, datPath),
-                testDataKey, tradeJson);
+        return createdTrade(createTrade(helper, SUBMIT_TRADE_PATH, userId, testDataKey, productId, datPath),
+                testDataKey);
     }
 
     /** Saves the setup body {@code testDataKey} as a draft of product ID {@code productId}. */
     public static CreatedTrade saveTrade(RequestResponseHelper helper, String userId, String testDataKey,
                                          String productId, String datPath) throws URISyntaxException {
-        String tradeJson = tradeJson(testDataKey, productId);
-        return createdTrade(createTrade(helper, SAVE_TRADE_PATH, userId, testDataKey, tradeJson, datPath), testDataKey,
-                tradeJson);
+        return createdTrade(createTrade(helper, SAVE_TRADE_PATH, userId, testDataKey, productId, datPath), testDataKey);
     }
 
     /** @throws AssertionError when the response names no trade */
-    private static CreatedTrade createdTrade(JsonNode response, String testDataKey, String tradeJson) {
+    private static CreatedTrade createdTrade(JsonNode response, String testDataKey) {
         String tradeId = response.at("/data/trade/id").asText("");
         if (tradeId.isBlank()) {
             throw new AssertionError("[TradeApiClient] setup " + testDataKey + " created no trade: " + response);
         }
-        return new CreatedTrade(tradeId, response.at("/data/checkerContext/taskId").asText(""), tradeJson);
-    }
-
-    /** The setup body {@code testDataKey} as a trade of {@code productId}: the setup body carries no product. */
-    private static String tradeJson(String testDataKey, String productId) {
-        return withProductId(TestData.setup(testDataKey).request(), productId);
+        return new CreatedTrade(tradeId, response.at("/data/checkerContext/taskId").asText(""));
     }
 
     private static JsonNode createTrade(RequestResponseHelper helper, String path, String userId, String testDataKey,
-                                        String tradeJson, String datPath) throws URISyntaxException {
+                                        String productId, String datPath) throws URISyntaxException {
+        // The setup body carries no product: the step resolves the product ID from the registry and the case
+        String tradeJson = withProductId(TestData.setup(testDataKey).request(), productId);
         URL resource = TradeApiClient.class.getClassLoader().getResource(datPath);
         if (resource == null) {
             throw new AssertionError("[TradeApiClient] dat file '" + datPath + "' not found on classpath.");

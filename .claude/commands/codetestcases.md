@@ -69,8 +69,8 @@ With the skill `qa-bdd-test-execution`, mode `real-run`, one invocation for all 
 
 - New API cases (`expectedRecordings`): their first run records and fails once; run the same selection a second
   time. A value that changed between the runs gets a `dynamicFields` rule (`docs/test-data.md`, "Recorded
-  responses"; a date the request gave as `${date:...}` takes `request:<path>`, a value the trade was created with
-  `trade:<path>`, so it is still checked against what was sent), then one run in mode `record` (ask first) and one more normally.
+  responses"; a date the request gave as `${date:...}` takes `request:<path>`, so it is still checked against what
+  was sent), then one run in mode `record` (ask first) and one more normally.
 - **Review every new recording with the user before it is trusted**: for each file, show the business values that
   matter to the scenario (status, trade state, amounts, messages) next to what the requirement says. A value the
   requirement contradicts is a `behavior` finding, never "the expected value".

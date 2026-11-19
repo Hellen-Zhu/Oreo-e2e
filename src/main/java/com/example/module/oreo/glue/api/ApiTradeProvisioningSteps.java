@@ -120,10 +120,6 @@ public class ApiTradeProvisioningSteps {
     private CreatedTrade store(String tradeKey, String taskKey, CreatedTrade trade) {
         ctx.set(tradeKey, trade.tradeId());
         ctx.set(taskKey, trade.taskId());
-        if (trade.request() != null) {
-            // the body this trade was created with: the response rule trade:<path> compares with it
-            ctx.set(TradeApiClient.TRADE_REQUEST_KEY, trade.request());
-        }
         ctx.write(String.format("[provisioned] %s = %s, %s = %s", tradeKey, trade.tradeId(), taskKey, trade.taskId()));
         return trade;
     }

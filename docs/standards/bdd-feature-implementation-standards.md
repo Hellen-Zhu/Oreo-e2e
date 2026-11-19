@@ -200,7 +200,7 @@ The format and every rule of the test data are in [docs/test-data.md](../test-da
 | An amount that depends on the trade's notional (a share, API and UI) | "Where a value goes" |
 | Setup data, `extends` | "Setup data" |
 | Products and capabilities, `sync-examples` | "Products and capabilities"; a new product: skill `onboarding-e2e-product` |
-| Recordings, `dynamicFields` (`var:` for a scenario variable, `request:` for a value the request sent, such as a `${date:...}` date, `trade:` for a value the scenario's trade was created with), `@expected#none`, re-recording | "Recorded responses", "Updating a recorded response" |
+| Recordings, `dynamicFields` (`var:` for a scenario variable, `request:` for a value the request sent, such as a `${date:...}` date), `@expected#none`, re-recording | "Recorded responses", "Updating a recorded response" |
 
 ## 6. Verification
 
