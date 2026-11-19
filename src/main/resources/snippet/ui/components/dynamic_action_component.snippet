@@ -39,6 +39,9 @@
 @When "^component dynamic action types new notional from stored variable '([^']*)'$"
     When type inner value '$1' from stored variable into 'dynamic_action.pt_new_notional_input'
 
+@When "^component dynamic action types new notional from stored variable '([^']*)' if it is set$"
+    When type inner value '$1' from stored variable into 'dynamic_action.pt_new_notional_input' if it is set
+
 @When "^component dynamic action types Unwind Fee Amount from stored variable '([^']*)'$"
     When type inner value '$1' from stored variable into 'dynamic_action.amount_input'
 
