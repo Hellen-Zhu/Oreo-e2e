@@ -168,7 +168,8 @@ with the columns `| case | dataset |` (`001`, `002` ...); each case is its own r
 ## Setup data
 
 `data/setup/<name>.json`: `request` and / or `response`, `_comment`, and `extends` (another setup file, merged
-under this one, its lists replaced whole; `${date:...}` as in case data). Read by the steps `... from test data '<name>'` and by `TestData.setup("<name>")`; its `request()` /
+under this one, its lists replaced whole; `${date:T...}` as in case data, never `${date:S...}`: setup data has no
+product). Read by the steps `... from test data '<name>'` and by `TestData.setup("<name>")`; its `request()` /
 `response()` fail when the file (with its `extends` chain) has no such part, so a caller never checks for null and
 asks `hasRequest()` / `hasResponse()` only when the part is optional. The setup trade
 and the API case blocks hold the same values but are kept apart on purpose: what an API case sends must not change
@@ -197,6 +198,7 @@ recorded:
 | `regex:<pattern>` | the value matches the pattern |
 | `var:<name>` | the value equals the scenario variable `<name>` of this run (`createdTradeId`, stored by `a live '<product_type>' trade is created via api`) |
 | `request:<path>` | the value equals what this run's request has at `<path>`: a date the request gives as `${date:T+1}` or `${date:S-5}`, an amount given as a share |
+| `trade:<path>` | the value equals what the body the scenario's trade was created with has at `<path>`: a trade field (`basic.effectiveTimestamp`) that every event's response shows |
 | `ignore` | nothing; only when the others cannot work |
 
 A path is keys joined by `.`, `[n]` for one array element, `[*]` for all. `*` as a key is every
@@ -234,6 +236,17 @@ another format (`2026-11-20T00:00:00Z`), or moves it to a business day, does not
 and the business rule is reported as open, not guessed. Example, an early termination whose request gives
 `settleDate`: `"dynamicFields": { "<path of the date in the response>": "request:data.settleDate" }`, the response
 path taken from a recording (`suggest <event>`).
+
+`trade:<path>` is the same with the body the scenario's trade was created with, as it was sent (dates resolved,
+`basic.productId` set): in a trade creation case its own `trade` part, in any other case the body of the provisioning
+step (`a '<product_type>' trade is submitted to pending approval via api`, `... exists in the blotter`, ...: setup
+`trade-create`). The last trade created in the scenario counts; an event or amendment precondition does not change it.
+A trade field shown by the responses of every event is written once against the shared part, in
+`trade-response-parts`: `"{basic}.effectiveTimestamp": "trade:basic.effectiveTimestamp"`, and holds for creation,
+query and the events alike. `request:` would hold only for creation, the one case whose request is the trade's body.
+The value must be in the body the trade is created with: a field the case data gives (`trade-basic`) is given in setup
+`trade-create` too, with the same expression; setup data has no product, so there `${date:T...}` only, not
+`${date:S...}`. A scenario that created no trade fails the comparison.
 
 ### Lifecycle events: the retrieved trade
 
@@ -527,7 +540,8 @@ files by hand: the recording is what proves the system returns it.
      the recording.
 
    A fixed value needs no rule: it is compared exactly. A value equal to a scenario variable takes `var:<name>`;
-   one equal to a value of the request (a date the request gives as `${date:...}`) takes `request:<path>`.
+   one equal to a value of the request (a date the request gives as `${date:...}`) takes `request:<path>`, one equal to
+   a value the trade was created with `trade:<path>`.
 3. **Record every case that returns the field, events together** when the field is in a shared part:
    `OREO_EXPECTED=update` as an environment variable, with the narrowest `--name` filter that covers them (the API
    cases book real trades).

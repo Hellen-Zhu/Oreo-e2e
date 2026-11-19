@@ -31,6 +31,8 @@ import java.util.regex.PatternSyntaxException;
  *   <tr><td>{@code request:<path>}</td><td>{@code ${request:<path>}}; the actual value must be the value the request of
  *       the run has at {@code <path>} (a {@code ${date:T+1}} as it was resolved), put in again by
  *       {@link #fillVariables}; see {@link #requestValue}</td></tr>
+ *   <tr><td>{@code trade:<path>}</td><td>{@code ${trade:<path>}}; the same with the body the trade of the scenario was
+ *       created with (the case's own trade request, or the provisioning step's)</td></tr>
  * </table>
  *
  * A path is keys joined by {@code .}, with {@code [n]} for one array element and {@code [*]} for every element;
@@ -49,10 +51,13 @@ public final class ResponseMasker {
     public static final String REQUEST_START = "${request:";
     /** The name under which the lookup of {@link #mask} and {@link #fillVariables} gives a request value. */
     public static final String REQUEST_PREFIX = "request:";
+    public static final String TRADE_START = "${trade:";
+    /** The name under which the lookup gives a value of the body the scenario's trade was created with. */
+    public static final String TRADE_PREFIX = "trade:";
 
     private static final Pattern PLAIN_KEY = Pattern.compile("[^.\\[\\]]+");
     private static final Pattern VAR_NAME = Pattern.compile("[A-Za-z][A-Za-z0-9_.-]*");
-    private static final Pattern VAR = Pattern.compile("\\$\\{(?:var:(" + VAR_NAME.pattern() + ")|request:([^}]+))}");
+    private static final Pattern VAR = Pattern.compile("\\$\\{(?:var:(" + VAR_NAME.pattern() + ")|(request|trade):([^}]+))}");
     private static final Object ANY = new Object();
     private static final Object ANY_KEY = new Object();
 
@@ -66,7 +71,8 @@ public final class ResponseMasker {
     /**
      * The pretty-printed expected file for {@code actualJson}; fails on a rule that does not fit the response.
      * {@code variables} gives the value of a scenario variable by name, {@code null} when it is not stored, and the
-     * value of the run's request at a path by {@link #REQUEST_PREFIX} + path.
+     * value of the run's request at a path by {@link #REQUEST_PREFIX} + path, of the trade's creation body by
+     * {@link #TRADE_PREFIX} + path.
      */
     public static String mask(String actualJson, Map<String, String> rules, Function<String, String> variables,
                               String caseLabel) {
@@ -108,7 +114,7 @@ public final class ResponseMasker {
         String where = "rule " + path + " = " + rule + " in the response of " + caseLabel;
         if (rule == null) {
             throw new IllegalStateException("[ResponseMasker] " + where + ": a rule is type, type-tree, regex:<pattern>,"
-                    + " var:<name>, request:<path> or ignore");
+                    + " var:<name>, request:<path>, trade:<path> or ignore");
         }
         if (rule.equals("type")) {
             if (value.isArray()) {
@@ -165,27 +171,39 @@ public final class ResponseMasker {
             }
             return TextNode.valueOf(VAR_START + name + "}");
         }
-        if (rule.startsWith(REQUEST_PREFIX)) {
-            String requestPath = rule.substring(REQUEST_PREFIX.length());
+        String source = rule.startsWith(REQUEST_PREFIX) ? REQUEST_PREFIX
+                : rule.startsWith(TRADE_PREFIX) ? TRADE_PREFIX : null;
+        if (source != null) {
+            String requestPath = rule.substring(source.length());
             checkRequestPath(requestPath, caseLabel);
             if (value.isContainerNode() || value.isNull()) {
-                throw new IllegalStateException("[ResponseMasker] " + where + ": request applies to text, a number or"
-                        + " a boolean, the value is " + Json.compact(value));
+                throw new IllegalStateException("[ResponseMasker] " + where + ": " + source + " applies to text, a"
+                        + " number or a boolean, the value is " + Json.compact(value));
             }
-            String expected = variables.apply(REQUEST_PREFIX + requestPath);
+            String expected = variables.apply(source + requestPath);
             if (expected == null) {
-                throw new IllegalStateException("[ResponseMasker] " + where + ": the request has no value at "
-                        + requestPath + "; not recorded");
+                throw new IllegalStateException("[ResponseMasker] " + where + ": " + noValue(source, requestPath)
+                        + "; not recorded");
             }
             if (!sameValue(value, expected)) {
                 throw new IllegalStateException("[ResponseMasker] " + where + ": the actual value "
-                        + Json.compact(value) + " is not the request's " + requestPath + " (" + expected
+                        + Json.compact(value) + " is not " + sourceName(source) + "'s " + requestPath + " (" + expected
                         + "); not recorded");
             }
-            return TextNode.valueOf(REQUEST_START + requestPath + "}");
+            return TextNode.valueOf("${" + source + requestPath + "}");
         }
         throw new IllegalStateException("[ResponseMasker] " + where + ": unknown rule; a rule is type, type-tree,"
-                + " regex:<pattern>, var:<name>, request:<path> or ignore");
+                + " regex:<pattern>, var:<name>, request:<path>, trade:<path> or ignore");
+    }
+
+    private static String sourceName(String source) {
+        return source.equals(TRADE_PREFIX) ? "the trade's creation request" : "the request";
+    }
+
+    private static String noValue(String source, String path) {
+        return source.equals(TRADE_PREFIX)
+                ? "the trade's creation request has no value at " + path + " (or the scenario created no trade)"
+                : "the request has no value at " + path;
     }
 
     /** The same text, or the same number ({@code 35000} = {@code "35000.00"}). */
@@ -251,13 +269,15 @@ public final class ResponseMasker {
 
     /**
      * {@code expectedJson} with every {@code ${var:<name>}} value replaced by the scenario variable (every
-     * {@code ${request:<path>}} by the run's request value, a number equal by value): by the actual
+     * {@code ${request:<path>}} by the run's request value, every {@code ${trade:<path>}} by the trade's creation
+     * body, a number equal by value): by the actual
      * value at the same place when it is the variable's value (a number stays a number), otherwise by the variable's
      * value as text, which the comparison then reports. A file without a {@code ${var:...}} value is returned as it is.
      */
     public static String fillVariables(String expectedJson, String actualJson, Function<String, String> variables,
                                        String caseLabel) {
-        if (expectedJson == null || !expectedJson.contains(VAR_START) && !expectedJson.contains(REQUEST_START)) {
+        if (expectedJson == null || !expectedJson.contains(VAR_START) && !expectedJson.contains(REQUEST_START)
+                && !expectedJson.contains(TRADE_START)) {
             return expectedJson;
         }
         JsonNode actual;
@@ -275,11 +295,12 @@ public final class ResponseMasker {
             Matcher placeholder = VAR.matcher(expected.textValue());
             if (!placeholder.matches()) return expected;
             boolean request = placeholder.group(2) != null;
-            String value = variables.apply(request ? REQUEST_PREFIX + placeholder.group(2) : placeholder.group(1));
+            String source = request ? placeholder.group(2) + ":" : null;
+            String value = variables.apply(request ? source + placeholder.group(3) : placeholder.group(1));
             if (value == null) {
                 throw new IllegalStateException("[ResponseMasker] the expected file of " + caseLabel + " has "
-                        + expected.textValue() + ", but " + (request ? "the request has no value at "
-                        + placeholder.group(2) : "the scenario has no variable " + placeholder.group(1)));
+                        + expected.textValue() + ", but " + (request ? noValue(source, placeholder.group(3))
+                        : "the scenario has no variable " + placeholder.group(1)));
             }
             boolean same = actual != null && actual.isValueNode() && !actual.isNull()
                     && (request ? sameValue(actual, value) : actual.asText().equals(value));

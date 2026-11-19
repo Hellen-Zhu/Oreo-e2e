@@ -517,13 +517,16 @@ public final class TestDataRepository {
             }
             if (!rule.getValue().isTextual() && !rule.getValue().isNull()) {
                 throw error(path, where + ".dynamicFields." + rule.getKey(),
-                        "a rule is a string (type, type-tree, regex:<pattern>, var:<name>, request:<path>, ignore)"
+                        "a rule is a string (type, type-tree, regex:<pattern>, var:<name>, request:<path>,"
+                                + " trade:<path>, ignore)"
                                 + " or null");
             }
             String text = rule.getValue().asText("");
-            if (text.startsWith(ResponseMasker.REQUEST_PREFIX)) {
+            String source = text.startsWith(ResponseMasker.REQUEST_PREFIX) ? ResponseMasker.REQUEST_PREFIX
+                    : text.startsWith(ResponseMasker.TRADE_PREFIX) ? ResponseMasker.TRADE_PREFIX : null;
+            if (source != null) {
                 try {
-                    ResponseMasker.checkRequestPath(text.substring(ResponseMasker.REQUEST_PREFIX.length()), where);
+                    ResponseMasker.checkRequestPath(text.substring(source.length()), where);
                 } catch (IllegalStateException e) {
                     throw error(path, where + ".dynamicFields." + rule.getKey(), e.getMessage());
                 }
