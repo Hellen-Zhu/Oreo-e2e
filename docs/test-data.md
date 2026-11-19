@@ -112,7 +112,12 @@ with the columns `| case | dataset |` (`001`, `002` ...); each case is its own r
   gets `defaults` and its row only.
 - `use` names a block of `common.json` or of the event file's own `shared` (same shape: `request`, `dynamicFields`,
   `sharedFragments`),
-  for data of this event only. A name in both files is an error.
+  for data of this event only. A name in both files is an error. `setup/<name>` names a setup file instead: its
+  `request` (with its `extends` chain) is the block, so a body the provisioning steps send and the cases send is kept
+  once, in `data/setup/`. Its `${date:...}` are resolved as the case's, `S` from the case's product. API trade
+  creation takes the trade body so: `"use": ["setup/trade-create", "trade-response-parts"]`, the body the trade
+  preconditions submit. A setup file without a `request` is an error. Setup data never `use`s case data: it is the
+  layer both channels and the provisioning steps share.
 - Objects merge key by key; arrays and values replace whole; `null` removes a key. `_comment` is a comment at any
   depth. To change one element of a list, give the whole list.
 - `${date:T}`, `${date:T+N}`, `${date:T-N}` in a text value, alone or in a longer text: today's date plus or minus N
@@ -315,7 +320,7 @@ it), a value without is the path of the part in this event's response. The block
   "sharedFragments": { "basic": "basic/<product_type>", "instrument": "instrument/<product_type>" },
   "dynamicFields": { "{basic}.dealDate": "type", "{basic}.valueDate": "type", "{basic}.premiumDate": "type" } }
 // trade_creation.json, trade_query.json
-"defaults": { "use": ["trade-basic", "trade-response-parts"],
+"defaults": { "use": ["setup/trade-create", "trade-response-parts"],
               "sharedFragments": { "basic": "data.trade.basic", "instrument": "data.trade.instrument" } }
 // trade_creation_approval.json: the parts without "trade"
 "defaults": { "use": ["trade-response-parts"],

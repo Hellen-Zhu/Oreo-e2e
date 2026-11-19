@@ -117,6 +117,13 @@ public class TestDataRepositoryTest {
         write("api/settlement_event.json", """
                 { "defaults": { "request": { "data": [
                   { "key": "effectiveDate", "value": "${date:S-5}", "type": "Date" } ] } } }""");
+        write("api/setup_use_event.json", """
+                { "defaults": { "use": ["setup/list-child-setup", "extra"], "request": { "basic": { "c": "3" } } },
+                  "cases": [ { "id": "TC-SETUP-USE-EVENT-API-002", "request": { "valueDate": "fixed" } } ] }""");
+        write("api/bad_setup_use.json", """
+                { "cases": [ { "id": "TC-BAD-SETUP-USE-API-001", "use": ["setup/response-only-setup"] } ] }""");
+        write("api/missing_setup_use.json", """
+                { "cases": [ { "id": "TC-MISSING-SETUP-USE-API-001", "use": ["setup/nope"] } ] }""");
         write("api/bad_dat.json", """
                 { "defaults": { "datFile": "../FX_TRF.dat" } }""");
         write("api/clash_block.json", """
@@ -543,5 +550,21 @@ public class TestDataRepositoryTest {
         } catch (IllegalStateException e) {
             assertTrue(e.getMessage(), e.getMessage().contains("data/setup/nope.json"));
         }
+    }
+
+    @Test
+    public void aSetupFileIsABlockOfUse() {
+        CaseData data = repo.forCase("TC-SETUP-USE-EVENT-API-001");
+        // the setup's request with its extends chain, its date resolved by the case, then the next block and layer
+        assertEquals("{\"udf\":[{\"key\":\"b\",\"value\":\"2\"}],\"valueDate\":\"" + day(-1) + "\","
+                + "\"basic\":{\"udf\":[\"x\"],\"c\":\"3\"}}", data.request());
+        assertEquals(List.of("setup_use_event.json defaults (use setup/list-child-setup, extra)"), data.layers());
+        assertEquals("fixed", Json.parse(repo.forCase("TC-SETUP-USE-EVENT-API-002").request()).path("valueDate").asText());
+    }
+
+    @Test
+    public void aSetupBlockWithoutARequestOrFileFails() {
+        assertFailsWith(() -> repo.forCase("TC-BAD-SETUP-USE-API-001"), "setup/response-only-setup", "no request");
+        assertFailsWith(() -> repo.forCase("TC-MISSING-SETUP-USE-API-001"), "data/setup/nope.json");
     }
 }

@@ -44,6 +44,8 @@ public final class TestDataRepository {
     private static final Pattern PART_RULE = Pattern.compile("\\{([A-Za-z0-9_-]+)}([.\\[].*)?");
     private static final Set<String> SETUP_KEYS = Set.of("extends", "request", "response");
     private static final Pattern SETUP_NAME = Pattern.compile("[a-z0-9][a-z0-9-]*");
+    /** A {@code use} entry {@code setup/<name>}: the request of setup data {@code <name>} as a block. */
+    static final String SETUP_USE = "setup/";
 
     private final String root;
     private final ConcurrentHashMap<String, Optional<ObjectNode>> files = new ConcurrentHashMap<>();
@@ -131,15 +133,15 @@ public final class TestDataRepository {
 
     /**
      * Applies one layer: its {@code use} blocks in order, then its own {@code request}, {@code dynamicFields},
-     * {@code sharedFragments} and {@code expectedBase}.
+     * {@code sharedFragments} and {@code expectedBase}. A {@code use} entry {@code setup/<name>} is the request of
+     * that setup data ({@code extends} included, {@code ${date:...}} still unresolved: the case resolves them).
      */
-    private static void apply(Merged merged, ObjectNode layer, String label, Map<String, JsonNode> shared,
-                              String path) {
+    private void apply(Merged merged, ObjectNode layer, String label, Map<String, JsonNode> shared, String path) {
         if (layer == null) return;
         List<String> uses = new ArrayList<>();
         for (JsonNode use : layer.path("use")) {
             String name = use.asText();
-            JsonNode block = shared.get(name);
+            JsonNode block = name.startsWith(SETUP_USE) ? setupBlock(name, path, label) : shared.get(name);
             if (block == null) {
                 throw error(path, label + " use", "no shared block '" + name + "' in common.json or this file "
                         + shared.keySet());
@@ -156,6 +158,22 @@ public final class TestDataRepository {
             merged.productId = layer.get("productId").isNull() ? null : layer.get("productId").asText();
         }
         merged.layers.add(uses.isEmpty() ? label : label + " (use " + String.join(", ", uses) + ")");
+    }
+
+    /** The block of a {@code use} entry {@code setup/<name>}: {@code {"request": <the setup's request>}}. */
+    private ObjectNode setupBlock(String use, String path, String where) {
+        SetupData setup;
+        try {
+            setup = setup(use.substring(SETUP_USE.length()));
+        } catch (IllegalStateException e) {
+            throw error(path, where + " use", e.getMessage());
+        }
+        if (setup.requestNode() == null) {
+            throw error(path, where + " use", use + " has no request: data/" + use + ".json");
+        }
+        ObjectNode block = Json.MAPPER.createObjectNode();
+        block.set("request", setup.requestNode().deepCopy());
+        return block;
     }
 
     /** The request, dynamic fields, shared fragments, expected base, dat file and product ID merged so far. */
@@ -433,12 +451,15 @@ public final class TestDataRepository {
         JsonNode use = layer.get("use");
         if (use != null) {
             if (!use.isArray()) {
-                throw error(path, where + ".use", "must be an array of shared block names");
+                throw error(path, where + ".use", "must be an array of shared block names or setup/<name>");
             }
             for (JsonNode name : use) {
-                if (!name.isTextual() || !shared.contains(name.asText())) {
+                if (name.isTextual() && name.asText().startsWith(SETUP_USE)) {
+                    setupBlock(name.asText(), path, where);
+                } else if (!name.isTextual() || !shared.contains(name.asText())) {
                     throw error(path, where + ".use", "no shared block " + name + " in "
-                            + channelDir + "/common.json or this file's shared " + shared);
+                            + channelDir + "/common.json or this file's shared " + shared
+                            + " (setup data is setup/<name>)");
                 }
             }
         }

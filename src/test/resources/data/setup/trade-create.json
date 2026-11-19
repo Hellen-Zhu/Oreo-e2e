@@ -1,5 +1,5 @@
 {
-  "_comment": "Trade submitted before a case: common_trade_action.snippet (API), TradeProvisioningSteps (UI). The step sets basic.productId.",
+  "_comment": "The one trade body: submitted before a case by the provisioning steps (API, UI), and the request of the API trade creation cases (api/trade_creation.json: use setup/trade-create). The step sets basic.productId.",
   "request": {
     "basic": {
       "counterpartyFmId": "900000001",
