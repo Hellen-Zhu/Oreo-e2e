@@ -352,6 +352,8 @@ mvn -Ptest-data process-test-classes "-Dexec.args=shared TC-TRADE-CREATION-FX_TR
 mvn -Ptest-data process-test-classes "-Dexec.args=shared TC-TRADE-CREATION-<product_type>-API-001"
 mvn -Ptest-data process-test-classes "-Dexec.args=unused-steps"
 mvn -Ptest-data process-test-classes "-Dexec.args=coverage"
+mvn -Ptest-data process-test-classes "-Dexec.args=coverage --by productId"
+mvn -Ptest-data process-test-classes "-Dexec.args=coverage --by tradeType"
 mvn -Ptest-data process-test-classes "-Dexec.args=coverage --html"
 ```
 
@@ -409,9 +411,16 @@ or with `-U`.
   and `sync-examples` would not change it: a scenario to write) and the cells to sync. It writes nothing and never
   fails. Only product Outlines are counted: a Scenario with a fixed product says no capability. Whether each case has
   its data and recording is what `check` reports. Run it after `sync-examples` when a product is added, and give the
-  product's column to QA for the review. `coverage --html` prints the same and also writes the matrix as a page,
-  `target/coverage/coverage.html`, for readers outside the team: one tab per capability group (the trade lifecycle
-  first), one row per product, each cell two dots, API and UI, the counts on hover, a product's cases on a click. The
+  product's column to QA for the review. `--by` changes what a column is, for readers who look at products another
+  way: `--by productId` one column per product ID a case sends with its composition (`FX_PSCRIPT / FX_CO`: the
+  composition's default from `ProductDatFiles`, and another column for the cases whose data sends another
+  `productId`; such a column has no gaps of its own, the default one answers for the composition), `--by tradeType`
+  one column per trade type, the `tradeType` of the composition's recorded trade (`expected/_shared/basic/<C>.json`;
+  `(not recorded)` before its first recording), its compositions counted together. `coverage --html` prints the
+  matrix and also writes it as a page, `target/coverage/coverage.html`, for readers outside the team, every view in
+  it behind a switch (composition, product ID / composition, trade type): one tab per capability group (the trade
+  lifecycle first), one row per composition, product ID or trade type, each cell two dots, API and UI, the counts on
+  hover, a row's cases on a click, with the product ID each sends. The
   page is one file with nothing loaded from elsewhere: it opens offline, and a pipeline can publish it as a build
   artifact. Its data is written beside it, `coverage.json`, for other tools (and for the planned dashboard,
   [test-dashboard-plan.md](test-dashboard-plan.md)). Both are generated: never commit them. The

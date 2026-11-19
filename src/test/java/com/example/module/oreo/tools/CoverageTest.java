@@ -88,6 +88,45 @@ public class CoverageTest {
         assertTrue(report, report.indexOf("\nfixings ") > features);
     }
 
+    /** P1 and P2 send ID-1 and ID-2 by default; the API case of cancellation sends ID-X for P2. P1 and P2 are trade type T. */
+    private static final Coverage.Facts FACTS = new Coverage.Facts(
+            (product, capability) -> capability != Capability.FIXINGS,
+            (id, composition) -> id.equals("TC-CANCEL-P2-API-001") ? "ID-X" : "ID-" + composition.substring(1),
+            composition -> "ID-" + composition.substring(1),
+            composition -> "T");
+
+    @Test
+    public void aProductIdSomeCasesSendIsARowOfItsComposition() {
+        List<Coverage.Row> rows = Coverage.rows(Coverage.View.PRODUCT_ID, List.of("P1", "P2"), ENTRIES, FACTS);
+        assertEquals(List.of("ID-1 / P1", "ID-2 / P2", "ID-X / P2"), rows.stream().map(Coverage.Row::label).toList());
+        // the default row answers for P2: its API cancellation case sends ID-X, its UI one is to sync
+        Coverage.Cell ownCancel = Coverage.cell(rows.get(1), Capability.CANCELLATION, ENTRIES, Set.of(), FACTS).counts();
+        assertEquals(Coverage.NO_CASE + " *", ownCancel.text());
+        Coverage.Cell otherCancel = Coverage.cell(rows.get(2), Capability.CANCELLATION, ENTRIES, Set.of(), FACTS).counts();
+        assertEquals("1/0", otherCancel.text());
+        // a product ID only some cases send has no gap of its own
+        Coverage.Cell otherAlloc = Coverage.cell(rows.get(2), Capability.ALLOCATION, ENTRIES, Set.of(), FACTS).counts();
+        assertEquals(Coverage.NOT_SUPPORTED, otherAlloc.text());
+    }
+
+    @Test
+    public void aTradeTypeGathersItsCompositions() {
+        List<Coverage.Row> rows = Coverage.rows(Coverage.View.TRADE_TYPE, List.of("P1", "P2"), ENTRIES, FACTS);
+        assertEquals(1, rows.size());
+        assertEquals(List.of("P1", "P2"), rows.get(0).compositions());
+        Coverage.RowCell cancel = Coverage.cell(rows.get(0), Capability.CANCELLATION, ENTRIES, Set.of(), FACTS);
+        assertEquals("2/1 *", cancel.counts().text());
+        assertEquals(Coverage.NOT_SUPPORTED, Coverage.cell(rows.get(0), Capability.FIXINGS, ENTRIES, Set.of(), FACTS)
+                .counts().text());
+        String report = Coverage.render(Coverage.View.TRADE_TYPE, rows, ENTRIES, Set.of(), FACTS);
+        assertTrue(report, report.contains("T = P1 + P2"));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void anUnknownViewFails() {
+        Coverage.View.of("product");
+    }
+
     @Test
     public void wipIsInheritedFromTheFeatureAndTheRule() throws IOException {
         Path file = Files.createTempFile("coverage", ".feature");

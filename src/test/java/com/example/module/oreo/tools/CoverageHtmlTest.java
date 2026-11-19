@@ -60,8 +60,13 @@ public class CoverageHtmlTest {
                 outline("ui/trading/trade_cancellation.feature", "TC-CANCEL-<product_type>-UI-001",
                         Capability.CANCELLATION, "P1", "P2"));
         Set<String> wip = Set.of("ui/trading/trade_cancellation.feature|TC-CANCEL-<product_type>-UI-001");
-        Map<String, Object> model = CoverageHtml.model(entries, wip, List.of("P1", "P2"), (p, c) -> true, "now");
-        JsonNode lifecycle = new ObjectMapper().readTree(CoverageHtml.json(model)).get("groups").get(0);
+        Coverage.Facts facts = new Coverage.Facts((p, c) -> true, (id, c) -> "ID-" + c, c -> "ID-" + c, c -> "T");
+        Map<String, Object> model = CoverageHtml.model(entries, wip, List.of("P1", "P2"), facts, "now");
+        JsonNode views = new ObjectMapper().readTree(CoverageHtml.json(model)).get("views");
+        assertEquals(List.of("composition", "productId", "tradeType"),
+                List.of(views.get(0).get("key").asText(), views.get(1).get("key").asText(),
+                        views.get(2).get("key").asText()));
+        JsonNode lifecycle = views.get(0).get("groups").get(0);
         assertEquals("Trade lifecycle", lifecycle.get("title").asText());
         int column = indexOf(CoverageHtml.columns(Capability.SUPPORT_CAPABILITY), Capability.CANCELLATION);
 
@@ -72,6 +77,12 @@ public class CoverageHtmlTest {
         assertEquals("TC-CANCEL-P1-API-001", p1.get("cases").get(0).get("id").asText());
         assertEquals("API", p1.get("cases").get(0).get("layer").asText());
         assertTrue(p1.get("cases").get(1).get("wip").asBoolean());
+        assertEquals("P1", p1.get("cases").get(0).get("composition").asText());
+        assertEquals("ID-P1", p1.get("cases").get(0).get("productId").asText());
+        assertEquals("P1", lifecycle.get("rows").get(0).get("label").asText());
+        JsonNode byType = views.get(2).get("groups").get(0).get("rows");
+        assertEquals(1, byType.size());
+        assertEquals("T", byType.get(0).get("label").asText());
 
         JsonNode p2 = lifecycle.get("rows").get(1).get("cells").get(column);
         assertEquals("TC-CANCEL-P2-API-001", p2.get("toSync").get(0).asText());

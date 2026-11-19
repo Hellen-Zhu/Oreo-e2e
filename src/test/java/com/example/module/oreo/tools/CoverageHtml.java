@@ -11,11 +11,11 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.BiPredicate;
 
 /**
- * The coverage matrix as a page ({@code coverage --html}): one tab per group of {@link Capability#GROUPS}, one row
- * per product, one column per capability, each cell the layers that test it. The page is the template
+ * The coverage matrix as a page ({@code coverage --html}): a switch between the views of {@link Coverage.View}, one
+ * tab per group of {@link Capability#GROUPS}, one row per composition, product ID or trade type, one column per
+ * capability, each cell the layers that test it. The page is the template
  * {@code src/test/resources/tools/coverage-report.html} with the data of {@link #model} in it as JSON: one file,
  * nothing loaded from elsewhere, so it opens offline. The same JSON is written beside it for other tools to read.
  */
@@ -78,74 +78,79 @@ final class CoverageHtml {
     }
 
     /**
-     * The data of the page: per group its columns and, per product, one cell per column with its counts, whether it is
-     * a gap, the cases that run for it and those {@code sync-examples} would add.
+     * The data of the page: per view ({@link Coverage.View}) and group its columns and, per row, one cell per column
+     * with its counts, whether it is a gap, the cases that run for it (with their composition and the product ID they
+     * send) and those {@code sync-examples} would add.
      */
     static Map<String, Object> model(List<ProductExamples.Entry> entries, Set<String> wip, List<String> products,
-                                     BiPredicate<String, Capability> supports, String generated) {
-        List<Object> groups = new ArrayList<>();
-        for (Map.Entry<String, Set<Capability>> group : Capability.GROUPS.entrySet()) {
-            List<Column> columns = columns(group.getValue());
-            List<Object> header = new ArrayList<>();
-            for (Column column : columns) {
-                Map<String, Object> h = new LinkedHashMap<>();
-                h.put("tag", column.capability().tagName());
-                h.put("family", column.family());
-                h.put("variant", column.variant());
-                header.add(h);
-            }
-            List<Object> rows = new ArrayList<>();
-            for (String product : products) {
-                List<Object> cells = new ArrayList<>();
+                                     Coverage.Facts facts, String generated) {
+        List<Object> views = new ArrayList<>();
+        for (Coverage.View view : Coverage.View.values()) {
+            List<Coverage.Row> viewRows = Coverage.rows(view, products, entries, facts);
+            List<Object> groups = new ArrayList<>();
+            for (Map.Entry<String, Set<Capability>> group : Capability.GROUPS.entrySet()) {
+                List<Column> columns = columns(group.getValue());
+                List<Object> header = new ArrayList<>();
                 for (Column column : columns) {
-                    cells.add(cell(entries, wip, column.capability(), product,
-                            supports.test(product, column.capability())));
+                    Map<String, Object> h = new LinkedHashMap<>();
+                    h.put("tag", column.capability().tagName());
+                    h.put("family", column.family());
+                    h.put("variant", column.variant());
+                    header.add(h);
                 }
-                Map<String, Object> row = new LinkedHashMap<>();
-                row.put("product", product);
-                row.put("cells", cells);
-                rows.add(row);
+                List<Object> rows = new ArrayList<>();
+                for (Coverage.Row viewRow : viewRows) {
+                    List<Object> cells = new ArrayList<>();
+                    for (Column column : columns) {
+                        cells.add(cell(Coverage.cell(viewRow, column.capability(), entries, wip, facts)));
+                    }
+                    Map<String, Object> row = new LinkedHashMap<>();
+                    row.put("label", viewRow.label());
+                    row.put("compositions", viewRow.compositions());
+                    row.put("cells", cells);
+                    rows.add(row);
+                }
+                Map<String, Object> g = new LinkedHashMap<>();
+                g.put("title", group.getKey());
+                g.put("columns", header);
+                g.put("rows", rows);
+                groups.add(g);
             }
-            Map<String, Object> g = new LinkedHashMap<>();
-            g.put("title", group.getKey());
-            g.put("columns", header);
-            g.put("rows", rows);
-            groups.add(g);
+            Map<String, Object> v = new LinkedHashMap<>();
+            v.put("key", view.key);
+            v.put("title", view.title);
+            v.put("noun", view.noun);
+            v.put("groups", groups);
+            views.add(v);
         }
         Map<String, Object> model = new LinkedHashMap<>();
         model.put("generated", generated);
         model.put("products", products);
-        model.put("groups", groups);
+        model.put("views", views);
         return model;
     }
 
-    private static Map<String, Object> cell(List<ProductExamples.Entry> entries, Set<String> wip,
-                                            Capability capability, String product, boolean supported) {
-        Coverage.Cell counts = Coverage.cell(entries, wip, capability, product, supported);
+    private static Map<String, Object> cell(Coverage.RowCell rowCell) {
+        Coverage.Cell counts = rowCell.counts();
         List<Object> cases = new ArrayList<>();
-        List<String> toSync = new ArrayList<>();
-        for (ProductExamples.Entry entry : entries) {
-            if (entry.capability() != capability) continue;
-            String id = entry.rowId().replace("<product_type>", product);
-            if (!entry.before().contains(product)) {
-                if (supported) toSync.add(id);
-                continue;
-            }
+        for (Coverage.CaseRef ref : rowCell.cases()) {
             Map<String, Object> c = new LinkedHashMap<>();
-            c.put("id", id);
-            c.put("layer", entry.file().startsWith("api/") ? "API" : "UI");
-            c.put("file", entry.file());
-            c.put("wip", wip.contains(entry.file() + "|" + entry.rowId()));
+            c.put("id", ref.id());
+            c.put("layer", ref.api() ? "API" : "UI");
+            c.put("file", ref.file());
+            c.put("wip", ref.wip());
+            c.put("composition", ref.composition());
+            c.put("productId", ref.productId());
             cases.add(c);
         }
         Map<String, Object> cell = new LinkedHashMap<>();
-        cell.put("supported", supported);
+        cell.put("supported", counts.supported());
         cell.put("api", counts.api());
         cell.put("ui", counts.ui());
         cell.put("wip", counts.wip());
         cell.put("gap", counts.gap());
         cell.put("cases", cases);
-        cell.put("toSync", toSync);
+        cell.put("toSync", rowCell.toSync());
         return cell;
     }
 

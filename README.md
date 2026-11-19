@@ -70,7 +70,7 @@ placed in a tracked file, treat it as exposed and follow the team rotation proce
 ### Test data commands (`TestDataTool`)
 
 Every command of the offline tool (`check`, `sync-examples`, `case`, `suggest`, `compact`, `shared`, `unused-steps`,
-`coverage`), with what it does and what `check` covers: [docs/test-data.md, "Commands"](docs/test-data.md#commands).
+`coverage`, with `--by productId` or `--by tradeType` to count by product ID or trade type), with what it does and what `check` covers: [docs/test-data.md, "Commands"](docs/test-data.md#commands).
 
 ## Running
 

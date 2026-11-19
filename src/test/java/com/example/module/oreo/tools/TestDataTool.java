@@ -22,8 +22,11 @@ import java.util.stream.Stream;
  * shared &lt;case ID&gt;      takes the shared response parts from that case's recording (&lt;product_type&gt;: every
  *                       product's case), compacts every file again
  * unused-steps          lists the snippets and Java steps no feature reaches; writes nothing, never fails
- * coverage [--html]     prints the product x capability matrix of the product Outlines; never fails; --html also
- *                       writes it as a page, target/coverage/coverage.html, and its data, coverage.json
+ * coverage [--by &lt;view&gt;] [--html]
+ *                       prints the product x capability matrix of the product Outlines, one row per composition, or
+ *                       per product ID / composition (--by productId) or trade type (--by tradeType); never fails;
+ *                       --html also writes every view as a page, target/coverage/coverage.html, and its data,
+ *                       coverage.json
  * </pre>
  * A problem throws an exception so Maven fails without terminating its JVM.
  */
@@ -31,7 +34,7 @@ public class TestDataTool {
 
     private static final String USAGE =
             "usage: TestDataTool check | sync-examples | compact <event>|all | suggest <event> | case <case ID>"
-                    + " | shared <case ID> | unused-steps | coverage [--html]";
+                    + " | shared <case ID> | unused-steps | coverage [--by composition|productId|tradeType] [--html]";
 
     public static void main(String[] args) throws IOException, InterruptedException {
         String command = args.length == 0 ? "" : args[0];
@@ -45,8 +48,7 @@ public class TestDataTool {
                 case "case" -> args.length == 2 ? Lookup.run(args[1].trim()) : usage();
                 case "shared" -> args.length == 2 ? SharedFromCase.run(args[1].trim()) : usage();
                 case "unused-steps" -> args.length == 1 ? UnusedSteps.run() : usage();
-                case "coverage" -> args.length == 1 ? Coverage.run(false)
-                        : args.length == 2 && args[1].trim().equals("--html") ? Coverage.run(true) : usage();
+                case "coverage" -> coverage(args);
                 default -> usage();
             };
         } catch (IllegalStateException | IllegalArgumentException e) {
@@ -57,6 +59,19 @@ public class TestDataTool {
         if (problems != 0) {
             throw new IllegalStateException("Test-data command failed; see the diagnostics above");
         }
+    }
+
+    /** {@code coverage [--by <view>] [--html]}, the options in any order. */
+    private static int coverage(String[] args) throws IOException {
+        boolean html = false;
+        Coverage.View view = Coverage.View.COMPOSITION;
+        for (int i = 1; i < args.length; i++) {
+            String arg = args[i].trim();
+            if (arg.equals("--html")) html = true;
+            else if (arg.equals("--by") && i + 1 < args.length) view = Coverage.View.of(args[++i].trim());
+            else return usage();
+        }
+        return Coverage.run(html, view);
     }
 
     private static int usage() {
