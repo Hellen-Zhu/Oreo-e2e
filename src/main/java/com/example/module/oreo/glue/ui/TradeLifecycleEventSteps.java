@@ -289,14 +289,20 @@ public class TradeLifecycleEventSteps {
      * as it is ({@code "5000"}). Stores it as {@code '<amountVar>'}, as typed into a form ({@code 3468.75}), and as
      * {@code '<amountVar>.display'}, as the portal shows it ({@code 3,468.75}).
      *
-     * <p>A case whose data has no {@code '<shareVar>'} (or a blank one) stores nothing.
+     * <p>A case whose data has no {@code '<shareVar>'} (or a blank one) fails; with {@code if it is set} it stores
+     * nothing, for a value only some products give.
      *
-     * <pre>When the share 'newNotional' of the notional of trade 'createdTradeId' is stored as 'newNotionalAmount'</pre>
+     * <pre>When the share 'newNotional' of the notional of trade 'createdTradeId' is stored as 'newNotionalAmount'
+     * When the share 'newNotional' of the notional of trade 'createdTradeId' is stored as 'newNotionalAmount' if it is set</pre>
      */
-    @Given("^the share '([^']*)' of the notional of trade '([^']*)' is stored as '([^']*)'$")
-    public void storeShareOfNotional(String shareVar, String tradeVar, String amountVar) {
+    @Given("^the share '([^']*)' of the notional of trade '([^']*)' is stored as '([^']*)'( if it is set)?$")
+    public void storeShareOfNotional(String shareVar, String tradeVar, String amountVar, String ifSet) {
         Object given = ctx.find(shareVar);
         if (given == null || String.valueOf(given).isBlank()) {
+            if (ifSet == null) {
+                throw new AssertionError("[TradeLifecycleEventSteps] no '" + shareVar + "' in the case data of "
+                        + ctx.find("_tc.key"));
+            }
             ctx.write("[notional] no '" + shareVar + "' in the case data: '" + amountVar + "' not stored");
             return;
         }
