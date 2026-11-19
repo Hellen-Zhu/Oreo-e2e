@@ -1,5 +1,8 @@
 package com.example.module.oreo.glue.ui;
 
+import com.example.genie.module.rest.service.RequestResponseHelper;
+import com.example.module.oreo.config.TestUser;
+import com.example.module.oreo.utils.RestApiUtil;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.example.module.oreo.utils.TradeApiClient;
 import com.example.module.oreo.playwright.PlaywrightServiceResolver;
@@ -7,19 +10,29 @@ import com.example.module.oreo.playwright.PlaywrightServiceResolver.Context.Risk
 import com.microsoft.playwright.Locator;
 import cucumber.api.Scenario;
 import cucumber.api.java.Before;
+import cucumber.api.java.en.Given;
 import cucumber.api.java.en.When;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.util.List;
+import java.util.Locale;
 
 public class TradeLifecycleEventSteps {
 
     private static final Logger log = LoggerFactory.getLogger(TradeLifecycleEventSteps.class);
     private PlaywrightServiceResolver.Context ctx;
+    private RequestResponseHelper helper;
 
     @Before({"@playwright"})
-    public void beforeScenario(Scenario scenario) { this.ctx = PlaywrightServiceResolver.from(scenario); }
+    public void beforeScenario(Scenario scenario) {
+        this.ctx = PlaywrightServiceResolver.from(scenario);
+        this.helper = RestApiUtil.helperFromScenario(scenario);
+    }
 
     // ── Amendment steps ─────────────────────────────────────────────
 
@@ -238,5 +251,83 @@ public class TradeLifecycleEventSteps {
                 "POST"
         );
         ctx.set(responseCtxKey, responseBody);
+    }
+
+    // ── Event amounts from the trade's notional ───────────────────
+
+    /**
+     * The notionals a partial novation remaining leaves, from the trade's own notional ({@code basic.notionalAmount},
+     * read through the API) and the remaining notional the case gives: stores {@code originalNotional},
+     * {@code newNotional} (original - remaining: the novated trade's) and {@code equationLineValue} (the event form's
+     * line, {@code Notional: <original> - <remaining> = <new>}), each as the portal shows amounts ({@code 69,000.00}:
+     * en-US, the preference maker and checker sign in with).
+     *
+     * <pre>When the novated notional of trade 'createdTradeId' is computed from the remaining notional 'remainingNotional'</pre>
+     */
+    @Given("^the novated notional of trade '([^']*)' is computed from the remaining notional '([^']*)'$")
+    public void computeNovatedNotional(String tradeVar, String remainingVar) {
+        String tradeId = ctx.find(tradeVar);
+        BigDecimal original = tradeNotional(tradeId);
+        Object remainingValue = ctx.find(remainingVar);
+        if (remainingValue == null) {
+            throw new AssertionError("[TradeLifecycleEventSteps] no '" + remainingVar + "' in the case data of "
+                    + ctx.find("_tc.key"));
+        }
+        BigDecimal remaining = new BigDecimal(String.valueOf(remainingValue).replace(",", "").trim());
+        BigDecimal novated = original.subtract(remaining);
+        ctx.set("originalNotional", amount(original));
+        ctx.set("newNotional", amount(novated));
+        ctx.set("equationLineValue", "Notional: " + amount(original) + " - " + amount(remaining) + " = "
+                + amount(novated));
+        ctx.write("[notional] trade " + tradeId + ": " + amount(original) + " - " + amount(remaining) + " = "
+                + amount(novated));
+    }
+
+    /**
+     * An amount of the case data that may be a share of the trade's notional: {@code '<shareVar>'} is {@code "50%"}
+     * (computed from the trade's {@code basic.notionalAmount}, read through the API, rounded to the cent) or an amount
+     * as it is ({@code "5000"}). Stores it as {@code '<amountVar>'}, as typed into a form ({@code 3468.75}), and as
+     * {@code '<amountVar>.display'}, as the portal shows it ({@code 3,468.75}).
+     *
+     * <p>A case whose data has no {@code '<shareVar>'} (or a blank one) stores nothing.
+     *
+     * <pre>When the share 'newNotional' of the notional of trade 'createdTradeId' is stored as 'newNotionalAmount'</pre>
+     */
+    @Given("^the share '([^']*)' of the notional of trade '([^']*)' is stored as '([^']*)'$")
+    public void storeShareOfNotional(String shareVar, String tradeVar, String amountVar) {
+        Object given = ctx.find(shareVar);
+        if (given == null || String.valueOf(given).isBlank()) {
+            ctx.write("[notional] no '" + shareVar + "' in the case data: '" + amountVar + "' not stored");
+            return;
+        }
+        String text = String.valueOf(given).trim();
+        BigDecimal amount;
+        if (text.endsWith("%")) {
+            String tradeId = ctx.find(tradeVar);
+            BigDecimal percent = new BigDecimal(text.substring(0, text.length() - 1).trim());
+            amount = tradeNotional(tradeId).multiply(percent).divide(BigDecimal.valueOf(100))
+                    .setScale(2, RoundingMode.HALF_UP);
+            ctx.write("[notional] " + text + " of trade " + tradeId + " = " + amount(amount));
+        } else {
+            amount = new BigDecimal(text.replace(",", ""));
+        }
+        ctx.set(amountVar, amount.stripTrailingZeros().toPlainString());
+        ctx.set(amountVar + ".display", amount(amount));
+    }
+
+    /** The trade's {@code data.trade.basic.notionalAmount}, read through the API as the maker. */
+    private BigDecimal tradeNotional(String tradeId) {
+        JsonNode notional = RestApiUtil.get(helper, TradeApiClient.tradePath(tradeId), TestUser.MAKER.email())
+                .path("data").path("trade").path("basic").path("notionalAmount");
+        if (!notional.isNumber()) {
+            throw new AssertionError("[TradeLifecycleEventSteps] trade " + tradeId
+                    + " has no numeric data.trade.basic.notionalAmount: " + notional);
+        }
+        return notional.decimalValue();
+    }
+
+    /** An amount as the portal shows it with the en-US number format: grouped, two decimals. */
+    static String amount(BigDecimal value) {
+        return new DecimalFormat("#,##0.00", DecimalFormatSymbols.getInstance(Locale.US)).format(value);
     }
 }
