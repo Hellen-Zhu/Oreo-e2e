@@ -1,14 +1,4 @@
 {
-  "_comment": "StepIn Partial trade submitted before a case (TradeProvisioningSteps): trade-create with the StepIn udf entries",
-  "extends": "trade-create",
-  "request": {
-    "basic": {
-      "udf": [
-        { "key": "stepInType", "value": "StepInPartial", "type": "Text" },
-        { "key": "oldCptyName", "value": "EXAMPLE COUNTERPARTY B", "type": "Text" },
-        { "key": "oldCptyFmId", "value": "900000002", "type": "Text" },
-        { "key": "novationDate", "value": "${date:T}", "type": "Date" }
-      ]
-    }
-  }
+  "_comment": "StepIn Partial trade submitted before a case (TradeProvisioningSteps): trade-create with the StepIn udf entries of stepin-partial",
+  "extends": ["trade-create", "stepin-partial"]
 }

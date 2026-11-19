@@ -1,0 +1,13 @@
+{
+  "_comment": "StepIn Partial: the old counterparty and the novation date as udf entries, without the trade body. Used by trade-create-stepin-partial (with trade-create) and by the API trade creation cases (use setup/stepin-partial)",
+  "request": {
+    "basic": {
+      "udf": [
+        { "key": "stepInType", "value": "StepInPartial", "type": "Text" },
+        { "key": "oldCptyName", "value": "EXAMPLE COUNTERPARTY B", "type": "Text" },
+        { "key": "oldCptyFmId", "value": "900000002", "type": "Text" },
+        { "key": "novationDate", "value": "${date:T}", "type": "Date" }
+      ]
+    }
+  }
+}

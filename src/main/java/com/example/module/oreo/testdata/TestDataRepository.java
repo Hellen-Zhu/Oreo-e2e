@@ -602,7 +602,10 @@ public final class TestDataRepository {
 
     // ── Setup data ───────────────────────────────────────────────────────────
 
-    /** The setup payload {@code <root>setup/<name>.json}, with its {@code extends} chain merged under it. */
+    /**
+     * The setup payload {@code <root>setup/<name>.json}, with its {@code extends} chain merged under it: one parent, or
+     * a list of parents merged in order.
+     */
     public SetupData setup(String name) {
         SetupData cached = setups.get(name);
         if (cached != null) return cached;
@@ -628,15 +631,21 @@ public final class TestDataRepository {
                         + via(chain)));
         ObjectNode request = objectOrNull(file.get("request"));
         ObjectNode response = objectOrNull(file.get("response"));
-        JsonNode parentName = file.get("extends");
-        SetupData parent = null;
-        if (parentName != null) {
+        // extends: one setup name, or a list merged in order (each later one over the earlier), then this file
+        JsonNode parentNames = file.get("extends");
+        ObjectNode parentRequest = null;
+        ObjectNode parentResponse = null;
+        if (parentNames != null) {
             chain.add(name);
-            parent = resolveSetup(parentName.asText(), chain);
+            for (JsonNode parentName : parentNames.isArray() ? parentNames : List.of(parentNames)) {
+                SetupData parent = resolveSetup(parentName.asText(), chain);
+                parentRequest = under(parentRequest, parent.requestNode());
+                parentResponse = under(parentResponse, parent.responseNode());
+            }
             chain.removeLast();
         }
-        request = under(parent == null ? null : parent.requestNode(), request);
-        response = under(parent == null ? null : parent.responseNode(), response);
+        request = under(parentRequest, request);
+        response = under(parentResponse, response);
         return new SetupData(name, path, request, response);
     }
 
@@ -654,8 +663,13 @@ public final class TestDataRepository {
     private static void validateSetup(ObjectNode setup, String path) {
         checkKeys(setup, SETUP_KEYS, path, "");
         JsonNode parent = setup.get("extends");
-        if (parent != null && !parent.isTextual()) {
-            throw error(path, "extends", "must be the name of another setup file, without .json");
+        boolean names = parent != null && parent.isArray() && !parent.isEmpty();
+        if (names) {
+            for (JsonNode name : parent) names &= name.isTextual();
+        }
+        if (parent != null && !parent.isTextual() && !names) {
+            throw error(path, "extends", "must be the name of another setup file, without .json, or a list of them"
+                    + " (merged in order)");
         }
         for (String key : List.of("request", "response")) {
             JsonNode part = setup.get(key);

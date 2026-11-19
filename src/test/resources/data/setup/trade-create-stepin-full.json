@@ -1,14 +1,4 @@
 {
-  "_comment": "StepIn Full trade submitted before a case (TradeProvisioningSteps): trade-create with the StepIn udf entries",
-  "extends": "trade-create",
-  "request": {
-    "basic": {
-      "udf": [
-        { "key": "stepInType", "value": "StepInFull", "type": "Text" },
-        { "key": "oldCptyName", "value": "EXAMPLE COUNTERPARTY B", "type": "Text" },
-        { "key": "oldCptyFmId", "value": "900000002", "type": "Text" },
-        { "key": "novationDate", "value": "${date:T}", "type": "Date" }
-      ]
-    }
-  }
+  "_comment": "StepIn Full trade submitted before a case (TradeProvisioningSteps): trade-create with the StepIn udf entries of stepin-full",
+  "extends": ["trade-create", "stepin-full"]
 }

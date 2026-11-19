@@ -184,6 +184,10 @@ public class TestDataRepositoryTest {
                 { "extends": "list-setup", "request": { "udf": [ { "key": "b", "value": "2" } ] } }""");
         write("setup/response-only-setup.json", """
                 { "response": { "code": 200 } }""");
+        write("setup/udf-only-setup.json", """
+                { "request": { "basic": { "udf": [ { "key": "u", "value": "1" } ], "a": "from-udf" } } }""");
+        write("setup/two-parents-setup.json", """
+                { "extends": ["child-setup", "udf-only-setup"], "request": { "basic": { "c": "3" } } }""");
         write("setup/loop-a.json", """
                 { "extends": "loop-b" }""");
         write("setup/loop-b.json", """
@@ -566,5 +570,12 @@ public class TestDataRepositoryTest {
     public void aSetupBlockWithoutARequestOrFileFails() {
         assertFailsWith(() -> repo.forCase("TC-BAD-SETUP-USE-API-001"), "setup/response-only-setup", "no request");
         assertFailsWith(() -> repo.forCase("TC-MISSING-SETUP-USE-API-001"), "data/setup/nope.json");
+    }
+
+    @Test
+    public void setupExtendsAListInOrder() {
+        // child-setup (over base-setup), then udf-only-setup over it, then the file itself
+        assertEquals("{\"basic\":{\"a\":\"from-udf\",\"b\":\"2\",\"udf\":[{\"key\":\"u\",\"value\":\"1\"}],"
+                + "\"c\":\"3\"}}", repo.setup("two-parents-setup").request());
     }
 }

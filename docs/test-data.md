@@ -116,7 +116,9 @@ with the columns `| case | dataset |` (`001`, `002` ...); each case is its own r
   `request` (with its `extends` chain) is the block, so a body the provisioning steps send and the cases send is kept
   once, in `data/setup/`. Its `${date:...}` are resolved as the case's, `S` from the case's product. API trade
   creation takes the trade body so: `"use": ["setup/trade-create", "trade-response-parts"]`, the body the trade
-  preconditions submit. A setup file without a `request` is an error. Setup data never `use`s case data: it is the
+  preconditions submit; a StepIn case adds `setup/stepin-partial` or `setup/stepin-full` (the udf entries only, so
+the product's `byProduct` values of the trade body stay) and the block with its mask. A setup file without a
+`request` is an error. Setup data never `use`s case data: it is the
   layer both channels and the provisioning steps share.
 - Objects merge key by key; arrays and values replace whole; `null` removes a key. `_comment` is a comment at any
   depth. To change one element of a list, give the whole list.
@@ -172,8 +174,9 @@ with the columns `| case | dataset |` (`001`, `002` ...); each case is its own r
 
 ## Setup data
 
-`data/setup/<name>.json`: `request` and / or `response`, `_comment`, and `extends` (another setup file, merged
-under this one, its lists replaced whole; `${date:...}` as in case data). Read by the steps `... from test data '<name>'` and by `TestData.setup("<name>")`; its `request()` /
+`data/setup/<name>.json`: `request` and / or `response`, `_comment`, and `extends` (another setup file, or a list of
+them merged in order, each over the one before, all merged under this one, their lists replaced whole:
+`trade-create-stepin-full` is `"extends": ["trade-create", "stepin-full"]`; `${date:...}` as in case data). Read by the steps `... from test data '<name>'` and by `TestData.setup("<name>")`; its `request()` /
 `response()` fail when the file (with its `extends` chain) has no such part, so a caller never checks for null and
 asks `hasRequest()` / `hasResponse()` only when the part is optional. The setup trade
 and the API case blocks hold the same values but are kept apart on purpose: what an API case sends must not change

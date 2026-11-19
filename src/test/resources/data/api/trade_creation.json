@@ -1,32 +1,8 @@
 {
   "_comment": "features/api/trading/trade_creation.feature. Layers: defaults, byProduct, the case's row, the row's byProduct. API-001 has no row: it runs on the defaults. A variant's expected file may be a patch on the API-001 of its product (expectedBase; made by TestDataTool compact); cases without a product have no base.",
   "shared": {
-    "stepin-partial": {
-      "_comment": "StepIn Partial: the old counterparty and the novation date as udf entries; the date is today's, so its echo in the response (udf[3]) is masked",
-      "request": {
-        "basic": {
-          "udf": [
-            { "key": "stepInType", "value": "StepInPartial", "type": "Text" },
-            { "key": "oldCptyName", "value": "EXAMPLE COUNTERPARTY B", "type": "Text" },
-            { "key": "oldCptyFmId", "value": "900000002", "type": "Text" },
-            { "key": "novationDate", "value": "${date:T}", "type": "Date" }
-          ]
-        }
-      },
-      "dynamicFields": { "data.trade.basic.udf[3].value": "type" }
-    },
-    "stepin-full": {
-      "_comment": "StepIn Full: the old counterparty and the novation date as udf entries; the date is today's, so its echo in the response (udf[3]) is masked",
-      "request": {
-        "basic": {
-          "udf": [
-            { "key": "stepInType", "value": "StepInFull", "type": "Text" },
-            { "key": "oldCptyName", "value": "EXAMPLE COUNTERPARTY B", "type": "Text" },
-            { "key": "oldCptyFmId", "value": "900000002", "type": "Text" },
-            { "key": "novationDate", "value": "${date:T}", "type": "Date" }
-          ]
-        }
-      },
+    "stepin-novation-date": {
+      "_comment": "StepIn Partial / Full: the request's udf entries are setup/stepin-partial or setup/stepin-full; the novation date is today's, so its echo in the response (udf[3]) is masked",
       "dynamicFields": { "data.trade.basic.udf[3].value": "type" }
     }
   },
@@ -78,7 +54,7 @@
     {
       "id": "TC-TRADE-CREATION-<product_type>-API-002",
       "_comment": "StepIn Partial",
-      "use": ["stepin-partial"],
+      "use": ["setup/stepin-partial", "stepin-novation-date"],
       "byProduct": {
         "FX_PSCRIPT_TRF": { "request": { "basic": { "notionalCurrency": "" } } }
       }
@@ -86,7 +62,7 @@
     {
       "id": "TC-TRADE-CREATION-<product_type>-API-003",
       "_comment": "StepIn Full",
-      "use": ["stepin-full"],
+      "use": ["setup/stepin-full", "stepin-novation-date"],
       "byProduct": {
         "FX_PSCRIPT_TRF": { "request": { "basic": { "direction": "Buy", "notionalCurrency": "CNH" } } }
       }
@@ -94,14 +70,14 @@
     {
       "id": "TC-TRADE-CREATION-API-004",
       "_comment": "Counterparty name absent: 400",
-      "use": ["stepin-partial"],
+      "use": ["setup/stepin-partial", "stepin-novation-date"],
       "request": { "basic": { "counterpartyFmId": "900000002", "counterpartyName": "" } },
       "dynamicFields": null
     },
     {
       "id": "TC-TRADE-CREATION-API-005",
       "_comment": "Portfolio absent: 400",
-      "use": ["stepin-full"],
+      "use": ["setup/stepin-full", "stepin-novation-date"],
       "request": { "basic": { "portfolioId": "" } },
       "dynamicFields": null
     },
