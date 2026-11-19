@@ -34,8 +34,8 @@ public final class CaseData {
 
     public CaseId id() { return id; }
 
-    /** Compact JSON of the merged request, {@code ${date:...}} filled in ({@link #resolvedRequest}); {@code {}} when no layer has one. */
-    public String request() { return Json.compact(resolvedRequest()); }
+    /** Compact JSON of the merged request, {@code ${date:...}} filled in; {@code {}} when no layer has one. */
+    public String request() { return Json.compact(DataPlaceholders.resolve(request)); }
 
     /** {@code true} when the merged request has at least one field. */
     public boolean hasRequest() { return !request.isEmpty(); }
@@ -72,20 +72,12 @@ public final class CaseData {
 
     /**
      * The request flattened into dot-path keys ({@code basic.counterpartyName}, {@code subTrades[0].portfolioId})
-     * with text leaf values, as the hook stores them in the scenario context; {@code ${date:...}} filled in.
+     * with text leaf values, as the hook stores them in the scenario context; {@code ${date:...}} filled in for today.
      */
     public Map<String, String> flattenRequest() {
         Map<String, String> result = new LinkedHashMap<>();
-        flatten(resolvedRequest(), "", result);
+        flatten(DataPlaceholders.resolve(request), "", result);
         return Collections.unmodifiableMap(result);
-    }
-
-    /** The request with its {@code ${date:...}} filled in, {@code S} from the case's product. */
-    private JsonNode resolvedRequest() {
-        String product = id.product();
-        return DataPlaceholders.resolve(request,
-                product == null ? null : ProductDatFiles.of(product).settlementDate(),
-                id.raw() + (product == null ? " (no product)" : " (product " + product + ")"));
     }
 
     private static void flatten(JsonNode node, String prefix, Map<String, String> result) {

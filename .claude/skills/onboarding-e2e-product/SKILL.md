@@ -36,7 +36,7 @@ Nothing else is asked first. With the dat file, make the change (section 2), the
 
 | File | Change |
 |---|---|
-| `src/main/java/com/example/module/oreo/testdata/ProductDatFiles.java` | One constant `<C>("<default product ID>", "<final settlement date of its dat file, yyyy-MM-dd, or null>", SUPPORT_CAPABILITY, PRODUCT_FEATURES)`, named exactly as the composition ID (the date from the dat file as QA gives it, never guessed; `null` until a case uses `${date:S...}`): both groups, every capability (the trade lifecycle: create, step in full / partial, every lifecycle event; the product features: fixings, cortex formula, product upload) until QA's review takes some off, per group: `except(<group>, <the ones it lacks>)`, `only(<the ones it has>)` (`<C>("...", null, SUPPORT_CAPABILITY, only(PRODUCT_UPLOAD))`), or the group left out when it has none of it. Added after the last product, never first (`values()[0]` is the data checks' example product; the order of the constants is the order of the `Examples` rows). Its comment: the product's name as QA gives it, else none |
+| `src/main/java/com/example/module/oreo/testdata/ProductDatFiles.java` | One constant `<C>("<default product ID>", SUPPORT_CAPABILITY, PRODUCT_FEATURES)`, named exactly as the composition ID: both groups, every capability (the trade lifecycle: create, step in full / partial, every lifecycle event; the product features: fixings, cortex formula, product upload) until QA's review takes some off, per group: `except(<group>, <the ones it lacks>)`, `only(<the ones it has>)` (`<C>("...", SUPPORT_CAPABILITY, only(PRODUCT_UPLOAD))`), or the group left out when it has none of it. Added after the last product, never first (`values()[0]` is the data checks' example product; the order of the constants is the order of the `Examples` rows). Its comment: the product's name as QA gives it, else none |
 | `src/test/resources/data/dat/<C>/<C>.dat` (the default; variants QA names go into the same folder) | If the committed `.dat` files are one-line placeholders (`# Placeholder: copy <C>.dat from the E2E project.`), this is the public copy: write the same line for `<C>`, never the real file, and add `<C>` to the placeholder list in `README.md` ("This copy"). Otherwise copy QA's file byte for byte |
 | `byProduct.<C>` of an event file | Nothing at first: the product runs on the defaults. Only values QA gives in the review that differ from them. `dynamicFields` only after a recording shows them (section 5) |
 
@@ -69,9 +69,7 @@ answers. It holds:
    `src/test/resources/data/api|ui/<event>.json` and the `shared` blocks they `use` (the event file's own `shared`, or
    `api/common.json`, `ui/common.json`); `mvn -Ptest-data process-test-classes "-Dexec.args=case TC-<EVENT>-<C>-API-001"` prints the merged request. QA gives
    only the values that differ; a wrong default fails the case (the status check runs before any recording). An
-   amount given as a share of the notional (`"50%"`) fits every product and needs no value. A date written
-   `${date:S-N}` needs the product's final settlement date in its constant: ask QA for it when any event the product
-   joins uses one (`grep -rn 'date:S' src/test/resources/data`); without it the case fails when its request is read.
+   amount given as a share of the notional (`"50%"`) fits every product and needs no value.
 3. **Anything the current products do not have**: in the New Trade form, the trade detail page or the setup trade
    (`data/setup/trade-create*.json`, one body for every product). Yes is a code change of its own: report it, do not
    guess it.
@@ -124,4 +122,3 @@ In the user's language:
 | The product added to negative scenarios | They are written for one product |
 | A constant named after the product ID (`FX_PSCRIPT`), or a second one for another product ID of a registered composition | One constant per composition ID with its default product ID; another product ID is `productId` in a case's data |
 | An amount per product in `byProduct` because the dat files' notionals differ | A share of the notional in the event's `defaults` (`docs/test-data.md`, "Where a value goes") |
-| A settlement date guessed for the constant, or a fixed date in the data to stay before it | The date QA gives from the dat file; the data writes `${date:S-N}` |

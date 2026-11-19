@@ -1,6 +1,5 @@
 package com.example.module.oreo.testdata;
 
-import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -25,9 +24,7 @@ import static com.example.module.oreo.testdata.Capability.*;
  * <h3>Adding a composition</h3>
  * <ol>
  *   <li>Add its default dat file as {@code src/test/resources/data/dat/<C>/<C>.dat}</li>
- *   <li>Add a new enum constant here, named as the composition ID: its default product ID, the final settlement date
- *       of its default dat file ({@code "yyyy-MM-dd"}, or {@code null} when no case uses {@code ${date:S...}}),
- *       then one entry per
+ *   <li>Add a new enum constant here, named as the composition ID: its default product ID, then one entry per
  *       group of {@link Capability#GROUPS} it has: the trade lifecycle
  *       {@link Capability#SUPPORT_CAPABILITY} and the product features {@link Capability#PRODUCT_FEATURES}, each
  *       whole, {@code except(<group>, ...)} or {@code only(...)}; a group it has none of is left out (the order of
@@ -40,38 +37,35 @@ import static com.example.module.oreo.testdata.Capability.*;
 public enum ProductDatFiles {
 
     /** FX Total Return Forward. */
-    FX_TRF("FX_TRF", null, SUPPORT_CAPABILITY, PRODUCT_FEATURES),
+    FX_TRF("FX_TRF", SUPPORT_CAPABILITY, PRODUCT_FEATURES),
 
     /** FX Correlation Option. */
-    FX_CO("FX_PSCRIPT", null, SUPPORT_CAPABILITY, PRODUCT_FEATURES),
+    FX_CO("FX_PSCRIPT", SUPPORT_CAPABILITY, PRODUCT_FEATURES),
 
     /** FX Floating Strike Barrier. */
-    FX_FSB("FX_PSCRIPT_FSKO", null, SUPPORT_CAPABILITY, PRODUCT_FEATURES),
+    FX_FSB("FX_PSCRIPT_FSKO", SUPPORT_CAPABILITY, PRODUCT_FEATURES),
 
     /** FX TRF on the payoff script. */
-    FX_PSCRIPT_TRF("FX_PSCRIPT_TRF", null, SUPPORT_CAPABILITY, PRODUCT_FEATURES);
+    FX_PSCRIPT_TRF("FX_PSCRIPT_TRF", SUPPORT_CAPABILITY, PRODUCT_FEATURES);
 
     /** Placeholder for FX Option: add data/dat/FX_OPT/FX_OPT.dat when its template is available. Supports nothing. */
-//    FX_OPT("FX_OPT", null, except(SUPPORT_CAPABILITY, ALLOCATION, PORTFOLIO_REASSIGNMENT), only(PRODUCT_UPLOAD));
+//    FX_OPT("FX_OPT", except(SUPPORT_CAPABILITY, ALLOCATION, PORTFOLIO_REASSIGNMENT), only(PRODUCT_UPLOAD));
 
     /** The classpath folder of the dat files, one folder per composition. */
     public static final String DAT_DIR = "data/dat/";
     private static final Pattern FILE_NAME = Pattern.compile("[A-Za-z0-9][A-Za-z0-9_.-]*\\.dat");
 
     private final String productId;
-    private final LocalDate settlementDate;
     private final Set<Capability> capabilities;
 
     /**
-     * {@code productId}: the product ID the cases send by default. {@code settlementDate}: the final settlement date
-     * of the default dat file, {@code yyyy-MM-dd}, or {@code null}. The capabilities of
+     * {@code productId}: the product ID the cases send by default. The capabilities of
      * {@code groups}: each a group of {@link Capability#GROUPS} ({@code SUPPORT_CAPABILITY},
      * {@code PRODUCT_FEATURES}), or part of one ({@code except(...)}, {@code only(...)}).
      */
     @SafeVarargs
-    ProductDatFiles(String productId, String settlementDate, Set<Capability>... groups) {
+    ProductDatFiles(String productId, Set<Capability>... groups) {
         this.productId = productId;
-        this.settlementDate = settlementDate == null ? null : LocalDate.parse(settlementDate);
         EnumSet<Capability> set = EnumSet.noneOf(Capability.class);
         for (Set<Capability> group : groups) set.addAll(group);
         this.capabilities = Collections.unmodifiableSet(set);
@@ -139,16 +133,6 @@ public enum ProductDatFiles {
             throw new IllegalArgumentException("'" + datFile + "' is not a dat file name: a file of the composition's"
                     + " folder " + DAT_DIR + "<composition>/, such as FX_TRF.dat, without a folder");
         }
-    }
-
-    /**
-     * The final settlement date of the trades its default dat file books, {@code null} when not given. The trade's
-     * dates come from the dat file and stay fixed, so a date of the case data that must stay before them, such as an
-     * event's effective date, is written from it: {@code ${date:S-5}} (the test data's date placeholders). A dat
-     * variant ({@code datFile}) with other dates gives its own date in the case data instead.
-     */
-    public LocalDate settlementDate() {
-        return settlementDate;
     }
 
     /** The capabilities this composition supports (unmodifiable). */

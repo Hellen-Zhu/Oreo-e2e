@@ -114,7 +114,7 @@ with the columns `| case | dataset |` (`001`, `002` ...); each case is its own r
   `sharedFragments`),
   for data of this event only. A name in both files is an error. `setup/<name>` names a setup file instead: its
   `request` (with its `extends` chain) is the block, so a body the provisioning steps send and the cases send is kept
-  once, in `data/setup/`. Its `${date:...}` are resolved as the case's, `S` from the case's product. API trade
+  once, in `data/setup/`. Its `${date:...}` are resolved as the case's. API trade
   creation takes the trade body so: `"use": ["setup/trade-create", "trade-response-parts"]`, the body the trade
   preconditions submit; a StepIn case adds `setup/stepin-partial` or `setup/stepin-full` (the udf entries only, so
 the product's `byProduct` values of the trade body stay) and the block with its mask. A setup file without a
@@ -126,11 +126,6 @@ the product's `byProduct` values of the trade body stay) and the block with its 
   calendar days, `yyyy-MM-dd`, this machine's time zone (`DateUtil.resolveDate`), filled in each time a step reads the
   data (`request()`, `flattenRequest()`, a setup's `request()` / `response()`). Any other `${...}` is left for the step
   that fills it. Another expression (`${date:tomorrow}`) is a load error. Not business days.
-- `${date:S}`, `${date:S+N}`, `${date:S-N}`: the same from the final settlement date of the case's product
-  (`ProductDatFiles`, the constant's second value) instead of today. A trade's own dates come from its dat file and
-  stay fixed, so a date that must stay before them, such as an event's `effectiveDate` (which may be in the past), is
-  written `${date:S-5}`: it never passes the settlement date as the days go by, and needs no `byProduct` value. A case
-  without a product, or a product without the date, fails when its request is read.
 - A row exists only for a case that differs from the defaults. Its `id` is the feature's, as written: an Outline's
   `TC-TRADE-CREATION-<product_type>-API-002` covers every product; product differences go into the row's `byProduct`.
   A case matched by two rows is an error.
@@ -204,7 +199,7 @@ recorded:
 | `type-tree` | the whole structure (array lengths included), and the type of every leaf |
 | `regex:<pattern>` | the value matches the pattern |
 | `var:<name>` | the value equals the scenario variable `<name>` of this run (`createdTradeId`, stored by `a live '<product_type>' trade is created via api`) |
-| `request:<path>` | the value equals what this run's request has at `<path>`: a date the request gives as `${date:T+1}` or `${date:S-5}`, an amount given as a share |
+| `request:<path>` | the value equals what this run's request has at `<path>`: a date the request gives as `${date:T+1}`, an amount given as a share |
 | `ignore` | nothing; only when the others cannot work |
 
 A path is keys joined by `.`, `[n]` for one array element, `[*]` for all. `*` as a key is every

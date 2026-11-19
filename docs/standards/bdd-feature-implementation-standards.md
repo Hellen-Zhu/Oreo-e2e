@@ -196,7 +196,7 @@ The format and every rule of the test data are in [docs/test-data.md](../test-da
 | Need | Section |
 |---|---|
 | Which file and layer a value goes into | "Where a value goes" |
-| Case data: layers, `use`, merge rules, dates (`${date:T+N}`, `${date:S-N}` from the product's settlement date), `datFile`, `productId` | "Case data" |
+| Case data: layers, `use`, merge rules, dates (`${date:T+N}`), `datFile`, `productId` | "Case data" |
 | An amount that depends on the trade's notional (a share, API and UI) | "Where a value goes" |
 | Setup data, `extends` | "Setup data" |
 | Products and capabilities, `sync-examples` | "Products and capabilities"; a new product: skill `onboarding-e2e-product` |

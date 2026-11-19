@@ -20,7 +20,6 @@ Run Maven only on the company machine (`qa-bdd-test-execution`, "Where it runs")
 | Change | Run, in order | Procedure |
 |---|---|---|
 | Event or setup data, a row, `byProduct`, `use`, `datFile`, `productId`, an amount as a share, a `${date:...}` | `case <ID>` for each case touched, then `check` | `docs/test-data.md`, "Where a value goes", "Case data" |
-| A product's settlement date in `ProductDatFiles` (for `${date:S-N}`) | `case <ID>` of a case of the product that uses it, then `check` | "Case data" (dates) |
 | A product or capability in `ProductDatFiles`, a `@capability#` tag | `sync-examples`, review `git diff`, `check` | a new product: skill `onboarding-e2e-product` |
 | API responses recorded (first run, or `OREO_EXPECTED=update`) | `suggest <event>`, add the rules you agree with, record again; `compact <event>`, review `git diff`, `check` | "Recorded responses" |
 | The API changed a response on purpose | — | "Updating a recorded response" |
