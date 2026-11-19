@@ -517,7 +517,16 @@ public final class TestDataRepository {
             }
             if (!rule.getValue().isTextual() && !rule.getValue().isNull()) {
                 throw error(path, where + ".dynamicFields." + rule.getKey(),
-                        "a rule is a string (type, type-tree, regex:<pattern>, var:<name>, ignore) or null");
+                        "a rule is a string (type, type-tree, regex:<pattern>, var:<name>, request:<path>, ignore)"
+                                + " or null");
+            }
+            String text = rule.getValue().asText("");
+            if (text.startsWith(ResponseMasker.REQUEST_PREFIX)) {
+                try {
+                    ResponseMasker.checkRequestPath(text.substring(ResponseMasker.REQUEST_PREFIX.length()), where);
+                } catch (IllegalStateException e) {
+                    throw error(path, where + ".dynamicFields." + rule.getKey(), e.getMessage());
+                }
             }
         }
     }

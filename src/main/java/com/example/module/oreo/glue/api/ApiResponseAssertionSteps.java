@@ -91,7 +91,8 @@ public class ApiResponseAssertionSteps {
      * (a patch file is applied to its base first). A missing file is recorded (the actual response with the case's
      * {@code dynamicFields} masked, in full) and the scenario fails once, so the recording is reviewed; with
      * {@code OREO_EXPECTED=update} (or {@code -Doreo.expected=update}) the file is rewritten without being read and
-     * the step passes. A {@code ${var:<name>}} value of the file is the scenario variable of that name. Fails in a
+     * the step passes. A {@code ${var:<name>}} value of the file is the scenario variable of that name, a
+     * {@code ${request:<path>}} value the run's request at that path ({@link #variable}). Fails in a
      * case tagged {@link ExpectedResponses#NONE_TAG}, which has no expected file by design.
      */
     @Then("^response matches current scenario$")
@@ -231,8 +232,19 @@ public class ApiResponseAssertionSteps {
                 actual);
     }
 
-    /** The scenario variable {@code name} as text, {@code null} when the scenario has not stored it. */
+    /**
+     * The scenario variable {@code name} as text, {@code null} when the scenario has not stored it; for
+     * {@code request:<path>}, the value at that path of the request the run sent (amounts and dates as sent), else of
+     * the case's request, {@code null} when it has none.
+     */
     private String variable(String name) {
+        if (name.startsWith(ResponseMasker.REQUEST_PREFIX)) {
+            String tcKey = ctx.find("_tc.key");
+            String sent = ctx.find("_tc.sentRequest");
+            String request = sent != null ? sent : tcKey == null ? null : TestData.forCase(tcKey).request();
+            return request == null ? null
+                    : ResponseMasker.requestValue(request, name.substring(ResponseMasker.REQUEST_PREFIX.length()), tcKey);
+        }
         Object value = ctx.find(name);
         return value == null ? null : String.valueOf(value);
     }

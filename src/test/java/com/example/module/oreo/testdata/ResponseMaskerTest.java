@@ -225,4 +225,65 @@ public class ResponseMaskerTest {
         String masked = ResponseMasker.mask(actual, rules, vars, "x");
         JsonAssert.assertJsonEquals(ResponseMasker.fillVariables(masked, actual, vars, "x"), actual);
     }
+
+    private static final String EVENT_REQUEST = "{\"tradeIds\":[\"T1\"],\"data\":["
+            + "{\"key\":\"settleDate\",\"value\":\"2026-11-20\",\"type\":\"Date\"},"
+            + "{\"key\":\"amount\",\"value\":\"35000\",\"type\":\"Number\"}]}";
+
+    private static Function<String, String> request(String requestJson) {
+        return name -> name.startsWith(ResponseMasker.REQUEST_PREFIX)
+                ? ResponseMasker.requestValue(requestJson, name.substring(ResponseMasker.REQUEST_PREFIX.length()), "x")
+                : null;
+    }
+
+    @Test
+    public void requestValueTakesADataEntryByItsKey() {
+        assertEquals("2026-11-20", ResponseMasker.requestValue(EVENT_REQUEST, "data.settleDate", "x"));
+        assertEquals("T1", ResponseMasker.requestValue(EVENT_REQUEST, "tradeIds[0]", "x"));
+        assertEquals("2026-11-20", ResponseMasker.requestValue("{\"basic\":{\"d\":\"2026-11-20\"}}", "basic.d", "x"));
+        assertEquals(null, ResponseMasker.requestValue(EVENT_REQUEST, "data.novationDate", "x"));
+    }
+
+    @Test
+    public void requestRecordsThePathWhenTheValueIsTheRequests() {
+        String actual = "{\"data\":{\"settleDate\":\"2026-11-20\",\"amount\":35000.00}}";
+        Map<String, String> rules = rules("data.settleDate", "request:data.settleDate",
+                "data.amount", "request:data.amount");
+        String masked = ResponseMasker.mask(actual, rules, request(EVENT_REQUEST), "x");
+        assertJson("{\"data\":{\"settleDate\":\"${request:data.settleDate}\",\"amount\":\"${request:data.amount}\"}}",
+                masked);
+        JsonAssert.assertJsonEquals(ResponseMasker.fillVariables(masked, actual, request(EVENT_REQUEST), "x"), actual);
+    }
+
+    @Test
+    public void requestComparesWithTheRequestOfEachRun() {
+        String expected = "{\"settleDate\":\"${request:data.settleDate}\"}";
+        String nextRun = EVENT_REQUEST.replace("2026-11-20", "2026-11-21");
+        String filled = ResponseMasker.fillVariables(expected, "{\"settleDate\":\"2026-11-20\"}", request(nextRun), "x");
+        assertJson("{\"settleDate\":\"2026-11-21\"}", filled);
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void requestNotRecordedWhenTheValueDiffers() {
+        ResponseMasker.mask("{\"settleDate\":\"2026-11-23\"}", rules("settleDate", "request:data.settleDate"),
+                request(EVENT_REQUEST), "x");
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void requestPathWithoutAValueFails() {
+        ResponseMasker.mask("{\"settleDate\":\"2026-11-20\"}", rules("settleDate", "request:data.novationDate"),
+                request(EVENT_REQUEST), "x");
+    }
+
+    @Test
+    public void requestPathNamesOneValue() {
+        for (String path : List.of("data[*].value", "data.*", "{basic}.dealDate")) {
+            try {
+                ResponseMasker.checkRequestPath(path, "x");
+                fail(path);
+            } catch (IllegalStateException e) {
+                assertTrue(e.getMessage(), e.getMessage().contains(path));
+            }
+        }
+    }
 }

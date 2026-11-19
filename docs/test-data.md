@@ -188,6 +188,7 @@ recorded:
 | `type-tree` | the whole structure (array lengths included), and the type of every leaf |
 | `regex:<pattern>` | the value matches the pattern |
 | `var:<name>` | the value equals the scenario variable `<name>` of this run (`createdTradeId`, stored by `a live '<product_type>' trade is created via api`) |
+| `request:<path>` | the value equals what this run's request has at `<path>`: a date the request gives as `${date:T+1}` or `${date:S-5}`, an amount given as a share |
 | `ignore` | nothing; only when the others cannot work |
 
 A path is keys joined by `.`, `[n]` for one array element, `[*]` for all. `*` as a key is every
@@ -213,6 +214,18 @@ the tag, and `response matches current scenario` fails in it. Not on an `Example
 comparison the variable's value of that run is put in its place. It takes text, a number or a boolean, and a
 scenario that has not stored the variable fails. Example, a risk query by the trade of the case:
 `"dynamicFields": { "data.tradeId": "var:createdTradeId" }`.
+
+`request:<path>` works the same way with the request of the run: it records `"${request:<path>}"`, only when the
+actual value is the request's value at `<path>`, and each comparison puts in the value this run sent (an event's
+request as sent, its shares as amounts; otherwise the case's request, its dates resolved that day). The expected file
+never holds the date, so it does not go stale, and the response is still checked against the exact value given. The
+path starts at the request body and names one value (no `*`, `[*]` or `{part}`); a key on an array takes the
+`value` of the element with that `key`, so an event's `{ "key": "settleDate", "value": "${date:T+2}" }` is
+`data.settleDate`. Numbers compare by value (`35000` = `35000.00`), text exactly: a response that writes the date in
+another format (`2026-11-20T00:00:00Z`), or moves it to a business day, does not match; there `regex:` is the rule,
+and the business rule is reported as open, not guessed. Example, an early termination whose request gives
+`settleDate`: `"dynamicFields": { "<path of the date in the response>": "request:data.settleDate" }`, the response
+path taken from a recording (`suggest <event>`).
 
 ### Lifecycle events: the retrieved trade
 
@@ -505,7 +518,8 @@ files by hand: the recording is what proves the system returns it.
    - returned by some products only: their rows (`byProduct`), since a rule whose path is not in the response fails
      the recording.
 
-   A fixed value needs no rule: it is compared exactly. A value equal to a scenario variable takes `var:<name>`.
+   A fixed value needs no rule: it is compared exactly. A value equal to a scenario variable takes `var:<name>`;
+   one equal to a value of the request (a date the request gives as `${date:...}`) takes `request:<path>`.
 3. **Record every case that returns the field, events together** when the field is in a shared part:
    `OREO_EXPECTED=update` as an environment variable, with the narrowest `--name` filter that covers them (the API
    cases book real trades).

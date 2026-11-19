@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -27,6 +28,9 @@ import java.util.regex.PatternSyntaxException;
  *   <tr><td>{@code ignore}</td><td>{@code ${json-unit.ignore}}</td></tr>
  *   <tr><td>{@code var:<name>}</td><td>{@code ${var:<name>}}; the actual value must be the scenario variable's
  *       value, put in again by {@link #fillVariables} before the comparison</td></tr>
+ *   <tr><td>{@code request:<path>}</td><td>{@code ${request:<path>}}; the actual value must be the value the request of
+ *       the run has at {@code <path>} (a {@code ${date:T+1}} as it was resolved), put in again by
+ *       {@link #fillVariables}; see {@link #requestValue}</td></tr>
  * </table>
  *
  * A path is keys joined by {@code .}, with {@code [n]} for one array element and {@code [*]} for every element;
@@ -42,23 +46,27 @@ public final class ResponseMasker {
     public static final String REGEX = "${json-unit.regex}";
     public static final String IGNORE = "${json-unit.ignore}";
     public static final String VAR_START = "${var:";
+    public static final String REQUEST_START = "${request:";
+    /** The name under which the lookup of {@link #mask} and {@link #fillVariables} gives a request value. */
+    public static final String REQUEST_PREFIX = "request:";
 
     private static final Pattern PLAIN_KEY = Pattern.compile("[^.\\[\\]]+");
     private static final Pattern VAR_NAME = Pattern.compile("[A-Za-z][A-Za-z0-9_.-]*");
-    private static final Pattern VAR = Pattern.compile("\\$\\{var:(" + VAR_NAME.pattern() + ")}");
+    private static final Pattern VAR = Pattern.compile("\\$\\{(?:var:(" + VAR_NAME.pattern() + ")|request:([^}]+))}");
     private static final Object ANY = new Object();
     private static final Object ANY_KEY = new Object();
 
     private ResponseMasker() {}
 
-    /** {@link #mask(String, Map, Function, String)} without scenario variables: a {@code var:} rule fails. */
+    /** {@link #mask(String, Map, Function, String)} without scenario variables: a {@code var:} or {@code request:} rule fails. */
     public static String mask(String actualJson, Map<String, String> rules, String caseLabel) {
         return mask(actualJson, rules, name -> null, caseLabel);
     }
 
     /**
      * The pretty-printed expected file for {@code actualJson}; fails on a rule that does not fit the response.
-     * {@code variables} gives the value of a scenario variable by name, {@code null} when it is not stored.
+     * {@code variables} gives the value of a scenario variable by name, {@code null} when it is not stored, and the
+     * value of the run's request at a path by {@link #REQUEST_PREFIX} + path.
      */
     public static String mask(String actualJson, Map<String, String> rules, Function<String, String> variables,
                               String caseLabel) {
@@ -100,7 +108,7 @@ public final class ResponseMasker {
         String where = "rule " + path + " = " + rule + " in the response of " + caseLabel;
         if (rule == null) {
             throw new IllegalStateException("[ResponseMasker] " + where + ": a rule is type, type-tree, regex:<pattern>,"
-                    + " var:<name> or ignore");
+                    + " var:<name>, request:<path> or ignore");
         }
         if (rule.equals("type")) {
             if (value.isArray()) {
@@ -157,18 +165,101 @@ public final class ResponseMasker {
             }
             return TextNode.valueOf(VAR_START + name + "}");
         }
+        if (rule.startsWith(REQUEST_PREFIX)) {
+            String requestPath = rule.substring(REQUEST_PREFIX.length());
+            checkRequestPath(requestPath, caseLabel);
+            if (value.isContainerNode() || value.isNull()) {
+                throw new IllegalStateException("[ResponseMasker] " + where + ": request applies to text, a number or"
+                        + " a boolean, the value is " + Json.compact(value));
+            }
+            String expected = variables.apply(REQUEST_PREFIX + requestPath);
+            if (expected == null) {
+                throw new IllegalStateException("[ResponseMasker] " + where + ": the request has no value at "
+                        + requestPath + "; not recorded");
+            }
+            if (!sameValue(value, expected)) {
+                throw new IllegalStateException("[ResponseMasker] " + where + ": the actual value "
+                        + Json.compact(value) + " is not the request's " + requestPath + " (" + expected
+                        + "); not recorded");
+            }
+            return TextNode.valueOf(REQUEST_START + requestPath + "}");
+        }
         throw new IllegalStateException("[ResponseMasker] " + where + ": unknown rule; a rule is type, type-tree,"
-                + " regex:<pattern>, var:<name> or ignore");
+                + " regex:<pattern>, var:<name>, request:<path> or ignore");
+    }
+
+    /** The same text, or the same number ({@code 35000} = {@code "35000.00"}). */
+    private static boolean sameValue(JsonNode actual, String expected) {
+        if (actual.asText().equals(expected)) return true;
+        if (!actual.isNumber() && !actual.isTextual()) return false;
+        try {
+            return new BigDecimal(actual.asText()).compareTo(new BigDecimal(expected)) == 0;
+        } catch (NumberFormatException e) {
+            return false;
+        }
     }
 
     /**
-     * {@code expectedJson} with every {@code ${var:<name>}} value replaced by the scenario variable: by the actual
+     * Fails unless {@code path} names one value of a request: keys and {@code [n]}, no {@code *} or {@code [*]}, and
+     * not a shared part ({@code {basic}} is a response path).
+     */
+    public static void checkRequestPath(String path, String caseLabel) {
+        if (path.startsWith("{")) {
+            throw new IllegalStateException("[ResponseMasker] request path '" + path + "' of " + caseLabel
+                    + " starts at a shared part; a request path starts at the request body (basic.dealDate,"
+                    + " data.settleDate)");
+        }
+        for (Object step : parsePath(path, caseLabel)) {
+            if (isAny(step) || isAnyKey(step)) {
+                throw new IllegalStateException("[ResponseMasker] request path '" + path + "' of " + caseLabel
+                        + " names several values; it names one (no * or [*])");
+            }
+        }
+    }
+
+    /**
+     * The value of {@code requestJson} at {@code path} as text, {@code null} when it has none. A key on an array
+     * selects the element whose {@code key} is that key and takes its {@code value}: {@code data.settleDate} is the
+     * {@code value} of the entry {@code {"key": "settleDate", ...}} of an event's {@code data}.
+     */
+    public static String requestValue(String requestJson, String path, String caseLabel) {
+        checkRequestPath(path, caseLabel);
+        JsonNode node = Json.parse(requestJson);
+        for (Object step : parsePath(path, caseLabel)) {
+            if (step instanceof Integer n) {
+                node = node.isArray() ? node.get(n) : null;
+            } else if (node.isArray()) {
+                JsonNode entry = null;
+                for (JsonNode element : node) {
+                    if (step.equals(element.path("key").asText(null))) {
+                        entry = element.get("value");
+                        break;
+                    }
+                }
+                node = entry;
+            } else {
+                node = node.get((String) step);
+            }
+            if (node == null) return null;
+        }
+        if (node.isContainerNode() || node.isNull()) {
+            throw new IllegalStateException("[ResponseMasker] the request of " + caseLabel + " has " + Json.compact(node)
+                    + " at " + path + "; a request path names text, a number or a boolean");
+        }
+        return node.asText();
+    }
+
+    /**
+     * {@code expectedJson} with every {@code ${var:<name>}} value replaced by the scenario variable (every
+     * {@code ${request:<path>}} by the run's request value, a number equal by value): by the actual
      * value at the same place when it is the variable's value (a number stays a number), otherwise by the variable's
      * value as text, which the comparison then reports. A file without a {@code ${var:...}} value is returned as it is.
      */
     public static String fillVariables(String expectedJson, String actualJson, Function<String, String> variables,
                                        String caseLabel) {
-        if (expectedJson == null || !expectedJson.contains(VAR_START)) return expectedJson;
+        if (expectedJson == null || !expectedJson.contains(VAR_START) && !expectedJson.contains(REQUEST_START)) {
+            return expectedJson;
+        }
         JsonNode actual;
         try {
             actual = Json.parse(actualJson);
@@ -183,12 +274,15 @@ public final class ResponseMasker {
         if (expected.isTextual()) {
             Matcher placeholder = VAR.matcher(expected.textValue());
             if (!placeholder.matches()) return expected;
-            String value = variables.apply(placeholder.group(1));
+            boolean request = placeholder.group(2) != null;
+            String value = variables.apply(request ? REQUEST_PREFIX + placeholder.group(2) : placeholder.group(1));
             if (value == null) {
                 throw new IllegalStateException("[ResponseMasker] the expected file of " + caseLabel + " has "
-                        + expected.textValue() + ", but the scenario has no variable " + placeholder.group(1));
+                        + expected.textValue() + ", but " + (request ? "the request has no value at "
+                        + placeholder.group(2) : "the scenario has no variable " + placeholder.group(1)));
             }
-            boolean same = actual != null && actual.isValueNode() && !actual.isNull() && actual.asText().equals(value);
+            boolean same = actual != null && actual.isValueNode() && !actual.isNull()
+                    && (request ? sameValue(actual, value) : actual.asText().equals(value));
             return same ? actual : TextNode.valueOf(value);
         }
         if (expected.isObject()) {
