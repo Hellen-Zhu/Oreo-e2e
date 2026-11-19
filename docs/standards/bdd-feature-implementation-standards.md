@@ -91,6 +91,7 @@ Where each shared step lives and what it checks; how a feature words them is the
 | API precondition | `a live / draft / dead '<product_type>' trade is created via api`, `a '<product_type>' trade is submitted to pending approval via api`, and their `... stored as '<key>'` variants, a pending Cancellation / Amendment, an allocated trade (`ApiTradeProvisioningSteps`) | Never inline create + approve: headers, task IDs and ctx keys are part of the contract |
 | API lifecycle event | `(maker\|checker) has valid / invalid / malformed / duplicate data [with '<what>'] for the '<event>' event [on the trade stored as '<key>']`, `... has data for the '<event>' event on a trade that does not exist`, `performs the '<event>' event via api`, `the '<event>' event is executed successfully` (`api/trade_lifecycle_event.snippet`), `the '<event>' event is rejected with a validation error / permission denied / ...` (the API outcomes) | A success checks the event's response lightly and compares the trade it ran on, retrieved after it, with the recording: its row uses `trade-response-parts` and `retrieved-trade`. A rejection compares the event's response. The trades an event creates are `childTradeId1..n`, checked in the event's own snippet against the request (`the new trades of the event have '<path>' as in the request's '<data key>'`). A new event adds case data, recordings and the feature. A new variant (another status, another trade source) is added there, for every event |
 | API checker task | `(maker\|checker) has valid data for trade creation / amendment / cancellation approval / rejection / self-approval`, `performs the approval / rejection / bulk approval for the request`, `the '<kind> approval / rejection' request is processed successfully`, `the '<kind> self-approval' request is rejected with permission denied` (the API outcomes); provisioning `checker approves / rejects the pending task` (`api/trade_approval_rejection.snippet`) | A new kind of task adds its name to the alternations, not a step |
+| Event amounts from the trade's notional | API: the case data gives `"50%"` or `"[60%, 30%, 10%]"`; `build json request from current scenario with trade id from stored variable '<var>' as user '<role>'` (`api/common_api.snippet`) sends the amounts. UI, in a flow before the form is filled: `the share '<key>' of the notional of trade '<trade var>' is stored as '<amount var>'[ if it is set]`, `the novated notional of trade '<trade var>' is computed from the remaining notional '<key>'` (`TradeLifecycleEventSteps`) | Never an amount per product in `byProduct`. The UI step stores the amount to type and `<amount var>.display` to compare with the page; `if it is set` for a value only some products give, typed with a component step that ends in `if it is set` too. Rules: [docs/test-data.md](../test-data.md), "Where a value goes" |
 | API outcome | `the '<subject>' [request] is / are retrieved / created / updated / approved / processed / executed successfully` (200); `... is / are saved / published / re-published / imported successfully` (201); `the '<subject>' request / event is rejected with a validation error` (400), `with permission denied` (403), `as not found` (404), `with a conflict` (409) (`api/common_api.snippet`) | Status + strict comparison with the recorded response. One vocabulary: a domain `Then` exists only when it checks more than this; never a wrapper that renames an outcome. Another status (422, ...) is an outcome added here, with its own words |
 
 Use a domain-specific `Then` when the requirement needs evidence beyond the response (state, audit, persistence).
@@ -177,6 +178,7 @@ Every element is registered in JSON and reached through it:
 | Product, multipart and dat file requests | `TradeApiSteps` |
 | Recorded-response comparison, stored-variable and field assertions | `ApiResponseAssertionSteps` |
 | UI trade provisioning | `PlaywrightTradeProvisioningSteps` |
+| UI lifecycle event forms (confirm and wait), event amounts from the trade's notional | `TradeLifecycleEventSteps` |
 | API trade provisioning | `ApiTradeProvisioningSteps` |
 | Provisioning calls shared by both (no scenario state) | `TradeApiClient` `provision...` methods |
 | Lifecycle event request and results (`childTradeIds` included) | `TradeApiClient.triggerEvent` |
@@ -194,10 +196,11 @@ The format and every rule of the test data are in [docs/test-data.md](../test-da
 | Need | Section |
 |---|---|
 | Which file and layer a value goes into | "Where a value goes" |
-| Case data: layers, `use`, merge rules, dates, `datFile`, `productId` | "Case data" |
+| Case data: layers, `use`, merge rules, dates (`${date:T+N}`, `${date:S-N}` from the product's settlement date), `datFile`, `productId` | "Case data" |
+| An amount that depends on the trade's notional (a share, API and UI) | "Where a value goes" |
 | Setup data, `extends` | "Setup data" |
 | Products and capabilities, `sync-examples` | "Products and capabilities"; a new product: skill `onboarding-e2e-product` |
-| Recordings, `dynamicFields`, `@expected#none`, re-recording | "Recorded responses", "Updating a recorded response" |
+| Recordings, `dynamicFields` (`var:` for a scenario variable, `request:` for a value the request sent, such as a `${date:...}` date), `@expected#none`, re-recording | "Recorded responses", "Updating a recorded response" |
 
 ## 6. Verification
 

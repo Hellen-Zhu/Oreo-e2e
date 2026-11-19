@@ -73,7 +73,15 @@ notional is a share of it, never a `byProduct` value per product: an event's `da
 `"[60%, 30%, 10%]"` is sent as the amounts of the trade's `basic.notionalAmount` (each rounded to the cent; in a
 list whose shares sum to 100%, the last one is the rest), when the request is built with `build json request from
 current scenario with trade id from stored variable '<var>' as user '<role>'` (`api/trade_allocation.json`, API-001
-and API-002). A rejection that needs a wrong amount can be a share too (`"120%"`). Example, `api/trade_early_termination.json`:
+and API-002). A rejection that needs a wrong amount can be a share too (`"120%"`). In UI data the value is a share
+or an amount as it is (`"50%"`, `"5000"`); the flow turns it into the amount with `the share '<key>' of the notional
+of trade '<trade var>' is stored as '<amount var>'`, which stores `<amount var>` as typed into a form (`3468.75`)
+and `<amount var>.display` as the portal shows it (`3,468.75`), and fails when the case has no value; with
+`... if it is set` it stores nothing instead, for a value only some products give (`newNotional` of a partial termination
+or a step out partial). A partial novation remaining gives the notional that stays (`remainingNotional`); the flow computes
+the novated one with `the novated notional of trade '<trade var>' is computed from the remaining notional '<key>'`
+(`originalNotional`, `newNotional`, `equationLineValue`). Both steps are in `TradeLifecycleEventSteps` and read the
+trade's `basic.notionalAmount` through the API. Example, `api/trade_early_termination.json`:
 the event body is in `defaults`; API-001 (success) has a row only to `use` the retrieved-trade blocks; API-002
 (malformed) a row that empties `data`; API-003 (duplicate) a row with a message rule.
 

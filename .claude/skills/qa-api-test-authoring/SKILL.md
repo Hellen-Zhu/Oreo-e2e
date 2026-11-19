@@ -46,8 +46,9 @@ unimplementable is reported back, not rewritten.
    the story; on the company machine confirm them against `{rest.base.url}/v3/api-docs` (never copy the address into
    a file). Neither gives them: stop and list what is missing; never copy a neighbouring snippet and hope.
 3. **Data**, by `docs/test-data.md`: a row only for a case that differs from `defaults`; a new event gets
-   `data/api/<event>.json` named after the feature. Then `case <ID>` for every case you added a row for (company
-   machine).
+   `data/api/<event>.json` named after the feature. An amount that depends on the trade's notional is a share and a
+   date that must stay before the trade's own dates is `${date:S-N}` ("Where a value goes", "Case data"), never a
+   value per product. Then `case <ID>` for every case you added a row for (company machine).
 4. **Snippets** in `snippet/api/<featureName>.snippet` (or `common_*.snippet`), by the implementation standard §3.2-§3.4.
 5. **Java** only for `NEW_STEP`, in the domain's existing `*ApiSteps` class, by §4.2.
 6. **Report** (below). Validation is the caller's (`qa-bdd-test-execution`). A new API case's first run records its

@@ -57,7 +57,8 @@ answers. It holds:
    title), from `git diff` of the feature files or `grep -rn -A1 "@capability#" src/test/resources/features`; the
    product's column of `mvn -Ptest-data process-test-classes "-Dexec.args=coverage"` shows how many API and UI
    Outlines each capability runs and which have none (`NONE`, listed as gaps; `"-Dexec.args=coverage --html"` writes
-   the same as a page, `target/coverage/coverage.html`, a product's cases on a click); with a
+   the same as a page, `target/coverage/coverage.html`, a product's cases on a click; `--by productId` or
+   `--by tradeType` count the same by product ID or trade type, when QA asks for those views); with a
    column QA fills in: **supported / not supported, row by row**, in two parts as `Capability.GROUPS` has them: the
    trade lifecycle, then the product features (fixings, cortex formula, product upload), asked on their own: products
    differ there most, so "the same as the others" for the lifecycle is no answer for them. A general "looks fine" is not an answer: ask again
@@ -67,8 +68,10 @@ answers. It holds:
 2. **Data the product runs on** (default: the current values). Per event the product joins: the `defaults` of
    `src/test/resources/data/api|ui/<event>.json` and the `shared` blocks they `use` (the event file's own `shared`, or
    `api/common.json`, `ui/common.json`); `mvn -Ptest-data process-test-classes "-Dexec.args=case TC-<EVENT>-<C>-API-001"` prints the merged request. QA gives
-   only the values that differ (e.g. `earlyTermination.amount` must fit the dat file's notional); a wrong default fails
-   the case (the status check runs before any recording).
+   only the values that differ; a wrong default fails the case (the status check runs before any recording). An
+   amount given as a share of the notional (`"50%"`) fits every product and needs no value. A date written
+   `${date:S-N}` needs the product's final settlement date in its constant: ask QA for it when any event the product
+   joins uses one (`grep -rn 'date:S' src/test/resources/data`); without it the case fails when its request is read.
 3. **Anything the current products do not have**: in the New Trade form, the trade detail page or the setup trade
    (`data/setup/trade-create*.json`, one body for every product). Yes is a code change of its own: report it, do not
    guess it.
@@ -120,3 +123,5 @@ In the user's language:
 | QA's real dat file committed to the public copy | The placeholder line |
 | The product added to negative scenarios | They are written for one product |
 | A constant named after the product ID (`FX_PSCRIPT`), or a second one for another product ID of a registered composition | One constant per composition ID with its default product ID; another product ID is `productId` in a case's data |
+| An amount per product in `byProduct` because the dat files' notionals differ | A share of the notional in the event's `defaults` (`docs/test-data.md`, "Where a value goes") |
+| A settlement date guessed for the constant, or a fixed date in the data to stay before it | The date QA gives from the dat file; the data writes `${date:S-N}` |

@@ -228,7 +228,7 @@ flowchart LR
   ]
 }</code></pre>
       <div class="say">
-        <p>另外几个常用能力：<code>use</code> 按名字引用 <code>common.json</code> 或本文件 <code>shared</code> 里的数据块（两边同名会报错）。只有一个事件用的块放在它自己的 <code>shared</code> 里，比如 <code>trade-basic</code>、<code>stepin-full</code> 就在 <code>trade_creation.json</code>。每一层的 <code>use</code> 是<strong>叠加</strong>的，不是覆盖：<code>defaults</code> 用了一个块，某一行再 <code>use</code> 另一个，两个都生效，块先合并，再合并这一层自己写的值；<code>${date:T+2}</code> 是今天往后两个日历日，运行时才填；<code>datFile</code> 选这个产品文件夹里的另一个 dat 文件，做产品变体。<code>basic.productId</code> 永远不用写，步骤会按产品自动填。</p>
+        <p>另外几个常用能力：<code>use</code> 按名字引用 <code>common.json</code> 或本文件 <code>shared</code> 里的数据块（两边同名会报错）。只有一个事件用的块放在它自己的 <code>shared</code> 里，比如 <code>trade-basic</code>、<code>stepin-full</code> 就在 <code>trade_creation.json</code>。每一层的 <code>use</code> 是<strong>叠加</strong>的，不是覆盖：<code>defaults</code> 用了一个块，某一行再 <code>use</code> 另一个，两个都生效，块先合并，再合并这一层自己写的值；<code>${date:T+2}</code> 是今天往后两个日历日，运行时才填；<code>${date:S-5}</code> 是这个产品最终 settlement date 往前 5 天（日期登记在 <code>ProductDatFiles</code>），像 <code>effectiveDate</code> 这种必须早于交易自身日期的值就这么写，时间再久也不会越过去；跟 notional 有关的金额写成比例，比如 <code>"50%"</code>、<code>"[60%, 30%, 10%]"</code>，运行时按这笔交易的 notional 算出金额，换产品不用重新维护；<code>datFile</code> 选这个产品文件夹里的另一个 dat 文件，做产品变体。<code>basic.productId</code> 永远不用写，步骤会按产品自动填。</p>
         <p>写完数据，怎么确认它合并出来是对的？用 <code>case</code> 命令，它会打印这个 case 用了哪几层、最终请求是什么、比对哪个期望文件。</p>
       </div>
 <pre class="code"><code>mvn -Ptest-data process-test-classes "-Dexec.args=case TC-TRADE-CREATION-FX_TRF-API-001"</code></pre>
@@ -293,13 +293,14 @@ FX_DCD(only(CREATE, EARLY_TERMINATION)),                             // 只支�
             <tr><td><code>type-tree</code></td><td>整个结构、数组长度、每个叶子的类型</td><td>每次内容不同但结构固定的对象</td></tr>
             <tr><td><code>regex:&lt;pattern&gt;</code></td><td>值匹配正则</td><td>消息里带一个变化的编号</td></tr>
             <tr><td><code>var:&lt;name&gt;</code></td><td>等于本次运行存下的变量</td><td><code>var:createdTradeId</code>，确认查到的就是刚建的那笔</td></tr>
+            <tr><td><code>request:&lt;path&gt;</code></td><td>等于本次请求在这个路径上发出去的值</td><td>请求里写 <code>${date:T+2}</code> 的日期：期望文件不写死日期，每次都和当天发出去的值严格比对</td></tr>
             <tr><td><code>ignore</code></td><td>不检查</td><td>其他规则都不行时才用</td></tr>
           </tbody>
         </table>
       </div>
       <div class="say">
         <p>路径写法：key 用点连接，<code>[n]</code> 表示数组的某一个元素，<code>[*]</code> 表示所有元素，比如 <code>data.results[*].tradeId</code>；<code>*</code> 单独作为一个 key，表示对象的每一个值，比如 <code>"data.fixings.*": "type"</code>。像 <code>FX:EURSGD@[BFIX]-1500-JP TYO</code> 这种本身带点或方括号的 key 写不进路径，就用 <code>*</code> 匹配。</p>
-        <p>规则要在录制之前配好，而且要写对：<strong>规则的路径在响应里不存在，录制会直接失败</strong>，报错结尾是 <code>not recorded</code>。regex 不匹配、var 的值对不上，也一样。所以新产品不要提前猜规则，先录一次，再让工具给建议：</p>
+        <p>规则要在录制之前配好，而且要写对：<strong>规则的路径在响应里不存在，录制会直接失败</strong>，报错结尾是 <code>not recorded</code>。regex 不匹配、var 或 request 的值对不上，也一样。所以新产品不要提前猜规则，先录一次，再让工具给建议：</p>
       </div>
 <pre class="code"><code>mvn -Ptest-data process-test-classes "-Dexec.args=suggest trade_creation"</code></pre>
       <div class="say">

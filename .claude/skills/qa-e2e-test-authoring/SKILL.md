@@ -52,7 +52,8 @@ last, `glue/ui/`. Never the feature's wording or FE / BE code. Preconditions use
 3. **Elements, snippets, waits, Java**, by the implementation standard §3-§4. A shared business step goes into the
    existing shared flow (`common_trade_action`, `lifecycle_event`, `trade_portal`) rather than a copy.
 4. **Data**, by `docs/test-data.md`: rows only for cases that differ from `defaults`; trade preparation through the
-   `data/setup/` names the provisioning steps already use.
+   `data/setup/` names the provisioning steps already use. An amount from the trade's notional is a share, turned
+   into the amount by the flow (implementation standard §3.3, "Event amounts from the trade's notional").
 5. **Report** (below). Validation is the caller's.
 
 ## Repair round
