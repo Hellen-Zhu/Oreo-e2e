@@ -294,6 +294,23 @@ public final class SeedData {
     }
 
     /**
+     * What seed case {@code caseId} books its event {@code event} on: {@link #forCase} with the event's own dat file,
+     * {@code seed/dat/<C>/<event>.dat}, unless the case names one ({@code dat}, also under {@code seed/dat/<C>/}).
+     * Never an E2E dat file of {@code data/dat}, whatever the catalog's {@code cases} hold.
+     *
+     * @throws IllegalStateException when the event is not one, or as {@link #forCase}
+     */
+    public Trade forEvent(String caseId, String event, String composition, String productId) {
+        event(event);
+        Trade t = forCase(caseId, composition, productId, null);
+        CaseEntry entry = cases.get(caseId);
+        if (entry != null && entry.dat() != null) return t;
+        return new Trade(t.caseId(), t.composition(), t.itradeableType(), t.productId(), t.taxonomy(), t.variant(),
+                SEED_DAT_DIR + composition + "/" + event + ".dat", t.setup(), t.caseRequest(), t.caseEventRequest(),
+                t.registered());
+    }
+
+    /**
      * What a booking of {@code composition} under {@code productId} with {@code taxonomy} ({@code null} for none)
      * sends, as variant {@code variant} ({@code null} for none). A {@code trades} entry with this taxonomy wins over
      * one without.

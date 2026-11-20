@@ -88,11 +88,18 @@ public class SeedDataTest {
                         SeedData.checkCase(caseId);
                         assertTrue(file + ": case ID twice: " + caseId, cases.add(caseId));
                     }
-                    SeedData.Trade trade = caseId != null
+                    SeedData.Trade trade = caseId != null && event != null
+                            ? catalog.forEvent(caseId, event, cell(header, cells, "composition"),
+                                    cell(header, cells, "product_id"))
+                            : caseId != null
                             ? catalog.forCase(caseId, cell(header, cells, "composition"),
                                     cell(header, cells, "product_id"), cell(header, cells, "taxonomy"))
                             : catalog.trade(cell(header, cells, "composition"), cell(header, cells, "product_id"),
                                     cell(header, cells, "taxonomy"), variant);
+                    if (event != null) {
+                        assertTrue(file + ": an event books a seed dat file: " + trade.dat(),
+                                trade.dat().equals(SeedData.SEED_DAT_DIR + trade.composition() + "/" + event + ".dat"));
+                    }
                     assertTrue(file + ": no dat file " + trade.dat(),
                             getClass().getClassLoader().getResource(trade.dat()) != null);
                     Json.parse(SeedData.request(trade));
@@ -217,6 +224,27 @@ public class SeedDataTest {
             fail("a TODO eventRequest is refused");
         } catch (IllegalStateException e) {
             assertTrue(e.getMessage(), e.getMessage().contains("eventRequest.x is still TODO"));
+        }
+    }
+
+    @Test
+    public void anEventBooksItsOwnSeedDatFileNeverTheE2eOne() {
+        SeedData catalog = SeedData.fromJson("t.json", Json.parse("""
+                {"itradeableTypes": {"FX_TRF": "Cortex.Finance.Tradeable.TRF"},
+                 "events": {"termination": {"case": "TC-TRADE-EARLY-TERMINATION-<product_type>-API-001"}},
+                 "cases": {"SEED-EVENT-004": {"request": {"basic": {"portfolioId": "EXAMPLE_PORTFOLIO_E"}}},
+                           "SEED-EVENT-014": {"dat": "termination-metals.dat"}}}"""));
+        assertEquals("a registered composition, no dat in the case: the event's, not data/dat",
+                "seed/dat/FX_TRF/termination.dat", catalog.forEvent("SEED-EVENT-004", "termination", "FX_TRF", "FX_TRF").dat());
+        assertEquals("seed/dat/FX_TRF/termination.dat",
+                catalog.forEvent("SEED-EVENT-009", "termination", "FX_TRF", "FX_TRF").dat());
+        assertEquals("seed/dat/FX_TRF/termination-metals.dat",
+                catalog.forEvent("SEED-EVENT-014", "termination", "FX_TRF", "FX_TRF").dat());
+        try {
+            catalog.forEvent("SEED-EVENT-004", "no-such-event", "FX_TRF", "FX_TRF");
+            fail("an unknown event is refused");
+        } catch (IllegalStateException e) {
+            assertTrue(e.getMessage(), e.getMessage().contains("no event 'no-such-event'"));
         }
     }
 

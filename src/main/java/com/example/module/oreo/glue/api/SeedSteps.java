@@ -69,7 +69,7 @@ public class SeedSteps {
      */
     @Given("^seed case '([^']*)' books event '([^']*)' on a new live trade of composition '([^']*)' and product ID '([^']*)' via api$")
     public void bookEvent(String caseId, String event, String composition, String productId) throws Exception {
-        SeedData.Trade trade = SeedData.catalog().forCase(caseId, composition, productId, null);
+        SeedData.Trade trade = SeedData.catalog().forEvent(caseId, event, composition, productId);
         SeedData.Event e = SeedData.catalog().event(event);
         ObjectNode entry = entry("event", trade).put("event", e.name()).put("eventCase", e.caseId());
         try {

@@ -89,7 +89,9 @@ case sends of its own:
   the pair's. An event case (`SEED-EVENT-...`) books its trade with them too, and its `eventRequest` is merged the
   same way over its event's request (the E2E case's): the fields one event booking needs of its own. Each event
   books its own dat file, named after the event: `SEED-EVENT-004` (termination on FX_TRF) books
-  `seed/dat/FX_TRF/termination.dat`; the catalog names one per event case, placeholders until exported from Cortex. Every case
+  `seed/dat/FX_TRF/termination.dat`, by convention (`SeedData.forEvent`): never an E2E file of `data/dat`, even
+  with no `dat` in the case's entry; a case's `dat` names another file in the same folder. Placeholders until exported
+  from Cortex. Every case
   listed must be a row of the features (`SeedDataTest`), and a value starting with `TODO`
   stops the catalog from loading. The catalog has a case per row of the Excel with placeholders,
   `EXAMPLE_PORTFOLIO_<X>` and `EXAMPLE_ENTITY_<X>`, one letter per distinct portfolio and entity, so cases that share
