@@ -20,6 +20,7 @@ LOCATORS below to the names it prints. Keep the mouse and keyboard still while i
 from __future__ import annotations
 
 import argparse
+import contextlib
 import csv
 import sys
 import time
@@ -156,8 +157,10 @@ def inspect(out: Path) -> None:
         if title and any(k in title for k in ("TDS", "View", "VS20", "Save As")):
             n += 1
             file = out / f"inspect-{n}.txt"
-            # windows() returns wrappers; print_control_identifiers is on a window specification
-            desktop.window(handle=w.handle).print_control_identifiers(depth=6, filename=str(file))
+            # windows() returns wrappers; print_control_identifiers is on a window specification. Its filename=
+            # writes in the system code page (cp1252), which has no em space of Cortex's titles: print to UTF-8.
+            with file.open("w", encoding="utf-8") as f, contextlib.redirect_stdout(f):
+                desktop.window(handle=w.handle).print_control_identifiers(depth=6)
             print(f"{file}: {' '.join(title.split())!r}")
     if n == 0:
         print("No Cortex window open (TDS Browser, View, Save As).")
