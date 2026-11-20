@@ -1,5 +1,25 @@
 {
-  "_comment": "The SIT seed's catalog (docs/sit-seed.md), read by SeedData. The seed features name each booking by composition (the Excel's Itradeable Type, the E2E's composition) and product ID; this file holds only what a pair needs beyond that. trades: a list of {composition, productId, dat, setup} for a pair whose dat file name or body is not the default (a registered composition's dat is data/dat/<C>/<C>.dat, any other's seed/dat/<C>/<productId>.dat; the body is data/setup/trade-create). variants: another body for a pair, by name. events: the E2E Outline whose positive case's request books the event, via trigger-event (the default) or update (the amendment).",
+  "_comment": "The SIT seed's catalog (docs/sit-seed.md), read by SeedData. The seed features name each booking by composition and product ID. itradeableTypes: the Excel's Itradeable Type of each composition the seed books, one to one ({\"<Itradeable Type>\": \"<composition>\"}). trades: a list of {composition, productId, taxonomy, dat, setup} for a pair (or a pair with one taxonomy) whose dat file name or body is not the default (a registered composition's dat is data/dat/<C>/<C>.dat, any other's seed/dat/<C>/<productId>.dat; the body is data/setup/trade-create). variants: another body for a pair, by name. events: the E2E Outline whose positive case's request books the event, via trigger-event (the default) or update (the amendment).",
+  "itradeableTypes": {
+    "FXBO": "FXBO",
+    "FXStructure": "FXStructure",
+    "FX_ACCUMULATOR": "FX_ACCUMULATOR",
+    "FX_ARO": "FX_ARO",
+    "FX_ASO": "FX_ASO",
+    "FX_CO": "FX_CO",
+    "FX_FF": "FX_FF",
+    "FX_FVA": "FX_FVA",
+    "FX_OOS": "FX_OOS",
+    "FX_PSCRIPT_BOBO": "FX_PSCRIPT_BOBO",
+    "FX_PSCRIPT_CCK": "FX_PSCRIPT_CCK",
+    "FX_PSCRIPT_EASO": "FX_PSCRIPT_EASO",
+    "FX_PSCRIPT_FSB": "FX_FSB",
+    "FX_PSCRIPT_TRF": "FX_PSCRIPT_TRF",
+    "FX_PSCRIPT_VBD": "FX_PSCRIPT_VBD",
+    "FX_RAO": "FX_RAO",
+    "FX_RVO": "FX_RVO",
+    "FX_TRF": "FX_TRF"
+  },
   "trades": [],
   "variants": {
     "stepin-full": { "setup": "trade-create-stepin-full" },

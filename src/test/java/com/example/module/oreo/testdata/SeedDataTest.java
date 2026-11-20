@@ -40,6 +40,9 @@ public class SeedDataTest {
             TestData.setup(setup);
         }
         assertEquals(SeedData.TRIGGER_EVENT, catalog.event("withdrawal").via());
+        SeedData.Trade fsb = catalog.trade("FX_FSB", "FX_PSCRIPT_FSKO", null);
+        assertEquals("FX_PSCRIPT_FSB", fsb.itradeableType());
+        assertTrue(fsb.registered());
         assertEquals(SeedData.UPDATE, catalog.event("amendment").via());
     }
 
@@ -104,7 +107,8 @@ public class SeedDataTest {
     @Test
     public void aPairTakesItsDatFileByWhetherItsCompositionIsRegistered() {
         SeedData catalog = SeedData.fromJson("t.json", Json.parse("""
-                {"trades": [{"composition": "FX_X", "productId": "FX_X2", "dat": "OTHER.dat", "setup": "other-body"}],
+                {"itradeableTypes": {"FX_X": "FX_X", "FXBO": "FXBO", "FX_TRF": "FX_TRF"},
+                 "trades": [{"composition": "FX_X", "productId": "FX_X2", "dat": "OTHER.dat", "setup": "other-body"}],
                  "variants": {"stepin-full": {"setup": "trade-create-stepin-full"}}}"""));
         SeedData.Trade x = catalog.trade("FX_X", "FX_X1", null);
         assertFalse(x.registered());
@@ -124,7 +128,8 @@ public class SeedDataTest {
     @Test
     public void anEntryWithATaxonomyWinsOverOneWithout() {
         SeedData catalog = SeedData.fromJson("t.json", Json.parse("""
-                {"trades": [{"composition": "FXBO", "productId": "FX_BO_X", "setup": "body-a"},
+                {"itradeableTypes": {"FX_X": "FX_X", "FXBO": "FXBO", "FX_TRF": "FX_TRF"},
+                 "trades": [{"composition": "FXBO", "productId": "FX_BO_X", "setup": "body-a"},
                             {"composition": "FXBO", "productId": "FX_BO_X", "taxonomy": "Metals:Precious:Exotic",
                              "setup": "body-b"}]}"""));
         SeedData.Trade metals = catalog.trade("FXBO", "FX_BO_X", "Metals:Precious:Exotic", null);
@@ -139,7 +144,8 @@ public class SeedDataTest {
     @Test
     public void anEventNeedsARegisteredComposition() {
         SeedData catalog = SeedData.fromJson("t.json", Json.parse("""
-                {"events": {"termination": {"case": "TC-TRADE-EARLY-TERMINATION-<product_type>-API-001"}}}"""));
+                {"itradeableTypes": {"FX_X": "FX_X", "FXBO": "FXBO", "FX_TRF": "FX_TRF"},
+                 "events": {"termination": {"case": "TC-TRADE-EARLY-TERMINATION-<product_type>-API-001"}}}"""));
         try {
             SeedData.eventRequest(catalog.event("termination"), catalog.trade("FX_X", "FX_X1", null));
             fail("an event needs a registered composition");
@@ -177,7 +183,22 @@ public class SeedDataTest {
         bad("""
                 {"trades": [{"composition": "FX_X", "productId": "P", "taxonomy": "A"},
                             {"composition": "FX_X", "productId": "P", "taxonomy": "A"}]}""", "listed twice");
-        SeedData catalog = SeedData.fromJson("t.json", Json.parse("{}"));
+        bad("""
+                {"itradeableTypes": []}""", "itradeableTypes:");
+        bad("""
+                {"itradeableTypes": {"FX PSCRIPT": "FX_FSB"}}""", "\"Itradeable Type\"");
+        bad("""
+                {"itradeableTypes": {"FX_PSCRIPT_FSB": 1}}""", "\"composition\"");
+        bad("""
+                {"itradeableTypes": {"FX_PSCRIPT_FSB": "FX_FSB", "FX_FSB": "FX_FSB"}}""", "one to one");
+        SeedData catalog = SeedData.fromJson("t.json", Json.parse("""
+                {"itradeableTypes": {"FX_TRF": "FX_TRF"}}"""));
+        try {
+            catalog.trade("FX_CO", "FX_PSCRIPT", null);
+            fail("a composition needs its Itradeable Type");
+        } catch (IllegalStateException e) {
+            assertTrue(e.getMessage(), e.getMessage().contains("has no Itradeable Type"));
+        }
         try {
             catalog.trade("FX-TRF", "FX_TRF", null);
             fail("an ID is letters, digits and _");

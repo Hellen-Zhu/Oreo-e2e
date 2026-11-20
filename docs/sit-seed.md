@@ -10,7 +10,7 @@ data). When the API changes, one fix serves both.
 | What | Where |
 |---|---|
 | Runner, never run by a plain `mvn test` (surefire excludes it) | `src/test/java/com/example/module/oreo/SeedTest.java` |
-| Catalog: what a pair needs beyond its IDs, variants, events | `src/test/resources/seed/catalog.json` (`SeedData`) |
+| Catalog: Itradeable Type → composition, what a pair needs beyond its IDs, variants, events | `src/test/resources/seed/catalog.json` (`SeedData`) |
 | What a run books: one row per seed case (composition, product ID, taxonomy), variant or event | `src/test/resources/seed/features/*.feature` |
 | Steps | `glue/api/SeedSteps.java` |
 | Manifest: one line per booking or failure | `target/seed/manifest-<date>.jsonl` (generated, never committed) |
@@ -21,9 +21,9 @@ The seed features are outside `features/`: `OreoTest`, `check` and `sync-example
 ## Bookings and catalog
 
 A new trade is a **seed case** of the Excel's new-trade sheet: its case ID (`SEED-TRADE-001`, the scenario name), its
-**composition** (the Itradeable Type), **product ID** and **taxonomy**, the ISDA taxonomy of column A after the asset
+**composition** (the E2E's, mapped from the Itradeable Type in the catalog), **product ID** and **taxonomy**, the ISDA taxonomy of column A after the asset
 class (`ComplexExotic`, `SimpleExotic:Digital`, `Metals:Precious:Exotic`). The taxonomy labels the booking in the
-manifest and the report and can pick a catalog entry; it is not sent. Variants and events are named by composition and
+manifest and the report and can pick a catalog entry; it is never sent to the API. Variants and events are named by composition and
 product ID. Each row is one booking:
 
 ```gherkin
@@ -37,10 +37,14 @@ One composition can be booked under several product IDs, and one pair under seve
 composition, product ID, taxonomy, variant and event, when a row's dat file or setup is missing, and when an event's
 composition is not registered. Continue the numbering for a new row; never renumber, UAT knows the cases by their IDs.
 
-The catalog holds only what a pair needs beyond its two IDs:
+The catalog maps each Itradeable Type to its composition and holds what a pair needs beyond its two IDs:
 
 ```json
 {
+  "itradeableTypes": {
+    "FX_PSCRIPT_FSB": "FX_FSB",
+    "FX_TRF": "FX_TRF"
+  },
   "trades": [
     { "composition": "FX_EXAMPLE", "productId": "FX_EXAMPLE_1", "dat": "OTHER.dat", "setup": "trade-create-example" },
     { "composition": "FX_EXAMPLE", "productId": "FX_EXAMPLE_1", "taxonomy": "Metals:Precious:Exotic", "setup": "trade-create-metals" }
@@ -55,6 +59,10 @@ The catalog holds only what a pair needs beyond its two IDs:
 }
 ```
 
+- **`itradeableTypes`**: the Excel's Itradeable Type of each composition the seed books, one to one: the one place
+  where the two names meet. Most are the same name; `FX_PSCRIPT_FSB` is the E2E's `FX_FSB`. A row whose composition is
+  not in it fails, and so does a composition under two Itradeable Types. The manifest and the report carry the
+  Itradeable Type beside the composition, so UAT reads its own name.
 - **Dat file**: a composition registered in `ProductDatFiles` takes `data/dat/<C>/<C>.dat`; any other takes
   `seed/dat/<C>/<productId>.dat`. Do not register a seed-only composition in `ProductDatFiles`: it would join every
   product Outline of the E2E cases.
@@ -68,7 +76,8 @@ The catalog holds only what a pair needs beyond its two IDs:
   `POST /trades/<id>/update`, its task read from `msg`). The pair's composition must be registered, because the case
   data is per composition.
 
-**A new product** is a row (next case ID, composition, product ID, taxonomy) in `seed_new_trades.feature`, plus its dat file in
+**A new product** is its Itradeable Type in `itradeableTypes` (when the composition is new), a row (next case ID,
+composition, product ID, taxonomy) in `seed_new_trades.feature`, plus its dat file in
 `seed/dat/<C>/` when the composition is not registered. **A new event** is an event in the catalog and its rows in
 `seed_lifecycle_events.feature`; it needs a positive E2E case first.
 
@@ -116,12 +125,9 @@ and lists the failures.
 - The new-trade sheet: `SEED-TRADE-001` to `038` are its first 38 rows; rows 39 to 41 (FX_VOLOPTION, FX_AMER_OPT
   twice) wait for their composition and taxonomy. Each unregistered composition's dat file in `seed/dat/<C>/` is a
   placeholder here: the real template, and the entity and portfolio of its row as setup data, are on the company copy.
-- The sheet's composition FX_PSCRIPT_FSB is booked as the registered `FX_FSB` (the E2E's composition for it):
-  `SEED-TRADE-022`, `028`.
 - Rows that differ only by taxonomy (`008`/`009` FXBO + FX_BO_MULTIDIGI, `035`/`036` FX_TRF + FX_TRF) book the same
   body unless a `trades` entry with the taxonomy gives one its own (dat, entity, portfolio). `037` FX_TRF_DLYSTTL
   books `FX_TRF.dat` unless an entry names another dat.
-- To confirm: whether the taxonomy is to be sent in the booking (it is only a label now), and the taxonomy of `020`
-  (FX_CO, booked as `ComplexExotic`).
+- To confirm: the taxonomy of `020` (FX_CO, booked as `ComplexExotic`).
 - The public copy has only some events' case data (allocation, early termination). The other events, amendment and
   cancellation among them, resolve on the company copy.

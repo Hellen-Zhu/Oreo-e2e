@@ -23,7 +23,7 @@ import java.util.TreeMap;
  */
 final class SeedReport {
 
-    static final List<String> COLUMNS = List.of("env", "kind", "case", "composition", "productId", "taxonomy",
+    static final List<String> COLUMNS = List.of("env", "kind", "case", "itradeableType", "composition", "productId", "taxonomy",
             "variant", "event", "setup", "tradeId", "childTradeIds", "status", "at", "error");
 
     private SeedReport() {}
