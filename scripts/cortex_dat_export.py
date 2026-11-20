@@ -45,8 +45,14 @@ LOCATORS = {
     # Down presses select it when the menu is not a UI Automation element.
     "trade_export_item": (r"^View", 5),
     "object_window": r"^Viewer - .*",                   # "Viewer - {value} <build> VS2022 ...": Import / Export / Link
+    # The Viewer shows many columns; INSTRUMENT is far right. Right-click a column header, untick All, tick
+    # INSTRUMENT: the Viewer then shows INSTRUMENT only, {Object ITradeable} in its first cell. Offsets are from the
+    # Viewer's top left (--where prints them); an item of the column list is clicked by its text, else at its offset.
+    "object_header_offset": None,                       # a column header of the Viewer, e.g. ACTION
+    "column_all": ("All", None),                        # (text, offset) of the list's All
+    "column_instrument": ("INSTRUMENT", None),          # (text, offset) of the list's INSTRUMENT
     "object_cell": r".*Object ITradeable.*",            # the Viewer's INSTRUMENT cell; or object_cell_offset
-    "object_cell_offset": None,
+    "object_cell_offset": None,                         # {Object ITradeable} once INSTRUMENT is the only column
     "view_window": r"^View$",                           # Export, Raw view, Trade type: ...
     "view_export_item": (r"^Save As", 1),
     "save_dialog": r"Save As",
@@ -93,12 +99,24 @@ class Cortex:
         except Exception:
             send_keys("{DOWN}" * downs + "{ENTER}")
 
+    def list_item(self, window, item) -> None:
+        """Clicks an item of an open popup list: at its offset from the window when given, else by its text."""
+        text, offset = item
+        if offset:
+            self.click_at(window, offset)
+        else:
+            self.desktop.window(title_re=f"^{re.escape(text)}$", found_index=0, top_level_only=False).click_input()
+        time.sleep(0.3)
+
     @staticmethod
-    def click_at(window, offset, double: bool = False) -> None:
+    def click_at(window, offset, double: bool = False, right: bool = False) -> None:
         rect = window.rectangle()
         coords = (rect.left + offset[0], rect.top + offset[1])
         from pywinauto import mouse
-        (mouse.double_click if double else mouse.click)(coords=coords)
+        if right:
+            mouse.right_click(coords=coords)
+        else:
+            (mouse.double_click if double else mouse.click)(coords=coords)
 
     def export(self, trade_id: str, target: Path) -> None:
         from pywinauto.keyboard import send_keys
@@ -135,6 +153,15 @@ class Cortex:
         with step("6 wait for the Viewer (object_window)"):
             objects = self.window(LOCATORS["object_window"])
 
+        if LOCATORS["object_header_offset"]:
+            with step("7a show the INSTRUMENT column only (object_header_offset, column_all, column_instrument)"):
+                objects.set_focus()
+                self.click_at(objects, LOCATORS["object_header_offset"], right=True)
+                time.sleep(0.5)
+                self.list_item(objects, LOCATORS["column_all"])
+                self.list_item(objects, LOCATORS["column_instrument"])
+                send_keys("{ESC}")
+                time.sleep(0.3)
         with step("7 double-click {Object ITradeable} (object_cell / object_cell_offset)"):
             if LOCATORS["object_cell_offset"]:
                 self.click_at(objects, LOCATORS["object_cell_offset"], double=True)
@@ -229,6 +256,14 @@ def where() -> None:
     title = ctypes.create_unicode_buffer(512)
     user32.GetWindowTextW(window, title, 512)
     print(f"offset ({point.x - rect.left}, {point.y - rect.top}) in {' '.join(title.value.split())!r}")
+    # A popup list (the Viewer's columns) is a window of its own: the offsets from the Cortex windows too.
+    from pywinauto import Desktop
+
+    for w in Desktop(backend=LOCATORS["backend"]).windows():
+        name = w.window_text()
+        if name and (" VS20" in name or name.strip() == "View") and w.handle != window:
+            r = w.rectangle()
+            print(f"offset ({point.x - r.left}, {point.y - r.top}) from {' '.join(name.split())!r}")
 
 
 def main() -> int:
