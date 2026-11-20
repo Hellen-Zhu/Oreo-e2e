@@ -10,23 +10,38 @@ data). When the API changes, one fix serves both.
 | What | Where |
 |---|---|
 | Runner, never run by a plain `mvn test` (surefire excludes it) | `src/test/java/com/example/module/oreo/SeedTest.java` |
-| Catalog: the trades and events, by name | `src/test/resources/seed/catalog.json` (`SeedData`) |
-| What a run books: one row per trade, one row per event x trade | `src/test/resources/seed/features/*.feature` |
+| Catalog: what a pair needs beyond its IDs, variants, events | `src/test/resources/seed/catalog.json` (`SeedData`) |
+| What a run books: one row per composition + product ID (and variant, event) | `src/test/resources/seed/features/*.feature` |
 | Steps | `glue/api/SeedSteps.java` |
 | Manifest: one line per booking or failure | `target/seed/manifest-<date>.jsonl` (generated, never committed) |
 | Summary for UAT | `TestDataTool seed-report` → `target/seed/seed-report.csv` |
 
 The seed features are outside `features/`: `OreoTest`, `check` and `sync-examples` do not see them.
 
-## Catalog
+## Bookings and catalog
+
+A booking is named in the seed features by its **composition and product ID**, the Excel's Itradeable Type and
+product ID; each row is one booking:
+
+```gherkin
+Given a seed trade of composition 'FX_PSCRIPT_TRF' and product ID 'FX_PSCRIPT' is booked live via api
+Given a 'stepin-full' seed trade of composition 'FX_TRF' and product ID 'FX_TRF' is booked live via api
+Given seed event 'termination' is booked on a new live trade of composition 'FX_TRF' and product ID 'FX_TRF' via api
+```
+
+One composition can be booked under several product IDs, each its own row. `SeedDataTest` fails when two rows book
+the same composition, product ID, variant and event, when a row's dat file or setup is missing, and when an event's
+composition is not registered.
+
+The catalog holds only what a pair needs beyond its two IDs:
 
 ```json
 {
-  "trades": {
-    "fx-trf": { "composition": "FX_TRF" },
-    "fx-trf-stepin-full": { "composition": "FX_TRF", "setup": "trade-create-stepin-full" },
-    "fx-pscript-trf-pscript": { "composition": "FX_PSCRIPT_TRF", "productId": "FX_PSCRIPT" },
-    "fx-example": { "composition": "FX_EXAMPLE", "productId": "FX_EXAMPLE_1" }
+  "trades": [
+    { "composition": "FX_EXAMPLE", "productId": "FX_EXAMPLE_1", "dat": "OTHER.dat", "setup": "trade-create-example" }
+  ],
+  "variants": {
+    "stepin-full": { "setup": "trade-create-stepin-full" }
   },
   "events": {
     "termination": { "case": "TC-TRADE-EARLY-TERMINATION-<product_type>-API-001" },
@@ -35,27 +50,21 @@ The seed features are outside `features/`: `OreoTest`, `check` and `sync-example
 }
 ```
 
-- **A trade is a pair: a composition and a product ID**, one booking per pair (and setup). The composition is the
-  Excel's Itradeable Type, the E2E's composition (`basic.compositionId`); one composition can be booked under several
-  product IDs, each its own trade (`FX_PSCRIPT_TRF` under `FX_PSCRIPT_TRF` and under `FX_PSCRIPT`). Two trades with
-  the same pair and setup are an error.
-- A composition registered in `ProductDatFiles` may leave out `productId` (its default product ID) and takes its dat
-  file from `data/dat/<C>/`. Any other composition needs `productId`, and its dat file is in `seed/dat/<C>/`: do not
-  register it in `ProductDatFiles`, which would add it to every product Outline. `dat` is the file name in that folder
-  (default `<C>.dat` for a registered composition, `<productId>.dat` for the others).
-- `setup` is the body (`data/setup/<name>.json`, default `trade-create`). A variant (StepIn, another entity or
-  portfolio) is a setup file that `extends` `trade-create`.
-- **An event** is sent on a new live trade with the request of an E2E positive case (`case`, the Outline's ID), and the
-  checker approves the task when the event creates one. `via` is how it is sent: `trigger-event` (the default,
-  `POST /trades/trigger-event`, its `tradeIds` replaced) or `update` (the amendment, `POST /trades/<id>/update`, its
-  task read from `msg`). The trade's composition must be registered, because the case data is per composition.
-- Names are lower case, digits and `-`. `SeedDataTest` checks that every row of the seed features is in the catalog
-  and every setup exists.
+- **Dat file**: a composition registered in `ProductDatFiles` takes `data/dat/<C>/<C>.dat`; any other takes
+  `seed/dat/<C>/<productId>.dat`. Do not register a seed-only composition in `ProductDatFiles`: it would join every
+  product Outline of the E2E cases.
+- **`trades`**: a pair whose dat file name (`dat`) or body (`setup`, default `trade-create`) is not the default. A
+  body is a setup file that `extends` `trade-create` (another entity or portfolio).
+- **`variants`**: another body for any pair, by name (StepIn Full, StepIn Partial), the `variant` column.
+- **`events`**: sent on a new live trade of the pair with the request of an E2E positive case (`case`, the Outline's
+  ID), and the checker approves the task when the event creates one. `via` is how it is sent: `trigger-event` (the
+  default, `POST /trades/trigger-event`, its `tradeIds` replaced) or `update` (the amendment,
+  `POST /trades/<id>/update`, its task read from `msg`). The pair's composition must be registered, because the case
+  data is per composition.
 
-**A new product** (a composition + product ID pair) is a trade in the catalog and a row in `seed_new_trades.feature`,
-plus its dat file in `seed/dat/<C>/` when the composition is not registered.
-**A new event** is an event in the catalog and its rows in `seed_lifecycle_events.feature`; it needs a positive E2E
-case first.
+**A new product** is a row (composition, product ID) in `seed_new_trades.feature`, plus its dat file in
+`seed/dat/<C>/` when the composition is not registered. **A new event** is an event in the catalog and its rows in
+`seed_lifecycle_events.feature`; it needs a positive E2E case first.
 
 ## Run (company machine)
 
@@ -66,7 +75,7 @@ Every run books real trades on the environment of the properties file. `SeedTest
 mvn -B test -Dtest=SeedTest
 mvn -B test -Dtest=SeedTest "-Dcucumber.options=--tags @seed-trade"
 mvn -B test -Dtest=SeedTest "-Dcucumber.options=--tags @seed-event"
-mvn -B test -Dtest=SeedTest "-Dcucumber.options=--name ^\[SEED-EVENT-termination-fx-trf\].*$"
+mvn -B test -Dtest=SeedTest "-Dcucumber.options=--name ^\[SEED-EVENT-termination-FX_TRF-FX_TRF\].*$"
 mvn -Ptest-data process-test-classes "-Dexec.args=seed-report"
 ```
 
@@ -75,8 +84,9 @@ environment.
 
 The steps check only that a booking happened: a trade ID and an approved task. A failed booking fails its scenario and
 is written to the manifest with its error. To rerun only the failed ones, use `--name` with their scenario names
-(`[SEED-TRADE-<trade>]`, `[SEED-EVENT-<event>-<trade>]`). `seed-report` keeps the latest line of each booking
-(environment, trade, event), writes one CSV row per booking with its trade ID (and child trade IDs for allocation),
+(`[SEED-TRADE-<composition>-<product_id>]`, `[SEED-TRADE-<variant>-<composition>-<product_id>]`,
+`[SEED-EVENT-<event>-<composition>-<product_id>]`). `seed-report` keeps the latest line of each booking (environment,
+composition, product ID, variant, event), writes one CSV row per booking with its trade ID (and child trade IDs for allocation),
 and lists the failures.
 
 ## Maintenance
@@ -91,10 +101,11 @@ and lists the failures.
 ## Open
 
 - The Excel's events and the catalog: Withdrawal is `withdrawal` (Cancellation), Amendment is `amendment` (`via:
-  update`), StepInFull / StepInPartial are trades (`*-stepin-full`, `*-stepin-partial`). OptionEvent_knockout is left
+  update`), StepInFull / StepInPartial are the variants `stepin-full`, `stepin-partial`. OptionEvent_knockout is left
   out for now: it needs market data that triggers the knock-out.
 - To confirm: RemainingPartyFull / RemainingPartyPartial are NovationRemaining / PartialNovationRemaining, and the
-  Excel's FX_PSCRIPT with payoff script TRFGeneric is the composition FX_PSCRIPT_TRF.
+  Excel's FX_PSCRIPT with payoff script TRFGeneric is the composition FX_PSCRIPT_TRF under product ID FX_PSCRIPT (the
+  lifecycle rows book it so).
 - The new-trade sheet's 41 rows as composition + product ID pairs: the composition ID of each Itradeable Type (with its
   payoff script, for `Cortex.Finance.Tradeable.PayoffScript`), its dat template in `seed/dat/<C>/`, and the entity and
   portfolio of its row as setup data, on the company copy. Rows with the same Itradeable Type and product ID (and

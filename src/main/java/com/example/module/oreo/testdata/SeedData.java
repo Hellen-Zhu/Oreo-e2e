@@ -22,47 +22,43 @@ import java.util.Map;
 import java.util.regex.Pattern;
 
 /**
- * The SIT seed: trades booked in bulk for UAT, not tests. Its catalog, {@code seed/catalog.json} on the classpath,
- * names the trades ({@code trades}) and the lifecycle events ({@code events}) the seed features book by name; its
- * manifest, {@code target/seed/manifest-<date>.jsonl} under the project, holds one line per booking, which
+ * The SIT seed: trades booked in bulk for UAT, not tests. A booking is named in the seed features by its composition
+ * (the Excel's Itradeable Type, the E2E's composition) and product ID; its catalog, {@code seed/catalog.json} on the
+ * classpath, holds only what a pair needs beyond that, the variants and the lifecycle events. Its manifest,
+ * {@code target/seed/manifest-<date>.jsonl} under the project, holds one line per booking, which
  * {@code TestDataTool seed-report} turns into the summary for UAT. Details: {@code docs/sit-seed.md}.
  *
  * <ul>
- *   <li>A trade is a pair, a composition (the Excel's Itradeable Type, the E2E's composition) and a product ID:
- *       {@code {"composition": "FX_PSCRIPT_TRF", "productId": "FX_PSCRIPT"}}; one booking per pair (and setup). A
- *       composition registered in {@link ProductDatFiles} may leave out the product ID (its default) and takes its dat
- *       file from {@code data/dat/<C>/}; any other has its dat file in {@code seed/dat/<C>/}. {@code "dat"} is the
- *       file name there ({@code <C>.dat} for a registered composition's, {@code <productId>.dat} otherwise, when
- *       absent). {@code "setup"} is the body, {@code data/setup/<name>.json} ({@code trade-create} when
- *       absent).</li>
+ *   <li>A pair's dat file: a composition registered in {@link ProductDatFiles} takes it from {@code data/dat/<C>/}
+ *       ({@code <C>.dat}), any other from {@code seed/dat/<C>/} ({@code <productId>.dat}). {@code trades}, a list of
+ *       {@code {"composition", "productId", "dat"?, "setup"?}}, gives another file name or another body for a pair;
+ *       the body is {@code data/setup/<name>.json}, {@code trade-create} by default.</li>
+ *   <li>A variant ({@code variants}, by name: {@code {"setup": ...}}) books a pair with another body: StepIn Full,
+ *       StepIn Partial.</li>
  *   <li>An event is booked with the request of an E2E case ({@code "case"}, the Outline's ID with
- *       {@code <product_type>}) on the trade booked for it: one body for the test and the seed. {@code "via"} is
+ *       {@code <product_type>}) on a new trade of the pair: one body for the test and the seed. {@code "via"} is
  *       {@code trigger-event} (the default, the body's {@code tradeIds} replaced) or {@code update} (the amendment,
- *       posted to the trade's update path). Its trade's composition must be registered: the case's product.</li>
+ *       posted to the trade's update path). The pair's composition must be registered: the case's product.</li>
  * </ul>
  */
 public final class SeedData {
 
     public static final String CATALOG = "seed/catalog.json";
     public static final String DEFAULT_SETUP = "trade-create";
-    private static final String PRODUCT = "<product_type>";
-    private static final Pattern NAME = Pattern.compile("[a-z0-9][a-z0-9-]*");
-
-    /**
-     * A trade of the catalog: a composition and a product ID, the classpath path of its dat file, its setup body;
-     * {@code registered} when the composition is in {@link ProductDatFiles} (it can take lifecycle events).
-     */
-    public record Trade(String name, String composition, String productId, String dat, String setup,
-                        boolean registered) {}
-
     /** Where the dat files of a composition the E2E cases do not register are, {@code seed/dat/<C>/}. */
     public static final String SEED_DAT_DIR = "seed/dat/";
-    private static final Pattern COMPOSITION = Pattern.compile("[A-Z0-9][A-Z0-9_]*");
+    private static final String PRODUCT = "<product_type>";
+    private static final Pattern NAME = Pattern.compile("[a-z0-9][a-z0-9-]*");
+    private static final Pattern ID = Pattern.compile("[A-Z0-9][A-Z0-9_]*");
 
     /**
-     * A lifecycle event of the catalog, booked with the request of the E2E case {@code caseId} (with its product)
-     * through {@code via}: {@link #TRIGGER_EVENT} or {@link #UPDATE}.
+     * What one booking sends: a composition and a product ID, the classpath path of its dat file, its setup body,
+     * the variant ({@code null} for none); {@code registered} when the composition is in {@link ProductDatFiles}.
      */
+    public record Trade(String composition, String productId, String variant, String dat, String setup,
+                        boolean registered) {}
+
+    /** A lifecycle event of the catalog, booked with the request of the E2E case {@code caseId} through {@code via}. */
     public record Event(String name, String caseId, String via) {}
 
     /** An event sent to {@code POST /trades/trigger-event}, its {@code tradeIds} replaced: the default. */
@@ -70,11 +66,15 @@ public final class SeedData {
     /** An event sent to {@code POST /trades/<id>/update}, the trade amendment. */
     public static final String UPDATE = "update";
 
-    private final Map<String, Trade> trades;
+    private record Override(String dat, String setup) {}
+
+    private final Map<String, Override> overrides;
+    private final Map<String, String> variants;
     private final Map<String, Event> events;
 
-    private SeedData(Map<String, Trade> trades, Map<String, Event> events) {
-        this.trades = trades;
+    private SeedData(Map<String, Override> overrides, Map<String, String> variants, Map<String, Event> events) {
+        this.overrides = overrides;
+        this.variants = variants;
         this.events = events;
     }
 
@@ -110,64 +110,36 @@ public final class SeedData {
 
     /** The catalog {@code root}, read from {@code resource} (named in the errors). */
     static SeedData fromJson(String resource, JsonNode root) {
-        Map<String, Trade> trades = new LinkedHashMap<>();
-        root.path("trades").properties().forEach(e -> trades.put(e.getKey(), trade(resource, e.getKey(), e.getValue())));
+        Map<String, Override> overrides = new LinkedHashMap<>();
+        JsonNode trades = root.path("trades");
+        if (!trades.isMissingNode() && !trades.isArray()) {
+            throw new IllegalStateException("[Seed] " + resource + " trades: a list of {composition, productId, dat,"
+                    + " setup}");
+        }
+        for (int i = 0; i < trades.size(); i++) {
+            JsonNode node = trades.get(i);
+            String at = "[Seed] " + resource + " trades[" + i + "]";
+            String composition = id(at, "composition", text(node, "composition"));
+            String productId = id(at, "productId", text(node, "productId"));
+            String dat = text(node, "dat");
+            if (dat != null) checkDat(at, dat);
+            String key = key(composition, productId);
+            if (overrides.put(key, new Override(dat, text(node, "setup"))) != null) {
+                throw new IllegalStateException(at + ": " + key + " is listed twice");
+            }
+        }
+        Map<String, String> variants = new LinkedHashMap<>();
+        root.path("variants").properties().forEach(e -> {
+            String at = "[Seed] " + resource + " variants." + e.getKey();
+            checkName(at, e.getKey());
+            String setup = text(e.getValue(), "setup");
+            if (setup == null) throw new IllegalStateException(at + ": \"setup\" is the variant's body");
+            variants.put(e.getKey(), setup);
+        });
         Map<String, Event> events = new LinkedHashMap<>();
         root.path("events").properties().forEach(e -> events.put(e.getKey(), event(resource, e.getKey(), e.getValue())));
-        if (trades.isEmpty()) throw new IllegalStateException("[Seed] " + resource + ": no trades");
-        Map<String, String> pairs = new LinkedHashMap<>();
-        for (Trade t : trades.values()) {
-            String pair = t.composition() + " + " + t.productId() + " (setup " + t.setup() + ")";
-            String other = pairs.putIfAbsent(pair, t.name());
-            if (other != null) {
-                throw new IllegalStateException("[Seed] " + resource + ": trades." + other + " and trades." + t.name()
-                        + " are both " + pair + ": one booking per composition and product ID");
-            }
-        }
-        return new SeedData(Collections.unmodifiableMap(trades), Collections.unmodifiableMap(events));
-    }
-
-    private static Trade trade(String resource, String name, JsonNode node) {
-        String at = "[Seed] " + resource + " trades." + name;
-        checkName(at, name);
-        String composition = text(node, "composition");
-        String productId = text(node, "productId");
-        String dat = text(node, "dat");
-        String setup = text(node, "setup");
-        if (composition == null || !COMPOSITION.matcher(composition).matches()) {
-            throw new IllegalStateException(at + ": \"composition\" is the trade's composition (upper case, digits"
-                    + " and _: FX_TRF), the Excel's Itradeable Type");
-        }
-        ProductDatFiles registered = registered(composition);
-        if (productId == null) {
-            if (registered == null) {
-                throw new IllegalStateException(at + ": \"productId\" is needed: " + composition
-                        + " is not in ProductDatFiles, so it has no default product ID");
-            }
-            productId = registered.productId();
-        }
-        String path;
-        try {
-            if (registered != null) {
-                path = registered.path(dat);
-            } else {
-                String file = dat == null ? productId + ".dat" : dat;
-                ProductDatFiles.checkFileName(file);
-                path = SEED_DAT_DIR + composition + "/" + file;
-            }
-        } catch (IllegalArgumentException e) {
-            throw new IllegalStateException(at + ": " + e.getMessage(), e);
-        }
-        return new Trade(name, composition, productId, path, setup == null ? DEFAULT_SETUP : setup,
-                registered != null);
-    }
-
-    /** The registered composition {@code name}, or {@code null}. */
-    private static ProductDatFiles registered(String name) {
-        for (ProductDatFiles p : ProductDatFiles.values()) {
-            if (p.name().equals(name)) return p;
-        }
-        return null;
+        return new SeedData(Collections.unmodifiableMap(overrides), Collections.unmodifiableMap(variants),
+                Collections.unmodifiableMap(events));
     }
 
     private static Event event(String resource, String name, JsonNode node) {
@@ -186,6 +158,57 @@ public final class SeedData {
         return new Event(name, caseId, via);
     }
 
+    /**
+     * What a booking of {@code composition} under {@code productId} sends, as variant {@code variant} ({@code null}
+     * for none).
+     *
+     * @throws IllegalStateException when an ID is not one, or the catalog has no such variant
+     */
+    public Trade trade(String composition, String productId, String variant) {
+        String at = "[Seed] " + composition + " + " + productId;
+        id(at, "composition", composition);
+        id(at, "productId", productId);
+        Override override = overrides.get(key(composition, productId));
+        String setup = override == null || override.setup() == null ? DEFAULT_SETUP : override.setup();
+        if (variant != null) {
+            setup = variants.get(variant);
+            if (setup == null) throw new IllegalStateException(at + ": no variant '" + variant + "' in " + CATALOG);
+        }
+        String dat = override == null ? null : override.dat();
+        ProductDatFiles registered = registered(composition);
+        String path = registered != null ? registered.path(dat)
+                : SEED_DAT_DIR + composition + "/" + (dat == null ? productId + ".dat" : dat);
+        return new Trade(composition, productId, variant, path, setup, registered != null);
+    }
+
+    /** The registered composition {@code name}, or {@code null}. */
+    private static ProductDatFiles registered(String name) {
+        for (ProductDatFiles p : ProductDatFiles.values()) {
+            if (p.name().equals(name)) return p;
+        }
+        return null;
+    }
+
+    private static String key(String composition, String productId) {
+        return composition + " + " + productId;
+    }
+
+    private static String id(String at, String what, String value) {
+        if (value == null || !ID.matcher(value).matches()) {
+            throw new IllegalStateException(at + ": \"" + what + "\" is an ID: upper case, digits and _ (FX_TRF), not '"
+                    + value + "'");
+        }
+        return value;
+    }
+
+    private static void checkDat(String at, String dat) {
+        try {
+            ProductDatFiles.checkFileName(dat);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalStateException(at + ": " + e.getMessage(), e);
+        }
+    }
+
     private static void checkName(String at, String name) {
         if (!NAME.matcher(name).matches()) {
             throw new IllegalStateException(at + ": a name is lower case, digits and -");
@@ -197,19 +220,13 @@ public final class SeedData {
         return value == null || value.isNull() || value.asText().isBlank() ? null : value.asText().trim();
     }
 
-    public Map<String, Trade> trades() {
-        return trades;
+    /** The variants, name -> setup. */
+    public Map<String, String> variants() {
+        return variants;
     }
 
     public Map<String, Event> events() {
         return events;
-    }
-
-    /** @throws IllegalStateException when the catalog has no trade {@code name} */
-    public Trade trade(String name) {
-        Trade t = trades.get(name);
-        if (t == null) throw new IllegalStateException("[Seed] no trade '" + name + "' in " + CATALOG);
-        return t;
     }
 
     /** @throws IllegalStateException when the catalog has no event {@code name} */
@@ -222,13 +239,13 @@ public final class SeedData {
     /**
      * The request of {@code event} on {@code trade}: its E2E case's merged request for the trade's composition.
      *
-     * @throws IllegalStateException when the trade is not a composition or the case has no request
+     * @throws IllegalStateException when the composition is not registered or the case has no request
      */
     public static String eventRequest(Event event, Trade trade) {
         if (!trade.registered()) {
-            throw new IllegalStateException("[Seed] event '" + event.name() + "' on trade '" + trade.name()
-                    + "': an event needs a trade of a registered composition (its case data is per composition), not "
-                    + trade.composition());
+            throw new IllegalStateException("[Seed] event '" + event.name() + "' on " + key(trade.composition(),
+                    trade.productId()) + ": an event needs a registered composition (its case data is per"
+                    + " composition)");
         }
         String caseId = event.caseId().replace(PRODUCT, trade.composition());
         CaseData data = TestData.forCase(caseId);

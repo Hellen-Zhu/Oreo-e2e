@@ -16,20 +16,21 @@ import java.util.TreeMap;
 
 /**
  * {@code seed-report}: the summary of the SIT seed for UAT (docs/sit-seed.md). Reads every manifest in
- * {@code target/seed}, keeps the latest line of each booking (environment, trade, event) and writes
+ * {@code target/seed}, keeps the latest line of each booking (environment, composition, product ID, variant, event)
+ * and writes
  * {@code target/seed/seed-report.csv}, one row per booking; prints the counts and the bookings that failed. Checks the
  * catalog first. Never fails on a failed booking: the report lists it.
  */
 final class SeedReport {
 
-    static final List<String> COLUMNS = List.of("env", "kind", "trade", "composition", "productId", "setup", "event",
-            "tradeId", "childTradeIds", "status", "at", "error");
+    static final List<String> COLUMNS = List.of("env", "kind", "composition", "productId", "variant", "event",
+            "setup", "tradeId", "childTradeIds", "status", "at", "error");
 
     private SeedReport() {}
 
     static int run() throws IOException {
         SeedData catalog = SeedData.catalog();
-        System.out.println("Catalog " + SeedData.CATALOG + ": " + catalog.trades().size() + " trades, "
+        System.out.println("Catalog " + SeedData.CATALOG + ": " + catalog.variants().size() + " variants, "
                 + catalog.events().size() + " events");
         Path dir = SeedData.manifestDir();
         List<JsonNode> latest = latest(SeedData.readManifests(dir));
@@ -66,8 +67,9 @@ final class SeedReport {
     }
 
     private static String key(JsonNode entry) {
-        return entry.path("env").asText("") + "|" + entry.path("kind").asText() + "|" + entry.path("trade").asText()
-                + "|" + entry.path("event").asText("");
+        return entry.path("env").asText("") + "|" + entry.path("kind").asText() + "|"
+                + entry.path("composition").asText() + "|" + entry.path("productId").asText() + "|"
+                + entry.path("variant").asText("") + "|" + entry.path("event").asText("");
     }
 
     static String csv(List<JsonNode> entries) {

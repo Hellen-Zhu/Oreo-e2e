@@ -30,10 +30,19 @@ public class SeedSteps {
         this.ctx = RestServiceResolver.from(scenario);
     }
 
-    /** A live trade of the catalog's trade {@code name}, approved by the checker. */
-    @Given("^seed trade '([^']*)' is booked live via api$")
-    public void bookTrade(String name) throws Exception {
-        SeedData.Trade trade = SeedData.catalog().trade(name);
+    /** A live trade of {@code composition} under {@code productId}, approved by the checker. */
+    @Given("^a seed trade of composition '([^']*)' and product ID '([^']*)' is booked live via api$")
+    public void bookTrade(String composition, String productId) throws Exception {
+        book(SeedData.catalog().trade(composition, productId, null));
+    }
+
+    /** {@link #bookTrade} with the body of the catalog's variant {@code variant} (StepIn Full, ...). */
+    @Given("^a '([^']*)' seed trade of composition '([^']*)' and product ID '([^']*)' is booked live via api$")
+    public void bookVariant(String variant, String composition, String productId) throws Exception {
+        book(SeedData.catalog().trade(composition, productId, variant));
+    }
+
+    private void book(SeedData.Trade trade) throws Exception {
         ObjectNode entry = entry("trade", trade);
         try {
             CreatedTrade live = live(trade);
@@ -46,13 +55,13 @@ public class SeedSteps {
     }
 
     /**
-     * The catalog's event {@code event} on a new live trade of the catalog's trade {@code name}: the event sent by the
-     * maker with its E2E case's request (triggered, or the amendment through the trade's update) and, when it made a
-     * checker task, approved by the checker.
+     * The catalog's event {@code event} on a new live trade of {@code composition} under {@code productId}: the event
+     * sent by the maker with its E2E case's request (triggered, or the amendment through the trade's update) and, when
+     * it made a checker task, approved by the checker.
      */
-    @Given("^seed event '([^']*)' is booked on a new live seed trade '([^']*)' via api$")
-    public void bookEvent(String event, String name) throws Exception {
-        SeedData.Trade trade = SeedData.catalog().trade(name);
+    @Given("^seed event '([^']*)' is booked on a new live trade of composition '([^']*)' and product ID '([^']*)' via api$")
+    public void bookEvent(String event, String composition, String productId) throws Exception {
+        SeedData.Trade trade = SeedData.catalog().trade(composition, productId, null);
         SeedData.Event e = SeedData.catalog().event(event);
         ObjectNode entry = entry("event", trade).put("event", e.name()).put("case", e.caseId());
         try {
@@ -92,9 +101,9 @@ public class SeedSteps {
         entry.put("at", DateUtil.format(DateUtil.now()));
         String env = System.getenv("OREO_SEED_ENV");
         if (env != null && !env.isBlank()) entry.put("env", env.trim());
-        entry.put("kind", kind).put("trade", trade.name()).put("composition", trade.composition())
-                .put("productId", trade.productId())
+        entry.put("kind", kind).put("composition", trade.composition()).put("productId", trade.productId())
                 .put("setup", trade.setup());
+        if (trade.variant() != null) entry.put("variant", trade.variant());
         return entry;
     }
 

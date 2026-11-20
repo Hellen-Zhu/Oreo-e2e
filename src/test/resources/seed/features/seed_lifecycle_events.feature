@@ -1,31 +1,31 @@
 Feature: SIT seed - lifecycle events
-  Books each lifecycle event of seed/catalog.json on a new live trade, approved by the checker when it makes a task,
-  for UAT (docs/sit-seed.md). The event's request is its E2E case's (the catalog's "case"). Not a test: each booking,
-  or its failure, is a line of target/seed/manifest-<date>.jsonl.
+  Books each lifecycle event of seed/catalog.json on a new live trade of a composition and product ID, approved by the
+  checker when it makes a task, for UAT (docs/sit-seed.md). The event's request is its E2E case's (the catalog's
+  "case"). Not a test: each booking, or its failure, is a line of target/seed/manifest-<date>.jsonl.
 
   @api @seed-event
-  Scenario Outline: [SEED-EVENT-<event>-<trade>] <event> is booked on a new live <trade> trade
-    Given seed event '<event>' is booked on a new live seed trade '<trade>' via api
+  Scenario Outline: [SEED-EVENT-<event>-<composition>-<product_id>] <event> is booked on a new live <composition> trade of product ID <product_id>
+    Given seed event '<event>' is booked on a new live trade of composition '<composition>' and product ID '<product_id>' via api
 
     Examples:
-      | event                   | trade          |
-      | allocation-full         | fx-trf         |
-      | amendment               | fx-trf         |
-      | withdrawal              | fx-trf         |
-      | termination             | fx-trf         |
-      | remaining-party-full    | fx-trf         |
-      | remaining-party-partial | fx-trf         |
-      | step-out-full           | fx-trf         |
-      | step-out-partial        | fx-trf         |
-      | partial-termination     | fx-trf         |
-      | portfolio-reassignment  | fx-trf         |
-      | allocation-full         | fx-pscript-trf |
-      | amendment               | fx-pscript-trf |
-      | withdrawal              | fx-pscript-trf |
-      | termination             | fx-pscript-trf |
-      | remaining-party-full    | fx-pscript-trf |
-      | remaining-party-partial | fx-pscript-trf |
-      | step-out-full           | fx-pscript-trf |
-      | step-out-partial        | fx-pscript-trf |
-      | partial-termination     | fx-pscript-trf |
-      | portfolio-reassignment  | fx-pscript-trf |
+      | event                   | composition    | product_id |
+      | allocation-full         | FX_TRF         | FX_TRF     |
+      | amendment               | FX_TRF         | FX_TRF     |
+      | withdrawal              | FX_TRF         | FX_TRF     |
+      | termination             | FX_TRF         | FX_TRF     |
+      | remaining-party-full    | FX_TRF         | FX_TRF     |
+      | remaining-party-partial | FX_TRF         | FX_TRF     |
+      | step-out-full           | FX_TRF         | FX_TRF     |
+      | step-out-partial        | FX_TRF         | FX_TRF     |
+      | partial-termination     | FX_TRF         | FX_TRF     |
+      | portfolio-reassignment  | FX_TRF         | FX_TRF     |
+      | allocation-full         | FX_PSCRIPT_TRF | FX_PSCRIPT |
+      | amendment               | FX_PSCRIPT_TRF | FX_PSCRIPT |
+      | withdrawal              | FX_PSCRIPT_TRF | FX_PSCRIPT |
+      | termination             | FX_PSCRIPT_TRF | FX_PSCRIPT |
+      | remaining-party-full    | FX_PSCRIPT_TRF | FX_PSCRIPT |
+      | remaining-party-partial | FX_PSCRIPT_TRF | FX_PSCRIPT |
+      | step-out-full           | FX_PSCRIPT_TRF | FX_PSCRIPT |
+      | step-out-partial        | FX_PSCRIPT_TRF | FX_PSCRIPT |
+      | partial-termination     | FX_PSCRIPT_TRF | FX_PSCRIPT |
+      | portfolio-reassignment  | FX_PSCRIPT_TRF | FX_PSCRIPT |

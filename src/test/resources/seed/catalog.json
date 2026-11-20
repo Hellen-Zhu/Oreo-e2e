@@ -1,14 +1,9 @@
 {
-  "_comment": "The SIT seed's catalog (docs/sit-seed.md), read by SeedData. trades: a composition (the Excel's Itradeable Type) + a productId, one booking per pair; a registered composition may leave out productId (its default) and takes its dat from data/dat/<C>/, any other needs productId and has its dat in seed/dat/<C>/ (dat: the file name, <productId>.dat when absent); setup is the body in data/setup (trade-create when absent). events: the E2E Outline whose positive case's request books the event, via trigger-event (the default) or update (the amendment). The rows the seed features book are named here; a new composition + productId is a trade here and a row in seed_new_trades.feature.",
-  "trades": {
-    "fx-trf": { "composition": "FX_TRF" },
-    "fx-co": { "composition": "FX_CO" },
-    "fx-fsb": { "composition": "FX_FSB" },
-    "fx-pscript-trf": { "composition": "FX_PSCRIPT_TRF" },
-    "fx-trf-stepin-full": { "composition": "FX_TRF", "setup": "trade-create-stepin-full" },
-    "fx-trf-stepin-partial": { "composition": "FX_TRF", "setup": "trade-create-stepin-partial" },
-    "fx-pscript-trf-stepin-full": { "composition": "FX_PSCRIPT_TRF", "setup": "trade-create-stepin-full" },
-    "fx-pscript-trf-stepin-partial": { "composition": "FX_PSCRIPT_TRF", "setup": "trade-create-stepin-partial" }
+  "_comment": "The SIT seed's catalog (docs/sit-seed.md), read by SeedData. The seed features name each booking by composition (the Excel's Itradeable Type, the E2E's composition) and product ID; this file holds only what a pair needs beyond that. trades: a list of {composition, productId, dat, setup} for a pair whose dat file name or body is not the default (a registered composition's dat is data/dat/<C>/<C>.dat, any other's seed/dat/<C>/<productId>.dat; the body is data/setup/trade-create). variants: another body for a pair, by name. events: the E2E Outline whose positive case's request books the event, via trigger-event (the default) or update (the amendment).",
+  "trades": [],
+  "variants": {
+    "stepin-full": { "setup": "trade-create-stepin-full" },
+    "stepin-partial": { "setup": "trade-create-stepin-partial" }
   },
   "events": {
     "allocation-full": { "case": "TC-TRADE-ALLOCATION-<product_type>-API-001" },
