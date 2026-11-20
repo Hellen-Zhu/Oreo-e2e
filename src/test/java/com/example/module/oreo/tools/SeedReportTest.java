@@ -30,7 +30,7 @@ public class SeedReportTest {
         assertEquals("T.Recorded", filled.get(1).path("itradeableType").asText());
         assertTrue(filled.get(2).path("itradeableType").isMissingNode());
         String csv = SeedReport.csv(filled);
-        assertTrue(csv, csv.startsWith("run,env,kind,case,itradeableType,composition,productId,taxonomy,portfolioId,scbEntity,"));
+        assertTrue(csv, csv.startsWith("run,env,kind,case,itradeableType,composition,productId,taxonomy,portfolioId,riskPortfolio,scbEntity,"));
         assertTrue(csv, csv.contains(",,trade,,Cortex.Finance.Tradeable.PayoffScript.Ctrl.FloatingStrikeB,FX_FSB,FX_PSCRIPT,"));
     }
 }

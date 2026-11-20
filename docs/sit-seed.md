@@ -21,10 +21,10 @@ The seed features are outside `features/`: `OreoTest`, `check` and `sync-example
 ## Bookings and catalog
 
 A new trade is a **seed case** of the Excel's new-trade sheet: its case ID (`SEED-TRADE-001`, the scenario name), its
-**composition** (the E2E's, mapped from the Itradeable Type in the catalog), **product ID** and **taxonomy**, the ISDA taxonomy of column A after the asset
-class (`ComplexExotic`, `SimpleExotic:Digital`, `Metals:Precious:Exotic`). The taxonomy labels the booking in the
-manifest and the report and can pick a catalog entry; it is never sent to the API. Variants and events are named by composition and
-product ID. Each row is one booking:
+**composition** (the E2E's, mapped from the Itradeable Type in the catalog), **product ID** and **taxonomy**, the ISDA
+taxonomy of column A after the asset class (`ComplexExotic`, `SimpleExotic:Digital`, `Metals:Precious:Exotic`). The
+taxonomy labels the booking in the manifest and the report and can pick a catalog entry; it is never sent to the API.
+Variants and events are named by composition and product ID. Each row is one booking:
 
 ```gherkin
 Given seed case 'SEED-TRADE-024' books a live trade of composition 'FX_PSCRIPT_TRF' and product ID 'FX_PSCRIPT' with taxonomy 'ComplexExotic' via api
@@ -52,7 +52,7 @@ case sends of its own:
     { "composition": "FX_EXAMPLE", "productId": "FX_EXAMPLE_1", "taxonomy": "Metals:Precious:Exotic", "dat": "FX_EXAMPLE_1_METALS.dat" }
   ],
   "cases": {
-    "SEED-TRADE-001": { "request": { "basic": { "portfolioId": "EXAMPLE_PORTFOLIO_B", "scbEntity": "EXAMPLE_ENTITY_B" } } },
+    "SEED-TRADE-001": { "request": { "basic": { "portfolioId": "EXAMPLE_PORTFOLIO_B", "riskPortfolio": "EXAMPLE_PORTFOLIO_B", "scbEntity": "EXAMPLE_ENTITY_B" } } },
     "SEED-TRADE-035": { "dat": "FX_TRF_METALS.dat", "request": { "basic": { "portfolioId": "EXAMPLE_PORTFOLIO_C" } } }
   },
   "variants": {
@@ -77,10 +77,11 @@ case sends of its own:
   a pair with one taxonomy (`taxonomy`): an entry with the row's taxonomy wins over one without, so one pair books
   another dat file or body per taxonomy. A body is a setup file that `extends` `trade-create`.
 - **`cases`**: what one seed case sends of its own, by case ID, over `trades`. `request` is merged over the setup body
-  (objects deeply, arrays and values replaced, `null` deletes a field): the case's portfolio (`basic.portfolioId`) and
-  entity (`basic.scbEntity`, which the UI fills from the portfolio and the payload carries). `dat` and `setup` replace
+  (objects deeply, arrays and values replaced, `null` deletes a field): the case's portfolio (`basic.portfolioId`),
+  risk portfolio (`basic.riskPortfolio`) and entity (`basic.scbEntity`). The UI fills the last two from the portfolio;
+  the API takes them as sent, so a case gives all three. `dat` and `setup` replace
   the pair's. Every case listed must be a row of the features (`SeedDataTest`). The manifest and the report carry the
-  portfolio and entity each booking sent.
+  portfolio, risk portfolio and entity each booking sent.
 - **`variants`**: another body for any pair, by name (StepIn Full, StepIn Partial), the `variant` column.
 - **`events`**: sent on a new live trade of the pair with the request of an E2E positive case (`case`, the Outline's
   ID), and the checker approves the task when the event creates one. `via` is how it is sent: `trigger-event` (the
@@ -123,9 +124,9 @@ is written to the manifest with its error. To rerun only the failed ones, use `-
 `[SEED-EVENT-<event>-<composition>-<product_id>]`): the rerun is a run of its own.
 
 `seed-report` reports the latest run; `seed-report <run ID>` another one; `seed-report all` every run, the latest line
-of each booking (a rerun's result over the first run's failure). It keeps the latest line of each booking
-(environment, case, composition, product ID, taxonomy, variant, event), writes one CSV row per booking with its run,
-case, Itradeable Type (from the catalog when a manifest line has none), portfolio, entity and trade ID (and child trade
+of each booking (a rerun's result over the first run's failure). It keeps the latest line of each booking (environment,
+case, composition, product ID, taxonomy, variant, event), writes one CSV row per booking with its run, case, Itradeable
+Type (from the catalog when a manifest line has none), portfolio, risk portfolio, entity and trade ID (and child trade
 IDs for allocation), counts the bookings by kind and by Itradeable Type, and lists the failures.
 
 ## Maintenance
@@ -149,7 +150,6 @@ IDs for allocation), counts the bookings by kind and by Itradeable Type, and lis
   twice) wait for their composition and taxonomy. Each unregistered composition's dat file in `seed/dat/<C>/` is a
   placeholder here: the real template, and the entity and portfolio of each row in `cases`, are on the company copy.
 - `037` FX_TRF_DLYSTTL books `FX_TRF.dat` unless an entry names another dat.
-- To confirm: `scbEntity` is under `basic` in the trade payload, beside `portfolioId`.
 - To confirm: three Itradeable Types are cut off at the cell's edge in the sheet and are written as seen:
   `...PayoffScript.Ctrl.CrossCurrency` (FX_PSCRIPT_CCK), `...Ctrl.FloatingStrikeB` (FX_FSB),
   `...Ctrl.VolBarrierDigi` (FX_PSCRIPT_VBD).

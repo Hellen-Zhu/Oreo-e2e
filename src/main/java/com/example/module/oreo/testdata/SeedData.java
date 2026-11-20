@@ -42,7 +42,8 @@ import java.util.regex.Pattern;
  *       by default.</li>
  *   <li>{@code cases}, by seed case ID: {@code {"request"?, "dat"?, "setup"?}} for that case alone. {@code request}
  *       is merged over the setup body (objects deeply, {@code null} deletes): the case's portfolio
- *       ({@code basic.portfolioId}) and entity ({@code basic.scbEntity}). Its {@code dat} and {@code setup} win over
+ *       ({@code basic.portfolioId}), risk portfolio ({@code basic.riskPortfolio}) and entity
+ *       ({@code basic.scbEntity}). Its {@code dat} and {@code setup} win over
  *       {@code trades}.</li>
  *   <li>A variant ({@code variants}, by name: {@code {"setup": ...}}) books a pair with another body: StepIn Full,
  *       StepIn Partial.</li>

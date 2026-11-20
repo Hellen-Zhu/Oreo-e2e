@@ -452,7 +452,7 @@ or with `-U`.
   page's template is `src/test/resources/tools/coverage-report.html`.
 - `seed-report [<run ID>|all]`: the summary of a run of the SIT seed for UAT (the latest by default, `all` for every
   run), `target/seed/seed-report-<run ID or all>.csv`, from the seed's manifests ([sit-seed.md](sit-seed.md)), a row
-  per booking with its Itradeable Type, portfolio and entity; never fails on a failed booking, it lists it.
+  per booking with its Itradeable Type, portfolio, risk portfolio and entity; never fails on a failed booking, it lists it.
 - `suggest <event>`: reads the event's recordings and prints, without writing anything, the `dynamicFields` rules
   they need and the `expectedBase` that suits them ("Suggestions", below).
 - `compact <event>` or `compact all`: the compaction of "Base and patch" and "Shared parts". It lists the files it

@@ -264,6 +264,7 @@ public class SeedDataTest {
                  "trades": [{"composition": "FX_TRF", "productId": "FX_TRF", "dat": "FX_TRF_PAIR.dat"}],
                  "cases": {"_comment": "skipped",
                            "SEED-TRADE-001": {"request": {"basic": {"portfolioId": "PORTFOLIO_1",
+                                                                    "riskPortfolio": "PORTFOLIO_1R",
                                                                     "scbEntity": "ENTITY_1"}}},
                            "SEED-TRADE-002": {"dat": "FX_TRF_CASE.dat", "setup": "trade-create-stepin-full",
                                               "request": {"basic": {"counterpartyName": null}}}}}"""));
@@ -273,6 +274,7 @@ public class SeedDataTest {
         assertEquals(ProductDatFiles.FX_TRF.path("FX_TRF_PAIR.dat"), one.dat());
         JsonNode basic = Json.parse(SeedData.request(one)).path("basic");
         assertEquals("PORTFOLIO_1", basic.path("portfolioId").asText());
+        assertEquals("PORTFOLIO_1R", basic.path("riskPortfolio").asText());
         assertEquals("ENTITY_1", basic.path("scbEntity").asText());
         JsonNode setupBasic = Json.parse(TestData.setup(SeedData.DEFAULT_SETUP).request()).path("basic");
         assertEquals(setupBasic.path("direction"), basic.path("direction"));

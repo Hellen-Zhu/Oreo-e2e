@@ -97,13 +97,13 @@ public class SeedSteps {
     }
 
     /**
-     * A live trade of {@code trade}: its body ({@link SeedData#request}) and dat file. The body's portfolio and entity
-     * go to {@code entry}.
+     * A live trade of {@code trade}: its body ({@link SeedData#request}) and dat file. The body's portfolio, risk portfolio
+     * and entity go to {@code entry}.
      */
     private CreatedTrade live(SeedData.Trade trade, ObjectNode entry) throws Exception {
         String request = SeedData.request(trade);
         JsonNode basic = Json.parse(request).path("basic");
-        for (String field : List.of("portfolioId", "scbEntity")) {
+        for (String field : List.of("portfolioId", "riskPortfolio", "scbEntity")) {
             if (basic.hasNonNull(field)) entry.put(field, basic.get(field).asText());
         }
         CreatedTrade live = TradeApiClient.provisionLiveTradeWithBody(ctx.helper(), request, trade.productId(),

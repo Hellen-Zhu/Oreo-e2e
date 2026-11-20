@@ -1,5 +1,5 @@
 {
-  "_comment": "The SIT seed's catalog (docs/sit-seed.md), read by SeedData. The seed features name each booking by composition and product ID. itradeableTypes: the Excel's full Itradeable Type (column E) of each composition the seed books, one to one ({\"<composition>\": \"<Itradeable Type>\"}). trades: a list of {composition, productId, taxonomy, dat, setup} for a pair (or a pair with one taxonomy) whose dat file name or body is not the default (a registered composition's dat is data/dat/<C>/<C>.dat, any other's seed/dat/<C>/<productId>.dat; the body is data/setup/trade-create). cases: by seed case ID, {request, dat, setup} for that case alone, over trades; request is merged over the setup body (the portfolio and entity of the case). variants: another body for a pair, by name. events: the E2E Outline whose positive case's request books the event, via trigger-event (the default) or update (the amendment).",
+  "_comment": "The SIT seed's catalog (docs/sit-seed.md), read by SeedData. The seed features name each booking by composition and product ID. itradeableTypes: the Excel's full Itradeable Type (column E) of each composition the seed books, one to one ({\"<composition>\": \"<Itradeable Type>\"}). trades: a list of {composition, productId, taxonomy, dat, setup} for a pair (or a pair with one taxonomy) whose dat file name or body is not the default (a registered composition's dat is data/dat/<C>/<C>.dat, any other's seed/dat/<C>/<productId>.dat; the body is data/setup/trade-create). cases: by seed case ID, {request, dat, setup} for that case alone, over trades; request is merged over the setup body (the portfolio, risk portfolio and entity of the case). variants: another body for a pair, by name. events: the E2E Outline whose positive case's request books the event, via trigger-event (the default) or update (the amendment).",
   "itradeableTypes": {
     "FXBO":            "Cortex.FX.FXStructured.Tradeable.FXBO",
     "FXStructure":     "Cortex.FX.FXStructured.Tradeable.FXStructure",
@@ -22,7 +22,7 @@
   },
   "trades": [],
   "cases": {
-    "_comment": "Per seed case: request (fields merged over the setup body: basic.portfolioId, basic.scbEntity), dat, setup. Real SIT values on the company copy only."
+    "_comment": "Per seed case: request (fields merged over the setup body: basic.portfolioId, basic.riskPortfolio, basic.scbEntity), dat, setup. Real SIT values on the company copy only."
   },
   "variants": {
     "stepin-full": { "setup": "trade-create-stepin-full" },

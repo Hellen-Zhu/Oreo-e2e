@@ -20,13 +20,13 @@ import java.util.TreeMap;
  * the latest run in {@code target/seed} (or of the given run, or every run), keeps the latest line of each booking
  * (environment, case, composition, product ID, taxonomy, variant, event) and writes
  * {@code target/seed/seed-report-<run ID or all>.csv}, one row per booking with its Itradeable Type (from the catalog's
- * {@code itradeableTypes} when the line has none), portfolio and entity; prints the counts, by kind and by Itradeable
+ * {@code itradeableTypes} when the line has none), portfolio, risk portfolio and entity; prints the counts, by kind and by Itradeable
  * Type, and the bookings that failed. Checks the catalog first. Never fails on a failed booking: the report lists it.
  */
 final class SeedReport {
 
     static final List<String> COLUMNS = List.of("run", "env", "kind", "case", "itradeableType", "composition",
-            "productId", "taxonomy", "portfolioId", "scbEntity", "variant", "event", "setup", "tradeId", "childTradeIds", "status", "at", "error");
+            "productId", "taxonomy", "portfolioId", "riskPortfolio", "scbEntity", "variant", "event", "setup", "tradeId", "childTradeIds", "status", "at", "error");
 
     private SeedReport() {}
 
