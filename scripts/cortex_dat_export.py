@@ -47,9 +47,10 @@ LOCATORS = {
     "object_window": r"^Viewer - .*",                   # "Viewer - {value} <build> VS2022 ...": Import / Export / Link
     # The Viewer shows many columns; INSTRUMENT is far right. Right-click a column header, untick All, tick
     # INSTRUMENT: the Viewer then shows INSTRUMENT only, {Object ITradeable} in its first cell. Offsets are from the
-    # Viewer's top left (--where prints them); an item of the column list is clicked by its text, else at its offset.
-    "object_header_offset": (128, 186),                      # a column header of the Viewer, e.g. ACTION
-    "column_all": ("All", None),                        # (text, offset) of the list's All
+    # Viewer's top left, but an item of the column list is at its offset from the list (--where's first line), else
+    # clicked by its text.
+    "object_header_offset": (128, 186),                 # a column header of the Viewer, e.g. ACTION
+    "column_all": ("All", (168, 29)),                   # (text, offset) of the list's All
     "column_instrument": ("INSTRUMENT", None),          # (text, offset) of the list's INSTRUMENT
     "object_cell": r".*Object ITradeable.*",            # the Viewer's INSTRUMENT cell; or object_cell_offset
     "object_cell_offset": None,                         # {Object ITradeable} once INSTRUMENT is the only column
@@ -99,8 +100,21 @@ class Cortex:
         except Exception:
             send_keys("{DOWN}" * downs + "{ENTER}")
 
+    def popup_under_cursor(self):
+        """The popup a right-click opened at the cursor: the top-level window just below and right of it."""
+        import ctypes
+        from ctypes import wintypes
+
+        user32 = ctypes.windll.user32
+        point = wintypes.POINT()
+        user32.GetCursorPos(ctypes.byref(point))
+        point.x += 10
+        point.y += 10
+        handle = user32.GetAncestor(user32.WindowFromPoint(point), 2)       # GA_ROOT
+        return self.desktop.window(handle=handle)
+
     def list_item(self, window, item) -> None:
-        """Clicks an item of an open popup list: at its offset from the window when given, else by its text."""
+        """Clicks an item of an open popup list: at its offset from the list when given, else by its text."""
         text, offset = item
         if offset:
             self.click_at(window, offset)
@@ -158,8 +172,9 @@ class Cortex:
                 objects.set_focus()
                 self.click_at(objects, LOCATORS["object_header_offset"], right=True)
                 time.sleep(0.5)
-                self.list_item(objects, LOCATORS["column_all"])
-                self.list_item(objects, LOCATORS["column_instrument"])
+                columns = self.popup_under_cursor()
+                self.list_item(columns, LOCATORS["column_all"])
+                self.list_item(columns, LOCATORS["column_instrument"])
                 send_keys("{ESC}")
                 time.sleep(0.3)
         with step("7 double-click {Object ITradeable} (object_cell / object_cell_offset)"):
