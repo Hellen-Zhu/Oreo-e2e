@@ -65,9 +65,19 @@ class Cortex:
         self.tds = self.window(LOCATORS["tds_window"])
 
     def window(self, title_re: str, timeout: float = WAIT["window"]):
-        w = self.desktop.window(title_re=title_re)
+        # found_index: a window left open by an earlier try has the same title; the first one is enough
+        w = self.desktop.window(title_re=title_re, found_index=0)
         w.wait("visible", timeout=timeout)
         return w
+
+    def close_all(self, *titles_re: str) -> None:
+        """Closes the windows an earlier try left open, so that each title names one window."""
+        for title_re in titles_re:
+            for w in self.desktop.windows(title_re=title_re):
+                try:
+                    w.close()
+                except Exception:
+                    pass
 
     def menu(self, window, item) -> None:
         """Clicks the window's Export button, then the menu item: by its text, else by Down presses and Enter."""
@@ -110,13 +120,16 @@ class Cortex:
             loaded.click_input()                                # a click outside the box closes the list too
             time.sleep(0.3)
 
+        trade_title = LOCATORS["trade_window"].replace("{trade}", re.escape(trade_id))
+        self.close_all(LOCATORS["view_window"], LOCATORS["object_window"], trade_title)
+        tds.set_focus()
         with step("3 double-click the INSTRUMENT cell (tds_instrument_cell / tds_instrument_offset)"):
             if LOCATORS["tds_instrument_offset"]:
                 self.click_at(tds, LOCATORS["tds_instrument_offset"], double=True)
             else:
                 tds.child_window(title_re=LOCATORS["tds_instrument_cell"], found_index=0).double_click_input()
         with step("4 wait for the trade's window (trade_window)"):
-            trade = self.window(LOCATORS["trade_window"].replace("{trade}", re.escape(trade_id)))
+            trade = self.window(trade_title)
         with step("5 Export > View in the trade's window (export_button, trade_export_item)"):
             self.menu(trade, LOCATORS["trade_export_item"])
         with step("6 wait for the Viewer (object_window)"):
