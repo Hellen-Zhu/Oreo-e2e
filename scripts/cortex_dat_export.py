@@ -3,8 +3,9 @@
 For each trade ID given, the script does in Cortex what is done by hand:
 
   1. TDS Browser: Trade ID is <trade ID>, Load (F9).
-  2. Open the trade's INSTRUMENT, then its {Object ITradeable}: the View window.
-  3. View > Export > Save As "Cortex object file (*.dat)": <out>/<trade ID>.dat.
+  2. Double-click the trade's INSTRUMENT: the "Trade <trade ID>_1" window. Its Export > View: "Viewer - {value}".
+  3. Double-click the Viewer's {Object ITradeable}: the "View" window.
+  4. View's Export > Save As..., "Cortex object file (*.dat)": <out>/<trade ID>.dat.
 
 The files stay outside the project (--out); copy each into the seed case's dat path yourself (seed-dats lists them).
 
@@ -22,6 +23,7 @@ from __future__ import annotations
 import argparse
 import contextlib
 import csv
+import re
 import sys
 import time
 from pathlib import Path
@@ -37,12 +39,16 @@ LOCATORS = {
     # The INSTRUMENT cell of the first row ({FXFVA}, {FXAverageRateOption}): its text, or an offset.
     "tds_instrument_cell": r"^\{.+\}$",
     "tds_instrument_offset": (877, 268),           # measured with --where: the grid draws its cells
-    "object_window": r"^Viewer - .*",                  # "Viewer - {value} <build> VS2022 ...": Import / Export / Link
-    "object_cell": r".*Object ITradeable.*",
+    "trade_window": r"^Trade {trade}",                 # "Trade 8613152402_1": tabs Fields, INSTRUMENT, ...
+    "export_button": r"^Export",                        # the Export button of the Trade and View windows
+    # A menu item of Export (Save As..., Copy, Share to Store..., Email, View, Publish): its text, and how many
+    # Down presses select it when the menu is not a UI Automation element.
+    "trade_export_item": (r"^View", 5),
+    "object_window": r"^Viewer - .*",                   # "Viewer - {value} <build> VS2022 ...": Import / Export / Link
+    "object_cell": r".*Object ITradeable.*",            # the Viewer's INSTRUMENT cell; or object_cell_offset
     "object_cell_offset": None,
-    "view_window": r"^View$",
-    "view_export": r"Export.*",                         # the Export button of the View window
-    "export_menu_item": None,                           # a menu item under Export, when it opens a menu first
+    "view_window": r"^View$",                           # Export, Raw view, Trade type: ...
+    "view_export_item": (r"^Save As", 1),
     "save_dialog": r"Save As",
     "confirm_dialog": r"Confirm Save As",
 }
@@ -62,6 +68,20 @@ class Cortex:
         w = self.desktop.window(title_re=title_re)
         w.wait("visible", timeout=timeout)
         return w
+
+    def menu(self, window, item) -> None:
+        """Clicks the window's Export button, then the menu item: by its text, else by Down presses and Enter."""
+        from pywinauto.keyboard import send_keys
+
+        text, downs = item
+        window.set_focus()
+        window.child_window(title_re=LOCATORS["export_button"], found_index=0).click_input()
+        time.sleep(0.5)
+        try:
+            self.desktop.window(control_type="Menu", found_index=0).child_window(
+                title_re=text, control_type="MenuItem", found_index=0).click_input()
+        except Exception:
+            send_keys("{DOWN}" * downs + "{ENTER}")
 
     @staticmethod
     def click_at(window, offset, double: bool = False) -> None:
@@ -95,23 +115,24 @@ class Cortex:
                 self.click_at(tds, LOCATORS["tds_instrument_offset"], double=True)
             else:
                 tds.child_window(title_re=LOCATORS["tds_instrument_cell"], found_index=0).double_click_input()
-        with step("4 wait for the instrument's window (object_window)"):
+        with step("4 wait for the trade's window (trade_window)"):
+            trade = self.window(LOCATORS["trade_window"].replace("{trade}", re.escape(trade_id)))
+        with step("5 Export > View in the trade's window (export_button, trade_export_item)"):
+            self.menu(trade, LOCATORS["trade_export_item"])
+        with step("6 wait for the Viewer (object_window)"):
             objects = self.window(LOCATORS["object_window"])
 
-        with step("5 double-click {Object ITradeable} (object_cell / object_cell_offset)"):
+        with step("7 double-click {Object ITradeable} (object_cell / object_cell_offset)"):
             if LOCATORS["object_cell_offset"]:
                 self.click_at(objects, LOCATORS["object_cell_offset"], double=True)
             else:
                 objects.child_window(title_re=LOCATORS["object_cell"], found_index=0).double_click_input()
-        with step("6 wait for the View window (view_window)"):
+        with step("8 wait for the View window (view_window)"):
             view = self.window(LOCATORS["view_window"])
+        with step("9 Export > Save As... in the View window (export_button, view_export_item)"):
+            self.menu(view, LOCATORS["view_export_item"])
 
-        with step("7 click Export (view_export, export_menu_item)"):
-            view.child_window(title_re=LOCATORS["view_export"], found_index=0).click_input()
-            if LOCATORS["export_menu_item"]:
-                self.desktop.window(control_type="Menu").child_window(
-                    title_re=LOCATORS["export_menu_item"]).click_input()
-        with step("8 save as <trade ID>.dat (save_dialog)"):
+        with step("10 save as <trade ID>.dat (save_dialog)"):
             save = self.window(LOCATORS["save_dialog"])
             name = save.child_window(title="File name:", control_type="Edit") if LOCATORS["backend"] == "uia" \
                 else save.child_window(class_name="Edit", found_index=0)
@@ -128,7 +149,7 @@ class Cortex:
                     raise RuntimeError(f"{target} was not written")
                 time.sleep(0.3)
 
-        for w in (view, objects):                                # back to the TDS Browser for the next trade
+        for w in (view, objects, trade):                         # back to the TDS Browser for the next trade
             try:
                 w.close()
             except Exception:

@@ -153,7 +153,8 @@ Itradeable Type and the failures.
 ## Dat files from Cortex
 
 Each seed case books a dat file exported from Cortex from the case's Sample Trade (the Excel): TDS Browser, Trade ID,
-Load (F9), the trade's INSTRUMENT, its `{Object ITradeable}`, View > Export > "Cortex object file (*.dat)".
+Load (F9), double-click the trade's INSTRUMENT ("Trade <trade ID>_1"), Export > View ("Viewer - {value}"),
+double-click its `{Object ITradeable}` ("View"), Export > Save As..., "Cortex object file (*.dat)".
 `scripts/cortex_dat_export.py` does those clicks for the trade IDs it is given.
 
 1. `seed-dats` lists every seed case (commented-out rows too), the dat path it books and its state: `placeholder` or
