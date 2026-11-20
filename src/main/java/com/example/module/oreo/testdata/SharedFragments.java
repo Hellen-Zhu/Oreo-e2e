@@ -20,9 +20,11 @@ import java.util.stream.Stream;
  * Parts of recorded responses that several cases and events share: {@code data/api/expected/_shared/<name>.json},
  * e.g. {@code instrument/FX_TRF}, the instrument every trade API returns for a trade of that product. An expected file
  * refers to one at the place of the part, an object {@code {"_shared": "<name>"}}; where the case's part differs, the
- * reference holds the differences as JSON Patch ops on the part, each a path and its value
- * ({@code {"_shared": "basic/FX_TRF", "_patch": [{"op": "replace", "path": "/status", "value": "Live"}]}}). Other
- * keys of a reference (an older form) replace the part's keys of the same name, before the ops. {@link #expand} turns the
+ * reference holds only the differences: those at most {@link #INLINE_DEPTH} keys deep as JSON beside {@code _shared}
+ * ({@code {"_shared": "basic/FX_TRF", "status": "Live"}}): an object merges into the part's object at that place, any
+ * other value (an array among them) replaces the part's value, {@code _remove} lists the keys the case does not have;
+ * deeper ones as JSON Patch ops in {@code _patch}, applied after, each a path and its value
+ * ({@code {"op": "replace", "path": "/_value/notional/amount1", "value": 200000000}}). {@link #expand} turns the
  * references back into the full part when the file is read. The event data declares which parts are shared
  * ({@code sharedFragments}); {@code TestDataTool compact} writes the shared files and the references, never a person.
  */
@@ -32,8 +34,18 @@ public final class SharedFragments {
     public static final String FOLDER = "_shared";
     /** The key of a reference. */
     public static final String KEY = "_shared";
-    /** The key of a reference's differences from its part: JSON Patch ops, paths relative to the part. */
+    /**
+     * In a reference, at any depth: the keys of the part's object at that place that the case does not have
+     * ({@code "_remove": ["ccy"]}).
+     */
+    public static final String REMOVE = "_remove";
+    /** In a reference: JSON Patch ops on the part, for the differences deeper than {@link #INLINE_DEPTH} keys. */
     public static final String PATCH = "_patch";
+    /**
+     * How many keys deep a difference is still written as JSON beside {@code _shared} ({@code status},
+     * {@code basic.status}); a deeper one is a {@code _patch} op, a path and its value.
+     */
+    public static final int INLINE_DEPTH = 2;
 
     private static final Pattern NAME = Pattern.compile("[A-Za-z0-9_-]+(/[A-Za-z0-9_-]+)*");
 
@@ -127,8 +139,9 @@ public final class SharedFragments {
     }
 
     /**
-     * {@code json} with every reference replaced by its shared part: the reference's other keys replace the part's keys
-     * of the same name, then its {@code _patch} ops are applied. {@code file} is for messages.
+     * {@code json} with every reference replaced by its shared part with the reference's differences merged in (an
+     * object into the object at its place, any other value replacing it, {@code _remove} removing keys), then its
+     * {@code _patch} ops applied. {@code file} is for messages.
      */
     public JsonNode expand(JsonNode json, Path file) {
         return expandNode(json.deepCopy(), file);
@@ -140,11 +153,8 @@ public final class SharedFragments {
             ObjectNode part = read(name).orElseThrow(() -> new IllegalStateException("[SharedFragments] " + file
                     + " refers to the shared part '" + name + "', which has no file " + fileFor(name)
                     + ". To fix: TestDataTool compact all (it writes the shared parts again)"));
-            JsonNode full = part.deepCopy();
-            for (Map.Entry<String, JsonNode> entry : node.properties()) {
-                String key = entry.getKey();
-                if (!key.equals(KEY) && !key.equals(PATCH)) ((ObjectNode) full).set(key, entry.getValue());
-            }
+            ObjectNode full = part.deepCopy();
+            merge(full, (ObjectNode) node, file + " (reference to " + name + ")");
             JsonNode ops = node.get(PATCH);
             return ops == null ? full : JsonPatch.apply(full, ops, file + " (reference to " + name + ")");
         }
@@ -161,19 +171,102 @@ public final class SharedFragments {
         return node;
     }
 
+    /** Merges the differences {@code diff} into {@code target}, as {@link #expand} does; skips the reference's keys. */
+    private static void merge(ObjectNode target, ObjectNode diff, String label) {
+        JsonNode removed = diff.get(REMOVE);
+        if (removed != null) {
+            if (!removed.isArray()) throw new IllegalStateException("[SharedFragments] " + label + ": " + REMOVE
+                    + " must be an array of keys");
+            removed.forEach(key -> target.remove(key.asText()));
+        }
+        for (Map.Entry<String, JsonNode> entry : diff.properties()) {
+            String key = entry.getKey();
+            if (key.equals(KEY) || key.equals(PATCH) || key.equals(REMOVE)) continue;
+            JsonNode value = entry.getValue();
+            if (value.isObject() && target.get(key) instanceof ObjectNode inner) {
+                merge(inner, (ObjectNode) value, label);
+            } else {
+                target.set(key, value.deepCopy());
+            }
+        }
+    }
+
     /**
-     * The reference that stands for {@code actual} given the shared part {@code shared}: {@code _shared} and, when
-     * they differ, {@code _patch}, the ops ({@link JsonPatch}) that turn the part into {@code actual}: the path of
-     * each value that differs, with its value, never a whole key around it. Values compare exactly
-     * ({@code 2.0E+8} is not {@code 200000000}); key order does not count. {@code null} when {@code actual} already
-     * contains a key {@code _shared}.
+     * The reference that stands for {@code actual} given the shared part {@code shared}: {@code _shared} plus only what
+     * differs. A difference at most {@link #INLINE_DEPTH} keys deep is written as JSON beside {@code _shared}
+     * ({@code "status": "Live"}, {@code "basic": {"status": "Live"}}; {@code _remove} for keys the case lacks); a
+     * deeper one as a JSON Patch op in {@code _patch}, its path and value
+     * ({@code {"op": "replace", "path": "/_value/notional/amount1", "value": 200000000}}). Values compare exactly
+     * ({@code 2.0E+8} is not {@code 200000000}); key order does not count. {@code null} when {@code actual} holds a key
+     * the reference uses itself ({@code _shared}, or {@code _remove} / {@code _patch} where it differs).
      */
     public static ObjectNode reference(String name, ObjectNode shared, ObjectNode actual) {
         if (actual.has(KEY)) return null;
         ObjectNode ref = Json.MAPPER.createObjectNode();
         ref.put(KEY, name);
-        ArrayNode ops = JsonPatch.diff(shared, actual);
+        ArrayNode ops = Json.MAPPER.createArrayNode();
+        if (!differences(shared, actual, ref, 1, "", ops)) return null;
         if (!ops.isEmpty()) ref.set(PATCH, ops);
         return ref;
+    }
+
+    /**
+     * Writes into {@code out} what differs from {@code part} in {@code actual}, {@code level} keys deep; deeper
+     * differences go to {@code ops}, under {@code pointer}. {@code false} when it cannot.
+     */
+    private static boolean differences(ObjectNode part, ObjectNode actual, ObjectNode out, int level, String pointer,
+                                       ArrayNode ops) {
+        if (actual.has(REMOVE) || actual.has(PATCH)) return false;
+        ArrayNode removed = Json.MAPPER.createArrayNode();
+        for (String key : (Iterable<String>) part::fieldNames) {
+            if (!actual.has(key)) removed.add(key);
+        }
+        if (!removed.isEmpty()) out.set(REMOVE, removed);
+        for (Map.Entry<String, JsonNode> entry : actual.properties()) {
+            String key = entry.getKey();
+            JsonNode mine = entry.getValue();
+            JsonNode theirs = part.get(key);
+            if (mine.equals(theirs)) continue;
+            if (mine instanceof ObjectNode object && theirs instanceof ObjectNode partObject) {
+                String inner = pointer + "/" + key.replace("~", "~0").replace("/", "~1");
+                if (level < INLINE_DEPTH) {
+                    ObjectNode nested = Json.MAPPER.createObjectNode();
+                    if (!differences(partObject, object, nested, level + 1, inner, ops)) return false;
+                    if (!nested.isEmpty()) out.set(key, nested); // empty: its differences are all deeper, in ops
+                } else {
+                    for (JsonNode op : JsonPatch.diff(partObject, object)) {
+                        ObjectNode moved = ((ObjectNode) op).deepCopy();
+                        moved.put("path", inner + op.path("path").asText());
+                        ops.add(moved);
+                    }
+                }
+            } else {
+                out.set(key, mine.deepCopy());
+            }
+        }
+        return true;
+    }
+
+    /** The places where a reference differs from its part, as paths ({@code _value.notional.amount1}). */
+    public static List<String> differencePaths(JsonNode ref) {
+        List<String> out = new ArrayList<>();
+        differencePaths(ref, "", out);
+        return out;
+    }
+
+    private static void differencePaths(JsonNode node, String at, List<String> out) {
+        for (Map.Entry<String, JsonNode> entry : node.properties()) {
+            String key = entry.getKey();
+            if (key.equals(KEY)) continue;
+            if (key.equals(REMOVE)) {
+                entry.getValue().forEach(k -> out.add(at + k.asText() + " (removed)"));
+            } else if (key.equals(PATCH)) {
+                entry.getValue().forEach(op -> out.add(op.path("path").asText()));
+            } else if (entry.getValue().isObject() && !entry.getValue().isEmpty()) {
+                differencePaths(entry.getValue(), at + key + ".", out);
+            } else {
+                out.add(at + key);
+            }
+        }
     }
 }

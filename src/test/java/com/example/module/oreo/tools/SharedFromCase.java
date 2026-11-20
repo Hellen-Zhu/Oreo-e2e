@@ -22,7 +22,7 @@ import java.util.Map;
  * becomes the shared part of its name, as the case's file has it (after a recording with
  * {@code OREO_EXPECTED=update}, the full new response). The expected files that depend on those parts (refer to one,
  * or are a patch on such a file) are then compacted again against them, so each case still expects what it expected
- * before: a case whose part differs keeps its differences in its reference (_patch). Other files are left as they
+ * before: a case whose part differs keeps only its differences in its reference. Other files are left as they
  * are, even when a compaction would change them (counted: {@code compact <event>} rewrites them). Shared parts the case does not declare, or does not hold as an object (a whole-part
  * placeholder), are kept. Nothing is written when any event has a problem.
  */

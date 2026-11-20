@@ -298,23 +298,25 @@ record the case again with `OREO_EXPECTED=update` (update mode does not read the
 
 Several events return the same part of a trade: creation and query both return `data.trade.basic` and
 `data.trade.instrument`. Each is kept once per product in `data/api/expected/_shared/<name>.json`, and an expected file
-refers to it at the place of the part. Where the case's part differs, the reference holds each difference as a JSON
-Patch op on the part: its path and its value, never the whole key around it:
+refers to it at the place of the part. Where the case's part differs, the reference holds only the differences: a
+difference at most two keys deep (`status`, `basic.status`) as JSON beside `_shared`, a deeper one as a JSON Patch op
+in `_patch`, its path and its value:
 
 ```jsonc
 // expected/trade_creation/TC-TRADE-CREATION-FX_TRF-API-001.json
 "trade": { "basic": { "_shared": "basic/FX_TRF" }, "instrument": { "_shared": "instrument/FX_TRF" }, ... }
 // another event, the same trade in another state
-"basic": { "_shared": "basic/FX_TRF", "_patch": [ { "op": "replace", "path": "/status", "value": "Live" } ] }
+"basic": { "_shared": "basic/FX_TRF", "eventStatus": "Amended", "status": "Live", "version": 4 }
 // a query writes an amount as an integer where creation wrote 2.0E+8: one op, at that number
 "instrument": { "_shared": "instrument/FX_PSCRIPT_CCK", "_patch": [
   { "op": "replace", "path": "/_value/payoffOption/VanillaPayoff/notional/ByAmount1/amount1", "value": 200000000 } ] }
 ```
 
-Key order is no difference; values compare exactly, as the response check does. A key the part has and the case lacks
-is a `remove` op, one the case adds an `add` op; an array of another length is replaced whole. When the file is read,
-the ops are applied to the part. (An older reference form, other keys beside `_shared` replacing the part's keys of
-the same name, is still read; the compaction no longer writes it.)
+Values compare exactly, as the response check does (`2.0E+8` is not `200000000`); key order is no difference. In the
+JSON beside `_shared`, an object merges into the part's object at that place, any other value (an array among them)
+replaces the part's value, and `_remove` lists the keys the case does not have (`"_remove": ["ccy"]`). When the file is
+read, that JSON is merged into the part, then the `_patch` ops are applied. The depth is
+`SharedFragments.INLINE_DEPTH`.
 
 `sharedFragments` maps a part's name to its file or to its path, in any layer: a value with `/` is the file
 (`expected/_shared/<file>.json`; `<product_type>` becomes the case's product, a case without a product does not share
@@ -346,8 +348,8 @@ the references, in a file kept in full (a patch on a base works on the base's fu
 
 - a part with no file yet is taken from the first case that has it: first the events of `sharedSources`, in their
   order, then the other events by name; case IDs in order within an event;
-- a part that differs from the shared one keeps its differences in the reference (`_patch`, above); a part that is
-  not an object (a whole-part placeholder) stays in full in the case's file;
+- a part that differs from the shared one keeps only its differences in the reference (above); a part that is not
+  an object (a whole-part placeholder) stays in full in the case's file;
 - `compact all` takes every part again from the first case that has it and deletes the shared files no case uses;
   `compact <event>` keeps the shared files there are, and takes a missing one from the source events (whose own files
   it does not rewrite);
@@ -470,7 +472,7 @@ or with `-U`.
   for every product's case that has a recording): the shared parts the case declares
   become what its file holds (resolved: base, patch and references applied), then the files that depend on those
   parts (they refer to one, or are a patch on such a file) are compacted again against them, so every case still
-  expects what it did; a case whose part now differs keeps its differences in its reference (`_patch`). Other files, other products' among them, are not written even when a
+  expects what it did; a case whose part now differs keeps only its differences in its reference. Other files, other products' among them, are not written even when a
   compaction would change them: the command counts them, and `compact <event>` rewrites them. A part the case holds as
   a placeholder, not an object, is kept, and so are the parts it does not declare. Nothing is written on a problem.
 
@@ -610,7 +612,7 @@ parts", above). On the company machine, choose by why the part changed.
 
 2. Make its part the shared one; `<product_type>` stays as written (every product's case). Every other case is
    that depends on the part is compacted again and still expects what it expected: its differences stay in its
-   reference (`_patch`).
+   reference.
 
    ```shell
    mvn -Ptest-data process-test-classes "-Dexec.args=shared TC-TRADE-CREATION-<product_type>-API-001"

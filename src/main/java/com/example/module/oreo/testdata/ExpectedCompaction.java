@@ -25,7 +25,7 @@ import java.util.function.Function;
  *       turn a patch into a full file or back. A patch longer than the full form is flagged ({@link Entry#warning}):
  *       {@code "expectedBase": null} in the case's row keeps it in full;</li>
  *   <li>in a file kept in full, each part the case declares shared ({@code sharedFragments}) becomes a reference to
- *       {@code _shared/<name>.json} plus the values that differ from it, as patch ops (path and value); a part not written yet is taken from the first
+ *       {@code _shared/<name>.json} plus only what differs from it (short paths as JSON, deep ones as {@code _patch} ops); a part not written yet is taken from the first
  *       case that has it ({@link Shared});</li>
  *   <li>any error (a base without a file, a base with a base of its own, a patch that does not apply, case data
  *       that does not load) stops the compaction before a file is written;</li>
@@ -215,8 +215,9 @@ public final class ExpectedCompaction {
 
     /**
      * {@code own} with each declared part that is an object replaced by a reference to its shared part. A part that
-     * differs from the shared part keeps its differences in the reference, as patch ops (a path and its value each). A
-     * part that already holds a key {@code _shared} stays in full, noted.
+     * differs from the shared part keeps only its differences in the reference: short ones as JSON, deep ones as
+     * {@code _patch} ops ({@link SharedFragments#reference}). A part that holds a key the reference uses itself
+     * ({@code _shared}, {@code _remove}, {@code _patch}) stays in full, noted.
      * {@code notes} {@code null}: only the text is wanted, nothing is recorded in {@code shared}.
      */
     private static JsonNode withReferences(JsonNode own, Map<String, String> fragments, Shared shared,
@@ -237,7 +238,8 @@ public final class ExpectedCompaction {
             ObjectNode ref = SharedFragments.reference(name, sharedPart, part);
             if (ref == null) {
                 if (notes != null) {
-                    notes.add(fragment.getKey() + " in full (it holds a key " + SharedFragments.KEY + ")");
+                    notes.add(fragment.getKey() + " in full (it holds a key " + SharedFragments.KEY + ", "
+                            + SharedFragments.REMOVE + " or " + SharedFragments.PATCH + ")");
                 }
                 continue;
             }
@@ -249,12 +251,10 @@ public final class ExpectedCompaction {
 
     /** The note of a reference's differences: their count and first paths, or nothing. */
     private static String differences(ObjectNode ref) {
-        JsonNode ops = ref.path(SharedFragments.PATCH);
-        if (ops.isEmpty()) return "";
-        List<String> paths = new ArrayList<>();
-        for (int i = 0; i < ops.size() && i < 3; i++) paths.add(ops.get(i).path("path").asText());
-        return " (" + ops.size() + " difference(s): " + String.join(", ", paths) + (ops.size() > 3 ? ", ..." : "")
-                + ")";
+        List<String> paths = SharedFragments.differencePaths(ref);
+        if (paths.isEmpty()) return "";
+        return " (" + paths.size() + " difference(s): " + String.join(", ", paths.subList(0, Math.min(3, paths.size())))
+                + (paths.size() > 3 ? ", ..." : "") + ")";
     }
 
     /** The part {@code shared} would give, without recording anything. */

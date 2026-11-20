@@ -200,27 +200,32 @@ public class ExpectedResponsesTest {
     }
 
     @Test
-    public void referenceHoldsOnlyThePathsThatDiffer() {
+    public void referenceHoldsOnlyWhatDiffers() {
         ObjectNode shared = (ObjectNode) Json.parse(BASIC);
-        assertEquals(Json.parse("{\"_shared\":\"b\",\"_patch\":[{\"op\":\"replace\",\"path\":\"/status\",\"value\":\"Draft\"},"
-                        + "{\"op\":\"add\",\"path\":\"/udf\",\"value\":[]}]}"),
-                SharedFragments.reference("b", shared,
-                        (ObjectNode) Json.parse("{\"status\":\"Draft\",\"ccy\":\"USD\",\"udf\":[]}")));
+        assertEquals(Json.parse("{\"_shared\":\"b\",\"status\":\"Draft\",\"udf\":[]}"), SharedFragments.reference("b",
+                shared, (ObjectNode) Json.parse("{\"status\":\"Draft\",\"ccy\":\"USD\",\"udf\":[]}")));
         assertEquals("a key the part has and the case lacks is removed",
-                Json.parse("{\"_shared\":\"b\",\"_patch\":[{\"op\":\"remove\",\"path\":\"/ccy\"}]}"),
+                Json.parse("{\"_shared\":\"b\",\"_remove\":[\"ccy\"]}"),
                 SharedFragments.reference("b", shared, (ObjectNode) Json.parse("{\"status\":\"Live\"}")));
+        assertNull("a part holding the reference's own key stays in full",
+                SharedFragments.reference("b", shared, (ObjectNode) Json.parse("{\"status\":\"Live\",\"_remove\":1}")));
     }
 
     @Test
-    public void aDeepDifferenceIsItsPathNotTheWholeKey() {
-        ObjectNode shared = (ObjectNode) Json.parse("{\"_type\":\"T\",\"_value\":{\"exercise\":{\"fixingSource\":\"S\","
-                + "\"fixingDate\":\"2026-12-29\"},\"notional\":{\"amount1\":2.0E+8,\"strike\":6.4}}}");
-        ObjectNode query = (ObjectNode) Json.parse("{\"_value\":{\"notional\":{\"strike\":6.4,\"amount1\":200000000},"
-                + "\"exercise\":{\"fixingDate\":\"2026-12-29\",\"fixingSource\":\"S\"}},\"_type\":\"T\"}");
+    public void aShortDifferenceIsJsonADeepOneAPatchOp() {
+        ObjectNode shared = (ObjectNode) Json.parse("{\"_type\":\"T\",\"status\":\"Live\",\"_value\":{\"expiryCut\":\"TOK\","
+                + "\"exercise\":{\"fixingSource\":\"S\",\"fixingDate\":\"2026-12-29\"},"
+                + "\"notional\":{\"ByAmount1\":{\"amount1\":2.0E+8,\"strike\":6.4}}}}");
+        ObjectNode query = (ObjectNode) Json.parse("{\"status\":\"Amended\",\"_value\":{\"notional\":{\"ByAmount1\":"
+                + "{\"strike\":6.4,\"amount1\":200000000}},\"expiryCut\":\"NY\",\"exercise\":{\"fixingDate\":"
+                + "\"2026-12-29\",\"fixingSource\":\"S\"}},\"_type\":\"T\"}");
         ObjectNode ref = SharedFragments.reference("instrument/X", shared, query);
-        // key order is no difference; 2.0E+8 and 200000000 are: one op, at the number's path
-        assertEquals("{\"_shared\":\"instrument/X\",\"_patch\":[{\"op\":\"replace\",\"path\":\"/_value/notional/amount1\","
-                + "\"value\":200000000}]}", Json.compact(ref));
+        // key order is no difference; 2.0E+8 and 200000000 are, at the number's path
+        assertEquals(Json.parse("{\"_shared\":\"instrument/X\",\"status\":\"Amended\",\"_value\":{\"expiryCut\":\"NY\"},"
+                + "\"_patch\":[{\"op\":\"replace\",\"path\":\"/_value/notional/ByAmount1/amount1\",\"value\":200000000}]}"),
+                ref);
+        assertEquals(List.of("status", "_value.expiryCut", "/_value/notional/ByAmount1/amount1"),
+                SharedFragments.differencePaths(ref));
         expected.shared().write("instrument/X", Json.pretty(shared));
         expected.write(id, Json.compact(Json.MAPPER.createObjectNode().set("instrument", ref)));
         assertEquals("the reference reads back as the case's part", query,
@@ -242,7 +247,7 @@ public class ExpectedResponsesTest {
         assertEquals(Json.parse(BASIC), expected.shared().read("basic/FX_TRF").orElseThrow());
         assertEquals(Json.parse("{\"trade\":{\"id\":1,\"basic\":{\"_shared\":\"basic/FX_TRF\"}}}"),
                 Json.parse(expected.read(id).orElseThrow()));
-        assertEquals(Json.parse("{\"trade\":{\"id\":2,\"basic\":{\"_shared\":\"basic/FX_TRF\",\"_patch\":[{\"op\":\"replace\",\"path\":\"/status\",\"value\":\"Draft\"}]}}}"),
+        assertEquals(Json.parse("{\"trade\":{\"id\":2,\"basic\":{\"_shared\":\"basic/FX_TRF\",\"status\":\"Draft\"}}}"),
                 Json.parse(expected.read(variant).orElseThrow()));
         assertEquals(Json.parse("{\"error\":\"no trade\"}"), Json.parse(expected.read(third).orElseThrow()));
         assertEquals(Json.parse("{\"trade\":{\"id\":2,\"basic\":{\"status\":\"Draft\",\"ccy\":\"USD\"}}}"),
@@ -266,7 +271,7 @@ public class ExpectedResponsesTest {
         ExpectedCompaction.write(expected, shared);
         assertEquals(Json.parse("{\"status\":\"Live\",\"ccy\":\"USD\",\"version\":1}"),
                 expected.shared().read("basic/FX_TRF").orElseThrow());
-        assertEquals(Json.parse("{\"data\":{\"basic\":{\"_shared\":\"basic/FX_TRF\",\"_patch\":[{\"op\":\"replace\",\"path\":\"/version\",\"value\":2}]}}}"),
+        assertEquals(Json.parse("{\"data\":{\"basic\":{\"_shared\":\"basic/FX_TRF\",\"version\":2}}}"),
                 Json.parse(expected.read(amendment).orElseThrow()));
     }
 
