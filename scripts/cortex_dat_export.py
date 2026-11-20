@@ -191,23 +191,29 @@ class Cortex:
             self.menu(view, LOCATORS["view_export_item"])
 
         with step("10 save as <trade ID>.dat (save_dialog)"):
-            save = self.window(LOCATORS["save_dialog"])
-            save.set_focus()
-            try:
-                name = save.child_window(title="File name:", control_type="Edit", found_index=0) \
-                    if LOCATORS["backend"] == "uia" else save.child_window(class_name="Edit", found_index=0)
-                name.set_edit_text(str(target))
-                name.set_focus()
-            except Exception:                                   # the box by its shortcut: Alt+N, File name
+            # UI Automation lists the modal Save As under the window that opened it, not on the desktop: it is
+            # looked up under View. Its File name box and Save button have the common dialog's fixed IDs, 1001
+            # and 1. Without the dialog, the path is typed where the focus is: the File name box (Alt+N).
+            save = view.child_window(title_re=LOCATORS["save_dialog"], control_type="Window", found_index=0)
+            typed = False
+            if save.exists(timeout=WAIT["window"]):
+                try:
+                    save.set_focus()
+                    save.child_window(auto_id="1001", control_type="Edit", found_index=0).set_edit_text(
+                        str(target))
+                    time.sleep(0.3)
+                    save.child_window(auto_id="1", control_type="Button", found_index=0).click_input()
+                    typed = True
+                except Exception:
+                    pass
+            if not typed:
                 escaped = "".join("{" + c + "}" if c in "+^%~(){}[]" else c for c in str(target))
                 send_keys("%n^a{BACKSPACE}" + escaped, with_spaces=True)
-            time.sleep(0.3)
-            send_keys("{ENTER}")
-            try:
-                self.desktop.window(title_re=LOCATORS["confirm_dialog"]).wait("visible", timeout=2)
-                send_keys("%y")                                   # overwrite: Yes
-            except Exception:
-                pass
+                time.sleep(0.3)
+                send_keys("{ENTER}")
+            confirm = view.child_window(title_re=LOCATORS["confirm_dialog"], control_type="Window", found_index=0)
+            if confirm.exists(timeout=2):                       # the file exists (--force): overwrite, Yes
+                send_keys("%y")
             deadline = time.time() + WAIT["save"]
             while not (target.is_file() and target.stat().st_size > 0):
                 if time.time() > deadline:
