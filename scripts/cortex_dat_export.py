@@ -83,7 +83,12 @@ class Cortex:
             send_keys("^a{BACKSPACE}" + trade_id, with_spaces=True)
             send_keys("{F9}")
         with step("2 wait for the trade to load (tds_loaded)"):
-            tds.child_window(title_re=LOCATORS["tds_loaded"]).wait("visible", timeout=WAIT["load"])
+            loaded = tds.child_window(title_re=LOCATORS["tds_loaded"])
+            loaded.wait("visible", timeout=WAIT["load"])
+        with step("2b close the Trade ID suggestion list, which covers the INSTRUMENT column"):
+            send_keys("{ESC}")                                  # the trade is loaded: the box's text no longer matters
+            loaded.click_input()                                # a click outside the box closes the list too
+            time.sleep(0.3)
 
         with step("3 double-click the INSTRUMENT cell (tds_instrument_cell / tds_instrument_offset)"):
             if LOCATORS["tds_instrument_offset"]:
