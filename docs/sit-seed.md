@@ -176,7 +176,7 @@ Load (F9), the trade's INSTRUMENT, its `{Object ITradeable}`, View > Export > "C
    Each trade becomes `<trade ID>.dat` in `--out` (`~/Downloads/seed-dats` by default, outside the project, with
    `export-log.csv`). An exported file is reused unless `--force`. One trade's failure does not stop the others.
 
-   The Cortex controls in `LOCATORS` (top of the script) were read from a screen recording: run `--inspect` once,
+   The Cortex controls in `LOCATORS` (top of the script) were read from a screen recording: run `--inspect` once (it writes each window's control tree to `<out>/inspect-<n>.txt`),
    with a trade's View window open, and adjust them to the names it prints. A cell without a name is clicked at an
    offset: `--where` prints the mouse position in the TDS Browser for the `*_offset` locators.
 

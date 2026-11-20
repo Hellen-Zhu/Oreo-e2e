@@ -10,7 +10,7 @@ The files stay outside the project (--out); copy each into the seed case's dat p
 
 Windows only, on the machine where Cortex runs, with the TDS Browser open:
     pip install pywinauto
-    python scripts/cortex_dat_export.py --inspect          # the controls, to adjust LOCATORS
+    python scripts/cortex_dat_export.py --inspect          # the controls, to <out>/inspect-<n>.txt
     python scripts/cortex_dat_export.py <trade ID>
     python scripts/cortex_dat_export.py <trade ID> <trade ID> ...
 
@@ -121,15 +121,23 @@ class Cortex:
                 pass
 
 
-def inspect() -> None:
+def inspect(out: Path) -> None:
+    """Writes the control tree of each open Cortex window to <out>/inspect-<n>.txt, for adjusting LOCATORS."""
     from pywinauto import Desktop
 
     desktop = Desktop(backend=LOCATORS["backend"])
+    out.mkdir(parents=True, exist_ok=True)
+    n = 0
     for w in desktop.windows():
         title = w.window_text()
         if title and any(k in title for k in ("TDS", "View", "VS20", "Save As")):
-            print(f"\n=== {title!r}")
-            w.print_control_identifiers(depth=6)
+            n += 1
+            file = out / f"inspect-{n}.txt"
+            # windows() returns wrappers; print_control_identifiers is on a window specification
+            desktop.window(handle=w.handle).print_control_identifiers(depth=6, filename=str(file))
+            print(f"{file}: {' '.join(title.split())!r}")
+    if n == 0:
+        print("No Cortex window open (TDS Browser, View, Save As).")
 
 
 def where() -> None:
@@ -159,7 +167,7 @@ def main() -> int:
     args = p.parse_args()
 
     if args.inspect:
-        inspect()
+        inspect(args.out)
         return 0
     if args.where:
         where()
