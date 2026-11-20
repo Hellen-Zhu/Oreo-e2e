@@ -28,7 +28,7 @@ import java.util.stream.Stream;
  *                       --html also writes every view as a page, target/coverage/coverage.html, and its data,
  *                       coverage.json
  * seed-report [<run>|all] summarises a run of the SIT seed (the latest by default; all: every run) for UAT:
- *                       target/seed/seed-report-<run>.csv (docs/sit-seed.md)
+ *                       target/seed/seed-report-<run>.csv and .html (docs/sit-seed.md)
  * </pre>
  * A problem throws an exception so Maven fails without terminating its JVM.
  */

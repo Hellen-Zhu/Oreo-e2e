@@ -14,7 +14,8 @@ data). When the API changes, one fix serves both.
 | What a run books: one row per seed case (composition, product ID, taxonomy), variant or event | `src/test/resources/seed/features/*.feature` |
 | Steps | `glue/api/SeedSteps.java` |
 | Manifest: one file per run, one line per booking or failure | `target/seed/manifest-<run ID>.jsonl` (generated, never committed) |
-| Summary for UAT | `TestDataTool seed-report [<run ID>\|all]` → `target/seed/seed-report-<run ID or all>.csv` |
+| Summary for UAT | `TestDataTool seed-report [<run ID>\|all]` → `target/seed/seed-report-<run ID or all>.csv` and `.html` |
+| The page's template | `src/test/resources/tools/seed-report.html` |
 
 The seed features are outside `features/`: `OreoTest`, `check` and `sync-examples` do not see them.
 
@@ -139,10 +140,13 @@ is written to the manifest with its error. To rerun only the failed ones, use `-
 `[SEED-EVENT-<event>-<composition>-<product_id>]`): the rerun is a run of its own.
 
 `seed-report` reports the latest run; `seed-report <run ID>` another one; `seed-report all` every run, the latest line
-of each booking (a rerun's result over the first run's failure). It keeps the latest line of each booking (environment,
-case, composition, product ID, taxonomy, variant, event), writes one CSV row per booking with its run, case, Itradeable
-Type (from the catalog when a manifest line has none), portfolio, risk portfolio, entity and trade ID (and child trade
-IDs for allocation), counts the bookings by kind and by Itradeable Type, and lists the failures.
+of each booking (a rerun's result over the first run's failure). It keeps the latest line of each booking
+(environment, case, composition, product ID, taxonomy, variant, event) and writes it twice: a CSV, one row per booking
+(run, trade ID, then case, Itradeable Type, portfolio, risk portfolio, entity, child trade IDs for allocation,
+status, error), and an HTML page beside it, `seed-report-<run ID or all>.html`, for UAT: counts, a table to search,
+filter by status and sort, each failure's error under its row, a button that copies the case and trade ID of the rows
+shown, and the counts by Itradeable Type. The page opens offline. The console prints the counts by kind and by
+Itradeable Type and the failures.
 
 ## Maintenance
 

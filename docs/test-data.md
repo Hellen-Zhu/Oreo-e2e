@@ -451,8 +451,10 @@ or with `-U`.
   [test-dashboard-plan.md](test-dashboard-plan.md)). Both are generated: never commit them. The
   page's template is `src/test/resources/tools/coverage-report.html`.
 - `seed-report [<run ID>|all]`: the summary of a run of the SIT seed for UAT (the latest by default, `all` for every
-  run), `target/seed/seed-report-<run ID or all>.csv`, from the seed's manifests ([sit-seed.md](sit-seed.md)), a row
-  per booking with its Itradeable Type, portfolio, risk portfolio and entity; never fails on a failed booking, it lists it.
+  run), `target/seed/seed-report-<run ID or all>.csv` and the same as a page (`.html`, from the template
+  `src/test/resources/tools/seed-report.html`), from the seed's manifests ([sit-seed.md](sit-seed.md)), a row per
+  booking with its trade ID, Itradeable Type, portfolio, risk portfolio and entity; never fails on a failed booking, it
+  lists it.
 - `suggest <event>`: reads the event's recordings and prints, without writing anything, the `dynamicFields` rules
   they need and the `expectedBase` that suits them ("Suggestions", below).
 - `compact <event>` or `compact all`: the compaction of "Base and patch" and "Shared parts". It lists the files it

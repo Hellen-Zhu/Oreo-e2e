@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<!-- The template of TestDataTool seed-report (SeedReport): the tool puts the report's data in place of the mark in the
+     script element "seed-data" and writes the page to target/seed/seed-report-<run ID or all>.html, beside the CSV.
+     Everything the page needs is in this file: it opens offline, with no server. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SIT seed report</title>
+<style>
+:root {
+  --bg: #ffffff; --surface: #f6f7f9; --surface-2: #eceef2; --text: #1d2330; --text-2: #5b6474; --muted: #9aa1ad;
+  --border: #e3e6eb; --border-strong: #c4c9d2; --accent: #2f5bd3; --accent-bg: #e9effc;
+  --ok: #1f8a4c; --ok-bg: #e6f4ec; --bad: #c4352b; --bad-bg: #fbe9e7;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #14171c; --surface: #1c2027; --surface-2: #262b34; --text: #e6e9ee; --text-2: #a4acb9; --muted: #6c7482;
+    --border: #2c323c; --border-strong: #454d5a; --accent: #7c9cf0; --accent-bg: #1f2a44;
+    --ok: #4cc283; --ok-bg: #16301f; --bad: #f0776c; --bad-bg: #3a1d1a;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #14171c; --surface: #1c2027; --surface-2: #262b34; --text: #e6e9ee; --text-2: #a4acb9; --muted: #6c7482;
+  --border: #2c323c; --border-strong: #454d5a; --accent: #7c9cf0; --accent-bg: #1f2a44;
+  --ok: #4cc283; --ok-bg: #16301f; --bad: #f0776c; --bad-bg: #3a1d1a;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text);
+  font: 14px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+main { max-width: 1440px; margin: 0 auto; padding: 24px 24px 48px; }
+h1 { font-size: 22px; font-weight: 600; margin: 0; }
+h2 { font-size: 16px; font-weight: 600; margin: 32px 0 10px; }
+.meta { color: var(--text-2); font-size: 13px; margin-top: 4px; }
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-top: 20px; }
+.card { background: var(--surface); border-radius: 8px; padding: 12px 14px; }
+.card .k { font-size: 12px; color: var(--text-2); }
+.card .v { font-size: 24px; font-weight: 600; margin-top: 2px; }
+.card .v.ok { color: var(--ok); }
+.card .v.bad { color: var(--bad); }
+.toolbar { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center; margin: 24px 0 12px; }
+.toolbar input[type=search] { flex: 1 1 260px; max-width: 420px; padding: 7px 10px; font: inherit;
+  color: var(--text); background: var(--bg); border: 1px solid var(--border-strong); border-radius: 7px; }
+.seg { display: inline-flex; border: 1px solid var(--border-strong); border-radius: 7px; overflow: hidden; }
+.seg button { background: var(--bg); border: 0; padding: 6px 12px; font: inherit; font-size: 13px;
+  color: var(--text-2); cursor: pointer; }
+.seg button + button { border-left: 1px solid var(--border-strong); }
+.seg button[aria-pressed="true"] { background: var(--accent-bg); color: var(--accent); font-weight: 600; }
+.btn { background: var(--bg); border: 1px solid var(--border-strong); border-radius: 7px; padding: 6px 12px;
+  font: inherit; font-size: 13px; color: var(--text); cursor: pointer; }
+.btn:hover { background: var(--surface); }
+.count { color: var(--muted); font-size: 12px; }
+.table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 8px; }
+table { border-collapse: collapse; width: 100%; font-size: 13px; }
+th, td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--border); white-space: nowrap;
+  vertical-align: top; }
+th { background: var(--surface); color: var(--text-2); font-weight: 600; font-size: 12px; position: sticky; top: 0;
+  cursor: pointer; user-select: none; }
+th[aria-sort="ascending"]::after { content: " ▲"; font-size: 9px; }
+th[aria-sort="descending"]::after { content: " ▼"; font-size: 9px; }
+tbody tr:hover td { background: var(--surface); }
+tbody tr:last-child td { border-bottom: 0; }
+.mono { font-family: var(--mono); font-size: 12px; }
+.trade { font-family: var(--mono); font-size: 12px; font-weight: 600; }
+.copy { margin-left: 6px; border: 0; background: none; color: var(--muted); cursor: pointer; font-size: 12px;
+  padding: 0 2px; }
+.copy:hover { color: var(--accent); }
+.pill { display: inline-block; padding: 0 8px; border-radius: 9px; font-size: 12px; font-weight: 500; }
+.pill.booked { background: var(--ok-bg); color: var(--ok); }
+.pill.failed { background: var(--bad-bg); color: var(--bad); }
+.type { color: var(--text-2); }
+.error td { white-space: normal; color: var(--bad); font-family: var(--mono); font-size: 12px;
+  background: var(--bad-bg); }
+.empty { padding: 28px; text-align: center; color: var(--muted); }
+.bar { display: inline-block; height: 8px; border-radius: 4px; background: var(--ok); vertical-align: middle; }
+.bar.bad { background: var(--bad); }
+.toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--text);
+  color: var(--bg); padding: 7px 14px; border-radius: 7px; font-size: 13px; opacity: 0; transition: opacity .2s;
+  pointer-events: none; }
+.toast.on { opacity: 1; }
+@media (max-width: 640px) { main { padding: 16px; } }
+</style>
+</head>
+<body>
+<main>
+  <h1>SIT seed report</h1>
+  <div class="meta" id="meta"></div>
+  <div class="cards" id="cards"></div>
+
+  <div class="toolbar">
+    <input type="search" id="search" placeholder="Search case, trade ID, product, portfolio…" aria-label="Search">
+    <div class="seg" id="status" role="group" aria-label="Status">
+      <button data-v="" aria-pressed="true">All</button>
+      <button data-v="booked" aria-pressed="false">Booked</button>
+      <button data-v="failed" aria-pressed="false">Failed</button>
+    </div>
+    <button class="btn" id="copy-all" title="Case and trade ID of the booked rows shown, tab-separated">Copy trade IDs</button>
+    <span class="count" id="count"></span>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr id="head"></tr></thead>
+      <tbody id="rows"></tbody>
+    </table>
+  </div>
+
+  <h2>By Itradeable Type</h2>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Itradeable Type</th><th>Booked</th><th>Failed</th><th></th></tr></thead>
+      <tbody id="types"></tbody>
+    </table>
+  </div>
+</main>
+<div class="toast" id="toast"></div>
+
+<script type="application/json" id="seed-data">@@SEED_DATA@@</script>
+<script>
+(function () {
+  const data = JSON.parse(document.getElementById('seed-data').textContent);
+  const bookings = data.bookings || [];
+  const label = b => b.case || b.event || b.variant || '';
+  const columns = [
+    { key: 'case', title: 'Case', get: label },
+    { key: 'tradeId', title: 'Trade ID' },
+    { key: 'status', title: 'Status' },
+    { key: 'itradeableType', title: 'Itradeable Type' },
+    { key: 'composition', title: 'Composition' },
+    { key: 'productId', title: 'Product ID' },
+    { key: 'taxonomy', title: 'Taxonomy' },
+    { key: 'portfolioId', title: 'Portfolio' },
+    { key: 'riskPortfolio', title: 'Risk portfolio' },
+    { key: 'scbEntity', title: 'Entity' },
+    { key: 'kind', title: 'Kind', get: b => b.kind + (b.event ? ' · ' + b.event : '') + (b.variant ? ' · ' + b.variant : '') },
+    { key: 'at', title: 'At' }
+  ];
+  if (data.run === 'all') columns.splice(1, 0, { key: 'run', title: 'Run' });
+  const value = (b, c) => String((c.get ? c.get(b) : b[c.key]) ?? '');
+
+  const envs = [...new Set(bookings.map(b => b.env).filter(Boolean))];
+  document.getElementById('meta').textContent =
+    (data.run === 'all' ? 'All runs (' + data.runs + ')' : 'Run ' + data.run + ' (' + data.runs + ' run(s) kept)')
+    + (envs.length ? ' · ' + envs.join(', ') : '') + ' · generated ' + data.generated;
+
+  const booked = bookings.filter(b => b.status === 'booked').length;
+  const failed = bookings.length - booked;
+  const types = new Set(bookings.map(b => b.itradeableType).filter(Boolean)).size;
+  document.getElementById('cards').innerHTML = [
+    ['Bookings', bookings.length, ''], ['Booked', booked, 'ok'], ['Failed', failed, failed ? 'bad' : ''],
+    ['Itradeable Types', types, '']
+  ].map(([k, v, cls]) => '<div class="card"><div class="k">' + k + '</div><div class="v ' + cls + '">' + v
+    + '</div></div>').join('');
+
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+  const shortType = t => t ? t.split('.').slice(-2).join('.') : '';
+
+  let status = '', query = '', sortKey = null, sortDir = 1;
+  const head = document.getElementById('head');
+  head.innerHTML = columns.map(c => '<th data-k="' + c.key + '">' + c.title + '</th>').join('');
+  head.addEventListener('click', e => {
+    const th = e.target.closest('th'); if (!th) return;
+    sortDir = sortKey === th.dataset.k ? -sortDir : 1; sortKey = th.dataset.k;
+    head.querySelectorAll('th').forEach(h => h.removeAttribute('aria-sort'));
+    th.setAttribute('aria-sort', sortDir > 0 ? 'ascending' : 'descending');
+    render();
+  });
+
+  function shown() {
+    const q = query.toLowerCase();
+    let out = bookings.filter(b => (!status || b.status === status)
+      && (!q || columns.some(c => value(b, c).toLowerCase().includes(q)) || (b.error || '').toLowerCase().includes(q)));
+    if (sortKey) {
+      const c = columns.find(c => c.key === sortKey);
+      out = out.slice().sort((a, b) => value(a, c).localeCompare(value(b, c), undefined, { numeric: true }) * sortDir);
+    }
+    return out;
+  }
+
+  function cell(b, c) {
+    const v = value(b, c);
+    if (c.key === 'tradeId') return v ? '<span class="trade">' + esc(v) + '</span><button class="copy" data-copy="'
+      + esc(v) + '" title="Copy">⧉</button>' + (b.childTradeIds && b.childTradeIds.length
+      ? '<div class="mono type">' + esc(b.childTradeIds.join(' ')) + '</div>' : '') : '';
+    if (c.key === 'status') return '<span class="pill ' + esc(v) + '">' + esc(v) + '</span>';
+    if (c.key === 'itradeableType') return '<span class="type" title="' + esc(v) + '">' + esc(shortType(v)) + '</span>';
+    if (['case', 'composition', 'productId', 'portfolioId', 'riskPortfolio', 'run'].includes(c.key))
+      return '<span class="mono">' + esc(v) + '</span>';
+    return esc(v);
+  }
+
+  function render() {
+    const rows = shown();
+    document.getElementById('count').textContent = rows.length + ' of ' + bookings.length;
+    document.getElementById('rows').innerHTML = rows.length ? rows.map(b =>
+      '<tr>' + columns.map(c => '<td>' + cell(b, c) + '</td>').join('') + '</tr>'
+      + (b.status === 'failed' && b.error ? '<tr class="error"><td colspan="' + columns.length + '">'
+        + esc(b.error) + '</td></tr>' : '')).join('')
+      : '<tr><td class="empty" colspan="' + columns.length + '">No booking matches</td></tr>';
+  }
+
+  const byType = {};
+  bookings.forEach(b => {
+    const t = b.itradeableType || '(none)';
+    byType[t] = byType[t] || [0, 0];
+    byType[t][b.status === 'booked' ? 0 : 1]++;
+  });
+  const max = Math.max(1, ...Object.values(byType).map(([o, f]) => o + f));
+  document.getElementById('types').innerHTML = Object.keys(byType).sort().map(t => {
+    const [o, f] = byType[t];
+    return '<tr><td class="mono" title="' + esc(t) + '">' + esc(t) + '</td><td>' + o + '</td><td>' + f + '</td><td>'
+      + '<span class="bar" style="width:' + (o / max * 160) + 'px"></span>'
+      + '<span class="bar bad" style="width:' + (f / max * 160) + 'px"></span></td></tr>';
+  }).join('');
+
+  document.getElementById('search').addEventListener('input', e => { query = e.target.value; render(); });
+  document.getElementById('status').addEventListener('click', e => {
+    const btn = e.target.closest('button'); if (!btn) return;
+    status = btn.dataset.v;
+    document.querySelectorAll('#status button').forEach(x => x.setAttribute('aria-pressed', String(x === btn)));
+    render();
+  });
+
+  const toast = document.getElementById('toast');
+  function copy(text, what) {
+    const done = () => { toast.textContent = what; toast.classList.add('on'); setTimeout(() => toast.classList.remove('on'), 1400); };
+    if (navigator.clipboard) navigator.clipboard.writeText(text).then(done, () => fallback(text, done));
+    else fallback(text, done);
+  }
+  function fallback(text, done) {
+    const t = document.createElement('textarea'); t.value = text; document.body.appendChild(t); t.select();
+    try { document.execCommand('copy'); done(); } finally { t.remove(); }
+  }
+  document.getElementById('rows').addEventListener('click', e => {
+    const btn = e.target.closest('.copy'); if (btn) copy(btn.dataset.copy, 'Copied ' + btn.dataset.copy);
+  });
+  document.getElementById('copy-all').addEventListener('click', () => {
+    const rows = shown().filter(b => b.tradeId);
+    copy(rows.map(b => label(b) + '\t' + b.tradeId).join('\n'), 'Copied ' + rows.length + ' trade ID(s)');
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>

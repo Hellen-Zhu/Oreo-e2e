@@ -30,7 +30,26 @@ public class SeedReportTest {
         assertEquals("T.Recorded", filled.get(1).path("itradeableType").asText());
         assertTrue(filled.get(2).path("itradeableType").isMissingNode());
         String csv = SeedReport.csv(filled);
-        assertTrue(csv, csv.startsWith("run,env,kind,case,itradeableType,composition,productId,taxonomy,portfolioId,riskPortfolio,scbEntity,"));
-        assertTrue(csv, csv.contains(",,trade,,Cortex.Finance.Tradeable.PayoffScript.Ctrl.FloatingStrikeB,FX_FSB,FX_PSCRIPT,"));
+        assertTrue(csv, csv.startsWith("run,tradeId,env,kind,case,itradeableType,composition,productId,taxonomy,portfolioId,"));
+        assertTrue(csv, csv.contains(",,,trade,,Cortex.Finance.Tradeable.PayoffScript.Ctrl.FloatingStrikeB,FX_FSB,FX_PSCRIPT,"));
+    }
+
+    @Test
+    public void thePageHoldsTheDataWhereTheMarkIs() throws java.io.IOException {
+        String template = java.nio.file.Files.readString(
+                com.example.module.oreo.testdata.ProjectPaths.projectRoot().resolve(SeedReport.TEMPLATE));
+        String json = SeedReport.model("20261120-153000", 2, List.of(Json.parse("""
+                {"kind": "trade", "case": "SEED-TRADE-001", "tradeId": "T1", "status": "failed",
+                 "error": "</script><b>"}""")));
+        String page = SeedReport.page(template, json);
+        assertTrue(!page.contains(SeedReport.DATA_MARK));
+        assertTrue(page.contains("\\u003c/script>\\u003cb>"));
+        assertTrue(page.contains("\"run\":\"20261120-153000\""));
+        try {
+            SeedReport.page("<html></html>", json);
+            org.junit.Assert.fail("a template without the mark");
+        } catch (IllegalStateException e) {
+            assertTrue(e.getMessage(), e.getMessage().contains(SeedReport.DATA_MARK));
+        }
     }
 }
