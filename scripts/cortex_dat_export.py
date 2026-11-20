@@ -62,7 +62,7 @@ LOCATORS = {
     "confirm_dialog": r"Confirm Save As",
 }
 # Seconds. The Viewer (Export > View) can take long to open.
-WAIT = {"load": 30, "window": 15, "viewer": 90, "menu": 5, "save": 15, "between": 0.5}
+WAIT = {"load": 30, "window": 15, "viewer": 90, "save": 15, "between": 0.5}
 
 
 # ── Cortex ──────────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -87,7 +87,7 @@ class Cortex:
             for desktop in (self.desktop, win32):
                 w = desktop.window(title_re=title_re, found_index=0)
                 try:
-                    if w.exists(timeout=0) and w.is_visible():
+                    if w.exists(timeout=0) and w.wrapper_object().is_visible():
                         return w
                 except Exception:
                     pass
@@ -104,29 +104,19 @@ class Cortex:
                 except Exception:
                     pass
 
-    def menu(self, window, item, expect: str, timeout: float = WAIT["window"]):
-        """Export > the menu item, then the window it opens (returned). The item is clicked by its text; when that
-        opens nothing within WAIT["menu"], the menu is opened again and the item chosen by Down presses and Enter."""
+    def menu(self, window, item) -> None:
+        """Clicks the window's Export button, then the menu item: by its text, else by Down presses and Enter."""
         from pywinauto.keyboard import send_keys
 
         text, downs = item
-
-        def open_menu() -> None:
-            window.set_focus()
-            window.child_window(title_re=LOCATORS["export_button"], found_index=0).click_input()
-            time.sleep(0.8)
-
-        open_menu()
+        window.set_focus()
+        window.child_window(title_re=LOCATORS["export_button"], found_index=0).click_input()
+        time.sleep(0.5)
         try:
             self.desktop.window(control_type="Menu", found_index=0).child_window(
                 title_re=text, control_type="MenuItem", found_index=0).click_input()
-            return self.window(expect, timeout=timeout)
         except Exception:
-            send_keys("{ESC}")
-            time.sleep(0.3)
-        open_menu()
-        send_keys("{DOWN}" * downs + "{ENTER}")
-        return self.window(expect, timeout=timeout)
+            send_keys("{DOWN}" * downs + "{ENTER}")
 
     def popup_under_cursor(self):
         """The popup a right-click opened at the cursor: the top-level window just below and right of it."""
@@ -190,8 +180,10 @@ class Cortex:
                 tds.child_window(title_re=LOCATORS["tds_instrument_cell"], found_index=0).double_click_input()
         with step("4 wait for the trade's window (trade_window)"):
             trade = self.window(trade_title)
-        with step("5-6 Export > View in the trade's window, then the Viewer (trade_export_item, object_window)"):
-            objects = self.menu(trade, LOCATORS["trade_export_item"], LOCATORS["object_window"], WAIT["viewer"])
+        with step("5 Export > View in the trade's window (export_button, trade_export_item)"):
+            self.menu(trade, LOCATORS["trade_export_item"])
+        with step("6 wait for the Viewer (object_window)"):
+            objects = self.window(LOCATORS["object_window"], timeout=WAIT["viewer"])
 
         if LOCATORS["object_header_offset"]:
             with step("7a show the INSTRUMENT column only (object_header_offset, column_all, column_instrument)"):
@@ -210,10 +202,11 @@ class Cortex:
                 objects.child_window(title_re=LOCATORS["object_cell"], found_index=0).double_click_input()
         with step("8 wait for the View window (view_window)"):
             view = self.window(LOCATORS["view_window"])
-        with step("9 Export > Save As... in the View window, then the dialog (view_export_item, save_dialog)"):
-            save = self.menu(view, LOCATORS["view_export_item"], LOCATORS["save_dialog"])
+        with step("9 Export > Save As... in the View window (export_button, view_export_item)"):
+            self.menu(view, LOCATORS["view_export_item"])
 
         with step("10 save as <trade ID>.dat (save_dialog)"):
+            save = self.window(LOCATORS["save_dialog"])
             save.set_focus()
             time.sleep(0.3)
             # Alt+N is the File name box; the type is already "Cortex object file (*.dat)"
