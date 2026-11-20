@@ -14,6 +14,7 @@ Windows only, on the machine where Cortex runs, with the TDS Browser open:
     python scripts/cortex_dat_export.py --inspect          # the controls, to <out>/inspect-<n>.txt
     python scripts/cortex_dat_export.py <trade ID>
     python scripts/cortex_dat_export.py <trade ID> <trade ID> ...
+    python scripts/cortex_dat_export.py --file trades.txt  # one trade ID per line (or comma-separated), # comments
 
 The controls of Cortex were read from a screen recording, not from the application: run --inspect once and adjust
 LOCATORS below to the names it prints. Keep the mouse and keyboard still while it runs; Ctrl+C stops it between trades.
@@ -324,6 +325,8 @@ def where() -> None:
 def main() -> int:
     p = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     p.add_argument("trades", nargs="*", help="trade IDs to export, one <trade ID>.dat each")
+    p.add_argument("--file", type=Path,
+                   help="a list of trade IDs: one per line or comma-separated; # starts a comment")
     p.add_argument("--out", type=Path, default=Path.home() / "Downloads" / "seed-dats",
                    help="where <trade ID>.dat files are exported (outside the project)")
     p.add_argument("--force", action="store_true", help="export again when <trade ID>.dat already exists")
@@ -337,8 +340,15 @@ def main() -> int:
     if args.where:
         where()
         return 0
-    if not args.trades:
-        p.error("give at least one trade ID")
+    trades = list(args.trades)
+    if args.file:
+        for line in args.file.read_text(encoding="utf-8-sig").splitlines():
+            trades += [t.strip() for t in line.split("#", 1)[0].split(",") if t.strip()]
+    trades = list(dict.fromkeys(trades))                         # each trade once, in the order given
+    if not trades:
+        p.error("give at least one trade ID, or --file")
+    args.trades = trades
+    print(f"{len(trades)} trade(s) to export to {args.out}")
 
     args.out.mkdir(parents=True, exist_ok=True)
     log_path = args.out / "export-log.csv"

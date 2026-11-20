@@ -172,9 +172,11 @@ double-click its `{Object ITradeable}` ("View"), Export > Save As..., "Cortex ob
    python scripts/cortex_dat_export.py --inspect
    python scripts/cortex_dat_export.py <trade ID>
    python scripts/cortex_dat_export.py <trade ID> <trade ID> ...
+   python scripts/cortex_dat_export.py --file <trade ID list>
    ```
 
-   Each trade becomes `<trade ID>.dat` in `--out` (`~/Downloads/seed-dats` by default, outside the project, with
+   A list file has one trade ID per line (or comma-separated, `#` starts a comment); keep it outside the
+   project, as the IDs are real. Each trade becomes `<trade ID>.dat` in `--out` (`~/Downloads/seed-dats` by default, outside the project, with
    `export-log.csv`). An exported file is reused unless `--force`. One trade's failure does not stop the others.
 
    The Cortex controls in `LOCATORS` (top of the script) were read from a screen recording: run `--inspect` once (it writes each window's control tree to `<out>/inspect-<n>.txt`),
