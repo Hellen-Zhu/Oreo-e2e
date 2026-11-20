@@ -189,9 +189,16 @@ class Cortex:
 
         with step("10 save as <trade ID>.dat (save_dialog)"):
             save = self.window(LOCATORS["save_dialog"])
-            name = save.child_window(title="File name:", control_type="Edit") if LOCATORS["backend"] == "uia" \
-                else save.child_window(class_name="Edit", found_index=0)
-            name.set_edit_text(str(target))
+            save.set_focus()
+            try:
+                name = save.child_window(title="File name:", control_type="Edit", found_index=0) \
+                    if LOCATORS["backend"] == "uia" else save.child_window(class_name="Edit", found_index=0)
+                name.set_edit_text(str(target))
+                name.set_focus()
+            except Exception:                                   # the box by its shortcut: Alt+N, File name
+                escaped = "".join("{" + c + "}" if c in "+^%~(){}[]" else c for c in str(target))
+                send_keys("%n^a{BACKSPACE}" + escaped, with_spaces=True)
+            time.sleep(0.3)
             send_keys("{ENTER}")
             try:
                 self.desktop.window(title_re=LOCATORS["confirm_dialog"]).wait("visible", timeout=2)
