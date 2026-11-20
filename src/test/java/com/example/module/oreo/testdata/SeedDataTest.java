@@ -74,16 +74,26 @@ public class SeedDataTest {
     }
 
     @Test
-    public void aProductIdTradeAndAnEvent() {
+    public void aTradeIsACompositionAndAProductId() {
         SeedData catalog = SeedData.fromJson("t.json", Json.parse("""
-                {"trades": {"fx-x": {"productId": "FX_X", "dat": "seed/dat/fx-x.dat", "setup": "trade-create"}},
+                {"trades": {
+                   "fx-x": {"composition": "FX_X", "productId": "FX_X1"},
+                   "fx-x-2": {"composition": "FX_X", "productId": "FX_X2", "dat": "OTHER.dat"},
+                   "fx-trf-other-id": {"composition": "FX_TRF", "productId": "FX_TRF_DLYSTTL"}},
                  "events": {"termination": {"case": "TC-TRADE-EARLY-TERMINATION-<product_type>-API-001"}}}"""));
         SeedData.Trade x = catalog.trade("fx-x");
-        assertNull(x.composition());
-        assertEquals("FX_X", x.productId());
+        assertEquals("FX_X", x.composition());
+        assertEquals("FX_X1", x.productId());
+        assertEquals("seed/dat/FX_X/FX_X1.dat", x.dat());
+        assertTrue(!x.registered());
+        assertEquals("seed/dat/FX_X/OTHER.dat", catalog.trade("fx-x-2").dat());
+        SeedData.Trade other = catalog.trade("fx-trf-other-id");
+        assertTrue(other.registered());
+        assertEquals("FX_TRF_DLYSTTL", other.productId());
+        assertEquals(ProductDatFiles.FX_TRF.path(), other.dat());
         try {
             SeedData.eventRequest(catalog.event("termination"), x);
-            fail("an event needs a composition");
+            fail("an event needs a registered composition");
         } catch (IllegalStateException e) {
             assertTrue(e.getMessage(), e.getMessage().contains("registered composition"));
         }
@@ -112,9 +122,14 @@ public class SeedDataTest {
         bad("""
                 {"trades": {"Fx": {"composition": "FX_TRF"}}}""", "trades.Fx");
         bad("""
-                {"trades": {"fx": {"composition": "FX_TRF", "productId": "FX_TRF"}}}""", "either composition");
+                {"trades": {"fx": {"productId": "FX_X"}}}""", "\"composition\"");
         bad("""
-                {"trades": {"fx": {"productId": "FX_X"}}}""", "productId and dat");
+                {"trades": {"fx": {"composition": "FX_X"}}}""", "\"productId\" is needed");
+        bad("""
+                {"trades": {"fx": {"composition": "FX_X", "productId": "P", "dat": "a/b.dat"}}}""", "trades.fx");
+        bad("""
+                {"trades": {"a": {"composition": "FX_TRF"}, "b": {"composition": "FX_TRF", "productId": "FX_TRF"}}}""",
+                "one booking per composition and product ID");
         bad("""
                 {"trades": {"fx": {"composition": "FX_TRF"}}, "events": {"e": {"case": "TC-TRADE-X-FX_TRF-API-001"}}}""",
                 "events.e");

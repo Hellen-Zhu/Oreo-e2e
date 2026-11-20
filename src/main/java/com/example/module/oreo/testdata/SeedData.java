@@ -28,14 +28,17 @@ import java.util.regex.Pattern;
  * {@code TestDataTool seed-report} turns into the summary for UAT. Details: {@code docs/sit-seed.md}.
  *
  * <ul>
- *   <li>A trade is a registered composition ({@code "composition": "FX_TRF"}: its product ID and dat file from
- *       {@link ProductDatFiles}), or a product ID with the classpath path of its dat file
- *       ({@code "productId"}, {@code "dat"}); {@code "setup"} is the body, {@code data/setup/<name>.json}
- *       ({@code trade-create} when absent).</li>
+ *   <li>A trade is a pair, a composition (the Excel's Itradeable Type, the E2E's composition) and a product ID:
+ *       {@code {"composition": "FX_PSCRIPT_TRF", "productId": "FX_PSCRIPT"}}; one booking per pair (and setup). A
+ *       composition registered in {@link ProductDatFiles} may leave out the product ID (its default) and takes its dat
+ *       file from {@code data/dat/<C>/}; any other has its dat file in {@code seed/dat/<C>/}. {@code "dat"} is the
+ *       file name there ({@code <C>.dat} for a registered composition's, {@code <productId>.dat} otherwise, when
+ *       absent). {@code "setup"} is the body, {@code data/setup/<name>.json} ({@code trade-create} when
+ *       absent).</li>
  *   <li>An event is booked with the request of an E2E case ({@code "case"}, the Outline's ID with
  *       {@code <product_type>}) on the trade booked for it: one body for the test and the seed. {@code "via"} is
  *       {@code trigger-event} (the default, the body's {@code tradeIds} replaced) or {@code update} (the amendment,
- *       posted to the trade's update path). Its trade must be a composition, the case's product.</li>
+ *       posted to the trade's update path). Its trade's composition must be registered: the case's product.</li>
  * </ul>
  */
 public final class SeedData {
@@ -45,8 +48,16 @@ public final class SeedData {
     private static final String PRODUCT = "<product_type>";
     private static final Pattern NAME = Pattern.compile("[a-z0-9][a-z0-9-]*");
 
-    /** A trade of the catalog; {@code composition} is {@code null} for a product ID that is not registered. */
-    public record Trade(String name, String composition, String productId, String dat, String setup) {}
+    /**
+     * A trade of the catalog: a composition and a product ID, the classpath path of its dat file, its setup body;
+     * {@code registered} when the composition is in {@link ProductDatFiles} (it can take lifecycle events).
+     */
+    public record Trade(String name, String composition, String productId, String dat, String setup,
+                        boolean registered) {}
+
+    /** Where the dat files of a composition the E2E cases do not register are, {@code seed/dat/<C>/}. */
+    public static final String SEED_DAT_DIR = "seed/dat/";
+    private static final Pattern COMPOSITION = Pattern.compile("[A-Z0-9][A-Z0-9_]*");
 
     /**
      * A lifecycle event of the catalog, booked with the request of the E2E case {@code caseId} (with its product)
@@ -104,6 +115,15 @@ public final class SeedData {
         Map<String, Event> events = new LinkedHashMap<>();
         root.path("events").properties().forEach(e -> events.put(e.getKey(), event(resource, e.getKey(), e.getValue())));
         if (trades.isEmpty()) throw new IllegalStateException("[Seed] " + resource + ": no trades");
+        Map<String, String> pairs = new LinkedHashMap<>();
+        for (Trade t : trades.values()) {
+            String pair = t.composition() + " + " + t.productId() + " (setup " + t.setup() + ")";
+            String other = pairs.putIfAbsent(pair, t.name());
+            if (other != null) {
+                throw new IllegalStateException("[Seed] " + resource + ": trades." + other + " and trades." + t.name()
+                        + " are both " + pair + ": one booking per composition and product ID");
+            }
+        }
         return new SeedData(Collections.unmodifiableMap(trades), Collections.unmodifiableMap(events));
     }
 
@@ -114,19 +134,40 @@ public final class SeedData {
         String productId = text(node, "productId");
         String dat = text(node, "dat");
         String setup = text(node, "setup");
-        if (composition != null) {
-            if (productId != null || dat != null) {
-                throw new IllegalStateException(at + ": a composition takes its product ID and dat file from"
-                        + " ProductDatFiles; give either composition or productId and dat");
-            }
-            ProductDatFiles p = ProductDatFiles.of(composition);
-            productId = p.productId();
-            dat = p.path();
-            composition = p.name();
-        } else if (productId == null || dat == null) {
-            throw new IllegalStateException(at + ": give composition, or productId and dat");
+        if (composition == null || !COMPOSITION.matcher(composition).matches()) {
+            throw new IllegalStateException(at + ": \"composition\" is the trade's composition (upper case, digits"
+                    + " and _: FX_TRF), the Excel's Itradeable Type");
         }
-        return new Trade(name, composition, productId, dat, setup == null ? DEFAULT_SETUP : setup);
+        ProductDatFiles registered = registered(composition);
+        if (productId == null) {
+            if (registered == null) {
+                throw new IllegalStateException(at + ": \"productId\" is needed: " + composition
+                        + " is not in ProductDatFiles, so it has no default product ID");
+            }
+            productId = registered.productId();
+        }
+        String path;
+        try {
+            if (registered != null) {
+                path = registered.path(dat);
+            } else {
+                String file = dat == null ? productId + ".dat" : dat;
+                ProductDatFiles.checkFileName(file);
+                path = SEED_DAT_DIR + composition + "/" + file;
+            }
+        } catch (IllegalArgumentException e) {
+            throw new IllegalStateException(at + ": " + e.getMessage(), e);
+        }
+        return new Trade(name, composition, productId, path, setup == null ? DEFAULT_SETUP : setup,
+                registered != null);
+    }
+
+    /** The registered composition {@code name}, or {@code null}. */
+    private static ProductDatFiles registered(String name) {
+        for (ProductDatFiles p : ProductDatFiles.values()) {
+            if (p.name().equals(name)) return p;
+        }
+        return null;
     }
 
     private static Event event(String resource, String name, JsonNode node) {
@@ -184,9 +225,10 @@ public final class SeedData {
      * @throws IllegalStateException when the trade is not a composition or the case has no request
      */
     public static String eventRequest(Event event, Trade trade) {
-        if (trade.composition() == null) {
+        if (!trade.registered()) {
             throw new IllegalStateException("[Seed] event '" + event.name() + "' on trade '" + trade.name()
-                    + "': an event needs a trade of a registered composition (its case data is per composition)");
+                    + "': an event needs a trade of a registered composition (its case data is per composition), not "
+                    + trade.composition());
         }
         String caseId = event.caseId().replace(PRODUCT, trade.composition());
         CaseData data = TestData.forCase(caseId);

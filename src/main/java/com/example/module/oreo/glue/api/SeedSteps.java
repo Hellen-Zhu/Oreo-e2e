@@ -92,9 +92,9 @@ public class SeedSteps {
         entry.put("at", DateUtil.format(DateUtil.now()));
         String env = System.getenv("OREO_SEED_ENV");
         if (env != null && !env.isBlank()) entry.put("env", env.trim());
-        entry.put("kind", kind).put("trade", trade.name()).put("productId", trade.productId())
+        entry.put("kind", kind).put("trade", trade.name()).put("composition", trade.composition())
+                .put("productId", trade.productId())
                 .put("setup", trade.setup());
-        if (trade.composition() != null) entry.put("composition", trade.composition());
         return entry;
     }
 

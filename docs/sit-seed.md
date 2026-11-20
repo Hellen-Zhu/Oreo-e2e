@@ -25,7 +25,8 @@ The seed features are outside `features/`: `OreoTest`, `check` and `sync-example
   "trades": {
     "fx-trf": { "composition": "FX_TRF" },
     "fx-trf-stepin-full": { "composition": "FX_TRF", "setup": "trade-create-stepin-full" },
-    "fx-example": { "productId": "FX_EXAMPLE", "dat": "seed/dat/fx-example.dat" }
+    "fx-pscript-trf-pscript": { "composition": "FX_PSCRIPT_TRF", "productId": "FX_PSCRIPT" },
+    "fx-example": { "composition": "FX_EXAMPLE", "productId": "FX_EXAMPLE_1" }
   },
   "events": {
     "termination": { "case": "TC-TRADE-EARLY-TERMINATION-<product_type>-API-001" },
@@ -34,19 +35,25 @@ The seed features are outside `features/`: `OreoTest`, `check` and `sync-example
 }
 ```
 
-- **A trade** is either a registered composition, which takes its product ID and dat file from `ProductDatFiles`, or
-  a product ID with the classpath path of its dat file. Use the second form for products the E2E cases do not cover:
-  registering them in `ProductDatFiles` would add them to every product Outline.
+- **A trade is a pair: a composition and a product ID**, one booking per pair (and setup). The composition is the
+  Excel's Itradeable Type, the E2E's composition (`basic.compositionId`); one composition can be booked under several
+  product IDs, each its own trade (`FX_PSCRIPT_TRF` under `FX_PSCRIPT_TRF` and under `FX_PSCRIPT`). Two trades with
+  the same pair and setup are an error.
+- A composition registered in `ProductDatFiles` may leave out `productId` (its default product ID) and takes its dat
+  file from `data/dat/<C>/`. Any other composition needs `productId`, and its dat file is in `seed/dat/<C>/`: do not
+  register it in `ProductDatFiles`, which would add it to every product Outline. `dat` is the file name in that folder
+  (default `<C>.dat` for a registered composition, `<productId>.dat` for the others).
 - `setup` is the body (`data/setup/<name>.json`, default `trade-create`). A variant (StepIn, another entity or
   portfolio) is a setup file that `extends` `trade-create`.
 - **An event** is sent on a new live trade with the request of an E2E positive case (`case`, the Outline's ID), and the
   checker approves the task when the event creates one. `via` is how it is sent: `trigger-event` (the default,
   `POST /trades/trigger-event`, its `tradeIds` replaced) or `update` (the amendment, `POST /trades/<id>/update`, its
-  task read from `msg`). The trade must be a composition, because the case data is per composition.
+  task read from `msg`). The trade's composition must be registered, because the case data is per composition.
 - Names are lower case, digits and `-`. `SeedDataTest` checks that every row of the seed features is in the catalog
   and every setup exists.
 
-**A new product** is a trade in the catalog and a row in `seed_new_trades.feature`, plus a dat file for a product ID.
+**A new product** (a composition + product ID pair) is a trade in the catalog and a row in `seed_new_trades.feature`,
+plus its dat file in `seed/dat/<C>/` when the composition is not registered.
 **A new event** is an event in the catalog and its rows in `seed_lifecycle_events.feature`; it needs a positive E2E
 case first.
 
@@ -88,7 +95,9 @@ and lists the failures.
   out for now: it needs market data that triggers the knock-out.
 - To confirm: RemainingPartyFull / RemainingPartyPartial are NovationRemaining / PartialNovationRemaining, and the
   Excel's FX_PSCRIPT with payoff script TRFGeneric is the composition FX_PSCRIPT_TRF.
-- The new-trade sheet's product IDs beyond the four registered compositions: each needs its dat template, and the
-  entity and portfolio of its row, as setup data on the company copy.
+- The new-trade sheet's 41 rows as composition + product ID pairs: the composition ID of each Itradeable Type (with its
+  payoff script, for `Cortex.Finance.Tradeable.PayoffScript`), its dat template in `seed/dat/<C>/`, and the entity and
+  portfolio of its row as setup data, on the company copy. Rows with the same Itradeable Type and product ID (and
+  another entity or portfolio) are one pair: one booking, unless each gets its own setup.
 - The public copy has only some events' case data (allocation, early termination). The other events, amendment and
   cancellation among them, resolve on the company copy.

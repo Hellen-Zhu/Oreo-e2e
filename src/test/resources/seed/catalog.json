@@ -1,5 +1,5 @@
 {
-  "_comment": "The SIT seed's catalog (docs/sit-seed.md), read by SeedData. trades: a registered composition, or productId + dat (classpath path of its dat file, e.g. seed/dat/<name>.dat); setup is the body in data/setup (trade-create when absent). events: the E2E Outline whose positive case's request books the event, via trigger-event (the default) or update (the amendment). The rows the seed features book are named here; a new product is a trade here and a row in seed_new_trades.feature.",
+  "_comment": "The SIT seed's catalog (docs/sit-seed.md), read by SeedData. trades: a composition (the Excel's Itradeable Type) + a productId, one booking per pair; a registered composition may leave out productId (its default) and takes its dat from data/dat/<C>/, any other needs productId and has its dat in seed/dat/<C>/ (dat: the file name, <productId>.dat when absent); setup is the body in data/setup (trade-create when absent). events: the E2E Outline whose positive case's request books the event, via trigger-event (the default) or update (the amendment). The rows the seed features book are named here; a new composition + productId is a trade here and a row in seed_new_trades.feature.",
   "trades": {
     "fx-trf": { "composition": "FX_TRF" },
     "fx-co": { "composition": "FX_CO" },
