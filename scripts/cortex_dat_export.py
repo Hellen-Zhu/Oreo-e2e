@@ -10,7 +10,7 @@ For each trade ID given, the script does in Cortex what is done by hand:
 The files stay outside the project (--out); copy each into the seed case's dat path yourself (seed-dats lists them).
 
 Windows only, on the machine where Cortex runs, with the TDS Browser open:
-    pip install pywinauto pillow
+    pip install pywinauto
     python scripts/cortex_dat_export.py --inspect          # the controls, to <out>/inspect-<n>.txt
     python scripts/cortex_dat_export.py <trade ID>
     python scripts/cortex_dat_export.py <trade ID> <trade ID> ...
@@ -56,13 +56,10 @@ LOCATORS = {
     "object_cell_offset": (160, 225),                        # {Object ITradeable} once INSTRUMENT is the only column
     "view_window": r"^View$",                           # Export, Raw view, Trade type: ...
     "view_export_item": (r"^Save As", 1),
-    # Closed before each trade: every View, Viewer and Trade window open, so that each title names one window.
-    "close_first": (r"^View", r"^Trade \d"),
     "save_dialog": r"Save As",
     "confirm_dialog": r"Confirm Save As",
 }
-# Seconds. The Viewer (Export > View) can take long to open.
-WAIT = {"load": 30, "window": 15, "viewer": 90, "save": 15, "between": 0.5}
+WAIT = {"load": 30, "window": 15, "save": 15, "between": 0.5}
 
 
 # ── Cortex ──────────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -73,27 +70,12 @@ class Cortex:
 
         self.desktop = Desktop(backend=LOCATORS["backend"])
         self.tds = self.window(LOCATORS["tds_window"])
-        self.close_all(*LOCATORS["close_first"])
 
     def window(self, title_re: str, timeout: float = WAIT["window"]):
-        """The first visible window with this title. UI Automation lists a modal dialog (Save As) under the window
-        that owns it, not on the desktop: the Win32 list of top-level windows, which has it, is tried too."""
-        from pywinauto import Desktop
-
-        win32 = Desktop(backend="win32")
-        deadline = time.time() + timeout
-        while True:
-            # found_index: a window left open by an earlier try has the same title; the first one is enough
-            for desktop in (self.desktop, win32):
-                w = desktop.window(title_re=title_re, found_index=0)
-                try:
-                    if w.exists(timeout=0) and w.wrapper_object().is_visible():
-                        return w
-                except Exception:
-                    pass
-            if time.time() > deadline:
-                raise TimeoutError(f"no visible window titled {title_re!r} in {timeout:.0f} s")
-            time.sleep(0.5)
+        # found_index: a window left open by an earlier try has the same title; the first one is enough
+        w = self.desktop.window(title_re=title_re, found_index=0)
+        w.wait("visible", timeout=timeout)
+        return w
 
     def close_all(self, *titles_re: str) -> None:
         """Closes the windows an earlier try left open, so that each title names one window."""
@@ -171,7 +153,7 @@ class Cortex:
             time.sleep(0.3)
 
         trade_title = LOCATORS["trade_window"].replace("{trade}", re.escape(trade_id))
-        self.close_all(*LOCATORS["close_first"])
+        self.close_all(LOCATORS["view_window"], LOCATORS["object_window"], trade_title)
         tds.set_focus()
         with step("3 double-click the INSTRUMENT cell (tds_instrument_cell / tds_instrument_offset)"):
             if LOCATORS["tds_instrument_offset"]:
@@ -183,7 +165,7 @@ class Cortex:
         with step("5 Export > View in the trade's window (export_button, trade_export_item)"):
             self.menu(trade, LOCATORS["trade_export_item"])
         with step("6 wait for the Viewer (object_window)"):
-            objects = self.window(LOCATORS["object_window"], timeout=WAIT["viewer"])
+            objects = self.window(LOCATORS["object_window"])
 
         if LOCATORS["object_header_offset"]:
             with step("7a show the INSTRUMENT column only (object_header_offset, column_all, column_instrument)"):
@@ -208,14 +190,18 @@ class Cortex:
         with step("10 save as <trade ID>.dat (save_dialog)"):
             save = self.window(LOCATORS["save_dialog"])
             save.set_focus()
-            time.sleep(0.3)
-            # Alt+N is the File name box; the type is already "Cortex object file (*.dat)"
-            escaped = "".join("{" + c + "}" if c in "+^%~(){}[]" else c for c in str(target))
-            send_keys("%n^a{BACKSPACE}" + escaped, with_spaces=True)
+            try:
+                name = save.child_window(title="File name:", control_type="Edit", found_index=0) \
+                    if LOCATORS["backend"] == "uia" else save.child_window(class_name="Edit", found_index=0)
+                name.set_edit_text(str(target))
+                name.set_focus()
+            except Exception:                                   # the box by its shortcut: Alt+N, File name
+                escaped = "".join("{" + c + "}" if c in "+^%~(){}[]" else c for c in str(target))
+                send_keys("%n^a{BACKSPACE}" + escaped, with_spaces=True)
             time.sleep(0.3)
             send_keys("{ENTER}")
             try:
-                self.window(LOCATORS["confirm_dialog"], timeout=2)
+                self.desktop.window(title_re=LOCATORS["confirm_dialog"]).wait("visible", timeout=2)
                 send_keys("%y")                                   # overwrite: Yes
             except Exception:
                 pass
@@ -340,14 +326,6 @@ def main() -> int:
             except Exception as e:                              # one trade's failure does not stop the others
                 failed += 1
                 print(f"FAILED {trade}: {e}")
-                shot = args.out / f"failed-{trade}.png"            # the screen as the step failed
-                try:
-                    from PIL import ImageGrab
-
-                    ImageGrab.grab(all_screens=True).save(shot)
-                    print(f"       screen: {shot}")
-                except Exception:
-                    print("       (pip install pillow to keep a screenshot of each failure)")
                 log.writerow([time.strftime("%Y-%m-%d %H:%M:%S"), trade, "failed", str(e)[:300]])
             time.sleep(WAIT["between"])
     print(f"{len(args.trades) - failed} exported, {failed} failed; log {log_path}")

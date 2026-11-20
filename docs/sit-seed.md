@@ -166,7 +166,7 @@ double-click its `{Object ITradeable}` ("View"), Export > Save As..., "Cortex ob
    mvn -Ptest-data process-test-classes -DskipTests "-Dexec.args=seed-dats"
    ```
 
-2. On the Windows machine where Cortex runs, with the TDS Browser open (`pip install pywinauto pillow`), export by trade ID:
+2. On the Windows machine where Cortex runs, with the TDS Browser open (`pip install pywinauto`), export by trade ID:
 
    ```
    python scripts/cortex_dat_export.py --inspect
@@ -175,8 +175,7 @@ double-click its `{Object ITradeable}` ("View"), Export > Save As..., "Cortex ob
    ```
 
    Each trade becomes `<trade ID>.dat` in `--out` (`~/Downloads/seed-dats` by default, outside the project, with
-   `export-log.csv`). An exported file is reused unless `--force`. One trade's failure does not stop the others; it names its
-   step and leaves a screenshot, `failed-<trade ID>.png`, in `--out`.
+   `export-log.csv`). An exported file is reused unless `--force`. One trade's failure does not stop the others.
 
    The Cortex controls in `LOCATORS` (top of the script) were read from a screen recording: run `--inspect` once (it writes each window's control tree to `<out>/inspect-<n>.txt`),
    with a trade's View window open, and adjust them to the names it prints. A cell without a name is clicked at an
