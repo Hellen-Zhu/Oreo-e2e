@@ -20,9 +20,10 @@ import java.util.Map;
  * Takes the shared response parts ({@code _shared/<name>.json}) from the recorded response of one case, or of every
  * product's case of a case ID with {@code <product_type>}: each part the case declares ({@code sharedFragments})
  * becomes the shared part of its name, as the case's file has it (after a recording with
- * {@code OREO_EXPECTED=update}, the full new response). Every expected file is then compacted again against the new
- * parts, so each case still expects what it expected before: a case whose part differs keeps the keys that differ
- * beside its reference. Shared parts the case does not declare, or does not hold as an object (a whole-part
+ * {@code OREO_EXPECTED=update}, the full new response). The expected files that depend on those parts (refer to one,
+ * or are a patch on such a file) are then compacted again against them, so each case still expects what it expected
+ * before: a case whose part differs keeps the keys that differ beside its reference. Other files are left as they
+ * are, even when a compaction would change them (counted: {@code compact <event>} rewrites them). Shared parts the case does not declare, or does not hold as an object (a whole-part
  * placeholder), are kept. Nothing is written when any event has a problem.
  */
 final class SharedFromCase {
@@ -97,6 +98,7 @@ final class SharedFromCase {
 
         from.forEach((name, id) -> System.out.println("  " + name + " <- " + id));
         List<String> events = ExpectedCompaction.order(files.events(), TestData.sharedSources());
-        return Compact.planAndWrite(files, List.of(), events, ExpectedCompaction.Shared.withParts(files, parts));
+        return Compact.planAndWrite(files, List.of(), events, ExpectedCompaction.Shared.withParts(files, parts),
+                parts.keySet());
     }
 }

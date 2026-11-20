@@ -14,6 +14,7 @@ import cucumber.api.java.Before;
 import cucumber.api.java.en.Then;
 import io.restassured.path.json.JsonPath;
 import net.javacrumbs.jsonunit.JsonAssert;
+import net.javacrumbs.jsonunit.core.Configuration;
 import org.hamcrest.Matchers;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,6 +32,12 @@ import java.util.Optional;
 public class ApiResponseAssertionSteps {
 
     private static final Logger log = LoggerFactory.getLogger(ApiResponseAssertionSteps.class);
+
+    /**
+     * Numbers compare by value ({@code 200000000} = {@code 2.0E+8}), as the compaction of the expected files does
+     * ({@code Json.sameValue}): one API may write an amount as an integer where another writes it as a decimal.
+     */
+    private static final Configuration NUMBERS_BY_VALUE = Configuration.empty().withTolerance(0);
 
     private RestServiceResolver.Context ctx;
     private Scenario scenario;
@@ -133,7 +140,7 @@ public class ApiResponseAssertionSteps {
         log.info("[ApiResponseAssertionSteps] comparing the response of {} with {}", tcKey, expected.describe());
         try {
             JsonAssert.assertJsonEquals(ResponseMasker.fillVariables(expected.json(), actual, this::variable, tcKey),
-                    actual);
+                    actual, NUMBERS_BY_VALUE);
         } catch (AssertionError e) {
             throw new AssertionError(e.getMessage() + "\nExpected file: " + expected.describe()
                     + "\nIf the change is intended, run again with OREO_EXPECTED=update, compact with"
@@ -229,7 +236,7 @@ public class ApiResponseAssertionSteps {
         String actual = ctx.helper().response().extract().asString();
         log.info("[ApiResponseAssertionSteps] comparing response snapshot for {}", sourceLabel);
         JsonAssert.assertJsonEquals(ResponseMasker.fillVariables(expected, actual, this::variable, sourceLabel),
-                actual);
+                actual, NUMBERS_BY_VALUE);
     }
 
     /**

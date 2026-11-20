@@ -157,7 +157,8 @@ public final class SharedFragments {
 
     /**
      * The reference that stands for {@code actual} given the shared part {@code shared}: {@code _shared} plus every
-     * key of {@code actual} that the part lacks or holds with another value. {@code null} when the part has a key
+     * key of {@code actual} that the part lacks or holds with another value ({@link Json#sameValue}: key order and the
+     * way a number is written do not count). {@code null} when the part has a key
      * that {@code actual} lacks (a reference cannot remove a key), or when {@code actual} already contains a key
      * {@code _shared}.
      */
@@ -169,7 +170,7 @@ public final class SharedFragments {
         ObjectNode ref = Json.MAPPER.createObjectNode();
         ref.put(KEY, name);
         for (Map.Entry<String, JsonNode> entry : actual.properties()) {
-            if (!entry.getValue().equals(shared.get(entry.getKey()))) {
+            if (!Json.sameValue(entry.getValue(), shared.get(entry.getKey()))) {
                 ref.set(entry.getKey(), entry.getValue());
             }
         }

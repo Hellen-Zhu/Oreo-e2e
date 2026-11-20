@@ -1,9 +1,11 @@
 package com.example.module.oreo.testdata;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -70,12 +72,32 @@ public class JsonPatchTest {
     }
 
     @Test
-    public void numbersCompareExactly() {
-        JsonNode base = json("{\"n\":70000.0}");
-        JsonNode target = json("{\"n\":70000.00}");
-        JsonNode ops = JsonPatch.diff(base, target);
+    public void numbersCompareByValue() {
+        // the response check compares numbers by value: the way a number is written is no difference
+        assertEquals(0, JsonPatch.diff(json("{\"n\":70000.0}"), json("{\"n\":70000.00}")).size());
+        assertEquals(0, JsonPatch.diff(json("{\"n\":2.0E+8}"), json("{\"n\":200000000}")).size());
+        JsonNode ops = JsonPatch.diff(json("{\"n\":6.4}"), json("{\"n\":6.40001}"));
         assertEquals(1, ops.size());
-        assertTrue(Json.compact(JsonPatch.apply(base, ops, "x")).contains("70000.00"));
+        assertTrue(Json.compact(JsonPatch.apply(json("{\"n\":6.4}"), ops, "x")).contains("6.40001"));
+    }
+
+    @Test
+    public void sameValueIgnoresKeyOrderAndNumberForm() {
+        assertTrue(Json.sameValue(json("{\"a\":1,\"b\":{\"x\":2.0E+8,\"y\":\"s\"}}"),
+                json("{\"b\":{\"y\":\"s\",\"x\":200000000},\"a\":1.0}")));
+        assertFalse(Json.sameValue(json("[1,2]"), json("[2,1]")));
+        assertFalse(Json.sameValue(json("{\"a\":\"1\"}"), json("{\"a\":1}")));
+        assertFalse(Json.sameValue(json("{\"a\":1}"), json("{\"a\":1,\"b\":null}")));
+    }
+
+    @Test
+    public void aReferenceKeepsOnlyRealDifferences() {
+        ObjectNode shared = (ObjectNode) json("{\"_value\":{\"notional\":{\"amount1\":2.0E+8,\"strike\":6.4},"
+                + "\"exercise\":{\"fixingSource\":\"S\",\"fixingDate\":\"2026-12-29\"}},\"_type\":\"T\"}");
+        ObjectNode query = (ObjectNode) json("{\"_type\":\"T\",\"_value\":{\"exercise\":{\"fixingDate\":"
+                + "\"2026-12-29\",\"fixingSource\":\"S\"},\"notional\":{\"strike\":6.4,\"amount1\":200000000}}}");
+        assertEquals("{\"_shared\":\"instrument/X\"}",
+                Json.compact(SharedFragments.reference("instrument/X", shared, query)));
     }
 
     @Test

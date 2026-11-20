@@ -284,7 +284,12 @@ public final class ExpectedCompaction {
 
     /** Writes the shared parts that change (new, different, or no longer used when rebuilding). */
     public static void write(ExpectedResponses files, Shared shared) {
-        for (SharedEntry entry : shared.entries()) {
+        write(files, shared.entries());
+    }
+
+    /** Writes {@code entries}, shared parts that change: each written, or deleted when it has no text after. */
+    public static void write(ExpectedResponses files, List<SharedEntry> entries) {
+        for (SharedEntry entry : entries) {
             if (entry.after() == null) {
                 files.shared().delete(entry.name());
             } else {
@@ -295,11 +300,16 @@ public final class ExpectedCompaction {
 
     /** Writes the changed files of {@code plan}; when it has errors, writes nothing and lists them. */
     public static void write(ExpectedResponses files, Plan plan) {
+        write(files, plan, plan.entries());
+    }
+
+    /** Writes the changed files among {@code entries} of {@code plan}; when it has errors, writes nothing. */
+    public static void write(ExpectedResponses files, Plan plan, List<Entry> entries) {
         if (!plan.errors().isEmpty()) {
             throw new IllegalStateException("[ExpectedCompaction] " + plan.eventFile() + ": nothing written, "
                     + plan.errors().size() + " problem(s):\n  " + String.join("\n  ", plan.errors()));
         }
-        for (Entry entry : plan.entries()) {
+        for (Entry entry : entries) {
             if (entry.changed()) files.write(entry.id(), entry.after());
         }
     }

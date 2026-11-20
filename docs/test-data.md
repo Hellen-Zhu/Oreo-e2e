@@ -182,7 +182,10 @@ run (`ProductApiClient`), so that each run creates a product of its own.
 ## Recorded responses
 
 `response matches current scenario` (behind the outcomes of `api/common_api.snippet`, `the '<x>' is retrieved
-successfully`, `the '<x>' request is rejected with ...`, after the status code check) compares the response strictly with `data/api/expected/<event>/<caseId>.json`:
+successfully`, `the '<x>' request is rejected with ...`, after the status code check) compares the response strictly with `data/api/expected/<event>/<caseId>.json`.
+Key order does not count, and numbers compare by value: `200000000` equals `2.0E+8` and `35000.00`, because one API
+can write an amount as an integer where another writes it as a decimal. The compaction (references and patches) uses
+the same rule, so a part that differs only in key order or in how a number is written still becomes a plain reference.
 
 | Situation | Run | Result |
 |---|---|---|
@@ -458,10 +461,12 @@ or with `-U`.
   expected response in full.
 - `shared TC-TRADE-CREATION-FX_TRF-API-001` (or the path of its expected file, or `TC-TRADE-CREATION-<product_type>-API-001`
   for every product's case that has a recording): the shared parts the case declares
-  become what its file holds (resolved: base, patch and references applied), then every event is compacted again
-  against them, so every case still expects what it did; a case whose part now differs keeps the keys that differ
-  beside its reference, or its part in full when it lacks a key of the new part. A part the case holds as a
-  placeholder, not an object, is kept, and so are the parts it does not declare. Nothing is written on a problem.
+  become what its file holds (resolved: base, patch and references applied), then the files that depend on those
+  parts (they refer to one, or are a patch on such a file) are compacted again against them, so every case still
+  expects what it did; a case whose part now differs keeps the keys that differ beside its reference, or its part in
+  full when it lacks a key of the new part. Other files, other products' among them, are not written even when a
+  compaction would change them: the command counts them, and `compact <event>` rewrites them. A part the case holds as
+  a placeholder, not an object, is kept, and so are the parts it does not declare. Nothing is written on a problem.
 
 The unit tests stay out of a plain `mvn test` (the pipeline runs `OreoTest` only). They are JUnit 4, and the profile
 fails when none ran: should it report no tests (a JUnit Platform without the vintage engine), add
