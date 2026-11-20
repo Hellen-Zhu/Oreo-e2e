@@ -316,7 +316,8 @@ public class SeedDataTest {
         JsonNode setupBasic = Json.parse(TestData.setup(SeedData.DEFAULT_SETUP).request()).path("basic");
         assertEquals(setupBasic.path("direction"), basic.path("direction"));
         SeedData.Trade two = catalog.forCase("SEED-TRADE-002", "FX_TRF", "FX_TRF", "ComplexExotic");
-        assertEquals(ProductDatFiles.FX_TRF.path("FX_TRF_CASE.dat"), two.dat());
+        assertEquals("a case's own dat file is the seed's, even for a registered composition",
+                "seed/dat/FX_TRF/FX_TRF_CASE.dat", two.dat());
         assertEquals("trade-create-stepin-full", two.setup());
         assertTrue(Json.parse(SeedData.request(two)).path("basic").path("counterpartyName").isMissingNode());
         SeedData.Trade three = catalog.forCase("SEED-TRADE-003", "FX_TRF", "FX_TRF", "ComplexExotic");

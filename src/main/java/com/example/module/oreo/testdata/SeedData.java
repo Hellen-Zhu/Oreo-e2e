@@ -40,7 +40,8 @@ import java.util.regex.Pattern;
  *       of each composition the seed books ({@code FX_TRF} is {@code Cortex.Finance.Tradeable.TRF}), one to one. A
  *       booking's composition must be in it; its Itradeable Type goes to the manifest and the report.</li>
  *   <li>A pair's dat file: a composition registered in {@link ProductDatFiles} takes it from {@code data/dat/<C>/}
- *       ({@code <C>.dat}), any other from {@code seed/dat/<C>/} ({@code <productId>.dat}). {@code trades}, a list of
+ *       ({@code <C>.dat}), any other from {@code seed/dat/<C>/} ({@code <productId>.dat}). A case's own
+ *       {@code dat} is always in {@code seed/dat/<C>/}: the seed's files stay apart from the E2E cases'. {@code trades}, a list of
  *       {@code {"composition", "productId", "taxonomy"?, "dat"?, "setup"?}}, gives another file name or another body
  *       for a pair, or for a pair with one taxonomy; the body is {@code data/setup/<name>.json}, {@code trade-create}
  *       by default.</li>
@@ -48,8 +49,8 @@ import java.util.regex.Pattern;
  *       alone. {@code request} is merged over the setup body (objects deeply, {@code null} deletes): the case's
  *       portfolio ({@code basic.portfolioId}), risk portfolio ({@code basic.riskPortfolio}) and entity
  *       ({@code basic.scbEntity}). An event case ({@code SEED-EVENT-001}) books its trade with them too, and its
- *       {@code eventRequest} is merged the same way over the event's request. Its {@code dat} and {@code setup}
- *       win over {@code trades}.</li>
+ *       {@code eventRequest} is merged the same way over the event's request. Its {@code dat}
+ *       ({@code seed/dat/<C>/<dat>}) and {@code setup} win over {@code trades}.</li>
  *   <li>A variant ({@code variants}, by name: {@code {"setup": ...}}) books a pair with another body: StepIn Full,
  *       StepIn Partial.</li>
  *   <li>An event row is a seed case too ({@code SEED-EVENT-001}): its event is booked with the request of an E2E
@@ -323,13 +324,16 @@ public final class SeedData {
         }
         String dat = override == null ? null : override.dat();
         CaseEntry entry = caseId == null ? null : cases.get(caseId);
-        if (entry != null) {
-            if (entry.setup() != null) setup = entry.setup();
-            if (entry.dat() != null) dat = entry.dat();
-        }
+        if (entry != null && entry.setup() != null) setup = entry.setup();
         ProductDatFiles registered = registered(composition);
-        String path = registered != null ? registered.path(dat)
-                : SEED_DAT_DIR + composition + "/" + (dat == null ? productId + ".dat" : dat);
+        String path;
+        if (entry != null && entry.dat() != null) {
+            path = SEED_DAT_DIR + composition + "/" + entry.dat();          // the seed's own, never an E2E file
+        } else if (registered != null) {
+            path = registered.path(dat);
+        } else {
+            path = SEED_DAT_DIR + composition + "/" + (dat == null ? productId + ".dat" : dat);
+        }
         ObjectNode caseRequest = entry == null ? Json.MAPPER.createObjectNode() : entry.request().deepCopy();
         ObjectNode caseEventRequest = entry == null ? Json.MAPPER.createObjectNode() : entry.eventRequest().deepCopy();
         return new Trade(caseId, composition, itradeableType, productId, taxonomy, variant, path, setup, caseRequest,

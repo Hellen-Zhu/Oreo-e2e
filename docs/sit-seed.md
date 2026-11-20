@@ -58,7 +58,7 @@ case sends of its own:
   "cases": {
     "SEED-TRADE-001": { "request": { "basic": { "portfolioId": "EXAMPLE_PORTFOLIO_B", "riskPortfolio": "EXAMPLE_PORTFOLIO_B", "scbEntity": "EXAMPLE_ENTITY_B" } } },
     "SEED-TRADE-035": { "dat": "FX_TRF_METALS.dat", "request": { "basic": { "portfolioId": "EXAMPLE_PORTFOLIO_C" } } },
-    "SEED-EVENT-004": { "request": { "basic": { "portfolioId": "EXAMPLE_PORTFOLIO_D" } }, "eventRequest": { "<field of the event>": "<value>" } }
+    "SEED-EVENT-004": { "dat": "termination.dat", "request": { "basic": { "portfolioId": "EXAMPLE_PORTFOLIO_D" } }, "eventRequest": { "<field of the event>": "<value>" } }
   },
   "variants": {
     "stepin-full": { "setup": "trade-create-stepin-full" }
@@ -76,7 +76,8 @@ case sends of its own:
   in it fails, and so does an Itradeable Type given to two compositions. The manifest and the report carry the
   Itradeable Type beside the composition, so UAT reads its own name.
 - **Dat file**: a composition registered in `ProductDatFiles` takes `data/dat/<C>/<C>.dat`; any other takes
-  `seed/dat/<C>/<productId>.dat`. Do not register a seed-only composition in `ProductDatFiles`: it would join every
+  `seed/dat/<C>/<productId>.dat`. A case's own `dat` is always `seed/dat/<C>/<dat>`, registered composition or not:
+  the seed's files stay apart from the E2E cases'. Do not register a seed-only composition in `ProductDatFiles`: it would join every
   product Outline of the E2E cases.
 - **`trades`**: a pair whose dat file name (`dat`) or body (`setup`, default `trade-create`) is not the default, or
   a pair with one taxonomy (`taxonomy`): an entry with the row's taxonomy wins over one without, so one pair books
@@ -86,7 +87,9 @@ case sends of its own:
   risk portfolio (`basic.riskPortfolio`) and entity (`basic.scbEntity`). The UI fills the last two from the portfolio;
   the API takes them as sent, so a case gives all three. `dat` and `setup` replace
   the pair's. An event case (`SEED-EVENT-...`) books its trade with them too, and its `eventRequest` is merged the
-  same way over its event's request (the E2E case's): the fields one event booking needs of its own. Every case
+  same way over its event's request (the E2E case's): the fields one event booking needs of its own. Each event
+  books its own dat file, named after the event: `SEED-EVENT-004` (termination on FX_TRF) books
+  `seed/dat/FX_TRF/termination.dat`; the catalog names one per event case, placeholders until exported from Cortex. Every case
   listed must be a row of the features (`SeedDataTest`), and a value starting with `TODO`
   stops the catalog from loading. The catalog has a case per row of the Excel with placeholders,
   `EXAMPLE_PORTFOLIO_<X>` and `EXAMPLE_ENTITY_<X>`, one letter per distinct portfolio and entity, so cases that share
