@@ -40,7 +40,10 @@ public class SeedSteps {
         book(SeedData.catalog().trade(composition, productId, taxonomy, null), caseId);
     }
 
-    /** {@link #bookTrade} with the body of the catalog's variant {@code variant} (StepIn Full, ...). */
+    /**
+     * A live trade of {@code composition} under {@code productId}, as {@link #bookCase}, with the body of the
+     * catalog's variant {@code variant} (StepIn Full, ...).
+     */
     @Given("^a '([^']*)' seed trade of composition '([^']*)' and product ID '([^']*)' is booked live via api$")
     public void bookVariant(String variant, String composition, String productId) throws Exception {
         book(SeedData.catalog().trade(composition, productId, variant), null);

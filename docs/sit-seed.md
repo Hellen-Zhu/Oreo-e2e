@@ -47,7 +47,7 @@ The catalog maps each composition to its Itradeable Type and holds what a pair n
   },
   "trades": [
     { "composition": "FX_EXAMPLE", "productId": "FX_EXAMPLE_1", "dat": "OTHER.dat", "setup": "trade-create-example" },
-    { "composition": "FX_EXAMPLE", "productId": "FX_EXAMPLE_1", "taxonomy": "Metals:Precious:Exotic", "setup": "trade-create-metals" }
+    { "composition": "FX_EXAMPLE", "productId": "FX_EXAMPLE_1", "taxonomy": "Metals:Precious:Exotic", "dat": "FX_EXAMPLE_1_METALS.dat" }
   ],
   "variants": {
     "stepin-full": { "setup": "trade-create-stepin-full" }
@@ -68,7 +68,8 @@ The catalog maps each composition to its Itradeable Type and holds what a pair n
   `seed/dat/<C>/<productId>.dat`. Do not register a seed-only composition in `ProductDatFiles`: it would join every
   product Outline of the E2E cases.
 - **`trades`**: a pair whose dat file name (`dat`) or body (`setup`, default `trade-create`) is not the default, or
-  a pair with one taxonomy (`taxonomy`): an entry with the row's taxonomy wins over one without. A body is a setup
+  a pair with one taxonomy (`taxonomy`): an entry with the row's taxonomy wins over one without, so one pair books
+  another dat file or body per taxonomy. Two rows with the same pair and taxonomy book the same thing. A body is a setup
   file that `extends` `trade-create` (another entity or portfolio).
 - **`variants`**: another body for any pair, by name (StepIn Full, StepIn Partial), the `variant` column.
 - **`events`**: sent on a new live trade of the pair with the request of an E2E positive case (`case`, the Outline's

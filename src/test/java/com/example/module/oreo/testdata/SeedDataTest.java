@@ -141,6 +141,23 @@ public class SeedDataTest {
         assertEquals(SeedData.DEFAULT_SETUP, catalog.trade("FXBO", "FX_BO_Y", "ComplexExotic", null).setup());
     }
 
+    /** One composition + product ID books another dat file under another taxonomy, registered or not. */
+    @Test
+    public void onePairTakesADatFilePerTaxonomy() {
+        SeedData catalog = SeedData.fromJson("t.json", Json.parse("""
+                {"itradeableTypes": {"FXBO": "T.FXBO", "FX_TRF": "Cortex.Finance.Tradeable.TRF"},
+                 "trades": [{"composition": "FX_TRF", "productId": "FX_TRF", "taxonomy": "Metals:Precious:Exotic",
+                             "dat": "FX_TRF_METALS.dat"},
+                            {"composition": "FXBO", "productId": "FX_BO_X", "taxonomy": "Metals:Precious:Exotic",
+                             "dat": "FX_BO_X_METALS.dat"}]}"""));
+        assertEquals(ProductDatFiles.FX_TRF.path("FX_TRF_METALS.dat"),
+                catalog.trade("FX_TRF", "FX_TRF", "Metals:Precious:Exotic", null).dat());
+        assertEquals(ProductDatFiles.FX_TRF.path(), catalog.trade("FX_TRF", "FX_TRF", "ComplexExotic", null).dat());
+        assertEquals("seed/dat/FXBO/FX_BO_X_METALS.dat",
+                catalog.trade("FXBO", "FX_BO_X", "Metals:Precious:Exotic", null).dat());
+        assertEquals("seed/dat/FXBO/FX_BO_X.dat", catalog.trade("FXBO", "FX_BO_X", "ComplexExotic", null).dat());
+    }
+
     @Test
     public void anEventNeedsARegisteredComposition() {
         SeedData catalog = SeedData.fromJson("t.json", Json.parse("""
