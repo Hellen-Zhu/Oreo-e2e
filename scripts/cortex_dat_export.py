@@ -51,7 +51,7 @@ LOCATORS = {
     # clicked by its text.
     "object_header_offset": (128, 186),                 # a column header of the Viewer, e.g. ACTION
     "column_all": ("All", (168, 29)),                   # (text, offset) of the list's All
-    "column_instrument": ("INSTRUMENT", None),          # (text, offset) of the list's INSTRUMENT
+    "column_instrument": ("INSTRUMENT", (146, 866)),          # (text, offset) of the list's INSTRUMENT
     "object_cell": r".*Object ITradeable.*",            # the Viewer's INSTRUMENT cell; or object_cell_offset
     "object_cell_offset": None,                         # {Object ITradeable} once INSTRUMENT is the only column
     "view_window": r"^View$",                           # Export, Raw view, Trade type: ...
