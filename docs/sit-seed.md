@@ -103,8 +103,9 @@ The steps check only that a booking happened: a trade ID and an approved task. A
 is written to the manifest with its error. To rerun only the failed ones, use `--name` with their scenario names
 (`[SEED-TRADE-001]`, `[SEED-TRADE-<variant>-<composition>-<product_id>]`,
 `[SEED-EVENT-<event>-<composition>-<product_id>]`). `seed-report` keeps the latest line of each booking (environment,
-composition, product ID, taxonomy, variant, event), writes one CSV row per booking with its case and trade ID (and child trade IDs for allocation),
-and lists the failures.
+composition, product ID, taxonomy, variant, event), writes one CSV row per booking with its case, Itradeable Type
+(from the catalog when a manifest line has none) and trade ID (and child trade IDs for allocation),
+counts the bookings by kind and by Itradeable Type, and lists the failures.
 
 ## Maintenance
 

@@ -3,6 +3,7 @@ package com.example.module.oreo.tools;
 import com.example.module.oreo.testdata.ProjectPaths;
 import com.example.module.oreo.testdata.SeedData;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -16,24 +17,25 @@ import java.util.TreeMap;
 
 /**
  * {@code seed-report}: the summary of the SIT seed for UAT (docs/sit-seed.md). Reads every manifest in
- * {@code target/seed}, keeps the latest line of each booking (environment, composition, product ID, variant, event)
- * and writes
- * {@code target/seed/seed-report.csv}, one row per booking; prints the counts and the bookings that failed. Checks the
- * catalog first. Never fails on a failed booking: the report lists it.
+ * {@code target/seed}, keeps the latest line of each booking (environment, composition, product ID, taxonomy, variant,
+ * event) and writes {@code target/seed/seed-report.csv}, one row per booking with its Itradeable Type (from the
+ * catalog's {@code itradeableTypes} when the line has none); prints the counts, by kind and by Itradeable Type, and the
+ * bookings that failed. Checks the catalog first. Never fails on a failed booking: the report lists it.
  */
 final class SeedReport {
 
-    static final List<String> COLUMNS = List.of("env", "kind", "case", "itradeableType", "composition", "productId", "taxonomy",
-            "variant", "event", "setup", "tradeId", "childTradeIds", "status", "at", "error");
+    static final List<String> COLUMNS = List.of("env", "kind", "case", "itradeableType", "composition", "productId",
+            "taxonomy", "variant", "event", "setup", "tradeId", "childTradeIds", "status", "at", "error");
 
     private SeedReport() {}
 
     static int run() throws IOException {
         SeedData catalog = SeedData.catalog();
-        System.out.println("Catalog " + SeedData.CATALOG + ": " + catalog.variants().size() + " variants, "
+        System.out.println("Catalog " + SeedData.CATALOG + ": " + catalog.itradeableTypes().size()
+                + " Itradeable Types, " + catalog.variants().size() + " variants, "
                 + catalog.events().size() + " events");
         Path dir = SeedData.manifestDir();
-        List<JsonNode> latest = latest(SeedData.readManifests(dir));
+        List<JsonNode> latest = withItradeableTypes(latest(SeedData.readManifests(dir)), catalog.itradeableTypes());
         if (latest.isEmpty()) {
             System.out.println("No bookings in " + ProjectPaths.projectRoot().relativize(dir)
                     + ": run SeedTest first (docs/sit-seed.md)");
@@ -43,15 +45,20 @@ final class SeedReport {
         Files.writeString(csv, csv(latest), StandardCharsets.UTF_8);
 
         Map<String, int[]> counts = new TreeMap<>();
+        Map<String, int[]> byType = new TreeMap<>();
         List<JsonNode> failed = new ArrayList<>();
         for (JsonNode entry : latest) {
             boolean booked = "booked".equals(entry.path("status").asText());
             counts.computeIfAbsent(entry.path("kind").asText(), k -> new int[2])[booked ? 0 : 1]++;
+            byType.computeIfAbsent(entry.path("itradeableType").asText("?"), k -> new int[2])[booked ? 0 : 1]++;
             if (!booked) failed.add(entry);
         }
         counts.forEach((kind, n) -> System.out.println(kind + ": " + n[0] + " booked, " + n[1] + " failed"));
+        System.out.println("By Itradeable Type:");
+        byType.forEach((type, n) -> System.out.println("  " + type + ": " + n[0] + " booked, " + n[1] + " failed"));
         for (JsonNode entry : failed) {
-            System.out.println("  failed " + key(entry) + ": " + entry.path("error").asText());
+            System.out.println("  failed " + entry.path("itradeableType").asText("?") + " " + key(entry) + ": "
+                    + entry.path("error").asText());
         }
         System.out.println("Wrote " + ProjectPaths.projectRoot().relativize(csv));
         return 0;
@@ -64,6 +71,25 @@ final class SeedReport {
             byKey.put(key(entry), entry);
         }
         return List.copyOf(byKey.values());
+    }
+
+    /**
+     * {@code entries} with the Itradeable Type of each one's composition, from {@code types} (Itradeable Type ->
+     * composition), where a line has none: lines written before the manifest carried it.
+     */
+    static List<JsonNode> withItradeableTypes(List<JsonNode> entries, Map<String, String> types) {
+        Map<String, String> typeOf = new LinkedHashMap<>();
+        types.forEach((type, composition) -> typeOf.put(composition, type));
+        List<JsonNode> out = new ArrayList<>();
+        for (JsonNode entry : entries) {
+            String type = typeOf.get(entry.path("composition").asText());
+            if (entry.hasNonNull("itradeableType") || type == null || !entry.isObject()) {
+                out.add(entry);
+            } else {
+                out.add(((ObjectNode) entry.deepCopy()).put("itradeableType", type));
+            }
+        }
+        return out;
     }
 
     private static String key(JsonNode entry) {
