@@ -60,9 +60,8 @@ public final class JsonPatch {
         }
     }
 
-    /** Numbers by value ({@link Json#sameValue}), as the response check compares them. */
     private static boolean sameValue(JsonNode a, JsonNode b) {
-        return Json.sameValue(a, b);
+        return a.getNodeType() == b.getNodeType() && Json.compact(a).equals(Json.compact(b));
     }
 
     private static ObjectNode op(String name, String path, JsonNode value) {

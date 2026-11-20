@@ -36,32 +36,6 @@ public final class Json {
         }
     }
 
-    /**
-     * {@code true} when {@code a} and {@code b} hold the same value, as the response check compares them: objects with
-     * the same keys and values in any order, arrays element by element, numbers by value ({@code 200000000} =
-     * {@code 2.0E+8} = {@code 200000000.00}), everything else exactly. {@code null} equals only {@code null}.
-     */
-    public static boolean sameValue(JsonNode a, JsonNode b) {
-        if (a == null || b == null) return a == b;
-        if (a.isNumber() && b.isNumber()) return a.decimalValue().compareTo(b.decimalValue()) == 0;
-        if (a.getNodeType() != b.getNodeType()) return false;
-        if (a.isObject()) {
-            if (a.size() != b.size()) return false;
-            for (Map.Entry<String, JsonNode> field : a.properties()) {
-                if (!sameValue(field.getValue(), b.get(field.getKey()))) return false;
-            }
-            return true;
-        }
-        if (a.isArray()) {
-            if (a.size() != b.size()) return false;
-            for (int i = 0; i < a.size(); i++) {
-                if (!sameValue(a.get(i), b.get(i))) return false;
-            }
-            return true;
-        }
-        return a.equals(b);
-    }
-
     public static String compact(JsonNode node) {
         try {
             return MAPPER.writeValueAsString(node);

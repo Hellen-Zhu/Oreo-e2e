@@ -19,8 +19,10 @@ import java.util.stream.Stream;
 /**
  * Parts of recorded responses that several cases and events share: {@code data/api/expected/_shared/<name>.json},
  * e.g. {@code instrument/FX_TRF}, the instrument every trade API returns for a trade of that product. An expected file
- * refers to one at the place of the part, an object {@code {"_shared": "<name>"}}; its other keys replace the shared
- * file's keys of the same name ({@code {"_shared": "basic/FX_TRF", "status": "Live"}}). {@link #expand} turns the
+ * refers to one at the place of the part, an object {@code {"_shared": "<name>"}}; where the case's part differs, the
+ * reference holds the differences as JSON Patch ops on the part, each a path and its value
+ * ({@code {"_shared": "basic/FX_TRF", "_patch": [{"op": "replace", "path": "/status", "value": "Live"}]}}). Other
+ * keys of a reference (an older form) replace the part's keys of the same name, before the ops. {@link #expand} turns the
  * references back into the full part when the file is read. The event data declares which parts are shared
  * ({@code sharedFragments}); {@code TestDataTool compact} writes the shared files and the references, never a person.
  */
@@ -30,6 +32,8 @@ public final class SharedFragments {
     public static final String FOLDER = "_shared";
     /** The key of a reference. */
     public static final String KEY = "_shared";
+    /** The key of a reference's differences from its part: JSON Patch ops, paths relative to the part. */
+    public static final String PATCH = "_patch";
 
     private static final Pattern NAME = Pattern.compile("[A-Za-z0-9_-]+(/[A-Za-z0-9_-]+)*");
 
@@ -123,8 +127,8 @@ public final class SharedFragments {
     }
 
     /**
-     * {@code json} with every reference replaced by its shared part, the reference's other keys replacing the part's
-     * keys of the same name. {@code file} is for messages.
+     * {@code json} with every reference replaced by its shared part: the reference's other keys replace the part's keys
+     * of the same name, then its {@code _patch} ops are applied. {@code file} is for messages.
      */
     public JsonNode expand(JsonNode json, Path file) {
         return expandNode(json.deepCopy(), file);
@@ -136,11 +140,13 @@ public final class SharedFragments {
             ObjectNode part = read(name).orElseThrow(() -> new IllegalStateException("[SharedFragments] " + file
                     + " refers to the shared part '" + name + "', which has no file " + fileFor(name)
                     + ". To fix: TestDataTool compact all (it writes the shared parts again)"));
-            ObjectNode full = part.deepCopy();
+            JsonNode full = part.deepCopy();
             for (Map.Entry<String, JsonNode> entry : node.properties()) {
-                if (!entry.getKey().equals(KEY)) full.set(entry.getKey(), entry.getValue());
+                String key = entry.getKey();
+                if (!key.equals(KEY) && !key.equals(PATCH)) ((ObjectNode) full).set(key, entry.getValue());
             }
-            return full;
+            JsonNode ops = node.get(PATCH);
+            return ops == null ? full : JsonPatch.apply(full, ops, file + " (reference to " + name + ")");
         }
         if (node.isObject()) {
             ObjectNode object = (ObjectNode) node;
@@ -156,24 +162,18 @@ public final class SharedFragments {
     }
 
     /**
-     * The reference that stands for {@code actual} given the shared part {@code shared}: {@code _shared} plus every
-     * key of {@code actual} that the part lacks or holds with another value ({@link Json#sameValue}: key order and the
-     * way a number is written do not count). {@code null} when the part has a key
-     * that {@code actual} lacks (a reference cannot remove a key), or when {@code actual} already contains a key
-     * {@code _shared}.
+     * The reference that stands for {@code actual} given the shared part {@code shared}: {@code _shared} and, when
+     * they differ, {@code _patch}, the ops ({@link JsonPatch}) that turn the part into {@code actual}: the path of
+     * each value that differs, with its value, never a whole key around it. Values compare exactly
+     * ({@code 2.0E+8} is not {@code 200000000}); key order does not count. {@code null} when {@code actual} already
+     * contains a key {@code _shared}.
      */
     public static ObjectNode reference(String name, ObjectNode shared, ObjectNode actual) {
         if (actual.has(KEY)) return null;
-        for (String key : (Iterable<String>) shared::fieldNames) {
-            if (!actual.has(key)) return null;
-        }
         ObjectNode ref = Json.MAPPER.createObjectNode();
         ref.put(KEY, name);
-        for (Map.Entry<String, JsonNode> entry : actual.properties()) {
-            if (!Json.sameValue(entry.getValue(), shared.get(entry.getKey()))) {
-                ref.set(entry.getKey(), entry.getValue());
-            }
-        }
+        ArrayNode ops = JsonPatch.diff(shared, actual);
+        if (!ops.isEmpty()) ref.set(PATCH, ops);
         return ref;
     }
 }

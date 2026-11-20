@@ -3,7 +3,7 @@
   "sharedSources": ["trade_creation"],
   "shared": {
     "trade-response-parts": {
-      "_comment": "Every trade API returns the trade's basic and instrument parts: TestDataTool compact keeps each once per product in expected/_shared/<file> and writes references to them (the keys that differ stay in the case's file). sharedFragments here: part name -> its file. Name the block in \"use\" of every event whose response holds the parts, and give their paths there: \"sharedFragments\": { \"basic\": \"data.trade.basic\" } (data.basic in an event without trade). The rules are written against the part ({basic}.dealDate) and take its path; a case with \"sharedFragments\": null (or the part null) has neither the part nor its rules",
+      "_comment": "Every trade API returns the trade's basic and instrument parts: TestDataTool compact keeps each once per product in expected/_shared/<file> and writes references to them (where a case's part differs, its reference holds the differences as _patch ops: path and value). sharedFragments here: part name -> its file. Name the block in \"use\" of every event whose response holds the parts, and give their paths there: \"sharedFragments\": { \"basic\": \"data.trade.basic\" } (data.basic in an event without trade). The rules are written against the part ({basic}.dealDate) and take its path; a case with \"sharedFragments\": null (or the part null) has neither the part nor its rules",
       "sharedFragments": {
         "basic": "basic/<product_type>",
         "instrument": "instrument/<product_type>"
