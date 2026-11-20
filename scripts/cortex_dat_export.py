@@ -48,7 +48,7 @@ LOCATORS = {
     # The Viewer shows many columns; INSTRUMENT is far right. Right-click a column header, untick All, tick
     # INSTRUMENT: the Viewer then shows INSTRUMENT only, {Object ITradeable} in its first cell. Offsets are from the
     # Viewer's top left (--where prints them); an item of the column list is clicked by its text, else at its offset.
-    "object_header_offset": None,                       # a column header of the Viewer, e.g. ACTION
+    "object_header_offset": (128, 186),                      # a column header of the Viewer, e.g. ACTION
     "column_all": ("All", None),                        # (text, offset) of the list's All
     "column_instrument": ("INSTRUMENT", None),          # (text, offset) of the list's INSTRUMENT
     "object_cell": r".*Object ITradeable.*",            # the Viewer's INSTRUMENT cell; or object_cell_offset
