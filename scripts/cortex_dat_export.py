@@ -154,7 +154,9 @@ def inspect(out: Path) -> None:
     n = 0
     for w in desktop.windows():
         title = w.window_text()
-        if title and any(k in title for k in ("TDS", "View", "VS20", "Save As")):
+        # Cortex's windows end in "<build date> VS20xx ..."; its View and Save As windows may not ("Protected View"
+        # is Excel's)
+        if title and (" VS20" in title or title.strip() in ("View", "Save As", "Confirm Save As")):
             n += 1
             file = out / f"inspect-{n}.txt"
             # windows() returns wrappers; print_control_identifiers is on a window specification. Its filename=
