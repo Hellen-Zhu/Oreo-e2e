@@ -62,7 +62,7 @@ LOCATORS = {
     "save_dialog": r"Save As",
     "confirm_dialog": r"Confirm Save As",
 }
-WAIT = {"load": 30, "window": 15, "save": 15, "between": 0.5}
+WAIT = {"load": 30, "window": 15, "viewer_ready": 2, "save": 15, "between": 0.5}
 
 
 # ── Cortex ──────────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -128,18 +128,56 @@ class Cortex:
         except Exception:
             send_keys("{DOWN}" * downs + "{ENTER}")
 
-    def popup_under_cursor(self):
-        """The popup a right-click opened at the cursor: the top-level window just below and right of it."""
+    def popup_under_cursor(self, owner: int, timeout: float = 3):
+        """The popup a right-click opened at the cursor: the top-level window just below and right of it, once it
+        is another window than the owner's (it takes a moment to open). None when none opened."""
         import ctypes
         from ctypes import wintypes
 
         user32 = ctypes.windll.user32
-        point = wintypes.POINT()
-        user32.GetCursorPos(ctypes.byref(point))
-        point.x += 10
-        point.y += 10
-        handle = user32.GetAncestor(user32.WindowFromPoint(point), 2)       # GA_ROOT
-        return self.desktop.window(handle=handle)
+        deadline = time.time() + timeout
+        while time.time() < deadline:
+            point = wintypes.POINT()
+            user32.GetCursorPos(ctypes.byref(point))
+            point.x += 10
+            point.y += 10
+            handle = user32.GetAncestor(user32.WindowFromPoint(point), 2)   # GA_ROOT
+            if handle and handle != owner and user32.IsWindowVisible(handle):
+                time.sleep(0.3)                                             # let it draw its items
+                return self.desktop.window(handle=handle), handle
+            time.sleep(0.2)
+        return None
+
+    def show_instrument_only(self, objects) -> None:
+        """Right-click a column header of the Viewer, untick All, tick INSTRUMENT, close the list. Each action
+        waits for its effect: the list to open (right-click again if not), then to close."""
+        import ctypes
+
+        from pywinauto.keyboard import send_keys
+
+        user32 = ctypes.windll.user32
+        objects.set_focus()
+        time.sleep(0.5)
+        owner = objects.wrapper_object().handle
+        for _ in range(3):
+            self.click_at(objects, LOCATORS["object_header_offset"], right=True)
+            popup = self.popup_under_cursor(owner)
+            if popup:
+                break
+            send_keys("{ESC}")
+        else:
+            raise RuntimeError("the column list did not open after 3 right-clicks")
+        columns, handle = popup
+        self.list_item(columns, LOCATORS["column_all"])
+        self.list_item(columns, LOCATORS["column_instrument"])
+        for _ in range(3):
+            send_keys("{ESC}")
+            deadline = time.time() + 2
+            while user32.IsWindowVisible(handle) and time.time() < deadline:
+                time.sleep(0.2)
+            if not user32.IsWindowVisible(handle):
+                break
+        time.sleep(0.5)                                                     # the Viewer redraws its one column
 
     def list_item(self, window, item) -> None:
         """Clicks an item of an open popup list: at its offset from the list when given, else by its text."""
@@ -148,7 +186,7 @@ class Cortex:
             self.click_at(window, offset)
         else:
             self.desktop.window(title_re=f"^{re.escape(text)}$", found_index=0, top_level_only=False).click_input()
-        time.sleep(0.3)
+        time.sleep(0.5)
 
     @staticmethod
     def click_at(window, offset, double: bool = False, right: bool = False) -> None:
@@ -195,23 +233,25 @@ class Cortex:
         with step("6 wait for the Viewer (object_window)"):
             objects = self.window(LOCATORS["object_window"])
 
+        time.sleep(WAIT["viewer_ready"])                        # the Viewer fills its grid after it shows
         if LOCATORS["object_header_offset"]:
+            # once: All is a toggle, so a second pass would tick every column again
             with step("7a show the INSTRUMENT column only (object_header_offset, column_all, column_instrument)"):
-                objects.set_focus()
-                self.click_at(objects, LOCATORS["object_header_offset"], right=True)
-                time.sleep(0.5)
-                columns = self.popup_under_cursor()
-                self.list_item(columns, LOCATORS["column_all"])
-                self.list_item(columns, LOCATORS["column_instrument"])
+                self.show_instrument_only(objects)
+        view = None
+        for attempt in range(1, 4):                             # 7 again when no View window opened
+            with step(f"7 double-click {{Object ITradeable}}, try {attempt} (object_cell / object_cell_offset)"):
+                if LOCATORS["object_cell_offset"]:
+                    self.click_at(objects, LOCATORS["object_cell_offset"], double=True)
+                else:
+                    objects.child_window(title_re=LOCATORS["object_cell"], found_index=0).double_click_input()
+            try:
+                view = self.window(LOCATORS["view_window"], timeout=10)
+                break
+            except Exception:
                 send_keys("{ESC}")
-                time.sleep(0.3)
-        with step("7 double-click {Object ITradeable} (object_cell / object_cell_offset)"):
-            if LOCATORS["object_cell_offset"]:
-                self.click_at(objects, LOCATORS["object_cell_offset"], double=True)
-            else:
-                objects.child_window(title_re=LOCATORS["object_cell"], found_index=0).double_click_input()
-        with step("8 wait for the View window (view_window)"):
-            view = self.window(LOCATORS["view_window"])
+        if view is None:
+            raise RuntimeError("step 8 wait for the View window (view_window): none opened after 3 tries")
         with step("9 Export > Save As... in the View window (export_button, view_export_item)"):
             self.menu(view, LOCATORS["view_export_item"])
 
