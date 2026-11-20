@@ -76,6 +76,7 @@ public class SeedSteps {
             String request = SeedData.eventRequest(e, trade);
             CreatedTrade live = live(trade, entry);
             entry.put("tradeId", live.tradeId());
+            request = withAmounts(request, live.tradeId(), trade);
             String taskId;
             if (SeedData.UPDATE.equals(e.via())) {
                 taskId = TradeApiClient.provisionPendingAmendmentWithBody(ctx.helper(), live.tradeId(), request,
@@ -95,6 +96,18 @@ public class SeedSteps {
             fail(entry, ex);
             throw ex;
         }
+    }
+
+    /**
+     * {@code request} with its shares of the notional ({@code [50%, 50%]}) replaced by the amounts of the notional of
+     * trade {@code tradeId}, as the E2E event step sends them; {@code request} itself when it gives none.
+     */
+    private String withAmounts(String request, String tradeId, SeedData.Trade trade) throws Exception {
+        JsonNode body = Json.parse(request);
+        if (!ApiRequestSteps.hasShares(body)) return request;
+        ObjectNode withAmounts = (ObjectNode) body;
+        ApiRequestSteps.putAmounts(withAmounts, ApiRequestSteps.notionalOf(ctx.helper(), tradeId, trade.caseId()));
+        return Json.MAPPER.writeValueAsString(withAmounts);
     }
 
     /**

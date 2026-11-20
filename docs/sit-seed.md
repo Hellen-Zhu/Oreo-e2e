@@ -102,7 +102,8 @@ case sends of its own:
   that gives either keeps it; `mifidExeTime` follows a given `effectiveTimestamp`.
 - **`variants`**: another body for any pair, by name (StepIn Full, StepIn Partial), the `variant` column.
 - **`events`**: sent on a new live trade of the pair with the request of an E2E positive case (`case`, the Outline's
-  ID), the seed case's `eventRequest` over it, and the checker approves the task when the event creates one. `via` is how it is sent: `trigger-event` (the
+  ID), the seed case's `eventRequest` over it, its shares of the notional (`[50%, 50%]`) sent as amounts of the live
+  trade's notional as the E2E step sends them, and the checker approves the task when the event creates one. `via` is how it is sent: `trigger-event` (the
   default, `POST /trades/trigger-event`, its `tradeIds` replaced) or `update` (the amendment,
   `POST /trades/<id>/update`, its task read from `msg`). The pair's composition must be registered, because the case
   data is per composition.

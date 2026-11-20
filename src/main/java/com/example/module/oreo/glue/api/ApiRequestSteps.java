@@ -3,6 +3,7 @@ package com.example.module.oreo.glue.api;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.example.genie.module.rest.service.RequestResponseHelper;
 import com.example.module.oreo.config.TestUser;
 import com.example.module.oreo.testdata.ProductDatFiles;
 import com.example.module.oreo.testdata.SetupData;
@@ -215,14 +216,33 @@ public class ApiRequestSteps {
             return;
         }
         String tradeId = ctx.get(varName);
-        JsonNode notional = RestApiUtil.get(ctx.helper(), TradeApiClient.tradePath(tradeId), TestUser.MAKER.email())
+        BigDecimal notional = notionalOf(ctx.helper(), tradeId, ctx.get("_tc.key"));
+        ctx.set(notionalKey(tradeId), notional.toPlainString());
+        ctx.write("[request] notional of trade " + tradeId + " = " + notional.toPlainString());
+    }
+
+    /**
+     * The notional of trade {@code tradeId} ({@code data.trade.basic.notionalAmount}), read as the maker, for
+     * {@code request} (a label) to give shares of.
+     */
+    static BigDecimal notionalOf(RequestResponseHelper helper, String tradeId, String request) {
+        JsonNode notional = RestApiUtil.get(helper, TradeApiClient.tradePath(tradeId), TestUser.MAKER.email())
                 .path("data").path("trade").path("basic").path("notionalAmount");
         if (!notional.isNumber()) {
-            throw new AssertionError("[ApiRequestSteps] the request of " + ctx.get("_tc.key") + " gives shares of the"
+            throw new AssertionError("[ApiRequestSteps] the request of " + request + " gives shares of the"
                     + " notional, and trade " + tradeId + " has no numeric data.trade.basic.notionalAmount: " + notional);
         }
-        ctx.set(notionalKey(tradeId), notional.decimalValue().toPlainString());
-        ctx.write("[request] notional of trade " + tradeId + " = " + notional.decimalValue().toPlainString());
+        return notional.decimalValue();
+    }
+
+    /** Replaces each share of the notional in {@code body}'s {@code data} values by its amount of {@code notional}. */
+    static void putAmounts(ObjectNode body, BigDecimal notional) {
+        for (JsonNode entry : body.path("data")) {
+            String value = entry.path("value").asText();
+            if (isShares(value)) {
+                ((ObjectNode) entry).put("value", amountsOfShares(value, notional));
+            }
+        }
     }
 
     @Given("^set json request body from current scenario with trade id from stored variable '([^']*)'$")
@@ -392,12 +412,7 @@ public class ApiRequestSteps {
                             + tradeId + ", which was not read: build the request with 'build json request from"
                             + " current scenario with trade id from stored variable ...'");
                 }
-                for (JsonNode entry : body.path("data")) {
-                    String value = entry.path("value").asText();
-                    if (isShares(value)) {
-                        ((ObjectNode) entry).put("value", amountsOfShares(value, new BigDecimal(notional)));
-                    }
-                }
+                putAmounts(body, new BigDecimal(notional));
             }
             String finalRequestBody = MAPPER.writeValueAsString(body);
             // what was sent, amounts included: the assertions on the event compare with it
@@ -419,7 +434,7 @@ public class ApiRequestSteps {
     }
 
     /** Whether a {@code data} value of the request is a share or a list of shares of the notional. */
-    private static boolean hasShares(JsonNode request) {
+    static boolean hasShares(JsonNode request) {
         for (JsonNode entry : request.path("data")) {
             if (isShares(entry.path("value").asText())) return true;
         }
