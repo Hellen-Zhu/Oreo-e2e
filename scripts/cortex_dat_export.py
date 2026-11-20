@@ -37,7 +37,7 @@ LOCATORS = {
     # The INSTRUMENT cell of the first row ({FXFVA}, {FXAverageRateOption}): its text, or an offset.
     "tds_instrument_cell": r"^\{.+\}$",
     "tds_instrument_offset": None,
-    "object_window": r"^(?!.*TDS Browser).*\d{8} VS\d{4}.*",   # the window with Import / Compare / Export / Link
+    "object_window": r"^Viewer - .*",                  # "Viewer - {value} <build> VS2022 ...": Import / Export / Link
     "object_cell": r".*Object ITradeable.*",
     "object_cell_offset": None,
     "view_window": r"^View$",
@@ -174,8 +174,8 @@ def where() -> None:
     from ctypes import wintypes
 
     user32 = ctypes.windll.user32
-    print("Point at a cell; the position is read in 5 seconds.")
-    time.sleep(5)
+    print("Switch to Cortex (Alt+Tab) and point at the cell; the position is read in 8 seconds.")
+    time.sleep(8)
     point = wintypes.POINT()
     user32.GetCursorPos(ctypes.byref(point))
     window = user32.GetAncestor(user32.WindowFromPoint(point), 2)          # GA_ROOT: the top-level window
