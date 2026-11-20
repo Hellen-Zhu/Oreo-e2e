@@ -76,10 +76,24 @@ class Cortex:
         self.close_all(*LOCATORS["close_first"])
 
     def window(self, title_re: str, timeout: float = WAIT["window"]):
-        # found_index: a window left open by an earlier try has the same title; the first one is enough
-        w = self.desktop.window(title_re=title_re, found_index=0)
-        w.wait("visible", timeout=timeout)
-        return w
+        """The first visible window with this title. UI Automation lists a modal dialog (Save As) under the window
+        that owns it, not on the desktop: the Win32 list of top-level windows, which has it, is tried too."""
+        from pywinauto import Desktop
+
+        win32 = Desktop(backend="win32")
+        deadline = time.time() + timeout
+        while True:
+            # found_index: a window left open by an earlier try has the same title; the first one is enough
+            for desktop in (self.desktop, win32):
+                w = desktop.window(title_re=title_re, found_index=0)
+                try:
+                    if w.exists(timeout=0) and w.is_visible():
+                        return w
+                except Exception:
+                    pass
+            if time.time() > deadline:
+                raise TimeoutError(f"no visible window titled {title_re!r} in {timeout:.0f} s")
+            time.sleep(0.5)
 
     def close_all(self, *titles_re: str) -> None:
         """Closes the windows an earlier try left open, so that each title names one window."""
@@ -201,18 +215,14 @@ class Cortex:
 
         with step("10 save as <trade ID>.dat (save_dialog)"):
             save.set_focus()
-            try:
-                name = save.child_window(title="File name:", control_type="Edit", found_index=0) \
-                    if LOCATORS["backend"] == "uia" else save.child_window(class_name="Edit", found_index=0)
-                name.set_edit_text(str(target))
-                name.set_focus()
-            except Exception:                                   # the box by its shortcut: Alt+N, File name
-                escaped = "".join("{" + c + "}" if c in "+^%~(){}[]" else c for c in str(target))
-                send_keys("%n^a{BACKSPACE}" + escaped, with_spaces=True)
+            time.sleep(0.3)
+            # Alt+N is the File name box; the type is already "Cortex object file (*.dat)"
+            escaped = "".join("{" + c + "}" if c in "+^%~(){}[]" else c for c in str(target))
+            send_keys("%n^a{BACKSPACE}" + escaped, with_spaces=True)
             time.sleep(0.3)
             send_keys("{ENTER}")
             try:
-                self.desktop.window(title_re=LOCATORS["confirm_dialog"]).wait("visible", timeout=2)
+                self.window(LOCATORS["confirm_dialog"], timeout=2)
                 send_keys("%y")                                   # overwrite: Yes
             except Exception:
                 pass
