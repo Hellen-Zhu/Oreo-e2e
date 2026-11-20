@@ -25,15 +25,14 @@ import java.util.regex.Pattern;
  * The SIT seed: trades booked in bulk for UAT, not tests. A booking is named in the seed features by its seed case ID
  * ({@code SEED-TRADE-001}), its composition (the Excel's Itradeable Type, the E2E's composition), product ID and ISDA
  * taxonomy after the asset class ({@code ComplexExotic}, a label); its catalog, {@code seed/catalog.json} on the
- * classpath, maps each Itradeable Type to its composition, one to one, and holds what a pair needs beyond its IDs,
- * the variants and the lifecycle events. Its manifest,
- * {@code target/seed/manifest-<date>.jsonl} under the project, holds one line per booking, which
- * {@code TestDataTool seed-report} turns into the summary for UAT. Details: {@code docs/sit-seed.md}.
+ * classpath, maps each composition to its Itradeable Type, one to one, and holds what a pair needs beyond its IDs,
+ * the variants and the lifecycle events. Its manifest, {@code target/seed/manifest-<date>.jsonl} under the project,
+ * holds one line per booking, which {@code TestDataTool seed-report} turns into the summary for UAT. Details: {@code docs/sit-seed.md}.
  *
  * <ul>
- *   <li>{@code itradeableTypes}, {@code {"<Itradeable Type>": "<composition>"}}: the Excel's full Itradeable Type
- *       of each composition the seed books ({@code Cortex.Finance.Tradeable.TRF} is {@code FX_TRF}), one to one. A booking's composition
- *       must be in it; its Itradeable Type goes to the manifest and the report.</li>
+ *   <li>{@code itradeableTypes}, {@code {"<composition>": "<Itradeable Type>"}}: the Excel's full Itradeable Type
+ *       of each composition the seed books ({@code FX_TRF} is {@code Cortex.Finance.Tradeable.TRF}), one to one. A
+ *       booking's composition must be in it; its Itradeable Type goes to the manifest and the report.</li>
  *   <li>A pair's dat file: a composition registered in {@link ProductDatFiles} takes it from {@code data/dat/<C>/}
  *       ({@code <C>.dat}), any other from {@code seed/dat/<C>/} ({@code <productId>.dat}). {@code trades}, a list of
  *       {@code {"composition", "productId", "taxonomy"?, "dat"?, "setup"?}}, gives another file name or another body
@@ -64,12 +63,12 @@ public final class SeedData {
     private static final Pattern CASE = Pattern.compile("SEED-[A-Z]+-[0-9]{3}");
 
     /**
-     * What one booking sends: a composition, its Itradeable Type and a product ID, the ISDA taxonomy after its asset class (a label of
-     * the booking, {@code null} for none), the variant ({@code null} for none), the classpath path of its dat file,
-     * its setup body; {@code registered} when the composition is in {@link ProductDatFiles}.
+     * What one booking sends: a composition, its Itradeable Type and a product ID, the ISDA taxonomy after its asset
+     * class (a label of the booking, {@code null} for none), the variant ({@code null} for none), the classpath path
+     * of its dat file, its setup body; {@code registered} when the composition is in {@link ProductDatFiles}.
      */
-    public record Trade(String composition, String itradeableType, String productId, String taxonomy, String variant, String dat,
-                        String setup, boolean registered) {}
+    public record Trade(String composition, String itradeableType, String productId, String taxonomy,
+                        String variant, String dat, String setup, boolean registered) {}
 
     /** A lifecycle event of the catalog, booked with the request of the E2E case {@code caseId} through {@code via}. */
     public record Event(String name, String caseId, String via) {}
@@ -81,17 +80,15 @@ public final class SeedData {
 
     private record Override(String dat, String setup) {}
 
-    /** Itradeable Type -> composition, and back: one to one. */
+    /** Composition -> Itradeable Type, one to one. */
     private final Map<String, String> itradeableTypes;
-    private final Map<String, String> typeOfComposition;
     private final Map<String, Override> overrides;
     private final Map<String, String> variants;
     private final Map<String, Event> events;
 
-    private SeedData(Map<String, String> itradeableTypes, Map<String, String> typeOfComposition,
-                     Map<String, Override> overrides, Map<String, String> variants, Map<String, Event> events) {
+    private SeedData(Map<String, String> itradeableTypes, Map<String, Override> overrides,
+                     Map<String, String> variants, Map<String, Event> events) {
         this.itradeableTypes = itradeableTypes;
-        this.typeOfComposition = typeOfComposition;
         this.overrides = overrides;
         this.variants = variants;
         this.events = events;
@@ -130,25 +127,26 @@ public final class SeedData {
     /** The catalog {@code root}, read from {@code resource} (named in the errors). */
     static SeedData fromJson(String resource, JsonNode root) {
         Map<String, String> itradeableTypes = new LinkedHashMap<>();
-        Map<String, String> typeOfComposition = new LinkedHashMap<>();
+        Map<String, String> compositionOfType = new LinkedHashMap<>();
         JsonNode types = root.path("itradeableTypes");
         if (!types.isMissingNode() && !types.isObject()) {
-            throw new IllegalStateException("[Seed] " + resource + " itradeableTypes: {\"<Itradeable Type>\":"
-                    + " \"<composition>\"}");
+            throw new IllegalStateException("[Seed] " + resource + " itradeableTypes: {\"<composition>\":"
+                    + " \"<Itradeable Type>\"}");
         }
         types.properties().forEach(e -> {
             String at = "[Seed] " + resource + " itradeableTypes." + e.getKey();
-            if (!ITRADEABLE_TYPE.matcher(e.getKey()).matches()) {
-                throw new IllegalStateException(at + ": an Itradeable Type is its full dotted name"
-                        + " (Cortex.Finance.Tradeable.TRF)");
+            String composition = id(at, "composition", e.getKey());
+            String type = e.getValue().isTextual() ? e.getValue().asText().trim() : "";
+            if (!ITRADEABLE_TYPE.matcher(type).matches()) {
+                throw new IllegalStateException(at + ": the Itradeable Type is its full dotted name"
+                        + " (Cortex.Finance.Tradeable.TRF), not '" + e.getValue().asText() + "'");
             }
-            String composition = id(at, "composition", e.getValue().isTextual() ? e.getValue().asText() : null);
-            String other = typeOfComposition.put(composition, e.getKey());
+            String other = compositionOfType.put(type, composition);
             if (other != null) {
-                throw new IllegalStateException(at + ": " + composition + " is already Itradeable Type " + other
+                throw new IllegalStateException(at + ": " + type + " is already the Itradeable Type of " + other
                         + " (one to one)");
             }
-            itradeableTypes.put(e.getKey(), composition);
+            itradeableTypes.put(composition, type);
         });
         Map<String, Override> overrides = new LinkedHashMap<>();
         JsonNode trades = root.path("trades");
@@ -180,9 +178,8 @@ public final class SeedData {
         });
         Map<String, Event> events = new LinkedHashMap<>();
         root.path("events").properties().forEach(e -> events.put(e.getKey(), event(resource, e.getKey(), e.getValue())));
-        return new SeedData(Collections.unmodifiableMap(itradeableTypes),
-                Collections.unmodifiableMap(typeOfComposition), Collections.unmodifiableMap(overrides), Collections.unmodifiableMap(variants),
-                Collections.unmodifiableMap(events));
+        return new SeedData(Collections.unmodifiableMap(itradeableTypes), Collections.unmodifiableMap(overrides),
+                Collections.unmodifiableMap(variants), Collections.unmodifiableMap(events));
     }
 
     private static Event event(String resource, String name, JsonNode node) {
@@ -219,7 +216,7 @@ public final class SeedData {
         id(at, "composition", composition);
         id(at, "productId", productId);
         if (taxonomy != null) taxonomy(at, taxonomy);
-        String itradeableType = typeOfComposition.get(composition);
+        String itradeableType = itradeableTypes.get(composition);
         if (itradeableType == null) {
             throw new IllegalStateException(at + ": composition " + composition + " has no Itradeable Type in "
                     + CATALOG + " itradeableTypes");
@@ -297,7 +294,7 @@ public final class SeedData {
         return value == null || value.isNull() || value.asText().isBlank() ? null : value.asText().trim();
     }
 
-    /** Itradeable Type -> composition, one to one. */
+    /** Composition -> Itradeable Type, one to one. */
     public Map<String, String> itradeableTypes() {
         return itradeableTypes;
     }

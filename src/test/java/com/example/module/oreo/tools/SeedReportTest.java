@@ -23,8 +23,8 @@ public class SeedReportTest {
                 Json.parse("""
                         {"kind": "trade", "composition": "FX_NEW", "productId": "FX_NEW", "status": "failed"}"""));
         List<JsonNode> filled = SeedReport.withItradeableTypes(entries,
-                Map.of("Cortex.Finance.Tradeable.PayoffScript.Ctrl.FloatingStrikeB", "FX_FSB",
-                        "Cortex.Finance.Tradeable.TRF", "FX_TRF"));
+                Map.of("FX_FSB", "Cortex.Finance.Tradeable.PayoffScript.Ctrl.FloatingStrikeB",
+                        "FX_TRF", "Cortex.Finance.Tradeable.TRF"));
         assertEquals("Cortex.Finance.Tradeable.PayoffScript.Ctrl.FloatingStrikeB",
                 filled.get(0).path("itradeableType").asText());
         assertEquals("T.Recorded", filled.get(1).path("itradeableType").asText());

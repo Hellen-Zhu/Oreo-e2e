@@ -74,15 +74,13 @@ final class SeedReport {
     }
 
     /**
-     * {@code entries} with the Itradeable Type of each one's composition, from {@code types} (Itradeable Type ->
-     * composition), where a line has none: lines written before the manifest carried it.
+     * {@code entries} with the Itradeable Type of each one's composition, from {@code types} (composition ->
+     * Itradeable Type), where a line has none: lines written before the manifest carried it.
      */
     static List<JsonNode> withItradeableTypes(List<JsonNode> entries, Map<String, String> types) {
-        Map<String, String> typeOf = new LinkedHashMap<>();
-        types.forEach((type, composition) -> typeOf.put(composition, type));
         List<JsonNode> out = new ArrayList<>();
         for (JsonNode entry : entries) {
-            String type = typeOf.get(entry.path("composition").asText());
+            String type = types.get(entry.path("composition").asText());
             if (entry.hasNonNull("itradeableType") || type == null || !entry.isObject()) {
                 out.add(entry);
             } else {

@@ -10,7 +10,7 @@ data). When the API changes, one fix serves both.
 | What | Where |
 |---|---|
 | Runner, never run by a plain `mvn test` (surefire excludes it) | `src/test/java/com/example/module/oreo/SeedTest.java` |
-| Catalog: Itradeable Type → composition, what a pair needs beyond its IDs, variants, events | `src/test/resources/seed/catalog.json` (`SeedData`) |
+| Catalog: composition → Itradeable Type, what a pair needs beyond its IDs, variants, events | `src/test/resources/seed/catalog.json` (`SeedData`) |
 | What a run books: one row per seed case (composition, product ID, taxonomy), variant or event | `src/test/resources/seed/features/*.feature` |
 | Steps | `glue/api/SeedSteps.java` |
 | Manifest: one line per booking or failure | `target/seed/manifest-<date>.jsonl` (generated, never committed) |
@@ -37,13 +37,13 @@ One composition can be booked under several product IDs, and one pair under seve
 composition, product ID, taxonomy, variant and event, when a row's dat file or setup is missing, and when an event's
 composition is not registered. Continue the numbering for a new row; never renumber, UAT knows the cases by their IDs.
 
-The catalog maps each Itradeable Type to its composition and holds what a pair needs beyond its two IDs:
+The catalog maps each composition to its Itradeable Type and holds what a pair needs beyond its two IDs:
 
 ```json
 {
   "itradeableTypes": {
-    "Cortex.Finance.Tradeable.PayoffScript.Ctrl.TRFGeneric": "FX_PSCRIPT_TRF",
-    "Cortex.Finance.Tradeable.TRF": "FX_TRF"
+    "FX_PSCRIPT_TRF": "Cortex.Finance.Tradeable.PayoffScript.Ctrl.TRFGeneric",
+    "FX_TRF":         "Cortex.Finance.Tradeable.TRF"
   },
   "trades": [
     { "composition": "FX_EXAMPLE", "productId": "FX_EXAMPLE_1", "dat": "OTHER.dat", "setup": "trade-create-example" },
@@ -59,10 +59,10 @@ The catalog maps each Itradeable Type to its composition and holds what a pair n
 }
 ```
 
-- **`itradeableTypes`**: the Excel's full Itradeable Type (column E, `Cortex.FX.FXVanilla.Tradeable.FXAverageRateOption`)
-  of each composition the seed books, one to one: the one place where the two names meet. The sheet's composition
+- **`itradeableTypes`**: each composition the seed books, with its full Itradeable Type of the Excel (column E,
+  `Cortex.FX.FXVanilla.Tradeable.FXAverageRateOption`), one to one: the one place where the two names meet. The sheet's composition
   column is the E2E's except `FX_PSCRIPT_FSB`, booked as `FX_FSB`. A row whose composition is
-  not in it fails, and so does a composition under two Itradeable Types. The manifest and the report carry the
+  not in it fails, and so does an Itradeable Type given to two compositions. The manifest and the report carry the
   Itradeable Type beside the composition, so UAT reads its own name.
 - **Dat file**: a composition registered in `ProductDatFiles` takes `data/dat/<C>/<C>.dat`; any other takes
   `seed/dat/<C>/<productId>.dat`. Do not register a seed-only composition in `ProductDatFiles`: it would join every

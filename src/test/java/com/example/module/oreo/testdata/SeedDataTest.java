@@ -107,7 +107,7 @@ public class SeedDataTest {
     @Test
     public void aPairTakesItsDatFileByWhetherItsCompositionIsRegistered() {
         SeedData catalog = SeedData.fromJson("t.json", Json.parse("""
-                {"itradeableTypes": {"T.X": "FX_X", "T.FXBO": "FXBO", "Cortex.Finance.Tradeable.TRF": "FX_TRF"},
+                {"itradeableTypes": {"FX_X": "T.X", "FXBO": "T.FXBO", "FX_TRF": "Cortex.Finance.Tradeable.TRF"},
                  "trades": [{"composition": "FX_X", "productId": "FX_X2", "dat": "OTHER.dat", "setup": "other-body"}],
                  "variants": {"stepin-full": {"setup": "trade-create-stepin-full"}}}"""));
         SeedData.Trade x = catalog.trade("FX_X", "FX_X1", null);
@@ -128,7 +128,7 @@ public class SeedDataTest {
     @Test
     public void anEntryWithATaxonomyWinsOverOneWithout() {
         SeedData catalog = SeedData.fromJson("t.json", Json.parse("""
-                {"itradeableTypes": {"T.X": "FX_X", "T.FXBO": "FXBO", "Cortex.Finance.Tradeable.TRF": "FX_TRF"},
+                {"itradeableTypes": {"FX_X": "T.X", "FXBO": "T.FXBO", "FX_TRF": "Cortex.Finance.Tradeable.TRF"},
                  "trades": [{"composition": "FXBO", "productId": "FX_BO_X", "setup": "body-a"},
                             {"composition": "FXBO", "productId": "FX_BO_X", "taxonomy": "Metals:Precious:Exotic",
                              "setup": "body-b"}]}"""));
@@ -144,7 +144,7 @@ public class SeedDataTest {
     @Test
     public void anEventNeedsARegisteredComposition() {
         SeedData catalog = SeedData.fromJson("t.json", Json.parse("""
-                {"itradeableTypes": {"T.X": "FX_X", "T.FXBO": "FXBO", "Cortex.Finance.Tradeable.TRF": "FX_TRF"},
+                {"itradeableTypes": {"FX_X": "T.X", "FXBO": "T.FXBO", "FX_TRF": "Cortex.Finance.Tradeable.TRF"},
                  "events": {"termination": {"case": "TC-TRADE-EARLY-TERMINATION-<product_type>-API-001"}}}"""));
         try {
             SeedData.eventRequest(catalog.event("termination"), catalog.trade("FX_X", "FX_X1", null));
@@ -186,13 +186,15 @@ public class SeedDataTest {
         bad("""
                 {"itradeableTypes": []}""", "itradeableTypes:");
         bad("""
-                {"itradeableTypes": {"FX_PSCRIPT_FSB": "FX_FSB"}}""", "full dotted name");
+                {"itradeableTypes": {"FX_FSB": "FX_PSCRIPT_FSB"}}""", "full dotted name");
         bad("""
-                {"itradeableTypes": {"T.FSB": 1}}""", "\"composition\"");
+                {"itradeableTypes": {"FX_FSB": 1}}""", "full dotted name");
         bad("""
-                {"itradeableTypes": {"T.FSB": "FX_FSB", "T.FSB2": "FX_FSB"}}""", "one to one");
+                {"itradeableTypes": {"FX FSB": "T.FSB"}}""", "\"composition\"");
+        bad("""
+                {"itradeableTypes": {"FX_FSB": "T.FSB", "FX_FSB2": "T.FSB"}}""", "one to one");
         SeedData catalog = SeedData.fromJson("t.json", Json.parse("""
-                {"itradeableTypes": {"Cortex.Finance.Tradeable.TRF": "FX_TRF"}}"""));
+                {"itradeableTypes": {"FX_TRF": "Cortex.Finance.Tradeable.TRF"}}"""));
         try {
             catalog.trade("FX_CO", "FX_PSCRIPT", null);
             fail("a composition needs its Itradeable Type");
