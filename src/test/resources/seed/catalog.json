@@ -1,5 +1,5 @@
 {
-  "_comment": "The SIT seed's catalog (docs/sit-seed.md), read by SeedData. trades: a registered composition, or productId + dat (classpath path of its dat file, e.g. seed/dat/<name>.dat); setup is the body in data/setup (trade-create when absent). events: the E2E Outline whose positive case's request books the event. The rows the seed features book are named here; a new product is a trade here and a row in seed_new_trades.feature.",
+  "_comment": "The SIT seed's catalog (docs/sit-seed.md), read by SeedData. trades: a registered composition, or productId + dat (classpath path of its dat file, e.g. seed/dat/<name>.dat); setup is the body in data/setup (trade-create when absent). events: the E2E Outline whose positive case's request books the event, via trigger-event (the default) or update (the amendment). The rows the seed features book are named here; a new product is a trade here and a row in seed_new_trades.feature.",
   "trades": {
     "fx-trf": { "composition": "FX_TRF" },
     "fx-co": { "composition": "FX_CO" },
@@ -12,6 +12,8 @@
   },
   "events": {
     "allocation-full": { "case": "TC-TRADE-ALLOCATION-<product_type>-API-001" },
+    "amendment": { "case": "TC-TRADE-AMENDMENT-<product_type>-API-001", "via": "update" },
+    "withdrawal": { "case": "TC-TRADE-CANCELLATION-<product_type>-API-001" },
     "termination": { "case": "TC-TRADE-EARLY-TERMINATION-<product_type>-API-001" },
     "remaining-party-full": { "case": "TC-TRADE-NOVATION-REMAINING-<product_type>-API-001" },
     "remaining-party-partial": { "case": "TC-TRADE-PARTIAL-NOVATION-REMAINING-<product_type>-API-001" },

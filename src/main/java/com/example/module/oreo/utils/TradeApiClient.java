@@ -179,8 +179,14 @@ public final class TradeApiClient {
     }
 
     public static JsonNode updateTrade(RequestResponseHelper helper, String tradeId, String userId, String testDataKey) {
-        log.info("[TradeApiClient] updateTrade: tradeId='{}', userId='{}', testDataKey='{}'", tradeId, userId, testDataKey);
-        return RestApiUtil.post(helper, updatePath(tradeId), userId, TestData.setup(testDataKey).request());
+        return updateTradeWithBody(helper, tradeId, userId, TestData.setup(testDataKey).request(), testDataKey);
+    }
+
+    /** Posts {@code requestJson} to the trade's update path as {@code userId}; {@code what} names the body in the log. */
+    public static JsonNode updateTradeWithBody(RequestResponseHelper helper, String tradeId, String userId,
+                                               String requestJson, String what) {
+        log.info("[TradeApiClient] updateTrade: tradeId='{}', userId='{}', body='{}'", tradeId, userId, what);
+        return RestApiUtil.post(helper, updatePath(tradeId), userId, requestJson);
     }
 
     // ── Lifecycle events ─────────────────────────────────────────────────
@@ -281,11 +287,23 @@ public final class TradeApiClient {
      */
     public static CreatedTrade provisionPendingAmendment(RequestResponseHelper helper, String tradeId,
                                                          String testDataKey) {
-        JsonNode response = updateTrade(helper, tradeId, TestUser.MAKER.email(), testDataKey);
+        return provisionPendingAmendmentWithBody(helper, tradeId, TestData.setup(testDataKey).request(),
+                "setup " + testDataKey);
+    }
+
+    /**
+     * The amendment {@code requestJson} submitted by the maker on trade {@code tradeId}, pending the checker: the
+     * trade with the amendment's checker task, read from the response's {@code msg}; {@code what} names the body.
+     *
+     * @throws AssertionError when the message names no task
+     */
+    public static CreatedTrade provisionPendingAmendmentWithBody(RequestResponseHelper helper, String tradeId,
+                                                                 String requestJson, String what) {
+        JsonNode response = updateTradeWithBody(helper, tradeId, TestUser.MAKER.email(), requestJson, what);
         String msg = response.path("msg").asText(response.at("/data/msg").asText(""));
         Matcher taskId = TASK_ID_IN_MSG.matcher(msg);
         if (!taskId.find()) {
-            throw new AssertionError("[TradeApiClient] setup " + testDataKey + " on " + tradeId
+            throw new AssertionError("[TradeApiClient] " + what + " on " + tradeId
                     + " names no checker task in msg: " + response);
         }
         return new CreatedTrade(tradeId, taskId.group(1).replaceAll("\\.$", ""));

@@ -99,6 +99,13 @@ public class SeedDataTest {
     }
 
     @Test
+    public void anEventIsTriggeredUnlessItGoesThroughTheUpdate() {
+        SeedData catalog = SeedData.load(SeedData.CATALOG);
+        assertEquals(SeedData.TRIGGER_EVENT, catalog.event("withdrawal").via());
+        assertEquals(SeedData.UPDATE, catalog.event("amendment").via());
+    }
+
+    @Test
     public void badEntriesNameWhereTheyAre() {
         bad("""
                 {"trades": {}}""", "no trades");
@@ -111,6 +118,9 @@ public class SeedDataTest {
         bad("""
                 {"trades": {"fx": {"composition": "FX_TRF"}}, "events": {"e": {"case": "TC-TRADE-X-FX_TRF-API-001"}}}""",
                 "events.e");
+        bad("""
+                {"trades": {"fx": {"composition": "FX_TRF"}},
+                 "events": {"e": {"case": "TC-TRADE-AMENDMENT-<product_type>-API-001", "via": "put"}}}""", "\"via\"");
     }
 
     @Test

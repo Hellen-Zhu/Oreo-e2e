@@ -28,7 +28,8 @@ The seed features are outside `features/`: `OreoTest`, `check` and `sync-example
     "fx-example": { "productId": "FX_EXAMPLE", "dat": "seed/dat/fx-example.dat" }
   },
   "events": {
-    "termination": { "case": "TC-TRADE-EARLY-TERMINATION-<product_type>-API-001" }
+    "termination": { "case": "TC-TRADE-EARLY-TERMINATION-<product_type>-API-001" },
+    "amendment": { "case": "TC-TRADE-AMENDMENT-<product_type>-API-001", "via": "update" }
   }
 }
 ```
@@ -38,9 +39,10 @@ The seed features are outside `features/`: `OreoTest`, `check` and `sync-example
   registering them in `ProductDatFiles` would add them to every product Outline.
 - `setup` is the body (`data/setup/<name>.json`, default `trade-create`). A variant (StepIn, another entity or
   portfolio) is a setup file that `extends` `trade-create`.
-- **An event** is sent with the request of an E2E positive case (`case`, the Outline's ID). Its `tradeIds` are replaced
-  by a new live trade, and the checker approves the task when the event creates one. The trade must be a composition,
-  because the case data is per composition.
+- **An event** is sent on a new live trade with the request of an E2E positive case (`case`, the Outline's ID), and the
+  checker approves the task when the event creates one. `via` is how it is sent: `trigger-event` (the default,
+  `POST /trades/trigger-event`, its `tradeIds` replaced) or `update` (the amendment, `POST /trades/<id>/update`, its
+  task read from `msg`). The trade must be a composition, because the case data is per composition.
 - Names are lower case, digits and `-`. `SeedDataTest` checks that every row of the seed features is in the catalog
   and every setup exists.
 
@@ -81,13 +83,12 @@ and lists the failures.
 
 ## Open
 
-- Excel events not mapped yet:
-  - **Amendment**: it goes through the trade update, not `trigger-event`, so it needs its own step.
-  - **Withdrawal**: is it Cancellation?
-  - **OptionEvent_knockout**: needs market data that triggers the knock-out.
+- The Excel's events and the catalog: Withdrawal is `withdrawal` (Cancellation), Amendment is `amendment` (`via:
+  update`), StepInFull / StepInPartial are trades (`*-stepin-full`, `*-stepin-partial`). OptionEvent_knockout is left
+  out for now: it needs market data that triggers the knock-out.
 - To confirm: RemainingPartyFull / RemainingPartyPartial are NovationRemaining / PartialNovationRemaining, and the
   Excel's FX_PSCRIPT with payoff script TRFGeneric is the composition FX_PSCRIPT_TRF.
 - The new-trade sheet's product IDs beyond the four registered compositions: each needs its dat template, and the
   entity and portfolio of its row, as setup data on the company copy.
-- The public copy has only some events' case data (allocation, early termination). The other events resolve on the
-  company copy.
+- The public copy has only some events' case data (allocation, early termination). The other events, amendment and
+  cancellation among them, resolve on the company copy.

@@ -33,8 +33,9 @@ import java.util.regex.Pattern;
  *       ({@code "productId"}, {@code "dat"}); {@code "setup"} is the body, {@code data/setup/<name>.json}
  *       ({@code trade-create} when absent).</li>
  *   <li>An event is booked with the request of an E2E case ({@code "case"}, the Outline's ID with
- *       {@code <product_type>}), its {@code tradeIds} replaced by the trade booked for it: one body for the test and
- *       the seed. Its trade must be a composition, the case's product.</li>
+ *       {@code <product_type>}) on the trade booked for it: one body for the test and the seed. {@code "via"} is
+ *       {@code trigger-event} (the default, the body's {@code tradeIds} replaced) or {@code update} (the amendment,
+ *       posted to the trade's update path). Its trade must be a composition, the case's product.</li>
  * </ul>
  */
 public final class SeedData {
@@ -47,8 +48,16 @@ public final class SeedData {
     /** A trade of the catalog; {@code composition} is {@code null} for a product ID that is not registered. */
     public record Trade(String name, String composition, String productId, String dat, String setup) {}
 
-    /** A lifecycle event of the catalog, booked with the request of the E2E case {@code caseId} (with its product). */
-    public record Event(String name, String caseId) {}
+    /**
+     * A lifecycle event of the catalog, booked with the request of the E2E case {@code caseId} (with its product)
+     * through {@code via}: {@link #TRIGGER_EVENT} or {@link #UPDATE}.
+     */
+    public record Event(String name, String caseId, String via) {}
+
+    /** An event sent to {@code POST /trades/trigger-event}, its {@code tradeIds} replaced: the default. */
+    public static final String TRIGGER_EVENT = "trigger-event";
+    /** An event sent to {@code POST /trades/<id>/update}, the trade amendment. */
+    public static final String UPDATE = "update";
 
     private final Map<String, Trade> trades;
     private final Map<String, Event> events;
@@ -128,7 +137,12 @@ public final class SeedData {
             throw new IllegalStateException(at + ": \"case\" is the E2E Outline's case ID with " + PRODUCT);
         }
         CaseId.checkRowId(caseId);
-        return new Event(name, caseId);
+        String via = text(node, "via");
+        if (via == null) via = TRIGGER_EVENT;
+        if (!via.equals(TRIGGER_EVENT) && !via.equals(UPDATE)) {
+            throw new IllegalStateException(at + ": \"via\" is " + TRIGGER_EVENT + " (the default) or " + UPDATE);
+        }
+        return new Event(name, caseId, via);
     }
 
     private static void checkName(String at, String name) {

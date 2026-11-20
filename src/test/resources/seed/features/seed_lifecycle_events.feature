@@ -10,6 +10,8 @@ Feature: SIT seed - lifecycle events
     Examples:
       | event                   | trade          |
       | allocation-full         | fx-trf         |
+      | amendment               | fx-trf         |
+      | withdrawal              | fx-trf         |
       | termination             | fx-trf         |
       | remaining-party-full    | fx-trf         |
       | remaining-party-partial | fx-trf         |
@@ -18,6 +20,8 @@ Feature: SIT seed - lifecycle events
       | partial-termination     | fx-trf         |
       | portfolio-reassignment  | fx-trf         |
       | allocation-full         | fx-pscript-trf |
+      | amendment               | fx-pscript-trf |
+      | withdrawal              | fx-pscript-trf |
       | termination             | fx-pscript-trf |
       | remaining-party-full    | fx-pscript-trf |
       | remaining-party-partial | fx-pscript-trf |

@@ -46,8 +46,9 @@ public class SeedSteps {
     }
 
     /**
-     * The catalog's event {@code event} on a new live trade of the catalog's trade {@code name}: the event triggered
-     * by the maker with its E2E case's request and, when it made a checker task, approved by the checker.
+     * The catalog's event {@code event} on a new live trade of the catalog's trade {@code name}: the event sent by the
+     * maker with its E2E case's request (triggered, or the amendment through the trade's update) and, when it made a
+     * checker task, approved by the checker.
      */
     @Given("^seed event '([^']*)' is booked on a new live seed trade '([^']*)' via api$")
     public void bookEvent(String event, String name) throws Exception {
@@ -58,12 +59,19 @@ public class SeedSteps {
             String request = SeedData.eventRequest(e, trade);
             CreatedTrade live = live(trade);
             entry.put("tradeId", live.tradeId());
-            EventResult result = TradeApiClient.triggerEventWithBody(ctx.helper(), List.of(live.tradeId()),
-                    TestUser.MAKER.email(), request, e.caseId()).get(0);
-            entry.put("eventTaskId", result.checkerTaskId());
-            result.childTradeIds().forEach(entry.putArray("childTradeIds")::add);
-            if (!result.checkerTaskId().isBlank()) {
-                TradeApiClient.approveTask(ctx.helper(), result.checkerTaskId(), TestUser.CHECKER.email());
+            String taskId;
+            if (SeedData.UPDATE.equals(e.via())) {
+                taskId = TradeApiClient.provisionPendingAmendmentWithBody(ctx.helper(), live.tradeId(), request,
+                        e.caseId()).taskId();
+            } else {
+                EventResult result = TradeApiClient.triggerEventWithBody(ctx.helper(), List.of(live.tradeId()),
+                        TestUser.MAKER.email(), request, e.caseId()).get(0);
+                taskId = result.checkerTaskId();
+                result.childTradeIds().forEach(entry.putArray("childTradeIds")::add);
+            }
+            entry.put("eventTaskId", taskId);
+            if (!taskId.isBlank()) {
+                TradeApiClient.approveTask(ctx.helper(), taskId, TestUser.CHECKER.email());
             }
             done(entry);
         } catch (Exception | AssertionError ex) {
