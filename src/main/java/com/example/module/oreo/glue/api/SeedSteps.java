@@ -30,20 +30,25 @@ public class SeedSteps {
         this.ctx = RestServiceResolver.from(scenario);
     }
 
-    /** A live trade of {@code composition} under {@code productId}, approved by the checker. */
-    @Given("^a seed trade of composition '([^']*)' and product ID '([^']*)' is booked live via api$")
-    public void bookTrade(String composition, String productId) throws Exception {
-        book(SeedData.catalog().trade(composition, productId, null));
+    /**
+     * Seed case {@code caseId}: a live trade of {@code composition} under {@code productId}, approved by the checker;
+     * {@code taxonomy} (the ISDA taxonomy after its asset class) labels the booking.
+     */
+    @Given("^seed case '([^']*)' books a live trade of composition '([^']*)' and product ID '([^']*)' with taxonomy '([^']*)' via api$")
+    public void bookCase(String caseId, String composition, String productId, String taxonomy) throws Exception {
+        SeedData.checkCase(caseId);
+        book(SeedData.catalog().trade(composition, productId, taxonomy, null), caseId);
     }
 
     /** {@link #bookTrade} with the body of the catalog's variant {@code variant} (StepIn Full, ...). */
     @Given("^a '([^']*)' seed trade of composition '([^']*)' and product ID '([^']*)' is booked live via api$")
     public void bookVariant(String variant, String composition, String productId) throws Exception {
-        book(SeedData.catalog().trade(composition, productId, variant));
+        book(SeedData.catalog().trade(composition, productId, variant), null);
     }
 
-    private void book(SeedData.Trade trade) throws Exception {
+    private void book(SeedData.Trade trade, String caseId) throws Exception {
         ObjectNode entry = entry("trade", trade);
+        if (caseId != null) entry.put("case", caseId);
         try {
             CreatedTrade live = live(trade);
             entry.put("tradeId", live.tradeId()).put("taskId", live.taskId());
@@ -103,6 +108,7 @@ public class SeedSteps {
         if (env != null && !env.isBlank()) entry.put("env", env.trim());
         entry.put("kind", kind).put("composition", trade.composition()).put("productId", trade.productId())
                 .put("setup", trade.setup());
+        if (trade.taxonomy() != null) entry.put("taxonomy", trade.taxonomy());
         if (trade.variant() != null) entry.put("variant", trade.variant());
         return entry;
     }

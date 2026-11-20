@@ -23,8 +23,8 @@ import java.util.TreeMap;
  */
 final class SeedReport {
 
-    static final List<String> COLUMNS = List.of("env", "kind", "composition", "productId", "variant", "event",
-            "setup", "tradeId", "childTradeIds", "status", "at", "error");
+    static final List<String> COLUMNS = List.of("env", "kind", "case", "composition", "productId", "taxonomy",
+            "variant", "event", "setup", "tradeId", "childTradeIds", "status", "at", "error");
 
     private SeedReport() {}
 
@@ -69,7 +69,7 @@ final class SeedReport {
     private static String key(JsonNode entry) {
         return entry.path("env").asText("") + "|" + entry.path("kind").asText() + "|"
                 + entry.path("composition").asText() + "|" + entry.path("productId").asText() + "|"
-                + entry.path("variant").asText("") + "|" + entry.path("event").asText("");
+                + entry.path("taxonomy").asText("") + "|" + entry.path("variant").asText("") + "|" + entry.path("event").asText("");
     }
 
     static String csv(List<JsonNode> entries) {

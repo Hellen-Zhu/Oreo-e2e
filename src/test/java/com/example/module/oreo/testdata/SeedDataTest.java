@@ -44,8 +44,8 @@ public class SeedDataTest {
     }
 
     /**
-     * Every row of the seed features resolves (its IDs, variant and event), has its dat file and setup, and no two
-     * rows book the same thing; an event's composition is registered.
+     * Every row of the seed features resolves (its case ID, IDs, taxonomy, variant and event), has its dat file and
+     * setup, and no two rows book the same thing or share a case ID; an event's composition is registered.
      */
     @Test
     public void everyRowOfTheSeedFeaturesResolvesOnce() throws IOException, URISyntaxException {
@@ -53,6 +53,7 @@ public class SeedDataTest {
         Path features = Paths.get(getClass().getClassLoader().getResource("seed/features").toURI());
         Pattern row = Pattern.compile("^\\s*\\|(.*)\\|\\s*$");
         Set<String> seen = new HashSet<>();
+        Set<String> cases = new HashSet<>();
         int rows = 0;
         try (var files = Files.list(features)) {
             for (Path file : files.filter(f -> f.toString().endsWith(".feature")).sorted().toList()) {
@@ -70,8 +71,13 @@ public class SeedDataTest {
                     }
                     String variant = cell(header, cells, "variant");
                     String event = cell(header, cells, "event");
+                    String caseId = cell(header, cells, "case");
+                    if (caseId != null) {
+                        SeedData.checkCase(caseId);
+                        assertTrue(file + ": case ID twice: " + caseId, cases.add(caseId));
+                    }
                     SeedData.Trade trade = catalog.trade(cell(header, cells, "composition"),
-                            cell(header, cells, "product_id"), variant);
+                            cell(header, cells, "product_id"), cell(header, cells, "taxonomy"), variant);
                     assertTrue(file + ": no dat file " + trade.dat(),
                             getClass().getClassLoader().getResource(trade.dat()) != null);
                     TestData.setup(trade.setup());
@@ -80,7 +86,8 @@ public class SeedDataTest {
                         assertTrue(file + ": " + event + " on an unregistered " + trade.composition(),
                                 trade.registered());
                     }
-                    String key = trade.composition() + "|" + trade.productId() + "|" + variant + "|" + event;
+                    String key = trade.composition() + "|" + trade.productId() + "|" + trade.taxonomy() + "|"
+                            + variant + "|" + event;
                     assertTrue(file + " books twice: " + key, seen.add(key));
                     rows++;
                 }
@@ -112,6 +119,21 @@ public class SeedDataTest {
         assertEquals(ProductDatFiles.FX_TRF.path(), trf.dat());
         assertEquals("trade-create-stepin-full", trf.setup());
         assertEquals("stepin-full", trf.variant());
+    }
+
+    @Test
+    public void anEntryWithATaxonomyWinsOverOneWithout() {
+        SeedData catalog = SeedData.fromJson("t.json", Json.parse("""
+                {"trades": [{"composition": "FXBO", "productId": "FX_BO_X", "setup": "body-a"},
+                            {"composition": "FXBO", "productId": "FX_BO_X", "taxonomy": "Metals:Precious:Exotic",
+                             "setup": "body-b"}]}"""));
+        SeedData.Trade metals = catalog.trade("FXBO", "FX_BO_X", "Metals:Precious:Exotic", null);
+        assertEquals("body-b", metals.setup());
+        assertEquals("Metals:Precious:Exotic", metals.taxonomy());
+        assertEquals("seed/dat/FXBO/FX_BO_X.dat", metals.dat());
+        assertEquals("body-a", catalog.trade("FXBO", "FX_BO_X", "ComplexExotic", null).setup());
+        assertEquals("body-a", catalog.trade("FXBO", "FX_BO_X", null).setup());
+        assertEquals(SeedData.DEFAULT_SETUP, catalog.trade("FXBO", "FX_BO_Y", "ComplexExotic", null).setup());
     }
 
     @Test
@@ -149,13 +171,34 @@ public class SeedDataTest {
                 {"events": {"e": {"case": "TC-TRADE-X-FX_TRF-API-001"}}}""", "events.e");
         bad("""
                 {"events": {"e": {"case": "TC-TRADE-AMENDMENT-<product_type>-API-001", "via": "put"}}}""", "\"via\"");
+        bad("""
+                {"trades": [{"composition": "FX_X", "productId": "P", "taxonomy": "Complex Exotic"}]}""",
+                "\"taxonomy\"");
+        bad("""
+                {"trades": [{"composition": "FX_X", "productId": "P", "taxonomy": "A"},
+                            {"composition": "FX_X", "productId": "P", "taxonomy": "A"}]}""", "listed twice");
         SeedData catalog = SeedData.fromJson("t.json", Json.parse("{}"));
         try {
-            catalog.trade("fx_trf", "FX_TRF", null);
-            fail("an ID is upper case");
+            catalog.trade("FX-TRF", "FX_TRF", null);
+            fail("an ID is letters, digits and _");
         } catch (IllegalStateException e) {
             assertTrue(e.getMessage(), e.getMessage().contains("\"composition\" is an ID"));
         }
+        try {
+            catalog.trade("FX_TRF", "FX_TRF", "ComplexExotic (CorrOption)", null);
+            fail("a taxonomy is words joined by :");
+        } catch (IllegalStateException e) {
+            assertTrue(e.getMessage(), e.getMessage().contains("\"taxonomy\""));
+        }
+        for (String id : new String[] {"SEED-TRADE-1", "TC-TRADE-001", "seed-trade-001"}) {
+            try {
+                SeedData.checkCase(id);
+                fail("not a seed case ID: " + id);
+            } catch (IllegalStateException e) {
+                assertTrue(e.getMessage(), e.getMessage().contains("seed case ID"));
+            }
+        }
+        assertEquals("SEED-TRADE-001", SeedData.checkCase("SEED-TRADE-001"));
         try {
             catalog.trade("FX_TRF", "FX_TRF", "nope");
             fail("no such variant");

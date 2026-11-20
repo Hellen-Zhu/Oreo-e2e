@@ -138,7 +138,7 @@ coverage for the test lead.
   (`example.com`) are substituted. Missing code is not guessed, so the project is not expected to build here.
 - Placeholders (a comment only): `.gitattributes`, `.mcp.json`, `azure-pipelines-maven.yml`,
   `META-INF/services/com.example.genie.module.GenieModule`, and the dat files
-  `data/dat/{FX_TRF,FX_CO,FX_FSB,FX_PSCRIPT_TRF}`.
+  `data/dat/{FX_TRF,FX_CO,FX_FSB,FX_PSCRIPT_TRF}` and `seed/dat/<C>/<productId>.dat`.
 - Missing: `qa.properties` and the other environments' properties; the setup files `trade-cancellation` and
   `trade-amendment` (`check.knownMissingSetups` in `test-data.properties`).
 - Event data files exist for API `trade_creation`, `trade_early_termination`, `trade_allocation`,

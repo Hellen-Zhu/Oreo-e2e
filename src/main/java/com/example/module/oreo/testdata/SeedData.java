@@ -22,8 +22,9 @@ import java.util.Map;
 import java.util.regex.Pattern;
 
 /**
- * The SIT seed: trades booked in bulk for UAT, not tests. A booking is named in the seed features by its composition
- * (the Excel's Itradeable Type, the E2E's composition) and product ID; its catalog, {@code seed/catalog.json} on the
+ * The SIT seed: trades booked in bulk for UAT, not tests. A booking is named in the seed features by its seed case ID
+ * ({@code SEED-TRADE-001}), its composition (the Excel's Itradeable Type, the E2E's composition), product ID and ISDA
+ * taxonomy after the asset class ({@code ComplexExotic}, a label); its catalog, {@code seed/catalog.json} on the
  * classpath, holds only what a pair needs beyond that, the variants and the lifecycle events. Its manifest,
  * {@code target/seed/manifest-<date>.jsonl} under the project, holds one line per booking, which
  * {@code TestDataTool seed-report} turns into the summary for UAT. Details: {@code docs/sit-seed.md}.
@@ -31,8 +32,9 @@ import java.util.regex.Pattern;
  * <ul>
  *   <li>A pair's dat file: a composition registered in {@link ProductDatFiles} takes it from {@code data/dat/<C>/}
  *       ({@code <C>.dat}), any other from {@code seed/dat/<C>/} ({@code <productId>.dat}). {@code trades}, a list of
- *       {@code {"composition", "productId", "dat"?, "setup"?}}, gives another file name or another body for a pair;
- *       the body is {@code data/setup/<name>.json}, {@code trade-create} by default.</li>
+ *       {@code {"composition", "productId", "taxonomy"?, "dat"?, "setup"?}}, gives another file name or another body
+ *       for a pair, or for a pair with one taxonomy; the body is {@code data/setup/<name>.json}, {@code trade-create}
+ *       by default.</li>
  *   <li>A variant ({@code variants}, by name: {@code {"setup": ...}}) books a pair with another body: StepIn Full,
  *       StepIn Partial.</li>
  *   <li>An event is booked with the request of an E2E case ({@code "case"}, the Outline's ID with
@@ -49,14 +51,19 @@ public final class SeedData {
     public static final String SEED_DAT_DIR = "seed/dat/";
     private static final String PRODUCT = "<product_type>";
     private static final Pattern NAME = Pattern.compile("[a-z0-9][a-z0-9-]*");
-    private static final Pattern ID = Pattern.compile("[A-Z0-9][A-Z0-9_]*");
+    private static final Pattern ID = Pattern.compile("[A-Za-z0-9][A-Za-z0-9_]*");
+    /** The ISDA taxonomy after its asset class: {@code ComplexExotic}, {@code SimpleExotic:Digital}. */
+    private static final Pattern TAXONOMY = Pattern.compile("[A-Za-z]+(:[A-Za-z]+)*");
+    /** A seed case ID, the {@code case} column: {@code SEED-TRADE-001}. */
+    private static final Pattern CASE = Pattern.compile("SEED-[A-Z]+-[0-9]{3}");
 
     /**
-     * What one booking sends: a composition and a product ID, the classpath path of its dat file, its setup body,
-     * the variant ({@code null} for none); {@code registered} when the composition is in {@link ProductDatFiles}.
+     * What one booking sends: a composition and a product ID, the ISDA taxonomy after its asset class (a label of
+     * the booking, {@code null} for none), the variant ({@code null} for none), the classpath path of its dat file,
+     * its setup body; {@code registered} when the composition is in {@link ProductDatFiles}.
      */
-    public record Trade(String composition, String productId, String variant, String dat, String setup,
-                        boolean registered) {}
+    public record Trade(String composition, String productId, String taxonomy, String variant, String dat,
+                        String setup, boolean registered) {}
 
     /** A lifecycle event of the catalog, booked with the request of the E2E case {@code caseId} through {@code via}. */
     public record Event(String name, String caseId, String via) {}
@@ -113,17 +120,19 @@ public final class SeedData {
         Map<String, Override> overrides = new LinkedHashMap<>();
         JsonNode trades = root.path("trades");
         if (!trades.isMissingNode() && !trades.isArray()) {
-            throw new IllegalStateException("[Seed] " + resource + " trades: a list of {composition, productId, dat,"
-                    + " setup}");
+            throw new IllegalStateException("[Seed] " + resource + " trades: a list of {composition, productId,"
+                    + " taxonomy, dat, setup}");
         }
         for (int i = 0; i < trades.size(); i++) {
             JsonNode node = trades.get(i);
             String at = "[Seed] " + resource + " trades[" + i + "]";
             String composition = id(at, "composition", text(node, "composition"));
             String productId = id(at, "productId", text(node, "productId"));
+            String taxonomy = text(node, "taxonomy");
+            if (taxonomy != null) taxonomy(at, taxonomy);
             String dat = text(node, "dat");
             if (dat != null) checkDat(at, dat);
-            String key = key(composition, productId);
+            String key = key(composition, productId, taxonomy);
             if (overrides.put(key, new Override(dat, text(node, "setup"))) != null) {
                 throw new IllegalStateException(at + ": " + key + " is listed twice");
             }
@@ -158,17 +167,25 @@ public final class SeedData {
         return new Event(name, caseId, via);
     }
 
-    /**
-     * What a booking of {@code composition} under {@code productId} sends, as variant {@code variant} ({@code null}
-     * for none).
-     *
-     * @throws IllegalStateException when an ID is not one, or the catalog has no such variant
-     */
+    /** {@link #trade(String, String, String, String)} with no taxonomy. */
     public Trade trade(String composition, String productId, String variant) {
-        String at = "[Seed] " + composition + " + " + productId;
+        return trade(composition, productId, null, variant);
+    }
+
+    /**
+     * What a booking of {@code composition} under {@code productId} with {@code taxonomy} ({@code null} for none)
+     * sends, as variant {@code variant} ({@code null} for none). A {@code trades} entry with this taxonomy wins over
+     * one without.
+     *
+     * @throws IllegalStateException when an ID or the taxonomy is not one, or the catalog has no such variant
+     */
+    public Trade trade(String composition, String productId, String taxonomy, String variant) {
+        String at = "[Seed] " + key(composition, productId, taxonomy);
         id(at, "composition", composition);
         id(at, "productId", productId);
-        Override override = overrides.get(key(composition, productId));
+        if (taxonomy != null) taxonomy(at, taxonomy);
+        Override override = taxonomy == null ? null : overrides.get(key(composition, productId, taxonomy));
+        if (override == null) override = overrides.get(key(composition, productId, null));
         String setup = override == null || override.setup() == null ? DEFAULT_SETUP : override.setup();
         if (variant != null) {
             setup = variants.get(variant);
@@ -178,7 +195,7 @@ public final class SeedData {
         ProductDatFiles registered = registered(composition);
         String path = registered != null ? registered.path(dat)
                 : SEED_DAT_DIR + composition + "/" + (dat == null ? productId + ".dat" : dat);
-        return new Trade(composition, productId, variant, path, setup, registered != null);
+        return new Trade(composition, productId, taxonomy, variant, path, setup, registered != null);
     }
 
     /** The registered composition {@code name}, or {@code null}. */
@@ -189,16 +206,36 @@ public final class SeedData {
         return null;
     }
 
-    private static String key(String composition, String productId) {
-        return composition + " + " + productId;
+    private static String key(String composition, String productId, String taxonomy) {
+        return composition + " + " + productId + (taxonomy == null ? "" : " (" + taxonomy + ")");
     }
 
     private static String id(String at, String what, String value) {
         if (value == null || !ID.matcher(value).matches()) {
-            throw new IllegalStateException(at + ": \"" + what + "\" is an ID: upper case, digits and _ (FX_TRF), not '"
+            throw new IllegalStateException(at + ": \"" + what + "\" is an ID: letters, digits and _ (FX_TRF), not '"
                     + value + "'");
         }
         return value;
+    }
+
+    private static void taxonomy(String at, String value) {
+        if (!TAXONOMY.matcher(value).matches()) {
+            throw new IllegalStateException(at + ": \"taxonomy\" is the ISDA taxonomy after its asset class, words"
+                    + " joined by : (ComplexExotic, SimpleExotic:Digital), not '" + value + "'");
+        }
+    }
+
+    /**
+     * Checks a seed case ID, the {@code case} column ({@code SEED-TRADE-001}).
+     *
+     * @throws IllegalStateException when it is not one
+     */
+    public static String checkCase(String caseId) {
+        if (caseId == null || !CASE.matcher(caseId).matches()) {
+            throw new IllegalStateException("[Seed] a seed case ID is SEED-<KIND>-<3 digits> (SEED-TRADE-001), not '"
+                    + caseId + "'");
+        }
+        return caseId;
     }
 
     private static void checkDat(String at, String dat) {
@@ -244,7 +281,7 @@ public final class SeedData {
     public static String eventRequest(Event event, Trade trade) {
         if (!trade.registered()) {
             throw new IllegalStateException("[Seed] event '" + event.name() + "' on " + key(trade.composition(),
-                    trade.productId()) + ": an event needs a registered composition (its case data is per"
+                    trade.productId(), trade.taxonomy()) + ": an event needs a registered composition (its case data is per"
                     + " composition)");
         }
         String caseId = event.caseId().replace(PRODUCT, trade.composition());
