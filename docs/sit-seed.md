@@ -178,7 +178,7 @@ Load (F9), the trade's INSTRUMENT, its `{Object ITradeable}`, View > Export > "C
 
    The Cortex controls in `LOCATORS` (top of the script) were read from a screen recording: run `--inspect` once (it writes each window's control tree to `<out>/inspect-<n>.txt`),
    with a trade's View window open, and adjust them to the names it prints. A cell without a name is clicked at an
-   offset: `--where` prints the mouse position in the TDS Browser for the `*_offset` locators.
+   offset: `--where` prints the mouse position in the window under it for the `*_offset` locators. A failure names its step and locator.
 
 3. Copy each `<trade ID>.dat` to its case's dat path (`datFile` in `seed-dats.csv`) and run `seed-dats` again: what
    is left is still `placeholder`. A real dat file is company data: it stays on the company copy and is never

@@ -73,52 +73,75 @@ class Cortex:
         from pywinauto.keyboard import send_keys
 
         tds = self.tds
-        tds.set_focus()
-        if LOCATORS["tds_trade_id_offset"]:
-            self.click_at(tds, LOCATORS["tds_trade_id_offset"])
-        else:
-            tds.child_window(**LOCATORS["tds_trade_id"]).click_input()
-        send_keys("^a{BACKSPACE}" + trade_id, with_spaces=True)
-        send_keys("{F9}")
-        tds.child_window(title_re=LOCATORS["tds_loaded"]).wait("visible", timeout=WAIT["load"])
+        with step("1 type the trade ID in the TDS Browser (tds_trade_id)"):
+            tds.set_focus()
+            if LOCATORS["tds_trade_id_offset"]:
+                self.click_at(tds, LOCATORS["tds_trade_id_offset"])
+            else:
+                tds.child_window(**LOCATORS["tds_trade_id"]).click_input()
+            send_keys("^a{BACKSPACE}" + trade_id, with_spaces=True)
+            send_keys("{F9}")
+        with step("2 wait for the trade to load (tds_loaded)"):
+            tds.child_window(title_re=LOCATORS["tds_loaded"]).wait("visible", timeout=WAIT["load"])
 
-        if LOCATORS["tds_instrument_offset"]:
-            self.click_at(tds, LOCATORS["tds_instrument_offset"], double=True)
-        else:
-            tds.child_window(title_re=LOCATORS["tds_instrument_cell"], found_index=0).double_click_input()
-        objects = self.window(LOCATORS["object_window"])
+        with step("3 double-click the INSTRUMENT cell (tds_instrument_cell / tds_instrument_offset)"):
+            if LOCATORS["tds_instrument_offset"]:
+                self.click_at(tds, LOCATORS["tds_instrument_offset"], double=True)
+            else:
+                tds.child_window(title_re=LOCATORS["tds_instrument_cell"], found_index=0).double_click_input()
+        with step("4 wait for the instrument's window (object_window)"):
+            objects = self.window(LOCATORS["object_window"])
 
-        if LOCATORS["object_cell_offset"]:
-            self.click_at(objects, LOCATORS["object_cell_offset"], double=True)
-        else:
-            objects.child_window(title_re=LOCATORS["object_cell"], found_index=0).double_click_input()
-        view = self.window(LOCATORS["view_window"])
+        with step("5 double-click {Object ITradeable} (object_cell / object_cell_offset)"):
+            if LOCATORS["object_cell_offset"]:
+                self.click_at(objects, LOCATORS["object_cell_offset"], double=True)
+            else:
+                objects.child_window(title_re=LOCATORS["object_cell"], found_index=0).double_click_input()
+        with step("6 wait for the View window (view_window)"):
+            view = self.window(LOCATORS["view_window"])
 
-        view.child_window(title_re=LOCATORS["view_export"], found_index=0).click_input()
-        if LOCATORS["export_menu_item"]:
-            self.desktop.window(control_type="Menu").child_window(
-                title_re=LOCATORS["export_menu_item"]).click_input()
-        save = self.window(LOCATORS["save_dialog"])
-        name = save.child_window(title="File name:", control_type="Edit") if LOCATORS["backend"] == "uia" \
-            else save.child_window(class_name="Edit", found_index=0)
-        name.set_edit_text(str(target))
-        send_keys("{ENTER}")
-        try:
-            self.desktop.window(title_re=LOCATORS["confirm_dialog"]).wait("visible", timeout=2)
-            send_keys("%y")                                   # overwrite: Yes
-        except Exception:
-            pass
-        deadline = time.time() + WAIT["save"]
-        while not (target.is_file() and target.stat().st_size > 0):
-            if time.time() > deadline:
-                raise RuntimeError(f"{target} was not written")
-            time.sleep(0.3)
+        with step("7 click Export (view_export, export_menu_item)"):
+            view.child_window(title_re=LOCATORS["view_export"], found_index=0).click_input()
+            if LOCATORS["export_menu_item"]:
+                self.desktop.window(control_type="Menu").child_window(
+                    title_re=LOCATORS["export_menu_item"]).click_input()
+        with step("8 save as <trade ID>.dat (save_dialog)"):
+            save = self.window(LOCATORS["save_dialog"])
+            name = save.child_window(title="File name:", control_type="Edit") if LOCATORS["backend"] == "uia" \
+                else save.child_window(class_name="Edit", found_index=0)
+            name.set_edit_text(str(target))
+            send_keys("{ENTER}")
+            try:
+                self.desktop.window(title_re=LOCATORS["confirm_dialog"]).wait("visible", timeout=2)
+                send_keys("%y")                                   # overwrite: Yes
+            except Exception:
+                pass
+            deadline = time.time() + WAIT["save"]
+            while not (target.is_file() and target.stat().st_size > 0):
+                if time.time() > deadline:
+                    raise RuntimeError(f"{target} was not written")
+                time.sleep(0.3)
 
-        for w in (view, objects):                                # back to the TDS Browser for the next case
+        for w in (view, objects):                                # back to the TDS Browser for the next trade
             try:
                 w.close()
             except Exception:
                 pass
+
+
+class step:
+    """Names the step that failed: "3 double-click the INSTRUMENT cell (...): <the pywinauto error>"."""
+
+    def __init__(self, name: str) -> None:
+        self.name = name
+
+    def __enter__(self) -> None:
+        return None
+
+    def __exit__(self, kind, error, trace) -> bool:
+        if error is not None and not isinstance(error, KeyboardInterrupt):
+            raise RuntimeError(f"step {self.name}: {type(error).__name__}: {error}") from error
+        return False
 
 
 def inspect(out: Path) -> None:
@@ -141,19 +164,21 @@ def inspect(out: Path) -> None:
 
 
 def where() -> None:
-    """Prints the mouse position from the top left of the TDS Browser, for the *_offset locators."""
+    """Prints the mouse position from the top left of the window under it, for the *_offset locators."""
     import ctypes
     from ctypes import wintypes
 
-    from pywinauto import Desktop
-
-    tds = Desktop(backend=LOCATORS["backend"]).window(title_re=LOCATORS["tds_window"])
+    user32 = ctypes.windll.user32
     print("Point at a cell; the position is read in 5 seconds.")
     time.sleep(5)
     point = wintypes.POINT()
-    ctypes.windll.user32.GetCursorPos(ctypes.byref(point))
-    rect = tds.rectangle()
-    print(f"offset from the TDS Browser: ({point.x - rect.left}, {point.y - rect.top})")
+    user32.GetCursorPos(ctypes.byref(point))
+    window = user32.GetAncestor(user32.WindowFromPoint(point), 2)          # GA_ROOT: the top-level window
+    rect = wintypes.RECT()
+    user32.GetWindowRect(window, ctypes.byref(rect))
+    title = ctypes.create_unicode_buffer(512)
+    user32.GetWindowTextW(window, title, 512)
+    print(f"offset ({point.x - rect.left}, {point.y - rect.top}) in {' '.join(title.value.split())!r}")
 
 
 def main() -> int:
@@ -163,7 +188,7 @@ def main() -> int:
                    help="where <trade ID>.dat files are exported (outside the project)")
     p.add_argument("--force", action="store_true", help="export again when <trade ID>.dat already exists")
     p.add_argument("--inspect", action="store_true", help="print the controls of the open Cortex windows")
-    p.add_argument("--where", action="store_true", help="print the mouse position in the TDS Browser")
+    p.add_argument("--where", action="store_true", help="print the mouse position in the window under it")
     args = p.parse_args()
 
     if args.inspect:
