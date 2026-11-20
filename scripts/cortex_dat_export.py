@@ -36,7 +36,7 @@ LOCATORS = {
     "tds_loaded": r"Loaded 1 trade.*",                  # the status text once the trade is loaded
     # The INSTRUMENT cell of the first row ({FXFVA}, {FXAverageRateOption}): its text, or an offset.
     "tds_instrument_cell": r"^\{.+\}$",
-    "tds_instrument_offset": (426, 113),           # measured with --where: the grid draws its cells
+    "tds_instrument_offset": (877, 268),           # measured with --where: the grid draws its cells
     "object_window": r"^Viewer - .*",                  # "Viewer - {value} <build> VS2022 ...": Import / Export / Link
     "object_cell": r".*Object ITradeable.*",
     "object_cell_offset": None,
