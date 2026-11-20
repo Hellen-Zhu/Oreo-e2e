@@ -13,7 +13,11 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeParseException;
+import java.time.temporal.ChronoUnit;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -305,6 +309,38 @@ public final class SeedData {
     public static String request(Trade trade) {
         ObjectNode body = (ObjectNode) Json.parse(TestData.setup(trade.setup()).request());
         return Json.compact(JsonLayers.merge(body, trade.caseRequest()));
+    }
+
+    private static final DateTimeFormatter EFFECTIVE = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'")
+            .withZone(ZoneOffset.UTC);
+    private static final DateTimeFormatter MIFID = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
+            .withZone(ZoneOffset.UTC);
+
+    /**
+     * {@code request} with its times, as the trade ticket sends them: {@code basic.effectiveTimestamp}
+     * ({@code 2026-11-20T11:42:59Z}) {@code at} when the body has none, and {@code basic.mifidExeTime} the same
+     * instant ({@code 2026-11-20T11:42:59.000Z}) when the body has none. A time the body (a case) gives is kept.
+     *
+     * @throws IllegalStateException when the body's {@code effectiveTimestamp} is not an ISO instant
+     */
+    public static String withTimes(String request, Instant at) {
+        ObjectNode body = (ObjectNode) Json.parse(request);
+        JsonNode existing = body.path("basic");
+        ObjectNode basic = existing instanceof ObjectNode object ? object : body.putObject("basic");
+        Instant effective = at.truncatedTo(ChronoUnit.SECONDS);
+        if (basic.hasNonNull("effectiveTimestamp")) {
+            String given = basic.get("effectiveTimestamp").asText();
+            try {
+                effective = Instant.parse(given);
+            } catch (DateTimeParseException e) {
+                throw new IllegalStateException("[Seed] basic.effectiveTimestamp is not an ISO instant"
+                        + " (2026-11-20T11:42:59Z): '" + given + "'", e);
+            }
+        } else {
+            basic.put("effectiveTimestamp", EFFECTIVE.format(effective));
+        }
+        if (!basic.hasNonNull("mifidExeTime")) basic.put("mifidExeTime", MIFID.format(effective));
+        return Json.compact(body);
     }
 
     /** The seed case IDs that have an entry in {@code cases}. */

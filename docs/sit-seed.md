@@ -82,6 +82,9 @@ case sends of its own:
   the API takes them as sent, so a case gives all three. `dat` and `setup` replace
   the pair's. Every case listed must be a row of the features (`SeedDataTest`). The manifest and the report carry the
   portfolio, risk portfolio and entity each booking sent.
+- **Times**: every booking sends `basic.effectiveTimestamp` as the booking's time (`2026-11-20T11:42:59Z`) and
+  `basic.mifidExeTime` as the same instant (`2026-11-20T11:42:59.000Z`), as the trade ticket does. A case's `request`
+  that gives either keeps it; `mifidExeTime` follows a given `effectiveTimestamp`.
 - **`variants`**: another body for any pair, by name (StepIn Full, StepIn Partial), the `variant` column.
 - **`events`**: sent on a new live trade of the pair with the request of an E2E positive case (`case`, the Outline's
   ID), and the checker approves the task when the event creates one. `via` is how it is sent: `trigger-event` (the

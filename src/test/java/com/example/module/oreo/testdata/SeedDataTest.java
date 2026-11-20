@@ -11,6 +11,7 @@ import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Instant;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -290,6 +291,31 @@ public class SeedDataTest {
                 {"cases": {"SEED-TRADE-001": {"request": []}}}""", "\"request\"");
         bad("""
                 {"cases": {"SEED-TRADE-001": {"dat": "a/b.dat"}}}""", "cases.SEED-TRADE-001");
+    }
+
+    @Test
+    public void theMifidExecutionTimeIsTheEffectiveTime() {
+        Instant at = Instant.parse("2026-11-20T11:42:59.734Z");
+        JsonNode basic = Json.parse(SeedData.withTimes("""
+                {"basic": {"portfolioId": "P"}}""", at)).path("basic");
+        assertEquals("2026-11-20T11:42:59Z", basic.path("effectiveTimestamp").asText());
+        assertEquals("2026-11-20T11:42:59.000Z", basic.path("mifidExeTime").asText());
+        assertEquals("P", basic.path("portfolioId").asText());
+        basic = Json.parse(SeedData.withTimes("""
+                {"basic": {"effectiveTimestamp": "2026-11-21T08:00:00Z"}}""", at)).path("basic");
+        assertEquals("2026-11-21T08:00:00Z", basic.path("effectiveTimestamp").asText());
+        assertEquals("2026-11-21T08:00:00.000Z", basic.path("mifidExeTime").asText());
+        basic = Json.parse(SeedData.withTimes("""
+                {"basic": {"mifidExeTime": "2026-11-19T00:00:00.000Z"}}""", at)).path("basic");
+        assertEquals("2026-11-19T00:00:00.000Z", basic.path("mifidExeTime").asText());
+        assertEquals("2026-11-20T11:42:59Z", basic.path("effectiveTimestamp").asText());
+        try {
+            SeedData.withTimes("""
+                    {"basic": {"effectiveTimestamp": "2026-11-21"}}""", at);
+            fail("not an instant");
+        } catch (IllegalStateException e) {
+            assertTrue(e.getMessage(), e.getMessage().contains("effectiveTimestamp"));
+        }
     }
 
     @Test
