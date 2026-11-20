@@ -455,6 +455,9 @@ or with `-U`.
   `src/test/resources/tools/seed-report.html`), from the seed's manifests ([sit-seed.md](sit-seed.md)), a row per
   booking with its trade ID, Itradeable Type, portfolio, risk portfolio and entity; never fails on a failed booking, it
   lists it.
+- `seed-dats`: each seed case's dat path and its state (to export, real, the E2E default, shared with an earlier
+  case), `target/seed/seed-dats.csv`, read by `scripts/cortex_dat_export.py` ([sit-seed.md](sit-seed.md), "Dat
+  files from Cortex").
 - `suggest <event>`: reads the event's recordings and prints, without writing anything, the `dynamicFields` rules
   they need and the `expectedBase` that suits them ("Suggestions", below).
 - `compact <event>` or `compact all`: the compaction of "Base and patch" and "Shared parts". It lists the files it

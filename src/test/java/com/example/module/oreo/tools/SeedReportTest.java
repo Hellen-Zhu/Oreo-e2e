@@ -52,4 +52,26 @@ public class SeedReportTest {
             assertTrue(e.getMessage(), e.getMessage().contains(SeedReport.DATA_MARK));
         }
     }
+
+    @Test
+    public void eachSeedCaseHasTheDatFileItBooks() throws java.io.IOException {
+        List<SeedReport.CaseDat> dats = SeedReport.caseDats(
+                com.example.module.oreo.testdata.ProjectPaths.projectRoot(),
+                com.example.module.oreo.testdata.SeedData.catalog());
+        Map<String, SeedReport.CaseDat> byCase = new java.util.HashMap<>();
+        dats.forEach(d -> byCase.put(d.caseId(), d));
+        assertEquals("one row per seed case, commented-out rows too", dats.size(), byCase.size());
+        assertEquals("src/test/resources/seed/dat/FXBO/FX_BO_MULTIDIGI_Precious.dat",
+                byCase.get("SEED-TRADE-008").path());
+        assertEquals("src/test/resources/seed/dat/FXBO/FX_BO_MULTIDIGI.dat", byCase.get("SEED-TRADE-009").path());
+        for (SeedReport.CaseDat d : dats) {
+            if (d.state() == SeedReport.DatState.e2e) {
+                assertEquals(d.caseId(), SeedReport.RESOURCES
+                        + com.example.module.oreo.testdata.ProductDatFiles.valueOf(d.composition()).path(), d.path());
+            }
+            if (d.state() == SeedReport.DatState.shared) {
+                assertTrue(d.caseId(), d.sameAs() != null && !d.sameAs().equals(d.caseId()));
+            }
+        }
+    }
 }

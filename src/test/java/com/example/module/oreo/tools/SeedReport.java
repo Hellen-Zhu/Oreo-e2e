@@ -175,6 +175,115 @@ final class SeedReport {
         return out.toString();
     }
 
+    // ── seed-dats: where each seed case's dat file goes ─────────────────────────────────────────────────────────
+
+    /** Where the seed features are, under the project. */
+    static final String SEED_FEATURES = "src/test/resources/seed/features";
+    static final String RESOURCES = "src/test/resources/";
+    /** The first line of a dat file that is still a placeholder. */
+    static final String PLACEHOLDER = "# Placeholder";
+
+    /** The state of a case's dat file. */
+    enum DatState {
+        /** The file is real. */
+        ok,
+        /** The file is a one-line placeholder: to export. */
+        placeholder,
+        /** No file yet: to export. */
+        missing,
+        /** The default dat of a registered composition, the E2E cases': never overwritten by an export. */
+        e2e,
+        /** An earlier case of the list books the same file: exported once, for that case. */
+        shared
+    }
+
+    /** A seed case's dat file: the case's IDs, its path under the project and its state. */
+    record CaseDat(String caseId, String composition, String productId, String taxonomy, String path, DatState state,
+                   String sameAs) {}
+
+    static final List<String> DAT_COLUMNS = List.of("case", "composition", "productId", "taxonomy", "datFile",
+            "fileName", "state", "sameAs");
+
+    /**
+     * {@code seed-dats}: every seed case of the features (commented-out rows too), the dat file it books and whether
+     * that file is still to be exported; writes {@code target/seed/seed-dats.csv}, which the Cortex export script
+     * reads ({@code docs/sit-seed.md}).
+     */
+    static int dats() throws IOException {
+        Path root = ProjectPaths.projectRoot();
+        List<CaseDat> dats = caseDats(root, SeedData.catalog());
+        StringBuilder out = new StringBuilder(String.join(",", DAT_COLUMNS)).append('\n');
+        Map<DatState, Integer> counts = new TreeMap<>();
+        for (CaseDat d : dats) {
+            String file = d.path().substring(d.path().lastIndexOf('/') + 1);
+            out.append(String.join(",", List.of(d.caseId(), d.composition(), d.productId(),
+                    d.taxonomy() == null ? "" : d.taxonomy(), d.path(), file, d.state().name(),
+                    d.sameAs() == null ? "" : d.sameAs()).stream().map(SeedReport::cell).toList())).append('\n');
+            counts.merge(d.state(), 1, Integer::sum);
+        }
+        Path csv = SeedData.manifestDir().resolve("seed-dats.csv");
+        Files.createDirectories(csv.getParent());
+        Files.writeString(csv, out.toString(), StandardCharsets.UTF_8);
+        System.out.println(dats.size() + " seed cases: " + counts);
+        for (CaseDat d : dats) {
+            if (d.state() == DatState.placeholder || d.state() == DatState.missing) {
+                System.out.println("  to export " + d.caseId() + " -> " + d.path());
+            }
+        }
+        System.out.println("Wrote " + root.relativize(csv));
+        return 0;
+    }
+
+    /** The dat file of every seed case of the features under {@code root}, in case order. */
+    static List<CaseDat> caseDats(Path root, SeedData catalog) throws IOException {
+        java.util.regex.Pattern row = java.util.regex.Pattern.compile("^\\s*(?:#\\s*)?\\|(.*)\\|\\s*$");
+        Map<String, List<String>> cases = new TreeMap<>();
+        try (var files = Files.list(root.resolve(SEED_FEATURES))) {
+            for (Path file : files.filter(f -> f.toString().endsWith(".feature")).sorted().toList()) {
+                List<String> header = null;
+                for (String line : Files.readAllLines(file, StandardCharsets.UTF_8)) {
+                    var m = row.matcher(line);
+                    if (!m.matches()) {
+                        if (line.trim().startsWith("Scenario")) header = null;
+                        continue;
+                    }
+                    List<String> cells = java.util.Arrays.stream(m.group(1).split("\\|")).map(String::trim).toList();
+                    if (header == null) {
+                        header = cells;
+                    } else if (header.contains("case")) {
+                        List<String> h = header;
+                        cases.put(cells.get(h.indexOf("case")), List.of(cells.get(h.indexOf("composition")),
+                                cells.get(h.indexOf("product_id")),
+                                h.contains("taxonomy") ? cells.get(h.indexOf("taxonomy")) : ""));
+                    }
+                }
+            }
+        }
+        List<CaseDat> out = new ArrayList<>();
+        Map<String, String> firstCase = new LinkedHashMap<>();
+        for (var e : cases.entrySet()) {
+            List<String> c = e.getValue();
+            String taxonomy = c.get(2).isEmpty() ? null : c.get(2);
+            SeedData.Trade trade = catalog.forCase(e.getKey(), c.get(0), c.get(1), taxonomy);
+            String path = RESOURCES + trade.dat();
+            String sameAs = firstCase.putIfAbsent(path, e.getKey());
+            DatState state;
+            if (trade.registered() && trade.dat().equals(
+                    com.example.module.oreo.testdata.ProductDatFiles.valueOf(c.get(0)).path())) {
+                state = DatState.e2e;
+            } else if (sameAs != null) {
+                state = DatState.shared;
+            } else {
+                Path file = root.resolve(path);
+                state = !Files.isRegularFile(file) ? DatState.missing
+                        : Files.readString(file, StandardCharsets.UTF_8).startsWith(PLACEHOLDER) ? DatState.placeholder
+                        : DatState.ok;
+            }
+            out.add(new CaseDat(e.getKey(), c.get(0), c.get(1), taxonomy, path, state, sameAs));
+        }
+        return out;
+    }
+
     private static String cell(String value) {
         if (value.isEmpty() || value.chars().noneMatch(c -> c == ',' || c == '"' || c == '\n' || c == '\r')) {
             return value;

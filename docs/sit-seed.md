@@ -16,6 +16,8 @@ data). When the API changes, one fix serves both.
 | Manifest: one file per run, one line per booking or failure | `target/seed/manifest-<run ID>.jsonl` (generated, never committed) |
 | Summary for UAT | `TestDataTool seed-report [<run ID>\|all]` → `target/seed/seed-report-<run ID or all>.csv` and `.html` |
 | The page's template | `src/test/resources/tools/seed-report.html` |
+| Each seed case's dat file and whether it is still to export | `TestDataTool seed-dats` → `target/seed/seed-dats.csv` |
+| Export the dat files from Cortex (Windows, pywinauto) | `scripts/cortex_dat_export.py` |
 
 The seed features are outside `features/`: `OreoTest`, `check` and `sync-examples` do not see them.
 
@@ -147,6 +149,43 @@ status, error), and an HTML page beside it, `seed-report-<run ID or all>.html`, 
 filter by status and sort, each failure's error under its row, a button that copies the case and trade ID of the rows
 shown, and the counts by Itradeable Type. The page opens offline. The console prints the counts by kind and by
 Itradeable Type and the failures.
+
+## Dat files from Cortex
+
+Each seed case books a dat file exported from Cortex from the case's Sample Trade (the Excel): TDS Browser, Trade ID,
+Load (F9), the trade's INSTRUMENT, its `{Object ITradeable}`, View > Export > "Cortex object file (*.dat)".
+`scripts/cortex_dat_export.py` does those clicks for every case still to export.
+
+1. `seed-dats` lists every seed case (commented-out rows too), the dat path it books and its state: `placeholder` or
+   `missing` (to export), `ok` (real), `e2e` (the default dat of a registered composition, the E2E cases': never
+   overwritten; give the case its own `"dat"` in `cases` to export one for it), `shared` (an earlier case, `sameAs`,
+   books the same file).
+
+   ```
+   mvn -Ptest-data process-test-classes -DskipTests "-Dexec.args=seed-dats"
+   ```
+
+2. On the Windows machine where Cortex runs, with the TDS Browser open (`pip install pywinauto openpyxl`):
+
+   ```
+   python scripts/cortex_dat_export.py --excel <the seed Excel> --dry-run
+   python scripts/cortex_dat_export.py --inspect
+   python scripts/cortex_dat_export.py --excel <the seed Excel> --cases SEED-TRADE-013
+   python scripts/cortex_dat_export.py --excel <the seed Excel>
+   ```
+
+   `--dry-run` prints which case exports which Sample Trade to which path. The script reads the Excel's `Case NB` and
+   `Sample Trade` columns (`--case-column`, `--trade-column`, `--sheet`). It exports `<Sample Trade>.dat` to
+   `--out` (`~/Downloads/seed-dats` by default, outside the project, with `export-log.csv`), then copies it to the
+   case's dat path (`--no-install` skips the copy). An exported file is reused unless `--force`; `--all` exports
+   cases whose dat is already real too. One case's failure does not stop the others.
+
+   The Cortex controls in `LOCATORS` (top of the script) were read from a screen recording: run `--inspect` once,
+   with a trade's View window open, and adjust them to the names it prints. A cell without a name is clicked at an
+   offset: `--where` prints the mouse position in the TDS Browser for the `*_offset` locators. Try one case first.
+
+3. Run `seed-dats` again: what is left is still `placeholder`. A real dat file is company data: it stays on the
+   company copy and is never committed (`.dat` files in the repo are placeholders).
 
 ## Maintenance
 
