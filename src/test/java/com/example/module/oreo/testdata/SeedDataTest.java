@@ -100,6 +100,9 @@ public class SeedDataTest {
                         catalog.event(event);
                         assertTrue(file + ": " + event + " on an unregistered " + trade.composition(),
                                 trade.registered());
+                    } else {
+                        assertTrue(SeedData.CATALOG + " cases." + caseId + ": eventRequest on a row with no event",
+                                trade.caseEventRequest().isEmpty());
                     }
                     // a seed case is its own booking (its case ID is unique): two cases may book one pair and
                     // taxonomy with their own portfolios; the other rows are known by what they book
@@ -189,6 +192,32 @@ public class SeedDataTest {
         }
         assertEquals(TestData.forCase("TC-TRADE-EARLY-TERMINATION-FX_TRF-API-001").request(),
                 SeedData.eventRequest(catalog.event("termination"), catalog.trade("FX_TRF", "FX_TRF", null)));
+    }
+
+    @Test
+    public void anEventCaseSendsItsFieldsOverTheTradeAndTheEvent() {
+        SeedData catalog = SeedData.fromJson("t.json", Json.parse("""
+                {"itradeableTypes": {"FX_TRF": "Cortex.Finance.Tradeable.TRF"},
+                 "events": {"termination": {"case": "TC-TRADE-EARLY-TERMINATION-<product_type>-API-001"}},
+                 "cases": {"SEED-EVENT-004": {"request": {"basic": {"portfolioId": "EXAMPLE_PORTFOLIO_E"}},
+                                              "eventRequest": {"seedField": "X", "nested": {"a": 1}}}}}"""));
+        SeedData.Trade trade = catalog.forCase("SEED-EVENT-004", "FX_TRF", "FX_TRF", null);
+        assertEquals("EXAMPLE_PORTFOLIO_E",
+                Json.parse(SeedData.request(trade)).path("basic").path("portfolioId").asText());
+        String base = TestData.forCase("TC-TRADE-EARLY-TERMINATION-FX_TRF-API-001").request();
+        com.fasterxml.jackson.databind.node.ObjectNode expected =
+                (com.fasterxml.jackson.databind.node.ObjectNode) Json.parse(base);
+        expected.put("seedField", "X").putObject("nested").put("a", 1);
+        assertEquals(expected, Json.parse(SeedData.eventRequest(catalog.event("termination"), trade)));
+        assertEquals(Json.parse(base), Json.parse(SeedData.eventRequest(catalog.event("termination"),
+                catalog.forCase("SEED-EVENT-014", "FX_TRF", "FX_TRF", null))));
+        try {
+            SeedData.fromJson("t.json", Json.parse("""
+                    {"cases": {"SEED-EVENT-001": {"eventRequest": {"x": "TODO the party"}}}}"""));
+            fail("a TODO eventRequest is refused");
+        } catch (IllegalStateException e) {
+            assertTrue(e.getMessage(), e.getMessage().contains("eventRequest.x is still TODO"));
+        }
     }
 
     @Test

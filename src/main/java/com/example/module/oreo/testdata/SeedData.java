@@ -44,15 +44,17 @@ import java.util.regex.Pattern;
  *       {@code {"composition", "productId", "taxonomy"?, "dat"?, "setup"?}}, gives another file name or another body
  *       for a pair, or for a pair with one taxonomy; the body is {@code data/setup/<name>.json}, {@code trade-create}
  *       by default.</li>
- *   <li>{@code cases}, by seed case ID: {@code {"request"?, "dat"?, "setup"?}} for that case alone. {@code request}
- *       is merged over the setup body (objects deeply, {@code null} deletes): the case's portfolio
- *       ({@code basic.portfolioId}), risk portfolio ({@code basic.riskPortfolio}) and entity
- *       ({@code basic.scbEntity}). Its {@code dat} and {@code setup} win over
- *       {@code trades}.</li>
+ *   <li>{@code cases}, by seed case ID: {@code {"request"?, "eventRequest"?, "dat"?, "setup"?}} for that case
+ *       alone. {@code request} is merged over the setup body (objects deeply, {@code null} deletes): the case's
+ *       portfolio ({@code basic.portfolioId}), risk portfolio ({@code basic.riskPortfolio}) and entity
+ *       ({@code basic.scbEntity}). An event case ({@code SEED-EVENT-001}) books its trade with them too, and its
+ *       {@code eventRequest} is merged the same way over the event's request. Its {@code dat} and {@code setup}
+ *       win over {@code trades}.</li>
  *   <li>A variant ({@code variants}, by name: {@code {"setup": ...}}) books a pair with another body: StepIn Full,
  *       StepIn Partial.</li>
- *   <li>An event is booked with the request of an E2E case ({@code "case"}, the Outline's ID with
- *       {@code <product_type>}) on a new trade of the pair: one body for the test and the seed. {@code "via"} is
+ *   <li>An event row is a seed case too ({@code SEED-EVENT-001}): its event is booked with the request of an E2E
+ *       case ({@code "case"}, the Outline's ID with {@code <product_type>}) on a new trade of the pair: one body for
+ *       the test and the seed. {@code "via"} is
  *       {@code trigger-event} (the default, the body's {@code tradeIds} replaced) or {@code update} (the amendment,
  *       posted to the trade's update path). The pair's composition must be registered: the case's product.</li>
  * </ul>
@@ -77,11 +79,13 @@ public final class SeedData {
      * What one booking sends: its seed case ID ({@code null} for a variant or event row), a composition, its
      * Itradeable Type and a product ID, the ISDA taxonomy after its asset class (a label of the booking, {@code null}
      * for none), the variant ({@code null} for none), the classpath path of its dat file, its setup body, the case's
-     * fields merged over the body (empty for none, {@link SeedData#request(Trade)}); {@code registered} when the
-     * composition is in {@link ProductDatFiles}.
+     * fields merged over the body (empty for none, {@link SeedData#request(Trade)}) and over an event's request
+     * (empty for none, {@link SeedData#eventRequest(Event, Trade)}); {@code registered} when the composition is in
+     * {@link ProductDatFiles}.
      */
     public record Trade(String caseId, String composition, String itradeableType, String productId, String taxonomy,
-                        String variant, String dat, String setup, ObjectNode caseRequest, boolean registered) {}
+                        String variant, String dat, String setup, ObjectNode caseRequest,
+                        ObjectNode caseEventRequest, boolean registered) {}
 
     /** A lifecycle event of the catalog, booked with the request of the E2E case {@code caseId} through {@code via}. */
     public record Event(String name, String caseId, String via) {}
@@ -93,8 +97,8 @@ public final class SeedData {
 
     private record Override(String dat, String setup) {}
 
-    /** A case's own fields over the setup body, and its own dat file and body. */
-    private record CaseEntry(ObjectNode request, String dat, String setup) {}
+    /** A case's own fields over the setup body and over its event's request, and its own dat file and body. */
+    private record CaseEntry(ObjectNode request, ObjectNode eventRequest, String dat, String setup) {}
 
     /** Composition -> Itradeable Type, one to one. */
     private final Map<String, String> itradeableTypes;
@@ -188,8 +192,8 @@ public final class SeedData {
         }
         JsonNode caseNodes = root.path("cases");
         if (!caseNodes.isMissingNode() && !caseNodes.isObject()) {
-            throw new IllegalStateException("[Seed] " + resource + " cases: {\"<seed case ID>\": {request, dat,"
-                    + " setup}}");
+            throw new IllegalStateException("[Seed] " + resource + " cases: {\"<seed case ID>\": {request,"
+                    + " eventRequest, dat, setup}}");
         }
         Map<String, CaseEntry> cases = new LinkedHashMap<>();
         caseNodes.properties().forEach(e -> {
@@ -202,19 +206,17 @@ public final class SeedData {
             }
             JsonNode node = e.getValue();
             JsonNode request = node.path("request");
-            if (!node.isObject() || (!request.isMissingNode() && !request.isObject())) {
-                throw new IllegalStateException(at + ": {\"request\": {fields over the setup body}, \"dat\","
-                        + " \"setup\"}");
+            JsonNode eventRequest = node.path("eventRequest");
+            if (!node.isObject() || (!request.isMissingNode() && !request.isObject())
+                    || (!eventRequest.isMissingNode() && !eventRequest.isObject())) {
+                throw new IllegalStateException(at + ": {\"request\": {fields over the setup body},"
+                        + " \"eventRequest\": {fields over the event's request}, \"dat\", \"setup\"}");
             }
             String dat = text(node, "dat");
             if (dat != null) checkDat(at, dat);
-            ObjectNode fields = request.isObject() ? (ObjectNode) JsonLayers.withoutComments(request)
-                    : Json.MAPPER.createObjectNode();
-            String todo = todo(fields, "request");
-            if (todo != null) {
-                throw new IllegalStateException(at + ": " + todo + " is still TODO: fill it in before booking");
-            }
-            cases.put(e.getKey(), new CaseEntry(fields, dat, text(node, "setup")));
+            ObjectNode fields = fields(at, request, "request");
+            ObjectNode eventFields = fields(at, eventRequest, "eventRequest");
+            cases.put(e.getKey(), new CaseEntry(fields, eventFields, dat, text(node, "setup")));
         });
         Map<String, String> variants = new LinkedHashMap<>();
         root.path("variants").properties().forEach(e -> {
@@ -229,6 +231,17 @@ public final class SeedData {
         return new SeedData(Collections.unmodifiableMap(itradeableTypes), Collections.unmodifiableMap(overrides),
                 Collections.unmodifiableMap(cases), Collections.unmodifiableMap(variants),
                 Collections.unmodifiableMap(events));
+    }
+
+    /** A case's fields ({@code node}, missing for none) without comments; refused while a value is TODO. */
+    private static ObjectNode fields(String at, JsonNode node, String name) {
+        ObjectNode fields = node.isObject() ? (ObjectNode) JsonLayers.withoutComments(node)
+                : Json.MAPPER.createObjectNode();
+        String todo = todo(fields, name);
+        if (todo != null) {
+            throw new IllegalStateException(at + ": " + todo + " is still TODO: fill it in before booking");
+        }
+        return fields;
     }
 
     /** The path under {@code at} of the first text value starting with TODO, or {@code null}. */
@@ -318,8 +331,9 @@ public final class SeedData {
         String path = registered != null ? registered.path(dat)
                 : SEED_DAT_DIR + composition + "/" + (dat == null ? productId + ".dat" : dat);
         ObjectNode caseRequest = entry == null ? Json.MAPPER.createObjectNode() : entry.request().deepCopy();
+        ObjectNode caseEventRequest = entry == null ? Json.MAPPER.createObjectNode() : entry.eventRequest().deepCopy();
         return new Trade(caseId, composition, itradeableType, productId, taxonomy, variant, path, setup, caseRequest,
-                registered != null);
+                caseEventRequest, registered != null);
     }
 
     /**
@@ -449,7 +463,8 @@ public final class SeedData {
     }
 
     /**
-     * The request of {@code event} on {@code trade}: its E2E case's merged request for the trade's composition.
+     * The request of {@code event} on {@code trade}: its E2E case's merged request for the trade's composition, with
+     * the seed case's {@code eventRequest} merged over it (objects deeply, {@code null} deletes).
      *
      * @throws IllegalStateException when the composition is not registered or the case has no request
      */
@@ -464,7 +479,9 @@ public final class SeedData {
         if (!data.hasRequest()) {
             throw new IllegalStateException("[Seed] event '" + event.name() + "': case " + caseId + " has no request");
         }
-        return data.request();
+        if (trade.caseEventRequest().isEmpty()) return data.request();
+        ObjectNode body = (ObjectNode) Json.parse(data.request());
+        return Json.compact(JsonLayers.merge(body, trade.caseEventRequest()));
     }
 
     // ── Manifest ─────────────────────────────────────────────────────────────

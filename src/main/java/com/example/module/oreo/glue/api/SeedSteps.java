@@ -62,13 +62,14 @@ public class SeedSteps {
     }
 
     /**
-     * The catalog's event {@code event} on a new live trade of {@code composition} under {@code productId}: the event
-     * sent by the maker with its E2E case's request (triggered, or the amendment through the trade's update) and, when
-     * it made a checker task, approved by the checker.
+     * Seed case {@code caseId}: the catalog's event {@code event} on a new live trade of {@code composition} under
+     * {@code productId}, booked with the case's fields ({@code cases}), the event sent by the maker with its E2E
+     * case's request and the seed case's {@code eventRequest} over it (triggered, or the amendment through the
+     * trade's update) and, when it made a checker task, approved by the checker.
      */
-    @Given("^seed event '([^']*)' is booked on a new live trade of composition '([^']*)' and product ID '([^']*)' via api$")
-    public void bookEvent(String event, String composition, String productId) throws Exception {
-        SeedData.Trade trade = SeedData.catalog().trade(composition, productId, null);
+    @Given("^seed case '([^']*)' books event '([^']*)' on a new live trade of composition '([^']*)' and product ID '([^']*)' via api$")
+    public void bookEvent(String caseId, String event, String composition, String productId) throws Exception {
+        SeedData.Trade trade = SeedData.catalog().forCase(caseId, composition, productId, null);
         SeedData.Event e = SeedData.catalog().event(event);
         ObjectNode entry = entry("event", trade).put("event", e.name()).put("eventCase", e.caseId());
         try {

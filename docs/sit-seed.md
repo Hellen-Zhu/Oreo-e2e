@@ -11,7 +11,7 @@ data). When the API changes, one fix serves both.
 |---|---|
 | Runner, never run by a plain `mvn test` (surefire excludes it) | `src/test/java/com/example/module/oreo/SeedTest.java` |
 | Catalog: composition → Itradeable Type, what a pair needs beyond its IDs, variants, events | `src/test/resources/seed/catalog.json` (`SeedData`) |
-| What a run books: one row per seed case (composition, product ID, taxonomy), variant or event | `src/test/resources/seed/features/*.feature` |
+| What a run books: one row per seed case (a new trade, or an event on a new trade) or variant | `src/test/resources/seed/features/*.feature` |
 | Steps | `glue/api/SeedSteps.java` |
 | Manifest: one file per run, one line per booking or failure | `target/seed/manifest-<run ID>.jsonl` (generated, never committed) |
 | Summary for UAT | `TestDataTool seed-report [<run ID>\|all]` → `target/seed/seed-report-<run ID or all>.csv` and `.html` |
@@ -27,19 +27,20 @@ A new trade is a **seed case** of the Excel's new-trade sheet: its case ID (`SEE
 **composition** (the E2E's, mapped from the Itradeable Type in the catalog), **product ID** and **taxonomy**, the ISDA
 taxonomy of column A after the asset class (`ComplexExotic`, `SimpleExotic:Digital`, `Metals:Precious:Exotic`). The
 taxonomy labels the booking in the manifest and the report and can pick a catalog entry; it is never sent to the API.
-Variants and events are named by composition and product ID. Each row is one booking:
+An event row is a seed case too (`SEED-EVENT-001`): the event on a new live trade of a composition and product ID.
+Variants are named by composition and product ID. Each row is one booking:
 
 ```gherkin
 Given seed case 'SEED-TRADE-024' books a live trade of composition 'FX_PSCRIPT_TRF' and product ID 'FX_PSCRIPT' with taxonomy 'ComplexExotic' via api
 Given a 'stepin-full' seed trade of composition 'FX_TRF' and product ID 'FX_TRF' is booked live via api
-Given seed event 'termination' is booked on a new live trade of composition 'FX_TRF' and product ID 'FX_TRF' via api
+Given seed case 'SEED-EVENT-004' books event 'termination' on a new live trade of composition 'FX_TRF' and product ID 'FX_TRF' via api
 ```
 
 One composition can be booked under several product IDs, and one pair under several taxonomies, each its own row.
-`SeedDataTest` fails when a case ID is not `SEED-<KIND>-<3 digits>` or is used twice, when two variant or event rows
-book the same composition, product ID, variant and event (two seed cases may book one pair with their own `cases`
-entries), when a row's dat file or setup is missing, and when an event's
-composition is not registered. Continue the numbering for a new row; never renumber, UAT knows the cases by their IDs.
+`SeedDataTest` fails when a case ID is not `SEED-<KIND>-<3 digits>` or is used twice, when two variant rows book the
+same composition, product ID and variant (two seed cases may book one pair with their own `cases` entries), when a
+row's dat file or setup is missing, when an event's composition is not registered, and when a case that is not an
+event row has an `eventRequest`. Continue the numbering for a new row; never renumber, UAT knows the cases by their IDs.
 
 The catalog maps each composition to its Itradeable Type, holds what a pair needs beyond its two IDs and what each
 case sends of its own:
@@ -56,7 +57,8 @@ case sends of its own:
   ],
   "cases": {
     "SEED-TRADE-001": { "request": { "basic": { "portfolioId": "EXAMPLE_PORTFOLIO_B", "riskPortfolio": "EXAMPLE_PORTFOLIO_B", "scbEntity": "EXAMPLE_ENTITY_B" } } },
-    "SEED-TRADE-035": { "dat": "FX_TRF_METALS.dat", "request": { "basic": { "portfolioId": "EXAMPLE_PORTFOLIO_C" } } }
+    "SEED-TRADE-035": { "dat": "FX_TRF_METALS.dat", "request": { "basic": { "portfolioId": "EXAMPLE_PORTFOLIO_C" } } },
+    "SEED-EVENT-004": { "request": { "basic": { "portfolioId": "EXAMPLE_PORTFOLIO_D" } }, "eventRequest": { "<field of the event>": "<value>" } }
   },
   "variants": {
     "stepin-full": { "setup": "trade-create-stepin-full" }
@@ -83,7 +85,9 @@ case sends of its own:
   (objects deeply, arrays and values replaced, `null` deletes a field): the case's portfolio (`basic.portfolioId`),
   risk portfolio (`basic.riskPortfolio`) and entity (`basic.scbEntity`). The UI fills the last two from the portfolio;
   the API takes them as sent, so a case gives all three. `dat` and `setup` replace
-  the pair's. Every case listed must be a row of the features (`SeedDataTest`), and a value starting with `TODO`
+  the pair's. An event case (`SEED-EVENT-...`) books its trade with them too, and its `eventRequest` is merged the
+  same way over its event's request (the E2E case's): the fields one event booking needs of its own. Every case
+  listed must be a row of the features (`SeedDataTest`), and a value starting with `TODO`
   stops the catalog from loading. The catalog has a case per row of the Excel with placeholders,
   `EXAMPLE_PORTFOLIO_<X>` and `EXAMPLE_ENTITY_<X>`, one letter per distinct portfolio and entity, so cases that share
   one share the placeholder. The company copy replaces them with the real SIT values (`scbEntity` is the payload's
@@ -95,15 +99,16 @@ case sends of its own:
   that gives either keeps it; `mifidExeTime` follows a given `effectiveTimestamp`.
 - **`variants`**: another body for any pair, by name (StepIn Full, StepIn Partial), the `variant` column.
 - **`events`**: sent on a new live trade of the pair with the request of an E2E positive case (`case`, the Outline's
-  ID), and the checker approves the task when the event creates one. `via` is how it is sent: `trigger-event` (the
+  ID), the seed case's `eventRequest` over it, and the checker approves the task when the event creates one. `via` is how it is sent: `trigger-event` (the
   default, `POST /trades/trigger-event`, its `tradeIds` replaced) or `update` (the amendment,
   `POST /trades/<id>/update`, its task read from `msg`). The pair's composition must be registered, because the case
   data is per composition.
 
 **A new product** is its Itradeable Type in `itradeableTypes` (when the composition is new), a row (next case ID,
 composition, product ID, taxonomy) in `seed_new_trades.feature`, plus its dat file in
-`seed/dat/<C>/` when the composition is not registered. **A new event** is an event in the catalog and its rows in
-`seed_lifecycle_events.feature`; it needs a positive E2E case first.
+`seed/dat/<C>/` when the composition is not registered. **A new event** is an event in the catalog and its rows
+(next `SEED-EVENT` case ID, event, composition, product ID) in `seed_lifecycle_events.feature`; it needs a positive
+E2E case first.
 
 ## Run (company machine)
 
@@ -115,7 +120,7 @@ mvn -B test -Dtest=SeedTest
 mvn -B test -Dtest=SeedTest "-Dcucumber.options=--tags @seed-trade"
 mvn -B test -Dtest=SeedTest "-Dcucumber.options=--tags @seed-event"
 mvn -B test -Dtest=SeedTest "-Dcucumber.options=--name ^\[SEED-TRADE-024\].*$"
-mvn -B test -Dtest=SeedTest "-Dcucumber.options=--name ^\[SEED-EVENT-termination-FX_TRF-FX_TRF\].*$"
+mvn -B test -Dtest=SeedTest "-Dcucumber.options=--name ^\[SEED-EVENT-004\].*$"
 mvn -Ptest-data process-test-classes "-Dexec.args=seed-report"
 mvn -Ptest-data process-test-classes "-Dexec.args=seed-report 20261120-153000"
 mvn -Ptest-data process-test-classes "-Dexec.args=seed-report all"
@@ -138,8 +143,8 @@ environment.
 
 The steps check only that a booking happened: a trade ID and an approved task. A failed booking fails its scenario and
 is written to the manifest with its error. To rerun only the failed ones, use `--name` with their scenario names
-(`[SEED-TRADE-001]`, `[SEED-TRADE-<variant>-<composition>-<product_id>]`,
-`[SEED-EVENT-<event>-<composition>-<product_id>]`): the rerun is a run of its own.
+(`[SEED-TRADE-001]`, `[SEED-EVENT-004]`, `[SEED-TRADE-<variant>-<composition>-<product_id>]`): the rerun is a run of
+its own.
 
 `seed-report` reports the latest run; `seed-report <run ID>` another one; `seed-report all` every run, the latest line
 of each booking (a rerun's result over the first run's failure). It keeps the latest line of each booking
