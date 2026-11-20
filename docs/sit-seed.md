@@ -80,7 +80,9 @@ case sends of its own:
   (objects deeply, arrays and values replaced, `null` deletes a field): the case's portfolio (`basic.portfolioId`),
   risk portfolio (`basic.riskPortfolio`) and entity (`basic.scbEntity`). The UI fills the last two from the portfolio;
   the API takes them as sent, so a case gives all three. `dat` and `setup` replace
-  the pair's. Every case listed must be a row of the features (`SeedDataTest`). The manifest and the report carry the
+  the pair's. Every case listed must be a row of the features (`SeedDataTest`), and a value starting with `TODO`
+  stops the catalog from loading. The cases of the Excel's rows, with their real portfolios, are prepared in the
+  git-ignored `seed/cases.local.json` (`*.local.json`), to copy into the company copy's catalog. The manifest and the report carry the
   portfolio, risk portfolio and entity each booking sent.
 - **Times**: every booking sends `basic.effectiveTimestamp` as the booking's time (`2026-11-20T11:42:59Z`) and
   `basic.mifidExeTime` as the same instant (`2026-11-20T11:42:59.000Z`), as the trade ticket does. A case's `request`

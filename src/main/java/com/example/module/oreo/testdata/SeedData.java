@@ -210,6 +210,10 @@ public final class SeedData {
             if (dat != null) checkDat(at, dat);
             ObjectNode fields = request.isObject() ? (ObjectNode) JsonLayers.withoutComments(request)
                     : Json.MAPPER.createObjectNode();
+            String todo = todo(fields, "request");
+            if (todo != null) {
+                throw new IllegalStateException(at + ": " + todo + " is still TODO: fill it in before booking");
+            }
             cases.put(e.getKey(), new CaseEntry(fields, dat, text(node, "setup")));
         });
         Map<String, String> variants = new LinkedHashMap<>();
@@ -225,6 +229,22 @@ public final class SeedData {
         return new SeedData(Collections.unmodifiableMap(itradeableTypes), Collections.unmodifiableMap(overrides),
                 Collections.unmodifiableMap(cases), Collections.unmodifiableMap(variants),
                 Collections.unmodifiableMap(events));
+    }
+
+    /** The path under {@code at} of the first text value starting with TODO, or {@code null}. */
+    private static String todo(JsonNode node, String at) {
+        if (node.isTextual()) return node.textValue().startsWith("TODO") ? at : null;
+        if (node.isObject()) {
+            for (var field : node.properties()) {
+                String found = todo(field.getValue(), at + "." + field.getKey());
+                if (found != null) return found;
+            }
+        }
+        for (int i = 0; node.isArray() && i < node.size(); i++) {
+            String found = todo(node.get(i), at + "[" + i + "]");
+            if (found != null) return found;
+        }
+        return null;
     }
 
     private static Event event(String resource, String name, JsonNode node) {

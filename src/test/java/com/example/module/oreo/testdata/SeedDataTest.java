@@ -291,6 +291,9 @@ public class SeedDataTest {
                 {"cases": {"SEED-TRADE-001": {"request": []}}}""", "\"request\"");
         bad("""
                 {"cases": {"SEED-TRADE-001": {"dat": "a/b.dat"}}}""", "cases.SEED-TRADE-001");
+        bad("""
+                {"cases": {"SEED-TRADE-007": {"request": {"basic": {"scbEntity": "TODO scbEntity of FT2 SHA"}}}}}""",
+                "cases.SEED-TRADE-007: request.basic.scbEntity is still TODO");
     }
 
     @Test
