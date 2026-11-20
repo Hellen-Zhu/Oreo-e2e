@@ -13,8 +13,8 @@ data). When the API changes, one fix serves both.
 | Catalog: composition → Itradeable Type, what a pair needs beyond its IDs, variants, events | `src/test/resources/seed/catalog.json` (`SeedData`) |
 | What a run books: one row per seed case (composition, product ID, taxonomy), variant or event | `src/test/resources/seed/features/*.feature` |
 | Steps | `glue/api/SeedSteps.java` |
-| Manifest: one line per booking or failure | `target/seed/manifest-<date>.jsonl` (generated, never committed) |
-| Summary for UAT | `TestDataTool seed-report` → `target/seed/seed-report.csv` |
+| Manifest: one file per run, one line per booking or failure | `target/seed/manifest-<run ID>.jsonl` (generated, never committed) |
+| Summary for UAT | `TestDataTool seed-report [<run ID>\|all]` → `target/seed/seed-report-<run ID or all>.csv` |
 
 The seed features are outside `features/`: `OreoTest`, `check` and `sync-examples` do not see them.
 
@@ -33,11 +33,13 @@ Given seed event 'termination' is booked on a new live trade of composition 'FX_
 ```
 
 One composition can be booked under several product IDs, and one pair under several taxonomies, each its own row.
-`SeedDataTest` fails when a case ID is not `SEED-<KIND>-<3 digits>` or is used twice, when two rows book the same
-composition, product ID, taxonomy, variant and event, when a row's dat file or setup is missing, and when an event's
+`SeedDataTest` fails when a case ID is not `SEED-<KIND>-<3 digits>` or is used twice, when two variant or event rows
+book the same composition, product ID, variant and event (two seed cases may book one pair with their own `cases`
+entries), when a row's dat file or setup is missing, and when an event's
 composition is not registered. Continue the numbering for a new row; never renumber, UAT knows the cases by their IDs.
 
-The catalog maps each composition to its Itradeable Type and holds what a pair needs beyond its two IDs:
+The catalog maps each composition to its Itradeable Type, holds what a pair needs beyond its two IDs and what each
+case sends of its own:
 
 ```json
 {
@@ -49,6 +51,10 @@ The catalog maps each composition to its Itradeable Type and holds what a pair n
     { "composition": "FX_EXAMPLE", "productId": "FX_EXAMPLE_1", "dat": "OTHER.dat", "setup": "trade-create-example" },
     { "composition": "FX_EXAMPLE", "productId": "FX_EXAMPLE_1", "taxonomy": "Metals:Precious:Exotic", "dat": "FX_EXAMPLE_1_METALS.dat" }
   ],
+  "cases": {
+    "SEED-TRADE-001": { "request": { "basic": { "portfolioId": "EXAMPLE_PORTFOLIO_B", "scbEntity": "EXAMPLE_ENTITY_B" } } },
+    "SEED-TRADE-035": { "dat": "FX_TRF_METALS.dat", "request": { "basic": { "portfolioId": "EXAMPLE_PORTFOLIO_C" } } }
+  },
   "variants": {
     "stepin-full": { "setup": "trade-create-stepin-full" }
   },
@@ -60,17 +66,21 @@ The catalog maps each composition to its Itradeable Type and holds what a pair n
 ```
 
 - **`itradeableTypes`**: each composition the seed books, with its full Itradeable Type of the Excel (column E,
-  `Cortex.FX.FXVanilla.Tradeable.FXAverageRateOption`), one to one: the one place where the two names meet. The sheet's composition
-  column is the E2E's except `FX_PSCRIPT_FSB`, booked as `FX_FSB`. A row whose composition is
-  not in it fails, and so does an Itradeable Type given to two compositions. The manifest and the report carry the
+  `Cortex.FX.FXVanilla.Tradeable.FXAverageRateOption`), one to one: the one place where the two names meet. The
+  sheet's composition column is the E2E's except `FX_PSCRIPT_FSB`, booked as `FX_FSB`. A row whose composition is not
+  in it fails, and so does an Itradeable Type given to two compositions. The manifest and the report carry the
   Itradeable Type beside the composition, so UAT reads its own name.
 - **Dat file**: a composition registered in `ProductDatFiles` takes `data/dat/<C>/<C>.dat`; any other takes
   `seed/dat/<C>/<productId>.dat`. Do not register a seed-only composition in `ProductDatFiles`: it would join every
   product Outline of the E2E cases.
 - **`trades`**: a pair whose dat file name (`dat`) or body (`setup`, default `trade-create`) is not the default, or
   a pair with one taxonomy (`taxonomy`): an entry with the row's taxonomy wins over one without, so one pair books
-  another dat file or body per taxonomy. Two rows with the same pair and taxonomy book the same thing. A body is a setup
-  file that `extends` `trade-create` (another entity or portfolio).
+  another dat file or body per taxonomy. A body is a setup file that `extends` `trade-create`.
+- **`cases`**: what one seed case sends of its own, by case ID, over `trades`. `request` is merged over the setup body
+  (objects deeply, arrays and values replaced, `null` deletes a field): the case's portfolio (`basic.portfolioId`) and
+  entity (`basic.scbEntity`, which the UI fills from the portfolio and the payload carries). `dat` and `setup` replace
+  the pair's. Every case listed must be a row of the features (`SeedDataTest`). The manifest and the report carry the
+  portfolio and entity each booking sent.
 - **`variants`**: another body for any pair, by name (StepIn Full, StepIn Partial), the `variant` column.
 - **`events`**: sent on a new live trade of the pair with the request of an E2E positive case (`case`, the Outline's
   ID), and the checker approves the task when the event creates one. `via` is how it is sent: `trigger-event` (the
@@ -95,7 +105,14 @@ mvn -B test -Dtest=SeedTest "-Dcucumber.options=--tags @seed-event"
 mvn -B test -Dtest=SeedTest "-Dcucumber.options=--name ^\[SEED-TRADE-024\].*$"
 mvn -B test -Dtest=SeedTest "-Dcucumber.options=--name ^\[SEED-EVENT-termination-FX_TRF-FX_TRF\].*$"
 mvn -Ptest-data process-test-classes "-Dexec.args=seed-report"
+mvn -Ptest-data process-test-classes "-Dexec.args=seed-report 20261120-153000"
+mvn -Ptest-data process-test-classes "-Dexec.args=seed-report all"
 ```
+
+**Each run has its own manifest**, `manifest-<run ID>.jsonl`, the run ID its start time (`20261120-153000`), never
+appended to an earlier run's. `SeedTest` starts the run in the JVM that forks the features and writes
+`target/seed/current-run` (its process ID and the run ID); each forked JVM finds that its parent started the run and
+writes to the same file. A seed step run without `SeedTest` (from the IDE) starts a run of its own.
 
 `OREO_SEED_ENV=sit` (an environment variable, which reaches the forked JVMs) labels each line of the manifest with the
 environment.
@@ -103,10 +120,13 @@ environment.
 The steps check only that a booking happened: a trade ID and an approved task. A failed booking fails its scenario and
 is written to the manifest with its error. To rerun only the failed ones, use `--name` with their scenario names
 (`[SEED-TRADE-001]`, `[SEED-TRADE-<variant>-<composition>-<product_id>]`,
-`[SEED-EVENT-<event>-<composition>-<product_id>]`). `seed-report` keeps the latest line of each booking (environment,
-composition, product ID, taxonomy, variant, event), writes one CSV row per booking with its case, Itradeable Type
-(from the catalog when a manifest line has none) and trade ID (and child trade IDs for allocation),
-counts the bookings by kind and by Itradeable Type, and lists the failures.
+`[SEED-EVENT-<event>-<composition>-<product_id>]`): the rerun is a run of its own.
+
+`seed-report` reports the latest run; `seed-report <run ID>` another one; `seed-report all` every run, the latest line
+of each booking (a rerun's result over the first run's failure). It keeps the latest line of each booking
+(environment, case, composition, product ID, taxonomy, variant, event), writes one CSV row per booking with its run,
+case, Itradeable Type (from the catalog when a manifest line has none), portfolio, entity and trade ID (and child trade
+IDs for allocation), counts the bookings by kind and by Itradeable Type, and lists the failures.
 
 ## Maintenance
 
@@ -114,7 +134,7 @@ counts the bookings by kind and by Itradeable Type, and lists the failures.
   after an SIT refresh), for example from a manual pipeline job with `OREO_SEED_ENV` and a `--tags` filter as
   parameters. Keep each run's CSV with the release it supported.
 - **Never commit** manifests, reports, real trade IDs, entities or portfolios. Real values for SIT (portfolio, entity)
-  go into setup files on the company copy only.
+  go into `cases` (or setup files) on the company copy only.
 - **A failing seed is a signal.** A product that no longer books in SIT is worth raising, like a failing case.
 
 ## Open
@@ -127,10 +147,9 @@ counts the bookings by kind and by Itradeable Type, and lists the failures.
   lifecycle rows book it so).
 - The new-trade sheet: `SEED-TRADE-001` to `038` are its first 38 rows; rows 39 to 41 (FX_VOLOPTION, FX_AMER_OPT
   twice) wait for their composition and taxonomy. Each unregistered composition's dat file in `seed/dat/<C>/` is a
-  placeholder here: the real template, and the entity and portfolio of its row as setup data, are on the company copy.
-- Rows that differ only by taxonomy (`008`/`009` FXBO + FX_BO_MULTIDIGI, `035`/`036` FX_TRF + FX_TRF) book the same
-  body unless a `trades` entry with the taxonomy gives one its own (dat, entity, portfolio). `037` FX_TRF_DLYSTTL
-  books `FX_TRF.dat` unless an entry names another dat.
+  placeholder here: the real template, and the entity and portfolio of each row in `cases`, are on the company copy.
+- `037` FX_TRF_DLYSTTL books `FX_TRF.dat` unless an entry names another dat.
+- To confirm: `scbEntity` is under `basic` in the trade payload, beside `portfolioId`.
 - To confirm: three Itradeable Types are cut off at the cell's edge in the sheet and are written as seen:
   `...PayoffScript.Ctrl.CrossCurrency` (FX_PSCRIPT_CCK), `...Ctrl.FloatingStrikeB` (FX_FSB),
   `...Ctrl.VolBarrierDigi` (FX_PSCRIPT_VBD).

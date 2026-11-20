@@ -16,32 +16,59 @@ import java.util.Map;
 import java.util.TreeMap;
 
 /**
- * {@code seed-report}: the summary of the SIT seed for UAT (docs/sit-seed.md). Reads every manifest in
- * {@code target/seed}, keeps the latest line of each booking (environment, composition, product ID, taxonomy, variant,
- * event) and writes {@code target/seed/seed-report.csv}, one row per booking with its Itradeable Type (from the
- * catalog's {@code itradeableTypes} when the line has none); prints the counts, by kind and by Itradeable Type, and the
- * bookings that failed. Checks the catalog first. Never fails on a failed booking: the report lists it.
+ * {@code seed-report [<run ID>|all]}: the summary of the SIT seed for UAT (docs/sit-seed.md). Reads the manifest of
+ * the latest run in {@code target/seed} (or of the given run, or every run), keeps the latest line of each booking
+ * (environment, case, composition, product ID, taxonomy, variant, event) and writes
+ * {@code target/seed/seed-report-<run ID or all>.csv}, one row per booking with its Itradeable Type (from the catalog's
+ * {@code itradeableTypes} when the line has none), portfolio and entity; prints the counts, by kind and by Itradeable
+ * Type, and the bookings that failed. Checks the catalog first. Never fails on a failed booking: the report lists it.
  */
 final class SeedReport {
 
-    static final List<String> COLUMNS = List.of("env", "kind", "case", "itradeableType", "composition", "productId",
-            "taxonomy", "variant", "event", "setup", "tradeId", "childTradeIds", "status", "at", "error");
+    static final List<String> COLUMNS = List.of("run", "env", "kind", "case", "itradeableType", "composition",
+            "productId", "taxonomy", "portfolioId", "scbEntity", "variant", "event", "setup", "tradeId", "childTradeIds", "status", "at", "error");
 
     private SeedReport() {}
 
-    static int run() throws IOException {
+    /** All runs, the latest line of each booking: {@code seed-report all}. */
+    static final String ALL = "all";
+
+    /**
+     * The report of run {@code which}: {@code null} for the latest run, a run ID ({@code 20261120-153000}), or
+     * {@link #ALL}. Writes {@code target/seed/seed-report-<run ID or all>.csv}.
+     */
+    static int run(String which) throws IOException {
         SeedData catalog = SeedData.catalog();
         System.out.println("Catalog " + SeedData.CATALOG + ": " + catalog.itradeableTypes().size()
                 + " Itradeable Types, " + catalog.variants().size() + " variants, "
                 + catalog.events().size() + " events");
         Path dir = SeedData.manifestDir();
-        List<JsonNode> latest = withItradeableTypes(latest(SeedData.readManifests(dir)), catalog.itradeableTypes());
-        if (latest.isEmpty()) {
-            System.out.println("No bookings in " + ProjectPaths.projectRoot().relativize(dir)
+        List<Path> manifests = SeedData.manifests(dir);
+        if (manifests.isEmpty()) {
+            System.out.println("No manifests in " + ProjectPaths.projectRoot().relativize(dir)
                     + ": run SeedTest first (docs/sit-seed.md)");
             return 0;
         }
-        Path csv = dir.resolve("seed-report.csv");
+        String name;
+        List<JsonNode> entries = new ArrayList<>();
+        if (ALL.equals(which)) {
+            name = ALL;
+            entries.addAll(SeedData.readManifests(dir));
+        } else {
+            Path file = which == null ? manifests.get(manifests.size() - 1)
+                    : dir.resolve("manifest-" + which + ".jsonl");
+            if (!Files.isRegularFile(file)) {
+                throw new IllegalArgumentException("[Seed] no manifest of run " + which + " in "
+                        + ProjectPaths.projectRoot().relativize(dir) + ": "
+                        + manifests.stream().map(p -> p.getFileName().toString()).toList());
+            }
+            name = file.getFileName().toString().replaceAll("^manifest-|\\.jsonl$", "");
+            entries.addAll(SeedData.readManifest(file));
+        }
+        System.out.println("Run " + name + " (" + manifests.size() + " run(s) in "
+                + ProjectPaths.projectRoot().relativize(dir) + ")");
+        List<JsonNode> latest = withItradeableTypes(latest(entries), catalog.itradeableTypes());
+        Path csv = dir.resolve("seed-report-" + name + ".csv");
         Files.writeString(csv, csv(latest), StandardCharsets.UTF_8);
 
         Map<String, int[]> counts = new TreeMap<>();
@@ -92,7 +119,7 @@ final class SeedReport {
 
     private static String key(JsonNode entry) {
         return entry.path("env").asText("") + "|" + entry.path("kind").asText() + "|"
-                + entry.path("composition").asText() + "|" + entry.path("productId").asText() + "|"
+                + entry.path("case").asText("") + "|" + entry.path("composition").asText() + "|" + entry.path("productId").asText() + "|"
                 + entry.path("taxonomy").asText("") + "|" + entry.path("variant").asText("") + "|" + entry.path("event").asText("");
     }
 

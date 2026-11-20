@@ -128,15 +128,22 @@ public final class TradeApiClient {
     private static CreatedTrade createdTrade(JsonNode response, String testDataKey) {
         String tradeId = response.at("/data/trade/id").asText("");
         if (tradeId.isBlank()) {
-            throw new AssertionError("[TradeApiClient] setup " + testDataKey + " created no trade: " + response);
+            throw new AssertionError("[TradeApiClient] " + testDataKey + " created no trade: " + response);
         }
         return new CreatedTrade(tradeId, response.at("/data/checkerContext/taskId").asText(""));
     }
 
     private static JsonNode createTrade(RequestResponseHelper helper, String path, String userId, String testDataKey,
                                         String productId, String datPath) throws URISyntaxException {
-        // The setup body carries no product: the step resolves the product ID from the registry and the case
-        String tradeJson = withProductId(TestData.setup(testDataKey).request(), productId);
+        return createTradeWithBody(helper, path, userId, TestData.setup(testDataKey).request(), productId, datPath,
+                testDataKey);
+    }
+
+    private static JsonNode createTradeWithBody(RequestResponseHelper helper, String path, String userId,
+                                                String requestJson, String productId, String datPath,
+                                                String testDataKey) throws URISyntaxException {
+        // The body carries no product: the step resolves the product ID from the registry and the case
+        String tradeJson = withProductId(requestJson, productId);
         URL resource = TradeApiClient.class.getClassLoader().getResource(datPath);
         if (resource == null) {
             throw new AssertionError("[TradeApiClient] dat file '" + datPath + "' not found on classpath.");
@@ -257,6 +264,20 @@ public final class TradeApiClient {
     public static CreatedTrade provisionLiveTrade(RequestResponseHelper helper, String testDataKey,
                                                   String productId, String datPath) throws URISyntaxException {
         CreatedTrade trade = provisionPendingTrade(helper, testDataKey, productId, datPath);
+        approveTask(helper, trade.taskId(), TestUser.CHECKER.email());
+        log.info("[TradeApiClient] live trade provisioned: tradeId='{}'", trade.tradeId());
+        return trade;
+    }
+
+    /**
+     * {@link #provisionLiveTrade} with the trade body {@code requestJson} instead of a setup body; {@code what} names
+     * the body in the log and the error.
+     */
+    public static CreatedTrade provisionLiveTradeWithBody(RequestResponseHelper helper, String requestJson,
+                                                          String productId, String datPath, String what)
+            throws URISyntaxException {
+        CreatedTrade trade = createdTrade(createTradeWithBody(helper, SUBMIT_TRADE_PATH, TestUser.MAKER.email(),
+                requestJson, productId, datPath, what), what);
         approveTask(helper, trade.taskId(), TestUser.CHECKER.email());
         log.info("[TradeApiClient] live trade provisioned: tradeId='{}'", trade.tradeId());
         return trade;

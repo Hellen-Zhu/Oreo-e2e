@@ -7,6 +7,7 @@ import com.example.module.oreo.utils.DateUtil;
 import com.example.module.oreo.utils.TradeApiClient;
 import com.example.module.oreo.utils.TradeApiClient.CreatedTrade;
 import com.example.module.oreo.utils.TradeApiClient.EventResult;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import cucumber.api.Scenario;
 import cucumber.api.java.Before;
@@ -16,7 +17,7 @@ import java.util.List;
 
 /**
  * The steps of the SIT seed ({@code SeedTest}, {@code docs/sit-seed.md}): book the trades and events of
- * {@link SeedData#catalog()} and write each booking, or its failure, to the manifest. They check only that a booking
+ * {@link SeedData#catalog()} and write each booking, or its failure, to the run's manifest. They check only that a booking
  * happened (a trade ID, an approved task), never the response: the seed makes data, the E2E cases test it.
  */
 public class SeedSteps {
@@ -36,8 +37,7 @@ public class SeedSteps {
      */
     @Given("^seed case '([^']*)' books a live trade of composition '([^']*)' and product ID '([^']*)' with taxonomy '([^']*)' via api$")
     public void bookCase(String caseId, String composition, String productId, String taxonomy) throws Exception {
-        SeedData.checkCase(caseId);
-        book(SeedData.catalog().trade(composition, productId, taxonomy, null), caseId);
+        book(SeedData.catalog().forCase(caseId, composition, productId, taxonomy));
     }
 
     /**
@@ -46,14 +46,13 @@ public class SeedSteps {
      */
     @Given("^a '([^']*)' seed trade of composition '([^']*)' and product ID '([^']*)' is booked live via api$")
     public void bookVariant(String variant, String composition, String productId) throws Exception {
-        book(SeedData.catalog().trade(composition, productId, variant), null);
+        book(SeedData.catalog().trade(composition, productId, variant));
     }
 
-    private void book(SeedData.Trade trade, String caseId) throws Exception {
+    private void book(SeedData.Trade trade) throws Exception {
         ObjectNode entry = entry("trade", trade);
-        if (caseId != null) entry.put("case", caseId);
         try {
-            CreatedTrade live = live(trade);
+            CreatedTrade live = live(trade, entry);
             entry.put("tradeId", live.tradeId()).put("taskId", live.taskId());
             done(entry);
         } catch (Exception | AssertionError e) {
@@ -71,10 +70,10 @@ public class SeedSteps {
     public void bookEvent(String event, String composition, String productId) throws Exception {
         SeedData.Trade trade = SeedData.catalog().trade(composition, productId, null);
         SeedData.Event e = SeedData.catalog().event(event);
-        ObjectNode entry = entry("event", trade).put("event", e.name()).put("case", e.caseId());
+        ObjectNode entry = entry("event", trade).put("event", e.name()).put("eventCase", e.caseId());
         try {
             String request = SeedData.eventRequest(e, trade);
-            CreatedTrade live = live(trade);
+            CreatedTrade live = live(trade, entry);
             entry.put("tradeId", live.tradeId());
             String taskId;
             if (SeedData.UPDATE.equals(e.via())) {
@@ -97,9 +96,18 @@ public class SeedSteps {
         }
     }
 
-    private CreatedTrade live(SeedData.Trade trade) throws Exception {
-        CreatedTrade live = TradeApiClient.provisionLiveTrade(ctx.helper(), trade.setup(), trade.productId(),
-                trade.dat());
+    /**
+     * A live trade of {@code trade}: its body ({@link SeedData#request}) and dat file. The body's portfolio and entity
+     * go to {@code entry}.
+     */
+    private CreatedTrade live(SeedData.Trade trade, ObjectNode entry) throws Exception {
+        String request = SeedData.request(trade);
+        JsonNode basic = Json.parse(request).path("basic");
+        for (String field : List.of("portfolioId", "scbEntity")) {
+            if (basic.hasNonNull(field)) entry.put(field, basic.get(field).asText());
+        }
+        CreatedTrade live = TradeApiClient.provisionLiveTradeWithBody(ctx.helper(), request, trade.productId(),
+                trade.dat(), trade.caseId() != null ? trade.caseId() : trade.setup());
         ctx.set("createdTradeId", live.tradeId());
         return live;
     }
@@ -109,6 +117,8 @@ public class SeedSteps {
         entry.put("at", DateUtil.format(DateUtil.now()));
         String env = System.getenv("OREO_SEED_ENV");
         if (env != null && !env.isBlank()) entry.put("env", env.trim());
+        entry.put("run", SeedData.runId());
+        if (trade.caseId() != null) entry.put("case", trade.caseId());
         entry.put("kind", kind).put("itradeableType", trade.itradeableType()).put("composition", trade.composition())
                 .put("productId", trade.productId())
                 .put("setup", trade.setup());

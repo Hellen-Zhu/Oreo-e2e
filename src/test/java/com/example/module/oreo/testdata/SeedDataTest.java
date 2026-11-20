@@ -48,7 +48,8 @@ public class SeedDataTest {
 
     /**
      * Every row of the seed features resolves (its case ID, IDs, taxonomy, variant and event), has its dat file and
-     * setup, and no two rows book the same thing or share a case ID; an event's composition is registered.
+     * body, and no two rows share a case ID or, without one, book the same thing; an event's composition is
+     * registered; every case of the catalog's {@code cases} is a row.
      */
     @Test
     public void everyRowOfTheSeedFeaturesResolvesOnce() throws IOException, URISyntaxException {
@@ -79,24 +80,33 @@ public class SeedDataTest {
                         SeedData.checkCase(caseId);
                         assertTrue(file + ": case ID twice: " + caseId, cases.add(caseId));
                     }
-                    SeedData.Trade trade = catalog.trade(cell(header, cells, "composition"),
-                            cell(header, cells, "product_id"), cell(header, cells, "taxonomy"), variant);
+                    SeedData.Trade trade = caseId != null
+                            ? catalog.forCase(caseId, cell(header, cells, "composition"),
+                                    cell(header, cells, "product_id"), cell(header, cells, "taxonomy"))
+                            : catalog.trade(cell(header, cells, "composition"), cell(header, cells, "product_id"),
+                                    cell(header, cells, "taxonomy"), variant);
                     assertTrue(file + ": no dat file " + trade.dat(),
                             getClass().getClassLoader().getResource(trade.dat()) != null);
-                    TestData.setup(trade.setup());
+                    Json.parse(SeedData.request(trade));
                     if (event != null) {
                         catalog.event(event);
                         assertTrue(file + ": " + event + " on an unregistered " + trade.composition(),
                                 trade.registered());
                     }
-                    String key = trade.composition() + "|" + trade.productId() + "|" + trade.taxonomy() + "|"
-                            + variant + "|" + event;
+                    // a seed case is its own booking (its case ID is unique): two cases may book one pair and
+                    // taxonomy with their own portfolios; the other rows are known by what they book
+                    String key = caseId != null ? caseId : trade.composition() + "|" + trade.productId() + "|"
+                            + trade.taxonomy() + "|" + variant + "|" + event;
                     assertTrue(file + " books twice: " + key, seen.add(key));
                     rows++;
                 }
             }
         }
         assertTrue("the seed features have rows", rows > 0);
+        for (String caseId : catalog.caseIds()) {
+            assertTrue(SeedData.CATALOG + " cases." + caseId + ": no such row in the seed features",
+                    cases.contains(caseId));
+        }
     }
 
     private static String cell(List<String> header, List<String> cells, String column) {
@@ -248,13 +258,66 @@ public class SeedDataTest {
     }
 
     @Test
-    public void bookingsAreAppendedAndReadBack() throws IOException {
+    public void aCaseSendsItsOwnFieldsDatFileAndBody() {
+        SeedData catalog = SeedData.fromJson("t.json", Json.parse("""
+                {"itradeableTypes": {"FX_TRF": "Cortex.Finance.Tradeable.TRF"},
+                 "trades": [{"composition": "FX_TRF", "productId": "FX_TRF", "dat": "FX_TRF_PAIR.dat"}],
+                 "cases": {"_comment": "skipped",
+                           "SEED-TRADE-001": {"request": {"basic": {"portfolioId": "PORTFOLIO_1",
+                                                                    "scbEntity": "ENTITY_1"}}},
+                           "SEED-TRADE-002": {"dat": "FX_TRF_CASE.dat", "setup": "trade-create-stepin-full",
+                                              "request": {"basic": {"counterpartyName": null}}}}}"""));
+        assertEquals(Set.of("SEED-TRADE-001", "SEED-TRADE-002"), catalog.caseIds());
+        SeedData.Trade one = catalog.forCase("SEED-TRADE-001", "FX_TRF", "FX_TRF", "ComplexExotic");
+        assertEquals("SEED-TRADE-001", one.caseId());
+        assertEquals(ProductDatFiles.FX_TRF.path("FX_TRF_PAIR.dat"), one.dat());
+        JsonNode basic = Json.parse(SeedData.request(one)).path("basic");
+        assertEquals("PORTFOLIO_1", basic.path("portfolioId").asText());
+        assertEquals("ENTITY_1", basic.path("scbEntity").asText());
+        JsonNode setupBasic = Json.parse(TestData.setup(SeedData.DEFAULT_SETUP).request()).path("basic");
+        assertEquals(setupBasic.path("direction"), basic.path("direction"));
+        SeedData.Trade two = catalog.forCase("SEED-TRADE-002", "FX_TRF", "FX_TRF", "ComplexExotic");
+        assertEquals(ProductDatFiles.FX_TRF.path("FX_TRF_CASE.dat"), two.dat());
+        assertEquals("trade-create-stepin-full", two.setup());
+        assertTrue(Json.parse(SeedData.request(two)).path("basic").path("counterpartyName").isMissingNode());
+        SeedData.Trade three = catalog.forCase("SEED-TRADE-003", "FX_TRF", "FX_TRF", "ComplexExotic");
+        assertEquals(TestData.setup(SeedData.DEFAULT_SETUP).request(), SeedData.request(three));
+        bad("""
+                {"cases": {"TC-TRADE-001": {}}}""", "cases.TC-TRADE-001");
+        bad("""
+                {"cases": {"SEED-TRADE-001": {"request": []}}}""", "\"request\"");
+        bad("""
+                {"cases": {"SEED-TRADE-001": {"dat": "a/b.dat"}}}""", "cases.SEED-TRADE-001");
+    }
+
+    @Test
+    public void eachRunWritesItsOwnManifest() throws IOException {
         System.setProperty(ProjectPaths.PROPERTY, tmp.getRoot().toString());
-        SeedData.record(Json.MAPPER.createObjectNode().put("kind", "trade").put("composition", "FX_TRF"));
-        SeedData.record(Json.MAPPER.createObjectNode().put("kind", "event").put("composition", "FX_TRF"));
-        List<JsonNode> entries = SeedData.readManifests(SeedData.manifestDir());
-        assertEquals(2, entries.size());
-        assertEquals("event", entries.get(1).path("kind").asText());
+        try {
+            SeedData.forgetRun();
+            String first = SeedData.startRun();
+            assertEquals("a JVM belongs to the run it started", first, SeedData.startRun());
+            SeedData.record(Json.MAPPER.createObjectNode().put("kind", "trade").put("composition", "FX_TRF"));
+            SeedData.record(Json.MAPPER.createObjectNode().put("kind", "event").put("composition", "FX_TRF"));
+            assertEquals(tmp.getRoot().toPath().resolve("target/seed/manifest-" + first + ".jsonl"),
+                    SeedData.manifestFile());
+            // another JVM's run, not an ancestor's: this JVM starts its own
+            Files.writeString(SeedData.manifestDir().resolve(SeedData.RUN_MARKER), Long.MAX_VALUE + " 20000101-000000");
+            SeedData.forgetRun();
+            String second = SeedData.runId();
+            assertEquals(first.length(), second.length());
+            assertTrue(second, !second.equals("20000101-000000"));
+            Files.writeString(SeedData.manifestDir().resolve("manifest-20000101-000000.jsonl"), "{\"kind\": \"old\"}\n");
+            List<Path> manifests = SeedData.manifests(SeedData.manifestDir());
+            assertEquals(List.of("manifest-20000101-000000.jsonl", "manifest-" + first + ".jsonl"),
+                    manifests.stream().map(p -> p.getFileName().toString()).toList());
+            assertEquals(2, SeedData.readManifest(SeedData.manifestDir().resolve("manifest-" + first + ".jsonl")).size());
+            List<JsonNode> all = SeedData.readManifests(SeedData.manifestDir());
+            assertEquals("old", all.get(0).path("kind").asText());
+            assertEquals(3, all.size());
+        } finally {
+            SeedData.forgetRun();
+        }
     }
 
     private static void bad(String json, String expected) {

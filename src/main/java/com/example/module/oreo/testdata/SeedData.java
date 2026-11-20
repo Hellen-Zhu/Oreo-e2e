@@ -13,12 +13,14 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
@@ -38,6 +40,10 @@ import java.util.regex.Pattern;
  *       {@code {"composition", "productId", "taxonomy"?, "dat"?, "setup"?}}, gives another file name or another body
  *       for a pair, or for a pair with one taxonomy; the body is {@code data/setup/<name>.json}, {@code trade-create}
  *       by default.</li>
+ *   <li>{@code cases}, by seed case ID: {@code {"request"?, "dat"?, "setup"?}} for that case alone. {@code request}
+ *       is merged over the setup body (objects deeply, {@code null} deletes): the case's portfolio
+ *       ({@code basic.portfolioId}) and entity ({@code basic.scbEntity}). Its {@code dat} and {@code setup} win over
+ *       {@code trades}.</li>
  *   <li>A variant ({@code variants}, by name: {@code {"setup": ...}}) books a pair with another body: StepIn Full,
  *       StepIn Partial.</li>
  *   <li>An event is booked with the request of an E2E case ({@code "case"}, the Outline's ID with
@@ -63,12 +69,14 @@ public final class SeedData {
     private static final Pattern CASE = Pattern.compile("SEED-[A-Z]+-[0-9]{3}");
 
     /**
-     * What one booking sends: a composition, its Itradeable Type and a product ID, the ISDA taxonomy after its asset
-     * class (a label of the booking, {@code null} for none), the variant ({@code null} for none), the classpath path
-     * of its dat file, its setup body; {@code registered} when the composition is in {@link ProductDatFiles}.
+     * What one booking sends: its seed case ID ({@code null} for a variant or event row), a composition, its
+     * Itradeable Type and a product ID, the ISDA taxonomy after its asset class (a label of the booking, {@code null}
+     * for none), the variant ({@code null} for none), the classpath path of its dat file, its setup body, the case's
+     * fields merged over the body (empty for none, {@link SeedData#request(Trade)}); {@code registered} when the
+     * composition is in {@link ProductDatFiles}.
      */
-    public record Trade(String composition, String itradeableType, String productId, String taxonomy,
-                        String variant, String dat, String setup, boolean registered) {}
+    public record Trade(String caseId, String composition, String itradeableType, String productId, String taxonomy,
+                        String variant, String dat, String setup, ObjectNode caseRequest, boolean registered) {}
 
     /** A lifecycle event of the catalog, booked with the request of the E2E case {@code caseId} through {@code via}. */
     public record Event(String name, String caseId, String via) {}
@@ -80,15 +88,20 @@ public final class SeedData {
 
     private record Override(String dat, String setup) {}
 
+    /** A case's own fields over the setup body, and its own dat file and body. */
+    private record CaseEntry(ObjectNode request, String dat, String setup) {}
+
     /** Composition -> Itradeable Type, one to one. */
     private final Map<String, String> itradeableTypes;
     private final Map<String, Override> overrides;
+    private final Map<String, CaseEntry> cases;
     private final Map<String, String> variants;
     private final Map<String, Event> events;
 
     private SeedData(Map<String, String> itradeableTypes, Map<String, Override> overrides,
-                     Map<String, String> variants, Map<String, Event> events) {
+                     Map<String, CaseEntry> cases, Map<String, String> variants, Map<String, Event> events) {
         this.itradeableTypes = itradeableTypes;
+        this.cases = cases;
         this.overrides = overrides;
         this.variants = variants;
         this.events = events;
@@ -168,6 +181,32 @@ public final class SeedData {
                 throw new IllegalStateException(at + ": " + key + " is listed twice");
             }
         }
+        JsonNode caseNodes = root.path("cases");
+        if (!caseNodes.isMissingNode() && !caseNodes.isObject()) {
+            throw new IllegalStateException("[Seed] " + resource + " cases: {\"<seed case ID>\": {request, dat,"
+                    + " setup}}");
+        }
+        Map<String, CaseEntry> cases = new LinkedHashMap<>();
+        caseNodes.properties().forEach(e -> {
+            if (e.getKey().equals(JsonLayers.COMMENT)) return;
+            String at = "[Seed] " + resource + " cases." + e.getKey();
+            try {
+                checkCase(e.getKey());
+            } catch (IllegalStateException ex) {
+                throw new IllegalStateException(at + ": " + ex.getMessage(), ex);
+            }
+            JsonNode node = e.getValue();
+            JsonNode request = node.path("request");
+            if (!node.isObject() || (!request.isMissingNode() && !request.isObject())) {
+                throw new IllegalStateException(at + ": {\"request\": {fields over the setup body}, \"dat\","
+                        + " \"setup\"}");
+            }
+            String dat = text(node, "dat");
+            if (dat != null) checkDat(at, dat);
+            ObjectNode fields = request.isObject() ? (ObjectNode) JsonLayers.withoutComments(request)
+                    : Json.MAPPER.createObjectNode();
+            cases.put(e.getKey(), new CaseEntry(fields, dat, text(node, "setup")));
+        });
         Map<String, String> variants = new LinkedHashMap<>();
         root.path("variants").properties().forEach(e -> {
             String at = "[Seed] " + resource + " variants." + e.getKey();
@@ -179,7 +218,8 @@ public final class SeedData {
         Map<String, Event> events = new LinkedHashMap<>();
         root.path("events").properties().forEach(e -> events.put(e.getKey(), event(resource, e.getKey(), e.getValue())));
         return new SeedData(Collections.unmodifiableMap(itradeableTypes), Collections.unmodifiableMap(overrides),
-                Collections.unmodifiableMap(variants), Collections.unmodifiableMap(events));
+                Collections.unmodifiableMap(cases), Collections.unmodifiableMap(variants),
+                Collections.unmodifiableMap(events));
     }
 
     private static Event event(String resource, String name, JsonNode node) {
@@ -204,6 +244,17 @@ public final class SeedData {
     }
 
     /**
+     * What seed case {@code caseId} books: {@link #trade(String, String, String, String)} with no variant, and the
+     * case's own fields, dat file and body from {@code cases}, which win over {@code trades}.
+     *
+     * @throws IllegalStateException when the case ID is not one, or as {@link #trade(String, String, String, String)}
+     */
+    public Trade forCase(String caseId, String composition, String productId, String taxonomy) {
+        checkCase(caseId);
+        return resolve(caseId, composition, productId, taxonomy, null);
+    }
+
+    /**
      * What a booking of {@code composition} under {@code productId} with {@code taxonomy} ({@code null} for none)
      * sends, as variant {@code variant} ({@code null} for none). A {@code trades} entry with this taxonomy wins over
      * one without.
@@ -212,6 +263,10 @@ public final class SeedData {
      *         or the catalog has no such variant
      */
     public Trade trade(String composition, String productId, String taxonomy, String variant) {
+        return resolve(null, composition, productId, taxonomy, variant);
+    }
+
+    private Trade resolve(String caseId, String composition, String productId, String taxonomy, String variant) {
         String at = "[Seed] " + key(composition, productId, taxonomy);
         id(at, "composition", composition);
         id(at, "productId", productId);
@@ -229,10 +284,31 @@ public final class SeedData {
             if (setup == null) throw new IllegalStateException(at + ": no variant '" + variant + "' in " + CATALOG);
         }
         String dat = override == null ? null : override.dat();
+        CaseEntry entry = caseId == null ? null : cases.get(caseId);
+        if (entry != null) {
+            if (entry.setup() != null) setup = entry.setup();
+            if (entry.dat() != null) dat = entry.dat();
+        }
         ProductDatFiles registered = registered(composition);
         String path = registered != null ? registered.path(dat)
                 : SEED_DAT_DIR + composition + "/" + (dat == null ? productId + ".dat" : dat);
-        return new Trade(composition, itradeableType, productId, taxonomy, variant, path, setup, registered != null);
+        ObjectNode caseRequest = entry == null ? Json.MAPPER.createObjectNode() : entry.request().deepCopy();
+        return new Trade(caseId, composition, itradeableType, productId, taxonomy, variant, path, setup, caseRequest,
+                registered != null);
+    }
+
+    /**
+     * The trade body {@code trade} sends without its product ID: its setup body with the case's fields merged over
+     * it (objects deeply, {@code null} deletes).
+     */
+    public static String request(Trade trade) {
+        ObjectNode body = (ObjectNode) Json.parse(TestData.setup(trade.setup()).request());
+        return Json.compact(JsonLayers.merge(body, trade.caseRequest()));
+    }
+
+    /** The seed case IDs that have an entry in {@code cases}. */
+    public Set<String> caseIds() {
+        return cases.keySet();
     }
 
     /** The registered composition {@code name}, or {@code null}. */
@@ -341,12 +417,80 @@ public final class SeedData {
         return ProjectPaths.projectRoot().resolve("target/seed");
     }
 
+    /** The file naming the current run: {@code <pid of the JVM that started it> <run ID>}. */
+    static final String RUN_MARKER = "current-run";
+    private static final DateTimeFormatter RUN_ID = DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss");
+    private static volatile String runId;
+
     /**
-     * Appends {@code entry} as one line to today's manifest, under a file lock: the seed features run in parallel
+     * Starts a run, unless this JVM belongs to one already: called by {@code SeedTest} in the JVM that forks the
+     * features, before any of them runs. The run's ID is its start time ({@code 20261120-153000}); its manifest is
+     * {@code manifest-<run ID>.jsonl}, a new file per run.
+     */
+    public static synchronized String startRun() {
+        String current = currentRun();
+        if (current != null) return runId = current;
+        String id = LocalDateTime.now().format(RUN_ID);
+        Path marker = manifestDir().resolve(RUN_MARKER);
+        try {
+            Files.createDirectories(marker.getParent());
+            Files.writeString(marker, ProcessHandle.current().pid() + " " + id, StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            throw new UncheckedIOException("[Seed] cannot write " + marker, e);
+        }
+        return runId = id;
+    }
+
+    /**
+     * The ID of this JVM's run: the run in {@link #RUN_MARKER} when this JVM or one of its ancestors started it (the
+     * forked JVMs of one {@code SeedTest} run share it), otherwise a new run ({@link #startRun()}).
+     */
+    public static String runId() {
+        String id = runId;
+        return id != null ? id : startRun();
+    }
+
+    /** The run of the marker when this JVM or an ancestor wrote it, or {@code null}. */
+    private static String currentRun() {
+        Path marker = manifestDir().resolve(RUN_MARKER);
+        if (!Files.isRegularFile(marker)) return null;
+        String[] parts;
+        try {
+            parts = Files.readString(marker, StandardCharsets.UTF_8).trim().split(" ");
+        } catch (IOException e) {
+            return null;
+        }
+        if (parts.length != 2) return null;
+        long pid;
+        try {
+            pid = Long.parseLong(parts[0]);
+        } catch (NumberFormatException e) {
+            return null;
+        }
+        ProcessHandle process = ProcessHandle.current();
+        for (int depth = 0; process != null && depth < 10; depth++) {
+            if (process.pid() == pid) return parts[1];
+            process = process.parent().orElse(null);
+        }
+        return null;
+    }
+
+    /** Forgets this JVM's run, for the tests. */
+    static synchronized void forgetRun() {
+        runId = null;
+    }
+
+    /** The manifest of this JVM's run, {@code manifest-<run ID>.jsonl}. */
+    public static Path manifestFile() {
+        return manifestDir().resolve("manifest-" + runId() + ".jsonl");
+    }
+
+    /**
+     * Appends {@code entry} as one line to the run's manifest, under a file lock: the seed features run in parallel
      * JVMs.
      */
     public static void record(ObjectNode entry) {
-        Path file = manifestDir().resolve("manifest-" + LocalDate.now() + ".jsonl");
+        Path file = manifestFile();
         byte[] line = (Json.compact(entry) + "\n").getBytes(StandardCharsets.UTF_8);
         try {
             Files.createDirectories(file.getParent());
@@ -360,18 +504,28 @@ public final class SeedData {
         }
     }
 
-    /** Every entry of the manifests in {@code dir}, file by file in name order, line by line. */
+    /** The manifests in {@code dir}, oldest run first. */
+    public static List<Path> manifests(Path dir) throws IOException {
+        if (!Files.isDirectory(dir)) return List.of();
+        try (var list = Files.list(dir)) {
+            return list.filter(p -> p.getFileName().toString().matches("manifest-.*\\.jsonl")).sorted().toList();
+        }
+    }
+
+    /** The entries of one manifest, line by line. */
+    public static List<JsonNode> readManifest(Path file) throws IOException {
+        List<JsonNode> out = new ArrayList<>();
+        for (String line : Files.readAllLines(file, StandardCharsets.UTF_8)) {
+            if (!line.isBlank()) out.add(Json.parse(line));
+        }
+        return out;
+    }
+
+    /** Every entry of the manifests in {@code dir}, run by run, line by line. */
     public static List<JsonNode> readManifests(Path dir) throws IOException {
         List<JsonNode> out = new ArrayList<>();
-        if (!Files.isDirectory(dir)) return out;
-        List<Path> files;
-        try (var list = Files.list(dir)) {
-            files = list.filter(p -> p.getFileName().toString().matches("manifest-.*\\.jsonl")).sorted().toList();
-        }
-        for (Path file : files) {
-            for (String line : Files.readAllLines(file, StandardCharsets.UTF_8)) {
-                if (!line.isBlank()) out.add(Json.parse(line));
-            }
+        for (Path file : manifests(dir)) {
+            out.addAll(readManifest(file));
         }
         return out;
     }
