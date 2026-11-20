@@ -1,37 +1,29 @@
-"""Export the SIT seed's dat files from Cortex, one per seed case (docs/sit-seed.md, "Dat files from Cortex").
+"""Export dat files from Cortex by trade ID (docs/sit-seed.md, "Dat files from Cortex").
 
-For each seed case still to export (target/seed/seed-dats.csv, written by `TestDataTool seed-dats`), the script takes
-the case's Sample Trade from the Excel and does in Cortex what is done by hand:
+For each trade ID given, the script does in Cortex what is done by hand:
 
-  1. TDS Browser: Trade ID is <Sample Trade>, Load (F9).
+  1. TDS Browser: Trade ID is <trade ID>, Load (F9).
   2. Open the trade's INSTRUMENT, then its {Object ITradeable}: the View window.
-  3. View > Export > Save As "Cortex object file (*.dat)": <export dir>/<Sample Trade>.dat.
+  3. View > Export > Save As "Cortex object file (*.dat)": <out>/<trade ID>.dat.
 
-Then it copies <Sample Trade>.dat to the case's dat path in the project (the name the catalog expects), unless
---no-install. The exported files keep their trade ID names outside the project: real trade IDs never reach the repo.
+The files stay outside the project (--out); copy each into the seed case's dat path yourself (seed-dats lists them).
 
 Windows only, on the machine where Cortex runs, with the TDS Browser open:
-    pip install pywinauto openpyxl
-    python scripts/cortex_dat_export.py --excel <the seed Excel> --dry-run      # the plan, no clicks
-    python scripts/cortex_dat_export.py --excel <the seed Excel> --inspect      # the controls, to adjust LOCATORS
-    python scripts/cortex_dat_export.py --excel <the seed Excel> --cases SEED-TRADE-013
-    python scripts/cortex_dat_export.py --excel <the seed Excel>
+    pip install pywinauto
+    python scripts/cortex_dat_export.py --inspect          # the controls, to adjust LOCATORS
+    python scripts/cortex_dat_export.py <trade ID>
+    python scripts/cortex_dat_export.py <trade ID> <trade ID> ...
 
 The controls of Cortex were read from a screen recording, not from the application: run --inspect once and adjust
-LOCATORS below to the names it prints. Keep the mouse and keyboard still while it runs; Ctrl+C stops it between cases.
+LOCATORS below to the names it prints. Keep the mouse and keyboard still while it runs; Ctrl+C stops it between trades.
 """
 from __future__ import annotations
 
 import argparse
 import csv
-import shutil
 import sys
 import time
 from pathlib import Path
-
-PROJECT = Path(__file__).resolve().parent.parent
-PLAN = PROJECT / "target" / "seed" / "seed-dats.csv"
-TO_EXPORT = {"placeholder", "missing"}
 
 # ── What the script clicks. Adjust after --inspect: titles are regular expressions. ─────────────────────────────────
 LOCATORS = {
@@ -54,40 +46,6 @@ LOCATORS = {
     "confirm_dialog": r"Confirm Save As",
 }
 WAIT = {"load": 30, "window": 15, "save": 15, "between": 0.5}
-
-
-def read_plan(path: Path) -> list[dict]:
-    if not path.is_file():
-        sys.exit(f"No {path}: run first\n  mvn -Ptest-data process-test-classes -DskipTests \"-Dexec.args=seed-dats\"")
-    with path.open(newline="", encoding="utf-8") as f:
-        return list(csv.DictReader(f))
-
-
-def read_sample_trades(excel: Path, sheet: str | None, case_column: str, trade_column: str) -> dict[int, str]:
-    """Case number (Case NB) -> Sample Trade, from the first row that has both column names."""
-    from openpyxl import load_workbook
-
-    ws = load_workbook(excel, read_only=True, data_only=True)[sheet] if sheet else \
-        load_workbook(excel, read_only=True, data_only=True).active
-    rows = ws.iter_rows(values_only=True)
-    for header in rows:
-        names = [str(c).strip() if c is not None else "" for c in header]
-        if case_column in names and trade_column in names:
-            ci, ti = names.index(case_column), names.index(trade_column)
-            break
-    else:
-        sys.exit(f"{excel}: no row with the columns '{case_column}' and '{trade_column}'")
-    trades = {}
-    for row in rows:
-        case, trade = row[ci], row[ti]
-        if case is None or trade is None or str(case).strip() == "":
-            continue
-        try:
-            number = int(float(str(case).strip()))
-        except ValueError:
-            continue
-        trades[number] = str(int(trade)) if isinstance(trade, float) else str(trade).strip()
-    return trades
 
 
 # ── Cortex ──────────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -192,18 +150,10 @@ def where() -> None:
 
 def main() -> int:
     p = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
-    p.add_argument("--excel", type=Path, help="the seed Excel (Case NB, Sample Trade)")
-    p.add_argument("--sheet", help="the sheet; the active one by default")
-    p.add_argument("--case-column", default="Case NB")
-    p.add_argument("--trade-column", default="Sample Trade")
-    p.add_argument("--plan", type=Path, default=PLAN, help="seed-dats.csv")
+    p.add_argument("trades", nargs="*", help="trade IDs to export, one <trade ID>.dat each")
     p.add_argument("--out", type=Path, default=Path.home() / "Downloads" / "seed-dats",
                    help="where <trade ID>.dat files are exported (outside the project)")
-    p.add_argument("--cases", help="only these cases, comma-separated (SEED-TRADE-008,SEED-TRADE-009)")
-    p.add_argument("--all", action="store_true", help="also cases whose dat file is already real")
     p.add_argument("--force", action="store_true", help="export again when <trade ID>.dat already exists")
-    p.add_argument("--no-install", action="store_true", help="export only, do not copy into the project")
-    p.add_argument("--dry-run", action="store_true", help="print the plan, click nothing")
     p.add_argument("--inspect", action="store_true", help="print the controls of the open Cortex windows")
     p.add_argument("--where", action="store_true", help="print the mouse position in the TDS Browser")
     args = p.parse_args()
@@ -214,36 +164,8 @@ def main() -> int:
     if args.where:
         where()
         return 0
-    if not args.excel:
-        p.error("--excel is required")
-
-    plan = read_plan(args.plan)
-    only = {c.strip() for c in args.cases.split(",")} if args.cases else None
-    trades = read_sample_trades(args.excel, args.sheet, args.case_column, args.trade_column)
-    todo, skipped = [], []
-    for row in plan:
-        case = row["case"]
-        if only is not None and case not in only:
-            continue
-        if row["state"] in ("e2e", "shared"):
-            skipped.append((case, row["state"] + (f" ({row['sameAs']})" if row["sameAs"] else "")))
-            continue
-        if not args.all and row["state"] not in TO_EXPORT:
-            skipped.append((case, "already real"))
-            continue
-        trade = trades.get(int(case.rsplit("-", 1)[1]))
-        if not trade:
-            skipped.append((case, f"no {args.trade_column} in the Excel"))
-            continue
-        todo.append((case, trade, PROJECT / row["datFile"]))
-
-    for case, why in skipped:
-        print(f"skip   {case}: {why}")
-    for case, trade, dat in todo:
-        print(f"export {case}: {trade}.dat -> {dat.relative_to(PROJECT)}")
-    if args.dry_run or not todo:
-        print(f"{len(todo)} to export, {len(skipped)} skipped" + (" (dry run)" if args.dry_run else ""))
-        return 0
+    if not args.trades:
+        p.error("give at least one trade ID")
 
     args.out.mkdir(parents=True, exist_ok=True)
     log_path = args.out / "export-log.csv"
@@ -251,26 +173,22 @@ def main() -> int:
     failed = 0
     with log_path.open("a", newline="", encoding="utf-8") as log_file:
         log = csv.writer(log_file)
-        for case, trade, dat in todo:
+        for trade in args.trades:
             exported = args.out / f"{trade}.dat"
             try:
                 if args.force or not exported.is_file():
                     cortex.export(trade, exported)
-                if not args.no_install:
-                    dat.parent.mkdir(parents=True, exist_ok=True)
-                    shutil.copyfile(exported, dat)
-                print(f"ok     {case}: {exported.name}" + ("" if args.no_install else f" -> {dat.name}"))
-                log.writerow([time.strftime("%Y-%m-%d %H:%M:%S"), case, trade, dat.name, "ok", ""])
+                print(f"ok     {trade}: {exported}")
+                log.writerow([time.strftime("%Y-%m-%d %H:%M:%S"), trade, "ok", ""])
             except KeyboardInterrupt:
                 print("stopped")
                 break
-            except Exception as e:                              # one case's failure does not stop the others
+            except Exception as e:                              # one trade's failure does not stop the others
                 failed += 1
-                print(f"FAILED {case}: {e}")
-                log.writerow([time.strftime("%Y-%m-%d %H:%M:%S"), case, trade, dat.name, "failed", str(e)[:300]])
+                print(f"FAILED {trade}: {e}")
+                log.writerow([time.strftime("%Y-%m-%d %H:%M:%S"), trade, "failed", str(e)[:300]])
             time.sleep(WAIT["between"])
-    print(f"{len(todo) - failed} exported, {failed} failed; log {log_path}")
-    print("Then: mvn -Ptest-data process-test-classes -DskipTests \"-Dexec.args=seed-dats\" to see what is left.")
+    print(f"{len(args.trades) - failed} exported, {failed} failed; log {log_path}")
     return 1 if failed else 0
 
 
