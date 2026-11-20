@@ -31,8 +31,8 @@ import java.util.regex.Pattern;
  * {@code TestDataTool seed-report} turns into the summary for UAT. Details: {@code docs/sit-seed.md}.
  *
  * <ul>
- *   <li>{@code itradeableTypes}, {@code {"<Itradeable Type>": "<composition>"}}: the Excel's name of each
- *       composition the seed books ({@code FX_PSCRIPT_FSB} is {@code FX_FSB}), one to one. A booking's composition
+ *   <li>{@code itradeableTypes}, {@code {"<Itradeable Type>": "<composition>"}}: the Excel's full Itradeable Type
+ *       of each composition the seed books ({@code Cortex.Finance.Tradeable.TRF} is {@code FX_TRF}), one to one. A booking's composition
  *       must be in it; its Itradeable Type goes to the manifest and the report.</li>
  *   <li>A pair's dat file: a composition registered in {@link ProductDatFiles} takes it from {@code data/dat/<C>/}
  *       ({@code <C>.dat}), any other from {@code seed/dat/<C>/} ({@code <productId>.dat}). {@code trades}, a list of
@@ -56,6 +56,8 @@ public final class SeedData {
     private static final String PRODUCT = "<product_type>";
     private static final Pattern NAME = Pattern.compile("[a-z0-9][a-z0-9-]*");
     private static final Pattern ID = Pattern.compile("[A-Za-z0-9][A-Za-z0-9_]*");
+    /** An Itradeable Type, the full name of the Excel's column: {@code Cortex.Finance.Tradeable.TRF}. */
+    private static final Pattern ITRADEABLE_TYPE = Pattern.compile("[A-Za-z][A-Za-z0-9_]*(\\.[A-Za-z][A-Za-z0-9_]*)+");
     /** The ISDA taxonomy after its asset class: {@code ComplexExotic}, {@code SimpleExotic:Digital}. */
     private static final Pattern TAXONOMY = Pattern.compile("[A-Za-z]+(:[A-Za-z]+)*");
     /** A seed case ID, the {@code case} column: {@code SEED-TRADE-001}. */
@@ -136,7 +138,10 @@ public final class SeedData {
         }
         types.properties().forEach(e -> {
             String at = "[Seed] " + resource + " itradeableTypes." + e.getKey();
-            id(at, "Itradeable Type", e.getKey());
+            if (!ITRADEABLE_TYPE.matcher(e.getKey()).matches()) {
+                throw new IllegalStateException(at + ": an Itradeable Type is its full dotted name"
+                        + " (Cortex.Finance.Tradeable.TRF)");
+            }
             String composition = id(at, "composition", e.getValue().isTextual() ? e.getValue().asText() : null);
             String other = typeOfComposition.put(composition, e.getKey());
             if (other != null) {

@@ -42,8 +42,8 @@ The catalog maps each Itradeable Type to its composition and holds what a pair n
 ```json
 {
   "itradeableTypes": {
-    "FX_PSCRIPT_FSB": "FX_FSB",
-    "FX_TRF": "FX_TRF"
+    "Cortex.Finance.Tradeable.PayoffScript.Ctrl.TRFGeneric": "FX_PSCRIPT_TRF",
+    "Cortex.Finance.Tradeable.TRF": "FX_TRF"
   },
   "trades": [
     { "composition": "FX_EXAMPLE", "productId": "FX_EXAMPLE_1", "dat": "OTHER.dat", "setup": "trade-create-example" },
@@ -59,8 +59,9 @@ The catalog maps each Itradeable Type to its composition and holds what a pair n
 }
 ```
 
-- **`itradeableTypes`**: the Excel's Itradeable Type of each composition the seed books, one to one: the one place
-  where the two names meet. Most are the same name; `FX_PSCRIPT_FSB` is the E2E's `FX_FSB`. A row whose composition is
+- **`itradeableTypes`**: the Excel's full Itradeable Type (column E, `Cortex.FX.FXVanilla.Tradeable.FXAverageRateOption`)
+  of each composition the seed books, one to one: the one place where the two names meet. The sheet's composition
+  column is the E2E's except `FX_PSCRIPT_FSB`, booked as `FX_FSB`. A row whose composition is
   not in it fails, and so does a composition under two Itradeable Types. The manifest and the report carry the
   Itradeable Type beside the composition, so UAT reads its own name.
 - **Dat file**: a composition registered in `ProductDatFiles` takes `data/dat/<C>/<C>.dat`; any other takes
@@ -128,6 +129,8 @@ and lists the failures.
 - Rows that differ only by taxonomy (`008`/`009` FXBO + FX_BO_MULTIDIGI, `035`/`036` FX_TRF + FX_TRF) book the same
   body unless a `trades` entry with the taxonomy gives one its own (dat, entity, portfolio). `037` FX_TRF_DLYSTTL
   books `FX_TRF.dat` unless an entry names another dat.
-- To confirm: the taxonomy of `020` (FX_CO, booked as `ComplexExotic`).
+- To confirm: three Itradeable Types are cut off at the cell's edge in the sheet and are written as seen:
+  `...PayoffScript.Ctrl.CrossCurrency` (FX_PSCRIPT_CCK), `...Ctrl.FloatingStrikeB` (FX_FSB),
+  `...Ctrl.VolBarrierDigi` (FX_PSCRIPT_VBD).
 - The public copy has only some events' case data (allocation, early termination). The other events, amendment and
   cancellation among them, resolve on the company copy.
