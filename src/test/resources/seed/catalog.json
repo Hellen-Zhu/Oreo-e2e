@@ -30,7 +30,7 @@
     "SEED-TRADE-005": { "request": { "basic": { "portfolioId": "EXAMPLE_PORTFOLIO_E", "riskPortfolio": "EXAMPLE_PORTFOLIO_E", "scbEntity": "EXAMPLE_ENTITY_B" } } },
     "SEED-TRADE-006": { "request": { "basic": { "portfolioId": "EXAMPLE_PORTFOLIO_F", "riskPortfolio": "EXAMPLE_PORTFOLIO_F", "scbEntity": "EXAMPLE_ENTITY_E" } } },
     "SEED-TRADE-007": { "request": { "basic": { "portfolioId": "EXAMPLE_PORTFOLIO_G", "riskPortfolio": "EXAMPLE_PORTFOLIO_G", "scbEntity": "EXAMPLE_ENTITY_F" } } },
-    "SEED-TRADE-008": { "dat": "FX_BO_MULTIDIGI_METALS.dat", "request": { "basic": { "portfolioId": "EXAMPLE_PORTFOLIO_H", "riskPortfolio": "EXAMPLE_PORTFOLIO_H", "scbEntity": "EXAMPLE_ENTITY_B" } } },
+    "SEED-TRADE-008": { "dat": "FX_BO_MULTIDIGI_Precious.dat", "request": { "basic": { "portfolioId": "EXAMPLE_PORTFOLIO_H", "riskPortfolio": "EXAMPLE_PORTFOLIO_H", "scbEntity": "EXAMPLE_ENTITY_B" } } },
     "SEED-TRADE-009": { "request": { "basic": { "portfolioId": "EXAMPLE_PORTFOLIO_I", "riskPortfolio": "EXAMPLE_PORTFOLIO_I", "scbEntity": "EXAMPLE_ENTITY_B" } } },
     "SEED-TRADE-010": { "request": { "basic": { "portfolioId": "EXAMPLE_PORTFOLIO_J", "riskPortfolio": "EXAMPLE_PORTFOLIO_J", "scbEntity": "EXAMPLE_ENTITY_B" } } },
     "SEED-TRADE-011": { "request": { "basic": { "portfolioId": "EXAMPLE_PORTFOLIO_K", "riskPortfolio": "EXAMPLE_PORTFOLIO_K", "scbEntity": "EXAMPLE_ENTITY_B" } } },

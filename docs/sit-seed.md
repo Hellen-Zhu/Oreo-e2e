@@ -168,9 +168,9 @@ Itradeable Type and the failures.
 - The new-trade sheet: `SEED-TRADE-001` to `038` are its first 38 rows; rows 39 to 41 (FX_VOLOPTION, FX_AMER_OPT
   twice) wait for their composition and taxonomy. Each unregistered composition's dat file in `seed/dat/<C>/` is a
   placeholder here: the real template, and the entity and portfolio of each row in `cases`, are on the company copy.
-- `008` and `009` (FXBO + FX_BO_MULTIDIGI) book different dat files: `008` names `FX_BO_MULTIDIGI_METALS.dat` in its
-  `cases` entry, `009` takes the pair's default `FX_BO_MULTIDIGI.dat`; both are placeholders here. Rename `008`'s to
-  the real file's name on the company copy.
+- `008` and `009` (FXBO + FX_BO_MULTIDIGI) book different dat files: `008` names `FX_BO_MULTIDIGI_Precious.dat`
+  (the name it is exported under from Cortex) in its `cases` entry, `009` takes the pair's default
+  `FX_BO_MULTIDIGI.dat`; both are placeholders here.
 - `037` FX_TRF_DLYSTTL books `FX_TRF.dat` unless an entry names another dat.
 - To confirm: three Itradeable Types are cut off at the cell's edge in the sheet and are written as seen:
   `...PayoffScript.Ctrl.CrossCurrency` (FX_PSCRIPT_CCK), `...Ctrl.FloatingStrikeB` (FX_FSB),
