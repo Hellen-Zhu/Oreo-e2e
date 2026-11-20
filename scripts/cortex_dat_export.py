@@ -50,6 +50,9 @@ LOCATORS = {
     # INSTRUMENT: the Viewer then shows INSTRUMENT only, {Object ITradeable} in its first cell. Offsets are from the
     # Viewer's top left, but an item of the column list is at its offset from the list (--where's first line), else
     # clicked by its text.
+    # Where the Viewer is put once it stops moving (it opens at a varying place and size): left, top, width,
+    # height in physical pixels. The offsets below are from its top left, so they hold wherever it is put.
+    "viewer_rect": (100, 100, 1600, 1000),
     "object_header_offset": (128, 186),                 # a column header of the Viewer, e.g. ACTION
     "column_all": ("All", (22, 28)),                   # (text, offset) of the list's All
     "column_instrument": ("INSTRUMENT", (22, 876)),          # (text, offset) of the list's INSTRUMENT
@@ -62,7 +65,7 @@ LOCATORS = {
     "save_dialog": r"Save As",
     "confirm_dialog": r"Confirm Save As",
 }
-WAIT = {"load": 30, "window": 15, "viewer_ready": 2, "save": 15, "between": 0.5}
+WAIT = {"load": 30, "window": 15, "viewer_ready": 20, "save": 15, "between": 0.5}
 
 
 # ── Cortex ──────────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -147,6 +150,29 @@ class Cortex:
                 return self.desktop.window(handle=handle), handle
             time.sleep(0.2)
         return None
+
+    @staticmethod
+    def settle_and_place(window, rect) -> None:
+        """Waits until the window keeps one place and size for 1.5 s (it fills and moves after it shows), then
+        moves it to rect, so that offsets from its top left meet the same cells each time."""
+        import ctypes
+
+        handle = window.wrapper_object().handle
+        last, stable_since, deadline = None, time.time(), time.time() + WAIT["viewer_ready"]
+        while time.time() < deadline:
+            r = window.rectangle()
+            now = (r.left, r.top, r.right, r.bottom)
+            if now != last:
+                last, stable_since = now, time.time()
+            elif time.time() - stable_since >= 1.5:
+                break
+            time.sleep(0.2)
+        user32 = ctypes.windll.user32
+        user32.ShowWindow(handle, 9)                                        # SW_RESTORE, if maximized
+        user32.MoveWindow(handle, *rect, True)
+        time.sleep(0.5)
+        window.set_focus()
+        time.sleep(0.3)
 
     def show_instrument_only(self, objects) -> None:
         """Right-click a column header of the Viewer, untick All, tick INSTRUMENT, close the list. Each action
@@ -233,7 +259,8 @@ class Cortex:
         with step("6 wait for the Viewer (object_window)"):
             objects = self.window(LOCATORS["object_window"])
 
-        time.sleep(WAIT["viewer_ready"])                        # the Viewer fills its grid after it shows
+        with step("6b wait for the Viewer to stop moving, then put it at viewer_rect"):
+            self.settle_and_place(objects, LOCATORS["viewer_rect"])
         if LOCATORS["object_header_offset"]:
             # once: All is a toggle, so a second pass would tick every column again
             with step("7a show the INSTRUMENT column only (object_header_offset, column_all, column_instrument)"):
