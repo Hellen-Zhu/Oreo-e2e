@@ -91,22 +91,8 @@ tbody tr:last-child td { border-bottom: 0; }
   <div class="meta" id="meta"></div>
   <div class="cards" id="cards"></div>
 
-  <div class="toolbar">
-    <input type="search" id="search" placeholder="Search case, trade ID, product, portfolio…" aria-label="Search">
-    <div class="seg" id="status" role="group" aria-label="Status">
-      <button data-v="" aria-pressed="true">All</button>
-      <button data-v="booked" aria-pressed="false">Booked</button>
-      <button data-v="failed" aria-pressed="false">Failed</button>
-    </div>
-    <button class="btn" id="copy-all" title="Case and trade ID of the booked rows shown, tab-separated">Copy trade IDs</button>
-    <span class="count" id="count"></span>
-  </div>
-  <div class="table-wrap">
-    <table>
-      <thead><tr id="head"></tr></thead>
-      <tbody id="rows"></tbody>
-    </table>
-  </div>
+  <section id="trades"></section>
+  <section id="events"></section>
 
   <h2>By Itradeable Type</h2>
   <div class="table-wrap">
@@ -124,21 +110,27 @@ tbody tr:last-child td { border-bottom: 0; }
   const data = JSON.parse(document.getElementById('seed-data').textContent);
   const bookings = data.bookings || [];
   const label = b => b.case || b.event || b.variant || '';
-  const columns = [
-    { key: 'case', title: 'Case', get: label },
-    { key: 'tradeId', title: 'Trade ID' },
-    { key: 'status', title: 'Status' },
-    { key: 'itradeableType', title: 'Itradeable Type' },
-    { key: 'composition', title: 'Composition' },
-    { key: 'productId', title: 'Product ID' },
-    { key: 'taxonomy', title: 'Taxonomy' },
+  const common = [
     { key: 'portfolioId', title: 'Portfolio' },
     { key: 'riskPortfolio', title: 'Risk portfolio' },
     { key: 'scbEntity', title: 'Entity' },
-    { key: 'kind', title: 'Kind', get: b => b.kind + (b.event ? ' · ' + b.event : '') + (b.variant ? ' · ' + b.variant : '') },
     { key: 'at', title: 'At' }
   ];
-  if (data.run === 'all') columns.splice(1, 0, { key: 'run', title: 'Run' });
+  const run = data.run === 'all' ? [{ key: 'run', title: 'Run' }] : [];
+  // new trades (kind "trade", a variant included) and lifecycle events (kind "event"), each in a section of its own
+  const sections = [
+    { id: 'trades', title: 'New trades', rows: bookings.filter(b => b.kind !== 'event'), columns: [
+      { key: 'case', title: 'Case', get: label }, ...run, { key: 'tradeId', title: 'Trade ID' },
+      { key: 'status', title: 'Status' }, { key: 'itradeableType', title: 'Itradeable Type' },
+      { key: 'composition', title: 'Composition' }, { key: 'productId', title: 'Product ID' },
+      { key: 'taxonomy', title: 'Taxonomy' }, { key: 'variant', title: 'Variant' }, ...common] },
+    { id: 'events', title: 'Lifecycle events', rows: bookings.filter(b => b.kind === 'event'), columns: [
+      { key: 'case', title: 'Case', get: label }, ...run, { key: 'event', title: 'Event' },
+      { key: 'tradeId', title: 'Trade ID' }, { key: 'status', title: 'Status' },
+      { key: 'childTradeIds', title: 'Child trade IDs', get: b => (b.childTradeIds || []).join(' ') },
+      { key: 'composition', title: 'Composition' }, { key: 'productId', title: 'Product ID' },
+      { key: 'eventCase', title: 'E2E case' }, ...common] }
+  ];
   const value = (b, c) => String((c.get ? c.get(b) : b[c.key]) ?? '');
 
   const envs = [...new Set(bookings.map(b => b.env).filter(Boolean))];
@@ -149,57 +141,92 @@ tbody tr:last-child td { border-bottom: 0; }
   const booked = bookings.filter(b => b.status === 'booked').length;
   const failed = bookings.length - booked;
   const types = new Set(bookings.map(b => b.itradeableType).filter(Boolean)).size;
-  document.getElementById('cards').innerHTML = [
+  const cardsOf = list => list.map(([k, v, cls]) => '<div class="card"><div class="k">' + k
+    + '</div><div class="v ' + cls + '">' + v + '</div></div>').join('');
+  document.getElementById('cards').innerHTML = cardsOf([
     ['Bookings', bookings.length, ''], ['Booked', booked, 'ok'], ['Failed', failed, failed ? 'bad' : ''],
     ['Itradeable Types', types, '']
-  ].map(([k, v, cls]) => '<div class="card"><div class="k">' + k + '</div><div class="v ' + cls + '">' + v
-    + '</div></div>').join('');
+  ]);
 
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
   const shortType = t => t ? t.split('.').slice(-2).join('.') : '';
 
-  let status = '', query = '', sortKey = null, sortDir = 1;
-  const head = document.getElementById('head');
-  head.innerHTML = columns.map(c => '<th data-k="' + c.key + '">' + c.title + '</th>').join('');
-  head.addEventListener('click', e => {
-    const th = e.target.closest('th'); if (!th) return;
-    sortDir = sortKey === th.dataset.k ? -sortDir : 1; sortKey = th.dataset.k;
-    head.querySelectorAll('th').forEach(h => h.removeAttribute('aria-sort'));
-    th.setAttribute('aria-sort', sortDir > 0 ? 'ascending' : 'descending');
-    render();
-  });
+  function section(sec) {
+    const root = document.getElementById(sec.id);
+    const { rows: all, columns } = sec;
+    const ok = all.filter(b => b.status === 'booked').length;
+    root.innerHTML = '<h2>' + sec.title + ' <span class="count">' + ok + ' booked, ' + (all.length - ok)
+      + ' failed</span></h2>'
+      + '<div class="toolbar">'
+      + '<input type="search" placeholder="Search case, trade ID, product, portfolio…" aria-label="Search '
+      + sec.title + '">'
+      + '<div class="seg" role="group" aria-label="Status">'
+      + '<button data-v="" aria-pressed="true">All</button><button data-v="booked" aria-pressed="false">Booked</button>'
+      + '<button data-v="failed" aria-pressed="false">Failed</button></div>'
+      + '<button class="btn copy-all" title="Case and trade ID of the booked rows shown, tab-separated">Copy trade IDs</button>'
+      + '<span class="count"></span></div>'
+      + '<div class="table-wrap"><table><thead><tr></tr></thead><tbody></tbody></table></div>';
+    const head = root.querySelector('thead tr'), body = root.querySelector('tbody'),
+      count = root.querySelector('.toolbar .count');
+    let status = '', query = '', sortKey = null, sortDir = 1;
+    head.innerHTML = columns.map(c => '<th data-k="' + c.key + '">' + c.title + '</th>').join('');
+    head.addEventListener('click', e => {
+      const th = e.target.closest('th'); if (!th) return;
+      sortDir = sortKey === th.dataset.k ? -sortDir : 1; sortKey = th.dataset.k;
+      head.querySelectorAll('th').forEach(h => h.removeAttribute('aria-sort'));
+      th.setAttribute('aria-sort', sortDir > 0 ? 'ascending' : 'descending');
+      render();
+    });
 
-  function shown() {
-    const q = query.toLowerCase();
-    let out = bookings.filter(b => (!status || b.status === status)
-      && (!q || columns.some(c => value(b, c).toLowerCase().includes(q)) || (b.error || '').toLowerCase().includes(q)));
-    if (sortKey) {
-      const c = columns.find(c => c.key === sortKey);
-      out = out.slice().sort((a, b) => value(a, c).localeCompare(value(b, c), undefined, { numeric: true }) * sortDir);
+    function shown() {
+      const q = query.toLowerCase();
+      let out = all.filter(b => (!status || b.status === status)
+        && (!q || columns.some(c => value(b, c).toLowerCase().includes(q)) || (b.error || '').toLowerCase().includes(q)));
+      if (sortKey) {
+        const c = columns.find(c => c.key === sortKey);
+        out = out.slice().sort((a, b) => value(a, c).localeCompare(value(b, c), undefined, { numeric: true }) * sortDir);
+      }
+      return out;
     }
-    return out;
+
+    function render() {
+      const rows = shown();
+      count.textContent = rows.length + ' of ' + all.length;
+      body.innerHTML = rows.length ? rows.map(b =>
+        '<tr>' + columns.map(c => '<td>' + cell(b, c) + '</td>').join('') + '</tr>'
+        + (b.status === 'failed' && b.error ? '<tr class="error"><td colspan="' + columns.length + '">'
+          + esc(b.error) + '</td></tr>' : '')).join('')
+        : '<tr><td class="empty" colspan="' + columns.length + '">'
+          + (all.length ? 'No booking matches' : 'No ' + sec.title.toLowerCase() + ' in this run') + '</td></tr>';
+    }
+
+    root.querySelector('input[type=search]').addEventListener('input', e => { query = e.target.value; render(); });
+    const seg = root.querySelector('.seg');
+    seg.addEventListener('click', e => {
+      const btn = e.target.closest('button'); if (!btn) return;
+      status = btn.dataset.v;
+      seg.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', String(x === btn)));
+      render();
+    });
+    body.addEventListener('click', e => {
+      const btn = e.target.closest('.copy'); if (btn) copy(btn.dataset.copy, 'Copied ' + btn.dataset.copy);
+    });
+    root.querySelector('.copy-all').addEventListener('click', () => {
+      const rows = shown().filter(b => b.tradeId);
+      copy(rows.map(b => label(b) + '\t' + b.tradeId).join('\n'), 'Copied ' + rows.length + ' trade ID(s)');
+    });
+    render();
   }
 
   function cell(b, c) {
     const v = value(b, c);
     if (c.key === 'tradeId') return v ? '<span class="trade">' + esc(v) + '</span><button class="copy" data-copy="'
-      + esc(v) + '" title="Copy">⧉</button>' + (b.childTradeIds && b.childTradeIds.length
-      ? '<div class="mono type">' + esc(b.childTradeIds.join(' ')) + '</div>' : '') : '';
+      + esc(v) + '" title="Copy">⧉</button>' : '';
     if (c.key === 'status') return '<span class="pill ' + esc(v) + '">' + esc(v) + '</span>';
     if (c.key === 'itradeableType') return '<span class="type" title="' + esc(v) + '">' + esc(shortType(v)) + '</span>';
-    if (['case', 'composition', 'productId', 'portfolioId', 'riskPortfolio', 'run'].includes(c.key))
-      return '<span class="mono">' + esc(v) + '</span>';
+    if (['case', 'composition', 'productId', 'portfolioId', 'riskPortfolio', 'run', 'childTradeIds', 'eventCase']
+      .includes(c.key)) return '<span class="mono">' + esc(v) + '</span>';
     return esc(v);
-  }
-
-  function render() {
-    const rows = shown();
-    document.getElementById('count').textContent = rows.length + ' of ' + bookings.length;
-    document.getElementById('rows').innerHTML = rows.length ? rows.map(b =>
-      '<tr>' + columns.map(c => '<td>' + cell(b, c) + '</td>').join('') + '</tr>'
-      + (b.status === 'failed' && b.error ? '<tr class="error"><td colspan="' + columns.length + '">'
-        + esc(b.error) + '</td></tr>' : '')).join('')
-      : '<tr><td class="empty" colspan="' + columns.length + '">No booking matches</td></tr>';
   }
 
   const byType = {};
@@ -216,14 +243,6 @@ tbody tr:last-child td { border-bottom: 0; }
       + '<span class="bar bad" style="width:' + (f / max * 160) + 'px"></span></td></tr>';
   }).join('');
 
-  document.getElementById('search').addEventListener('input', e => { query = e.target.value; render(); });
-  document.getElementById('status').addEventListener('click', e => {
-    const btn = e.target.closest('button'); if (!btn) return;
-    status = btn.dataset.v;
-    document.querySelectorAll('#status button').forEach(x => x.setAttribute('aria-pressed', String(x === btn)));
-    render();
-  });
-
   const toast = document.getElementById('toast');
   function copy(text, what) {
     const done = () => { toast.textContent = what; toast.classList.add('on'); setTimeout(() => toast.classList.remove('on'), 1400); };
@@ -234,15 +253,7 @@ tbody tr:last-child td { border-bottom: 0; }
     const t = document.createElement('textarea'); t.value = text; document.body.appendChild(t); t.select();
     try { document.execCommand('copy'); done(); } finally { t.remove(); }
   }
-  document.getElementById('rows').addEventListener('click', e => {
-    const btn = e.target.closest('.copy'); if (btn) copy(btn.dataset.copy, 'Copied ' + btn.dataset.copy);
-  });
-  document.getElementById('copy-all').addEventListener('click', () => {
-    const rows = shown().filter(b => b.tradeId);
-    copy(rows.map(b => label(b) + '\t' + b.tradeId).join('\n'), 'Copied ' + rows.length + ' trade ID(s)');
-  });
-
-  render();
+  sections.forEach(section);
 })();
 </script>
 </body>

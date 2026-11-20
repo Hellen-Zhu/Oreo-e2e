@@ -15,7 +15,7 @@ data). When the API changes, one fix serves both.
 | Steps | `glue/api/SeedSteps.java` |
 | Manifest: one file per run, one line per booking or failure | `target/seed/manifest-<run ID>.jsonl` (generated, never committed) |
 | Summary for UAT | `TestDataTool seed-report [<run ID>\|all]` → `target/seed/seed-report-<run ID or all>.csv` and `.html` |
-| The page's template | `src/test/resources/tools/seed-report.html` |
+| The page's template | `src/test/resources/tools/seed-report.html`: new trades and lifecycle events in two sections, each with its search, status filter and copy |
 | Each seed case's dat file and whether it is still to export | `TestDataTool seed-dats` → `target/seed/seed-dats.csv` |
 | Export dat files from Cortex by trade ID (Windows, pywinauto) | `scripts/cortex_dat_export.py` |
 
