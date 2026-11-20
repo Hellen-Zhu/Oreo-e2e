@@ -178,7 +178,13 @@ def where() -> None:
     import ctypes
     from ctypes import wintypes
 
+    import pywinauto  # noqa: F401 - makes this process DPI aware, as when it clicks: physical pixels both ways
+
     user32 = ctypes.windll.user32
+    try:
+        ctypes.windll.shcore.SetProcessDpiAwareness(2)                     # per monitor; a no-op if already set
+    except Exception:
+        user32.SetProcessDPIAware()
     print("Switch to Cortex (Alt+Tab) and point at the cell; the position is read in 8 seconds.")
     time.sleep(8)
     point = wintypes.POINT()
