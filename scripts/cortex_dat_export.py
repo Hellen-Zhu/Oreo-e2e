@@ -53,7 +53,7 @@ LOCATORS = {
     "column_all": ("All", (168, 29)),                   # (text, offset) of the list's All
     "column_instrument": ("INSTRUMENT", (146, 866)),          # (text, offset) of the list's INSTRUMENT
     "object_cell": r".*Object ITradeable.*",            # the Viewer's INSTRUMENT cell; or object_cell_offset
-    "object_cell_offset": None,                         # {Object ITradeable} once INSTRUMENT is the only column
+    "object_cell_offset": (160, 225),                        # {Object ITradeable} once INSTRUMENT is the only column
     "view_window": r"^View$",                           # Export, Raw view, Trade type: ...
     "view_export_item": (r"^Save As", 1),
     "save_dialog": r"Save As",
