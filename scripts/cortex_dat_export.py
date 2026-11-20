@@ -80,14 +80,38 @@ class Cortex:
         w.wait("visible", timeout=timeout)
         return w
 
-    def close_all(self, *titles_re: str) -> None:
-        """Closes the windows an earlier try left open, so that each title names one window."""
-        for title_re in titles_re:
-            for w in self.desktop.windows(title_re=title_re):
-                try:
-                    w.close()
-                except Exception:
-                    pass
+    @staticmethod
+    def close_all(*titles_re: str) -> None:
+        """Closes the windows an earlier try left open, so that each title names one window. The Win32 list of
+        top-level windows has them all, owned windows too; each gets WM_CLOSE, as from its close button."""
+        import ctypes
+        from ctypes import wintypes
+
+        user32 = ctypes.windll.user32
+        patterns = [re.compile(t) for t in titles_re]
+
+        def matching() -> list[int]:
+            found = []
+
+            def visit(hwnd, _):
+                if user32.IsWindowVisible(hwnd):
+                    title = ctypes.create_unicode_buffer(512)
+                    user32.GetWindowTextW(hwnd, title, 512)
+                    if any(p.match(title.value) for p in patterns):
+                        found.append(hwnd)
+                return True
+
+            user32.EnumWindows(ctypes.WINFUNCTYPE(wintypes.BOOL, wintypes.HWND, wintypes.LPARAM)(visit), 0)
+            return found
+
+        windows = matching()
+        for hwnd in windows:
+            user32.PostMessageW(hwnd, 0x0010, 0, 0)                 # WM_CLOSE
+        deadline = time.time() + 5
+        while windows and matching() and time.time() < deadline:
+            time.sleep(0.3)
+        if windows:
+            print(f"       closed {len(windows)} window(s) left open")
 
     def menu(self, window, item) -> None:
         """Clicks the window's Export button, then the menu item: by its text, else by Down presses and Enter."""
