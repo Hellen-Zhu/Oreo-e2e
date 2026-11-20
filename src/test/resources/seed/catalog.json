@@ -1,0 +1,23 @@
+{
+  "_comment": "The SIT seed's catalog (docs/sit-seed.md), read by SeedData. trades: a registered composition, or productId + dat (classpath path of its dat file, e.g. seed/dat/<name>.dat); setup is the body in data/setup (trade-create when absent). events: the E2E Outline whose positive case's request books the event. The rows the seed features book are named here; a new product is a trade here and a row in seed_new_trades.feature.",
+  "trades": {
+    "fx-trf": { "composition": "FX_TRF" },
+    "fx-co": { "composition": "FX_CO" },
+    "fx-fsb": { "composition": "FX_FSB" },
+    "fx-pscript-trf": { "composition": "FX_PSCRIPT_TRF" },
+    "fx-trf-stepin-full": { "composition": "FX_TRF", "setup": "trade-create-stepin-full" },
+    "fx-trf-stepin-partial": { "composition": "FX_TRF", "setup": "trade-create-stepin-partial" },
+    "fx-pscript-trf-stepin-full": { "composition": "FX_PSCRIPT_TRF", "setup": "trade-create-stepin-full" },
+    "fx-pscript-trf-stepin-partial": { "composition": "FX_PSCRIPT_TRF", "setup": "trade-create-stepin-partial" }
+  },
+  "events": {
+    "allocation-full": { "case": "TC-TRADE-ALLOCATION-<product_type>-API-001" },
+    "termination": { "case": "TC-TRADE-EARLY-TERMINATION-<product_type>-API-001" },
+    "remaining-party-full": { "case": "TC-TRADE-NOVATION-REMAINING-<product_type>-API-001" },
+    "remaining-party-partial": { "case": "TC-TRADE-PARTIAL-NOVATION-REMAINING-<product_type>-API-001" },
+    "step-out-full": { "case": "TC-TRADE-STEP-OUT-FULL-<product_type>-API-001" },
+    "step-out-partial": { "case": "TC-TRADE-STEP-OUT-PARTIAL-<product_type>-API-001" },
+    "partial-termination": { "case": "TC-TRADE-PARTIAL-TERMINATION-<product_type>-API-001" },
+    "portfolio-reassignment": { "case": "TC-TRADE-PORTFOLIO-REASSIGNMENT-<product_type>-API-001" }
+  }
+}

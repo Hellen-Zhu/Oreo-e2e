@@ -8,6 +8,8 @@ Read this before changing files. It holds the rules and the traps; the details l
 - **`mvn test` is not the whole suite.** `OreoTest` fixes the tags `not @wip` and `@ADO#trade_creation`; a command-line
   filter is combined with them. Read `src/test/java/com/example/module/oreo/OreoTest.java` before describing a run's
   scope or reading an empty run as a pass.
+- **`SeedTest` is not a test.** It books the SIT seed for UAT (`docs/sit-seed.md`), runs only with `-Dtest=SeedTest`
+  (surefire excludes it from `mvn test`) and reads `seed/features`, outside `features/`.
 - **Select with `-Dcucumber.options`** (`"--tags ..."`, `"--name ^\[TC-...\].*$"`). Never `-Dcucumber.filter.*`: not
   supported here, possibly ignored silently, running everything.
 - **The environment is `qa.properties`** (`@GenieOptions`), or the file of `-Dgenie.properties=./src/test/resources/<env>.properties`
@@ -41,6 +43,7 @@ Read this before changing files. It holds the rules and the traps; the details l
 | Test data formats, recorded responses, the tool's commands | `docs/test-data.md` |
 | Change data, features, recordings or the registry | skill `maintaining-e2e-test-data` |
 | Add a product | skill `onboarding-e2e-product` |
+| Book the SIT seed for UAT, its catalog, its report | `docs/sit-seed.md` |
 | Raise a defect a run found (ADO Bug) | skill `qa-defect-reporting`; settings in `ado-defects.local.properties` (git-ignored) |
 | Story → feature files, feature files → running cases | `/writebddfeatures`, `/codetestcases`; overview `docs/ai-workflow.md` |
 

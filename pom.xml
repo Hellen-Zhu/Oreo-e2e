@@ -172,11 +172,14 @@
                          of the test data code: those run first in every mvn -Ptest-data command (the profile's
                          test-data-unit-tests execution), before TestDataTool.
                          The same patterns as the profile's includes, so a new unit test needs no line here.
-                         **/*$* is surefire's default exclude (inner classes), which a list of excludes replaces. -->
+                         **/*$* is surefire's default exclude (inner classes), which a list of excludes replaces.
+                         SeedTest books the SIT seed (docs/sit-seed.md): only -Dtest=SeedTest runs it (-Dtest
+                         overrides these excludes). -->
                     <excludes>
                         <exclude>**/*$*</exclude>
                         <exclude>**/testdata/*Test.java</exclude>
                         <exclude>**/tools/*Test.java</exclude>
+                        <exclude>**/SeedTest.java</exclude>
                     </excludes>
                 </configuration>
             </plugin>

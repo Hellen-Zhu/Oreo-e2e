@@ -192,14 +192,25 @@ public final class TradeApiClient {
      */
     public static List<EventResult> triggerEvent(RequestResponseHelper helper, List<String> tradeIds, String userId,
                                                  String testDataKey) throws JsonProcessingException {
-        ObjectNode body = (ObjectNode) OBJECT_MAPPER.readTree(TestData.setup(testDataKey).request());
+        return triggerEventWithBody(helper, tradeIds, userId, TestData.setup(testDataKey).request(), testDataKey);
+    }
+
+    /**
+     * Triggers the event of {@code requestJson} on {@code tradeIds} as {@code userId}: its {@code tradeIds} replaced;
+     * {@code what} names the body in the log and the error.
+     *
+     * @throws AssertionError when the response has no result
+     */
+    public static List<EventResult> triggerEventWithBody(RequestResponseHelper helper, List<String> tradeIds,
+                                                         String userId, String requestJson, String what)
+            throws JsonProcessingException {
+        ObjectNode body = (ObjectNode) OBJECT_MAPPER.readTree(requestJson);
         ArrayNode ids = OBJECT_MAPPER.createArrayNode();
         tradeIds.forEach(ids::add);
         body.set("tradeIds", ids);
-        log.info("[TradeApiClient] triggerEvent: tradeIds='{}', userId='{}', testDataKey='{}'",
-                tradeIds, userId, testDataKey);
+        log.info("[TradeApiClient] triggerEvent: tradeIds='{}', userId='{}', body='{}'", tradeIds, userId, what);
         JsonNode response = RestApiUtil.post(helper, TRIGGER_EVENT_PATH, userId, OBJECT_MAPPER.writeValueAsString(body));
-        return eventResults(response, testDataKey + " on " + tradeIds);
+        return eventResults(response, what + " on " + tradeIds);
     }
 
     /**

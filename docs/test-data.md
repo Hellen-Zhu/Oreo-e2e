@@ -379,13 +379,14 @@ mvn -Ptest-data process-test-classes "-Dexec.args=coverage"
 mvn -Ptest-data process-test-classes "-Dexec.args=coverage --by productId"
 mvn -Ptest-data process-test-classes "-Dexec.args=coverage --by tradeType"
 mvn -Ptest-data process-test-classes "-Dexec.args=coverage --html"
+mvn -Ptest-data process-test-classes "-Dexec.args=seed-report"
 ```
 
-The first command defaults to `check`. Each command first runs the ten unit tests of the code that decides what a
+The first command defaults to `check`. Each command first runs the unit tests of the code that decides what a
 case sends and what its response is compared with (`ResponseMaskerTest`, `ExpectedResponsesTest`, `JsonPatchTest`,
-`TestDataRepositoryTest`, `JsonLayersTest`, `ResponseSuggestionsTest`, `UnusedStepsTest`, `CoverageTest`, `CoverageHtmlTest`, `CapabilityTest`; their data is written in the
+`TestDataRepositoryTest`, `JsonLayersTest`, `ResponseSuggestionsTest`, `UnusedStepsTest`, `CoverageTest`, `CoverageHtmlTest`, `CapabilityTest`, `SeedDataTest`; their data is written in the
 tests themselves, none of it lives under
-`src/test/resources`): a failing one stops Maven before the tool reads any data. The commands stop before the
+`src/test/resources`, except that `SeedDataTest` also checks the seed's catalog against its features): a failing one stops Maven before the tool reads any data. The commands stop before the
 `test` phase: they do not run Cucumber. A failed check fails Maven. Plain `mvn test` retains its existing behavior and does not activate
 this profile. The company Maven repository needs `org.codehaus.mojo:exec-maven-plugin:3.6.4`.
 After deleting resource files, add `clean` before `process-test-classes` to remove stale copied files.
@@ -449,6 +450,8 @@ or with `-U`.
   artifact. Its data is written beside it, `coverage.json`, for other tools (and for the planned dashboard,
   [test-dashboard-plan.md](test-dashboard-plan.md)). Both are generated: never commit them. The
   page's template is `src/test/resources/tools/coverage-report.html`.
+- `seed-report`: the summary of the SIT seed for UAT, `target/seed/seed-report.csv`, from the seed's manifests
+  ([sit-seed.md](sit-seed.md)); never fails on a failed booking, it lists it.
 - `suggest <event>`: reads the event's recordings and prints, without writing anything, the `dynamicFields` rules
   they need and the `expectedBase` that suits them ("Suggestions", below).
 - `compact <event>` or `compact all`: the compaction of "Base and patch" and "Shared parts". It lists the files it

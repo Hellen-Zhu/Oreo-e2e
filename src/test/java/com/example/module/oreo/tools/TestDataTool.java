@@ -27,6 +27,7 @@ import java.util.stream.Stream;
  *                       per product ID / composition (--by productId) or trade type (--by tradeType); never fails;
  *                       --html also writes every view as a page, target/coverage/coverage.html, and its data,
  *                       coverage.json
+ * seed-report           summarises the SIT seed's bookings (target/seed) for UAT: seed-report.csv (docs/sit-seed.md)
  * </pre>
  * A problem throws an exception so Maven fails without terminating its JVM.
  */
@@ -34,7 +35,8 @@ public class TestDataTool {
 
     private static final String USAGE =
             "usage: TestDataTool check | sync-examples | compact <event>|all | suggest <event> | case <case ID>"
-                    + " | shared <case ID> | unused-steps | coverage [--by composition|productId|tradeType] [--html]";
+                    + " | shared <case ID> | unused-steps | coverage [--by composition|productId|tradeType] [--html]"
+                    + " | seed-report";
 
     public static void main(String[] args) throws IOException, InterruptedException {
         String command = args.length == 0 ? "" : args[0];
@@ -49,6 +51,7 @@ public class TestDataTool {
                 case "shared" -> args.length == 2 ? SharedFromCase.run(args[1].trim()) : usage();
                 case "unused-steps" -> args.length == 1 ? UnusedSteps.run() : usage();
                 case "coverage" -> coverage(args);
+                case "seed-report" -> args.length == 1 ? SeedReport.run() : usage();
                 default -> usage();
             };
         } catch (IllegalStateException | IllegalArgumentException e) {

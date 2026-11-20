@@ -1,0 +1,134 @@
+package com.example.module.oreo.testdata;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import org.junit.After;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
+
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
+public class SeedDataTest {
+
+    @Rule
+    public TemporaryFolder tmp = new TemporaryFolder();
+
+    @After
+    public void clearProjectDir() {
+        System.clearProperty(ProjectPaths.PROPERTY);
+    }
+
+    @Test
+    public void theCatalogLoadsAndItsCompositionsAreRegistered() {
+        SeedData catalog = SeedData.load(SeedData.CATALOG);
+        SeedData.Trade trf = catalog.trade("fx-trf");
+        assertEquals("FX_TRF", trf.composition());
+        assertEquals(ProductDatFiles.FX_TRF.productId(), trf.productId());
+        assertEquals(ProductDatFiles.FX_TRF.path(), trf.dat());
+        assertEquals(SeedData.DEFAULT_SETUP, trf.setup());
+        for (SeedData.Trade t : catalog.trades().values()) {
+            TestData.setup(t.setup()); // every setup body exists
+        }
+    }
+
+    @Test
+    public void everyRowOfTheSeedFeaturesIsInTheCatalog() throws IOException, URISyntaxException {
+        SeedData catalog = SeedData.load(SeedData.CATALOG);
+        Path features = Paths.get(getClass().getClassLoader().getResource("seed/features").toURI());
+        Pattern trade = Pattern.compile("seed trade '<trade>'|seed event '<event>'");
+        Pattern row = Pattern.compile("^\\s*\\|(.*)\\|\\s*$");
+        int rows = 0;
+        try (var files = Files.list(features)) {
+            for (Path file : files.filter(f -> f.toString().endsWith(".feature")).toList()) {
+                List<String> header = null;
+                for (String line : Files.readAllLines(file)) {
+                    Matcher m = row.matcher(line);
+                    if (!m.matches()) continue;
+                    List<String> cells = List.of(m.group(1).split("\\|")).stream().map(String::trim).toList();
+                    if (header == null) {
+                        header = cells;
+                        continue;
+                    }
+                    for (int i = 0; i < cells.size(); i++) {
+                        if (header.get(i).equals("trade")) catalog.trade(cells.get(i));
+                        if (header.get(i).equals("event")) catalog.event(cells.get(i));
+                    }
+                    rows++;
+                }
+                assertTrue(file + " names its rows", trade.matcher(Files.readString(file)).find());
+            }
+        }
+        assertTrue("the seed features have rows", rows > 0);
+    }
+
+    @Test
+    public void aProductIdTradeAndAnEvent() {
+        SeedData catalog = SeedData.fromJson("t.json", Json.parse("""
+                {"trades": {"fx-x": {"productId": "FX_X", "dat": "seed/dat/fx-x.dat", "setup": "trade-create"}},
+                 "events": {"termination": {"case": "TC-TRADE-EARLY-TERMINATION-<product_type>-API-001"}}}"""));
+        SeedData.Trade x = catalog.trade("fx-x");
+        assertNull(x.composition());
+        assertEquals("FX_X", x.productId());
+        try {
+            SeedData.eventRequest(catalog.event("termination"), x);
+            fail("an event needs a composition");
+        } catch (IllegalStateException e) {
+            assertTrue(e.getMessage(), e.getMessage().contains("registered composition"));
+        }
+    }
+
+    @Test
+    public void anEventSendsItsCasesRequest() {
+        SeedData catalog = SeedData.fromJson("t.json", Json.parse("""
+                {"trades": {"fx-trf": {"composition": "FX_TRF"}},
+                 "events": {"termination": {"case": "TC-TRADE-EARLY-TERMINATION-<product_type>-API-001"}}}"""));
+        String request = SeedData.eventRequest(catalog.event("termination"), catalog.trade("fx-trf"));
+        assertEquals(TestData.forCase("TC-TRADE-EARLY-TERMINATION-FX_TRF-API-001").request(), request);
+    }
+
+    @Test
+    public void badEntriesNameWhereTheyAre() {
+        bad("""
+                {"trades": {}}""", "no trades");
+        bad("""
+                {"trades": {"Fx": {"composition": "FX_TRF"}}}""", "trades.Fx");
+        bad("""
+                {"trades": {"fx": {"composition": "FX_TRF", "productId": "FX_TRF"}}}""", "either composition");
+        bad("""
+                {"trades": {"fx": {"productId": "FX_X"}}}""", "productId and dat");
+        bad("""
+                {"trades": {"fx": {"composition": "FX_TRF"}}, "events": {"e": {"case": "TC-TRADE-X-FX_TRF-API-001"}}}""",
+                "events.e");
+    }
+
+    @Test
+    public void bookingsAreAppendedAndReadBack() throws IOException {
+        System.setProperty(ProjectPaths.PROPERTY, tmp.getRoot().toString());
+        SeedData.record(Json.MAPPER.createObjectNode().put("kind", "trade").put("trade", "fx-trf"));
+        SeedData.record(Json.MAPPER.createObjectNode().put("kind", "event").put("trade", "fx-trf"));
+        List<JsonNode> entries = SeedData.readManifests(SeedData.manifestDir());
+        assertEquals(2, entries.size());
+        assertEquals("event", entries.get(1).path("kind").asText());
+    }
+
+    private static void bad(String json, String expected) {
+        try {
+            SeedData.fromJson("t.json", Json.parse(json));
+            fail("expected an error with: " + expected);
+        } catch (IllegalStateException e) {
+            assertTrue(e.getMessage(), e.getMessage().contains(expected));
+        }
+    }
+}
