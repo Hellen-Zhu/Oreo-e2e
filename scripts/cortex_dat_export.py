@@ -56,6 +56,8 @@ LOCATORS = {
     "object_cell_offset": (160, 225),                        # {Object ITradeable} once INSTRUMENT is the only column
     "view_window": r"^View$",                           # Export, Raw view, Trade type: ...
     "view_export_item": (r"^Save As", 1),
+    # Closed before each trade: every View, Viewer and Trade window open, so that each title names one window.
+    "close_first": (r"^View", r"^Trade \d"),
     "save_dialog": r"Save As",
     "confirm_dialog": r"Confirm Save As",
 }
@@ -71,6 +73,7 @@ class Cortex:
 
         self.desktop = Desktop(backend=LOCATORS["backend"])
         self.tds = self.window(LOCATORS["tds_window"])
+        self.close_all(*LOCATORS["close_first"])
 
     def window(self, title_re: str, timeout: float = WAIT["window"]):
         # found_index: a window left open by an earlier try has the same title; the first one is enough
@@ -164,7 +167,7 @@ class Cortex:
             time.sleep(0.3)
 
         trade_title = LOCATORS["trade_window"].replace("{trade}", re.escape(trade_id))
-        self.close_all(LOCATORS["view_window"], LOCATORS["object_window"], trade_title)
+        self.close_all(*LOCATORS["close_first"])
         tds.set_focus()
         with step("3 double-click the INSTRUMENT cell (tds_instrument_cell / tds_instrument_offset)"):
             if LOCATORS["tds_instrument_offset"]:
