@@ -116,7 +116,14 @@ mvn -B test -Dtest=SeedTest "-Dcucumber.options=--name ^\[SEED-EVENT-termination
 mvn -Ptest-data process-test-classes "-Dexec.args=seed-report"
 mvn -Ptest-data process-test-classes "-Dexec.args=seed-report 20261120-153000"
 mvn -Ptest-data process-test-classes "-Dexec.args=seed-report all"
+mvn -Ptest-data process-test-classes -DskipTests "-Dexec.args=seed-report"
 ```
+
+Pick the cases of a run with `--name` (one case, `^\[SEED-TRADE-001\].*$`, or several, `^\[SEED-TRADE-(001|007)\].*$`)
+or `--tags`, not by editing the features. A row commented out (`# | SEED-TRADE-002 | ...`) is left out of the run and
+still counts as the row of its `cases` entry. `seed-report` reports what a run booked, however few cases it ran.
+`-Ptest-data` runs the test data's unit tests before the tool; `-DskipTests` skips them when only the report is
+wanted.
 
 **Each run has its own manifest**, `manifest-<run ID>.jsonl`, the run ID its start time (`20261120-153000`), never
 appended to an earlier run's. `SeedTest` starts the run in the JVM that forks the features and writes

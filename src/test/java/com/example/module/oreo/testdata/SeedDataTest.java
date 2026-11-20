@@ -50,14 +50,16 @@ public class SeedDataTest {
     /**
      * Every row of the seed features resolves (its case ID, IDs, taxonomy, variant and event), has its dat file and
      * body, and no two rows share a case ID or, without one, book the same thing; an event's composition is
-     * registered; every case of the catalog's {@code cases} is a row.
+     * registered; every case of the catalog's {@code cases} is a row. A row commented out ({@code # | ... |}, to
+     * leave it out of a run) still names its case: it is checked only for that.
      */
     @Test
     public void everyRowOfTheSeedFeaturesResolvesOnce() throws IOException, URISyntaxException {
         SeedData catalog = SeedData.load(SeedData.CATALOG);
         Path features = Paths.get(getClass().getClassLoader().getResource("seed/features").toURI());
-        Pattern row = Pattern.compile("^\\s*\\|(.*)\\|\\s*$");
+        Pattern row = Pattern.compile("^\\s*(#\\s*)?\\|(.*)\\|\\s*$");
         Set<String> seen = new HashSet<>();
+        Set<String> commentedOut = new HashSet<>();
         Set<String> cases = new HashSet<>();
         int rows = 0;
         try (var files = Files.list(features)) {
@@ -69,9 +71,14 @@ public class SeedDataTest {
                         if (line.trim().startsWith("Scenario")) header = null;
                         continue;
                     }
-                    List<String> cells = List.of(m.group(1).split("\\|")).stream().map(String::trim).toList();
+                    List<String> cells = List.of(m.group(2).split("\\|")).stream().map(String::trim).toList();
                     if (header == null) {
                         header = cells;
+                        continue;
+                    }
+                    if (m.group(1) != null) {
+                        String caseId = cell(header, cells, "case");
+                        if (caseId != null) commentedOut.add(caseId);
                         continue;
                     }
                     String variant = cell(header, cells, "variant");
@@ -106,7 +113,7 @@ public class SeedDataTest {
         assertTrue("the seed features have rows", rows > 0);
         for (String caseId : catalog.caseIds()) {
             assertTrue(SeedData.CATALOG + " cases." + caseId + ": no such row in the seed features",
-                    cases.contains(caseId));
+                    cases.contains(caseId) || commentedOut.contains(caseId));
         }
     }
 
