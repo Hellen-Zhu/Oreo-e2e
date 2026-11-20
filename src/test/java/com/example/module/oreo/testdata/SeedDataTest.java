@@ -221,6 +221,26 @@ public class SeedDataTest {
     }
 
     @Test
+    public void everyEventCaseBooksItsTradeWithItsOwnPortfolioAndEntity() {
+        SeedData catalog = SeedData.catalog();
+        for (String caseId : List.of("SEED-EVENT-001", "SEED-EVENT-011")) {
+            String composition = caseId.equals("SEED-EVENT-001") ? "FX_TRF" : "FX_PSCRIPT_TRF";
+            SeedData.Trade trade = catalog.forCase(caseId, composition, composition.equals("FX_TRF") ? "FX_TRF" : "FX_PSCRIPT", null);
+            JsonNode basic = Json.parse(SeedData.request(trade)).path("basic");
+            for (String field : List.of("portfolioId", "riskPortfolio", "scbEntity")) {
+                assertTrue(caseId + " " + field + ": " + basic.path(field),
+                        basic.path(field).asText().endsWith("_E" + caseId.substring(11)));
+            }
+            String data = Json.parse(SeedData.eventRequest(catalog.event("allocation-full"), trade)).path("data")
+                    .toString();
+            assertTrue(caseId + " allocates to its own counterparties and portfolios: " + data,
+                    data.contains("EXAMPLE_COUNTERPARTY_E" + caseId.substring(11) + "_1")
+                            && data.contains("EXAMPLE_PORTFOLIO_E" + caseId.substring(11) + "_2")
+                            && data.contains("[50%, 50%]"));
+        }
+    }
+
+    @Test
     public void badEntriesNameWhereTheyAre() {
         bad("""
                 {"trades": {}}""", "a list of");
