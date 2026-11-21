@@ -28,8 +28,8 @@ A new trade is a **seed case** of the Excel's new-trade sheet: its case ID (`SEE
 taxonomy of column A after the asset class (`ComplexExotic`, `SimpleExotic:Digital`, `Metals:Precious:Exotic`). The
 taxonomy labels the booking in the manifest and the report and can pick a catalog entry; it is never sent to the API.
 An event row is a seed case too (`SEED-EVENT-001`): the event on a new live trade of a composition and product ID.
-A step-in row is a seed case too (`SEED-STEPIN-001`): a variant's body with the case's own dat file, portfolio and
-entity. Each row is one booking:
+A step-in row is a seed case too (`SEED-STEPIN-001` full and `002` partial, FX_TRF), in the lifecycle events
+feature: a variant's body with the case's own dat file, portfolio and entity, reported among the events. Each row is one booking:
 
 ```gherkin
 Given seed case 'SEED-TRADE-024' books a live trade of composition 'FX_PSCRIPT_TRF' and product ID 'FX_PSCRIPT' with taxonomy 'ComplexExotic' via api

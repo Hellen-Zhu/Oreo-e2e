@@ -37,7 +37,7 @@ public class SeedSteps {
      */
     @Given("^seed case '([^']*)' books a live trade of composition '([^']*)' and product ID '([^']*)' with taxonomy '([^']*)' via api$")
     public void bookCase(String caseId, String composition, String productId, String taxonomy) throws Exception {
-        book(SeedData.catalog().forCase(caseId, composition, productId, taxonomy));
+        book(SeedData.catalog().forCase(caseId, composition, productId, taxonomy), "trade");
     }
 
     /**
@@ -47,11 +47,12 @@ public class SeedSteps {
      */
     @Given("^seed case '([^']*)' books a live '([^']*)' trade of composition '([^']*)' and product ID '([^']*)' via api$")
     public void bookVariant(String caseId, String variant, String composition, String productId) throws Exception {
-        book(SeedData.catalog().forVariant(caseId, variant, composition, productId));
+        book(SeedData.catalog().forVariant(caseId, variant, composition, productId), "event");
     }
 
-    private void book(SeedData.Trade trade) throws Exception {
-        ObjectNode entry = entry("trade", trade);
+    /** Books {@code trade} live; {@code kind} files it in the manifest ({@code trade}, or {@code event} for a step-in). */
+    private void book(SeedData.Trade trade, String kind) throws Exception {
+        ObjectNode entry = entry(kind, trade);
         try {
             CreatedTrade live = live(trade, entry);
             entry.put("tradeId", live.tradeId()).put("taskId", live.taskId());

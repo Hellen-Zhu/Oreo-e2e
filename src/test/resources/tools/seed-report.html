@@ -117,7 +117,7 @@ tbody tr:last-child td { border-bottom: 0; }
     { key: 'at', title: 'At' }
   ];
   const run = data.run === 'all' ? [{ key: 'run', title: 'Run' }] : [];
-  // new trades (kind "trade", a variant included) and lifecycle events (kind "event"), each in a section of its own
+  // new trades (kind "trade") and lifecycle events (kind "event", a step-in variant included), each in a section of its own
   const sections = [
     { id: 'trades', title: 'New trades', rows: bookings.filter(b => b.kind !== 'event'), columns: [
       { key: 'case', title: 'Case', get: label }, ...run, { key: 'tradeId', title: 'Trade ID' },
@@ -125,7 +125,7 @@ tbody tr:last-child td { border-bottom: 0; }
       { key: 'composition', title: 'Composition' }, { key: 'productId', title: 'Product ID' },
       { key: 'taxonomy', title: 'Taxonomy' }, { key: 'variant', title: 'Variant' }, ...common] },
     { id: 'events', title: 'Lifecycle events', rows: bookings.filter(b => b.kind === 'event'), columns: [
-      { key: 'case', title: 'Case', get: label }, ...run, { key: 'event', title: 'Event' },
+      { key: 'case', title: 'Case', get: label }, ...run, { key: 'event', title: 'Event', get: b => b.event || b.variant || '' },
       { key: 'tradeId', title: 'Trade ID' }, { key: 'status', title: 'Status' },
       { key: 'childTradeIds', title: 'Child trade IDs', get: b => (b.childTradeIds || []).join(' ') },
       { key: 'composition', title: 'Composition' }, { key: 'productId', title: 'Product ID' },

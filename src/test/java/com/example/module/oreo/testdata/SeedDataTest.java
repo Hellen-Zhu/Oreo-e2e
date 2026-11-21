@@ -283,8 +283,8 @@ public class SeedDataTest {
         for (String field : List.of("portfolioId", "riskPortfolio", "scbEntity")) {
             assertTrue(field + ": " + basic.path(field), basic.path(field).asText().endsWith("_S001"));
         }
-        assertEquals("seed/dat/FX_PSCRIPT_TRF/stepin-partial.dat",
-                catalog.forVariant("SEED-STEPIN-004", "stepin-partial", "FX_PSCRIPT_TRF", "FX_PSCRIPT").dat());
+        assertEquals("seed/dat/FX_TRF/stepin-partial.dat",
+                catalog.forVariant("SEED-STEPIN-002", "stepin-partial", "FX_TRF", "FX_TRF").dat());
         try {
             catalog.forVariant("SEED-STEPIN-099", "stepin-full", "FX_TRF", "FX_TRF");
             fail("a variant case naming no dat file is refused");

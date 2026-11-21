@@ -46,14 +46,3 @@ Feature: SIT seed - new trades
       | SEED-TRADE-036 | FX_TRF          | FX_TRF          | ComplexExotic              |
       | SEED-TRADE-037 | FX_TRF          | FX_TRF_DLYSTTL  | ComplexExotic              |
       | SEED-TRADE-038 | FX_RVO          | FX_VAROPTION    | ComplexExotic:Generic      |
-
-  @api @seed-trade
-  Scenario Outline: [<case>] A live <variant> <composition> trade of product ID <product_id> is booked
-    Given seed case '<case>' books a live '<variant>' trade of composition '<composition>' and product ID '<product_id>' via api
-
-    Examples:
-      | case            | variant        | composition    | product_id |
-      | SEED-STEPIN-001 | stepin-full    | FX_TRF         | FX_TRF     |
-      | SEED-STEPIN-002 | stepin-partial | FX_TRF         | FX_TRF     |
-      | SEED-STEPIN-003 | stepin-full    | FX_PSCRIPT_TRF | FX_PSCRIPT |
-      | SEED-STEPIN-004 | stepin-partial | FX_PSCRIPT_TRF | FX_PSCRIPT |

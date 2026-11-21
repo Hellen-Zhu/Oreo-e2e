@@ -82,9 +82,7 @@
     "SEED-EVENT-019": { "dat": "partial-termination.dat", "request": { "basic": { "portfolioId": "EXAMPLE_PORTFOLIO_E019", "riskPortfolio": "EXAMPLE_PORTFOLIO_E019", "scbEntity": "EXAMPLE_ENTITY_E019" } } },
     "SEED-EVENT-020": { "dat": "portfolio-reassignment.dat", "request": { "basic": { "portfolioId": "EXAMPLE_PORTFOLIO_E020", "riskPortfolio": "EXAMPLE_PORTFOLIO_E020", "scbEntity": "EXAMPLE_ENTITY_E020" } } },
     "SEED-STEPIN-001": { "dat": "stepin-full.dat", "request": { "basic": { "portfolioId": "EXAMPLE_PORTFOLIO_S001", "riskPortfolio": "EXAMPLE_PORTFOLIO_S001", "scbEntity": "EXAMPLE_ENTITY_S001" } } },
-    "SEED-STEPIN-002": { "dat": "stepin-partial.dat", "request": { "basic": { "portfolioId": "EXAMPLE_PORTFOLIO_S002", "riskPortfolio": "EXAMPLE_PORTFOLIO_S002", "scbEntity": "EXAMPLE_ENTITY_S002" } } },
-    "SEED-STEPIN-003": { "dat": "stepin-full.dat", "request": { "basic": { "portfolioId": "EXAMPLE_PORTFOLIO_S003", "riskPortfolio": "EXAMPLE_PORTFOLIO_S003", "scbEntity": "EXAMPLE_ENTITY_S003" } } },
-    "SEED-STEPIN-004": { "dat": "stepin-partial.dat", "request": { "basic": { "portfolioId": "EXAMPLE_PORTFOLIO_S004", "riskPortfolio": "EXAMPLE_PORTFOLIO_S004", "scbEntity": "EXAMPLE_ENTITY_S004" } } }
+    "SEED-STEPIN-002": { "dat": "stepin-partial.dat", "request": { "basic": { "portfolioId": "EXAMPLE_PORTFOLIO_S002", "riskPortfolio": "EXAMPLE_PORTFOLIO_S002", "scbEntity": "EXAMPLE_ENTITY_S002" } } }
   },
   "variants": {
     "stepin-full": { "setup": "trade-create-stepin-full" },
