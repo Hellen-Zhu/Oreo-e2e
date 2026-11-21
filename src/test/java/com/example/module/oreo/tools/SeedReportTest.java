@@ -86,4 +86,44 @@ public class SeedReportTest {
         assertEquals(List.of("trade", "event", "event", "event"), kinds);
         assertEquals("the manifest's line is left as it was", "trade", in.get(1).path("kind").asText());
     }
+
+    @Test
+    public void aReportMergesTheRunsItNamesTheLatestLineWinning() {
+        List<String> all = List.of("20261120-100000", "20261120-110000", "20261120-120000");
+        assertEquals(List.of("20261120-120000"), SeedReport.runs(null, all));
+        assertEquals(all, SeedReport.runs("all", all));
+        assertEquals(List.of("20261120-110000", "20261120-120000"), SeedReport.runs("20261120-110000..", all));
+        assertEquals("oldest first, whatever the order given, each once",
+                List.of("20261120-100000", "20261120-120000"),
+                SeedReport.runs("20261120-120000,20261120-100000,20261120-120000", all));
+        for (String bad : List.of("20261120-130000", "20261120-100000,nope", "nope..")) {
+            try {
+                SeedReport.runs(bad, all);
+                org.junit.Assert.fail(bad + " is refused");
+            } catch (IllegalArgumentException e) {
+                assertTrue(e.getMessage(), e.getMessage().contains("no run"));
+            }
+        }
+        List<JsonNode> merged = SeedReport.latest(List.of(
+                Json.parse("{\"run\": \"r1\", \"kind\": \"trade\", \"case\": \"SEED-TRADE-001\", \"status\": \"failed\"}"),
+                Json.parse("{\"run\": \"r1\", \"kind\": \"trade\", \"case\": \"SEED-TRADE-002\", \"status\": \"booked\"}"),
+                Json.parse("{\"run\": \"r2\", \"kind\": \"trade\", \"case\": \"SEED-TRADE-001\", \"status\": \"booked\"}")));
+        assertEquals(2, merged.size());
+        assertEquals("the rerun's line wins", "r2", merged.get(0).path("run").asText());
+        assertEquals("booked", merged.get(0).path("status").asText());
+    }
+
+    @Test
+    public void seedDatsListsTheNewTradesThenTheEventsAndStepInsTogether() throws java.io.IOException {
+        List<SeedReport.CaseDat> dats = SeedReport.caseDats(
+                com.example.module.oreo.testdata.ProjectPaths.projectRoot(),
+                com.example.module.oreo.testdata.SeedData.catalog());
+        List<String> kinds = dats.stream().map(SeedReport.CaseDat::kind).toList();
+        int firstEvent = kinds.indexOf("event");
+        assertTrue("trades first: " + kinds, firstEvent > 0 && kinds.subList(firstEvent, kinds.size()).stream()
+                .allMatch("event"::equals));
+        for (SeedReport.CaseDat d : dats) {
+            assertEquals(d.caseId(), d.caseId().startsWith("SEED-TRADE-") ? "trade" : "event", d.kind());
+        }
+    }
 }

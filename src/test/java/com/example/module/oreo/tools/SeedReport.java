@@ -19,8 +19,9 @@ import java.util.Map;
 import java.util.TreeMap;
 
 /**
- * {@code seed-report [<run ID>|all]}: the summary of the SIT seed for UAT (docs/sit-seed.md). Reads the manifest of
- * the latest run in {@code target/seed} (or of the given run, or every run), keeps the latest line of each booking
+ * {@code seed-report [<run ID>|<run ID>,<run ID>...|<run ID>..|all]}: the summary of the SIT seed for UAT
+ * (docs/sit-seed.md). Reads the manifest of the latest run in {@code target/seed} (or of the given runs merged, the
+ * runs from one on, or every run, {@link #runs}), keeps the latest line of each booking
  * (environment, case, composition, product ID, taxonomy, variant, event) and writes
  * {@code target/seed/seed-report-<run ID or all>.csv}, one row per booking with its Itradeable Type (from the catalog's
  * {@code itradeableTypes} when the line has none), portfolio, risk portfolio and entity; prints the counts, by kind and by Itradeable
@@ -58,23 +59,16 @@ final class SeedReport {
                     + ": run SeedTest first (docs/sit-seed.md)");
             return 0;
         }
-        String name;
+        List<String> all = manifests.stream()
+                .map(p -> p.getFileName().toString().replaceAll("^manifest-|\\.jsonl$", "")).toList();
+        List<String> runs = runs(which, all);
+        String name = ALL.equals(which) ? ALL : which != null && which.endsWith("..") ? which.replace("..", "-on")
+                : String.join("+", runs);
         List<JsonNode> entries = new ArrayList<>();
-        if (ALL.equals(which)) {
-            name = ALL;
-            entries.addAll(SeedData.readManifests(dir));
-        } else {
-            Path file = which == null ? manifests.get(manifests.size() - 1)
-                    : dir.resolve("manifest-" + which + ".jsonl");
-            if (!Files.isRegularFile(file)) {
-                throw new IllegalArgumentException("[Seed] no manifest of run " + which + " in "
-                        + ProjectPaths.projectRoot().relativize(dir) + ": "
-                        + manifests.stream().map(p -> p.getFileName().toString()).toList());
-            }
-            name = file.getFileName().toString().replaceAll("^manifest-|\\.jsonl$", "");
-            entries.addAll(SeedData.readManifest(file));
+        for (String run : runs) {
+            entries.addAll(SeedData.readManifest(dir.resolve("manifest-" + run + ".jsonl")));
         }
-        System.out.println("Run " + name + " (" + manifests.size() + " run(s) in "
+        System.out.println("Run(s) " + String.join(", ", runs) + " (" + manifests.size() + " run(s) in "
                 + ProjectPaths.projectRoot().relativize(dir) + ")");
         List<JsonNode> latest = withItradeableTypes(latest(asEvents(entries)), catalog.itradeableTypes());
         Path csv = dir.resolve("seed-report-" + name + ".csv");
@@ -106,6 +100,31 @@ final class SeedReport {
         System.out.println("Wrote " + ProjectPaths.projectRoot().relativize(csv) + " and "
                 + ProjectPaths.projectRoot().relativize(html));
         return 0;
+    }
+
+    /**
+     * The runs {@code which} names, oldest first, of {@code all} (every run ID, oldest first): {@code null} the latest;
+     * {@link #ALL} every one; {@code <run>..} that run and every later one; {@code <run>,<run>,...} those runs. Merged,
+     * the latest line of each booking wins: a rerun of the failed cases over its first run.
+     *
+     * @throws IllegalArgumentException when a run ID is not one of {@code all}
+     */
+    static List<String> runs(String which, List<String> all) {
+        if (which == null) return List.of(all.get(all.size() - 1));
+        if (ALL.equals(which)) return all;
+        if (which.endsWith("..")) {
+            String from = which.substring(0, which.length() - 2);
+            int i = all.indexOf(from);
+            if (i < 0) throw new IllegalArgumentException("[Seed] no run " + from + ": " + all);
+            return all.subList(i, all.size());
+        }
+        List<String> named = new ArrayList<>();
+        for (String run : which.split(",")) {
+            String id = run.trim();
+            if (!all.contains(id)) throw new IllegalArgumentException("[Seed] no run " + id + ": " + all);
+            if (!named.contains(id)) named.add(id);
+        }
+        return all.stream().filter(named::contains).toList();
     }
 
     /** The data of the page: the run, how many runs there are, when, and the bookings. */
@@ -212,10 +231,11 @@ final class SeedReport {
     }
 
     /** A seed case's dat file: the case's IDs, its path under the project and its state. */
-    record CaseDat(String caseId, String composition, String productId, String taxonomy, String path, DatState state,
-                   String sameAs) {}
+    record CaseDat(String caseId, String kind, String composition, String productId, String taxonomy, String path,
+                   DatState state, String sameAs) {}
 
-    static final List<String> DAT_COLUMNS = List.of("case", "composition", "productId", "taxonomy", "datFile",
+    /** {@code kind}: {@code trade} for a new trade, {@code event} for a lifecycle event or a step-in, as the report. */
+    static final List<String> DAT_COLUMNS = List.of("case", "kind", "composition", "productId", "taxonomy", "datFile",
             "fileName", "state", "sameAs");
 
     /**
@@ -230,7 +250,7 @@ final class SeedReport {
         Map<DatState, Integer> counts = new TreeMap<>();
         for (CaseDat d : dats) {
             String file = d.path().substring(d.path().lastIndexOf('/') + 1);
-            out.append(String.join(",", List.of(d.caseId(), d.composition(), d.productId(),
+            out.append(String.join(",", List.of(d.caseId(), d.kind(), d.composition(), d.productId(),
                     d.taxonomy() == null ? "" : d.taxonomy(), d.path(), file, d.state().name(),
                     d.sameAs() == null ? "" : d.sameAs()).stream().map(SeedReport::cell).toList())).append('\n');
             counts.merge(d.state(), 1, Integer::sum);
@@ -297,8 +317,11 @@ final class SeedReport {
                         : Files.readString(file, StandardCharsets.UTF_8).startsWith(PLACEHOLDER) ? DatState.placeholder
                         : DatState.ok;
             }
-            out.add(new CaseDat(e.getKey(), c.get(0), c.get(1), taxonomy, path, state, sameAs));
+            String kind = c.get(3).isEmpty() && c.get(4).isEmpty() ? "trade" : "event";
+            out.add(new CaseDat(e.getKey(), kind, c.get(0), c.get(1), taxonomy, path, state, sameAs));
         }
+        // new trades first, then the events and step-ins together, each by case ID
+        out.sort(java.util.Comparator.comparing((CaseDat d) -> !"trade".equals(d.kind())).thenComparing(CaseDat::caseId));
         return out;
     }
 

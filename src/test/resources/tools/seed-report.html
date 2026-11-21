@@ -116,7 +116,8 @@ tbody tr:last-child td { border-bottom: 0; }
     { key: 'scbEntity', title: 'Entity' },
     { key: 'at', title: 'At' }
   ];
-  const run = data.run === 'all' ? [{ key: 'run', title: 'Run' }] : [];
+  // the run of each line, when the report merges several (all, a rerun over its first run)
+  const run = new Set(bookings.map(b => b.run)).size > 1 ? [{ key: 'run', title: 'Run' }] : [];
   // new trades (kind "trade") and lifecycle events (kind "event", a step-in variant included), each in a section of its own
   const sections = [
     { id: 'trades', title: 'New trades', rows: bookings.filter(b => b.kind !== 'event'), columns: [
@@ -135,7 +136,7 @@ tbody tr:last-child td { border-bottom: 0; }
 
   const envs = [...new Set(bookings.map(b => b.env).filter(Boolean))];
   document.getElementById('meta').textContent =
-    (data.run === 'all' ? 'All runs (' + data.runs + ')' : 'Run ' + data.run + ' (' + data.runs + ' run(s) kept)')
+    (data.run === 'all' ? 'All runs (' + data.runs + ')' : 'Run ' + data.run.split('+').join(' + ') + ' (' + data.runs + ' run(s) kept)')
     + (envs.length ? ' · ' + envs.join(', ') : '') + ' · generated ' + data.generated;
 
   const booked = bookings.filter(b => b.status === 'booked').length;

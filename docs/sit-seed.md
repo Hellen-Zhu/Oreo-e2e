@@ -14,9 +14,9 @@ data). When the API changes, one fix serves both.
 | What a run books: one row per seed case (a new trade, or an event on a new trade) or variant | `src/test/resources/seed/features/*.feature` |
 | Steps | `glue/api/SeedSteps.java` |
 | Manifest: one file per run, one line per booking or failure | `target/seed/manifest-<run ID>.jsonl` (generated, never committed) |
-| Summary for UAT | `TestDataTool seed-report [<run ID>\|all]` → `target/seed/seed-report-<run ID or all>.csv` and `.html` |
+| Summary for UAT | `TestDataTool seed-report [<run ID>\|<run ID>,<run ID>\|<run ID>..\|all]` → `target/seed/seed-report-<runs>.csv` and `.html` |
 | The page's template | `src/test/resources/tools/seed-report.html`: new trades and lifecycle events in two sections, each with its search, status filter and copy |
-| Each seed case's dat file and whether it is still to export | `TestDataTool seed-dats` → `target/seed/seed-dats.csv` |
+| Each seed case's dat file and whether it is still to export | `TestDataTool seed-dats` → `target/seed/seed-dats.csv`, new trades then events and step-ins |
 | Export dat files from Cortex by trade ID (Windows, pywinauto) | `scripts/cortex_dat_export.py` |
 
 The seed features are outside `features/`: `OreoTest`, `check` and `sync-examples` do not see them.
@@ -135,6 +135,8 @@ mvn -B test -Dtest=SeedTest "-Dcucumber.options=--name ^\[SEED-TRADE-024\].*$"
 mvn -B test -Dtest=SeedTest "-Dcucumber.options=--name ^\[SEED-EVENT-004\].*$"
 mvn -Ptest-data process-test-classes "-Dexec.args=seed-report"
 mvn -Ptest-data process-test-classes "-Dexec.args=seed-report 20261120-153000"
+mvn -Ptest-data process-test-classes "-Dexec.args=seed-report 20261120-153000,20261120-171200"
+mvn -Ptest-data process-test-classes "-Dexec.args=seed-report 20261120-153000.."
 mvn -Ptest-data process-test-classes "-Dexec.args=seed-report all"
 mvn -Ptest-data process-test-classes -DskipTests "-Dexec.args=seed-report"
 ```
@@ -156,13 +158,20 @@ environment.
 The steps check only that a booking happened: a trade ID and an approved task. A failed booking fails its scenario and
 is written to the manifest with its error. To rerun only the failed ones, use `--name` with their scenario names
 (`[SEED-TRADE-001]`, `[SEED-EVENT-004]`, `[SEED-STEPIN-001]`): the rerun is a run of
-its own.
+its own, and `seed-report` merges it with the first run, so nothing is booked twice:
 
-`seed-report` reports the latest run; `seed-report <run ID>` another one; `seed-report all` every run, the latest line
-of each booking (a rerun's result over the first run's failure). It keeps the latest line of each booking
+```shell
+mvn -B test -Dtest=SeedTest "-Dcucumber.options=--name ^\[(SEED-TRADE-001|SEED-EVENT-004)\].*$"
+mvn -Ptest-data process-test-classes "-Dexec.args=seed-report 20261120-153000.."
+```
+
+`seed-report` reports the latest run; `seed-report <run ID>` another one; `seed-report <run ID>,<run ID>,...` those
+runs merged; `seed-report <run ID>..` that run and every later one (a first run and its reruns); `seed-report all` every
+run. Merged, the latest run's line of each booking wins (a rerun's result over the first run's failure), the page shows
+each row's run, and the files are named after the runs (`seed-report-<run>+<run>`, `seed-report-<run>-on`). It keeps the latest line of each booking
 (environment, case, composition, product ID, taxonomy, variant, event) and writes it twice: a CSV, one row per booking
 (run, trade ID, then case, Itradeable Type, portfolio, risk portfolio, entity, child trade IDs for allocation,
-status, error), and an HTML page beside it, `seed-report-<run ID or all>.html`, for UAT: counts, a table to search,
+status, error), and an HTML page beside it, `seed-report-<runs>.html`, for UAT: counts, a table to search,
 filter by status and sort, each failure's error under its row, a button that copies the case and trade ID of the rows
 shown, and the counts by Itradeable Type. The page opens offline. The console prints the counts by kind and by
 Itradeable Type and the failures.
@@ -174,7 +183,8 @@ Load (F9), double-click the trade's INSTRUMENT ("Trade <trade ID>_1"), Export > 
 double-click its `{Object ITradeable}` ("View"), Export > Save As..., "Cortex object file (*.dat)".
 `scripts/cortex_dat_export.py` does those clicks for the trade IDs it is given.
 
-1. `seed-dats` lists every seed case (commented-out rows too), the dat path it books and its state: `placeholder` or
+1. `seed-dats` lists every seed case (commented-out rows too), its kind (`trade`, or `event` for an event or a
+   step-in; the new trades first, then the events and step-ins together), the dat path it books and its state: `placeholder` or
    `missing` (to export), `ok` (real), `e2e` (the default dat of a registered composition, the E2E cases': do not
    overwrite it; give the case its own `"dat"` in `cases` to book another), `shared` (an earlier case, `sameAs`,
    books the same file).

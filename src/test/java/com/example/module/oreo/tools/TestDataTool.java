@@ -27,10 +27,11 @@ import java.util.stream.Stream;
  *                       per product ID / composition (--by productId) or trade type (--by tradeType); never fails;
  *                       --html also writes every view as a page, target/coverage/coverage.html, and its data,
  *                       coverage.json
- * seed-report [<run>|all] summarises a run of the SIT seed (the latest by default; all: every run) for UAT:
+ * seed-report [<run>|<run>,<run>|<run>..|all] summarises the SIT seed for UAT: the latest run by default, runs merged
+ *                       (a rerun of the failed cases over its first run; <run>..: that run and the later ones; all):
  *                       target/seed/seed-report-<run>.csv and .html (docs/sit-seed.md)
  * seed-dats             each seed case's dat file and whether it is still to be exported from Cortex:
- *                       target/seed/seed-dats.csv, read by scripts/cortex_dat_export.py (docs/sit-seed.md)
+ *                       target/seed/seed-dats.csv, new trades then events and step-ins (docs/sit-seed.md)
  * </pre>
  * A problem throws an exception so Maven fails without terminating its JVM.
  */
@@ -39,7 +40,7 @@ public class TestDataTool {
     private static final String USAGE =
             "usage: TestDataTool check | sync-examples | compact <event>|all | suggest <event> | case <case ID>"
                     + " | shared <case ID> | unused-steps | coverage [--by composition|productId|tradeType] [--html]"
-                    + " | seed-report [<run ID>|all] | seed-dats";
+                    + " | seed-report [<run ID>|<run ID>,<run ID>|<run ID>..|all] | seed-dats";
 
     public static void main(String[] args) throws IOException, InterruptedException {
         String command = args.length == 0 ? "" : args[0];
