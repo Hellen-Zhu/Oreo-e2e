@@ -41,12 +41,13 @@ public class SeedSteps {
     }
 
     /**
-     * A live trade of {@code composition} under {@code productId}, as {@link #bookCase}, with the body of the
-     * catalog's variant {@code variant} (StepIn Full, ...).
+     * Seed case {@code caseId}: a live trade of {@code composition} under {@code productId}, as {@link #bookCase},
+     * with the body of the catalog's variant {@code variant} (stepin-full, ...) and the case's dat file, portfolio
+     * and entity.
      */
-    @Given("^a '([^']*)' seed trade of composition '([^']*)' and product ID '([^']*)' is booked live via api$")
-    public void bookVariant(String variant, String composition, String productId) throws Exception {
-        book(SeedData.catalog().trade(composition, productId, variant));
+    @Given("^seed case '([^']*)' books a live '([^']*)' trade of composition '([^']*)' and product ID '([^']*)' via api$")
+    public void bookVariant(String caseId, String variant, String composition, String productId) throws Exception {
+        book(SeedData.catalog().forVariant(caseId, variant, composition, productId));
     }
 
     private void book(SeedData.Trade trade) throws Exception {

@@ -91,13 +91,16 @@ public class SeedDataTest {
                     SeedData.Trade trade = caseId != null && event != null
                             ? catalog.forEvent(caseId, event, cell(header, cells, "composition"),
                                     cell(header, cells, "product_id"))
+                            : caseId != null && variant != null
+                            ? catalog.forVariant(caseId, variant, cell(header, cells, "composition"),
+                                    cell(header, cells, "product_id"))
                             : caseId != null
                             ? catalog.forCase(caseId, cell(header, cells, "composition"),
                                     cell(header, cells, "product_id"), cell(header, cells, "taxonomy"))
                             : catalog.trade(cell(header, cells, "composition"), cell(header, cells, "product_id"),
                                     cell(header, cells, "taxonomy"), variant);
-                    if (event != null) {
-                        assertTrue(file + ": an event books a seed dat file: " + trade.dat(),
+                    if (event != null || variant != null) {
+                        assertTrue(file + ": an event or variant case books a seed dat file: " + trade.dat(),
                                 trade.dat().startsWith(SeedData.SEED_DAT_DIR + trade.composition() + "/"));
                     }
                     assertTrue(file + ": no dat file " + trade.dat(),
@@ -266,6 +269,27 @@ public class SeedDataTest {
                         basic.path(field).asText().endsWith("_E" + caseId.substring(11)));
             }
             assertEquals(caseId + ": the event sends its E2E case's request", 0, trade.caseEventRequest().size());
+        }
+    }
+
+    @Test
+    public void aStepInCaseBooksItsVariantsBodyWithItsOwnDatPortfolioAndEntity() {
+        SeedData catalog = SeedData.catalog();
+        SeedData.Trade full = catalog.forVariant("SEED-STEPIN-001", "stepin-full", "FX_TRF", "FX_TRF");
+        assertEquals("trade-create-stepin-full", full.setup());
+        assertEquals("seed/dat/FX_TRF/stepin-full.dat", full.dat());
+        assertEquals("stepin-full", full.variant());
+        JsonNode basic = Json.parse(SeedData.request(full)).path("basic");
+        for (String field : List.of("portfolioId", "riskPortfolio", "scbEntity")) {
+            assertTrue(field + ": " + basic.path(field), basic.path(field).asText().endsWith("_S001"));
+        }
+        assertEquals("seed/dat/FX_PSCRIPT_TRF/stepin-partial.dat",
+                catalog.forVariant("SEED-STEPIN-004", "stepin-partial", "FX_PSCRIPT_TRF", "FX_PSCRIPT").dat());
+        try {
+            catalog.forVariant("SEED-STEPIN-099", "stepin-full", "FX_TRF", "FX_TRF");
+            fail("a variant case naming no dat file is refused");
+        } catch (IllegalStateException e) {
+            assertTrue(e.getMessage(), e.getMessage().contains("names no dat file"));
         }
     }
 

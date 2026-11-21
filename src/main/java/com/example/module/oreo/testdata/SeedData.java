@@ -302,13 +302,31 @@ public final class SeedData {
      */
     public Trade forEvent(String caseId, String event, String composition, String productId) {
         event(event);
+        requireDat(caseId, "event case", event, composition);
+        return forCase(caseId, composition, productId, null);
+    }
+
+    /**
+     * What seed case {@code caseId} books as variant {@code variant} (stepin-full, ...): the variant's body with the
+     * case's fields merged over it and the dat file the case names ({@code dat}, under {@code seed/dat/<C>/}), as
+     * {@link #forEvent}.
+     *
+     * @throws IllegalStateException when the variant is not one, the case names no dat file, or as {@link #forCase}
+     */
+    public Trade forVariant(String caseId, String variant, String composition, String productId) {
+        checkCase(caseId);
+        requireDat(caseId, "variant case", variant, composition);
+        return resolve(caseId, composition, productId, null, variant);
+    }
+
+    /** Refuses case {@code caseId} when it names no dat file: it would take the composition's E2E one. */
+    private void requireDat(String caseId, String kind, String what, String composition) {
         CaseEntry entry = cases.get(caseId);
         if (entry == null || entry.dat() == null) {
-            throw new IllegalStateException("[Seed] event case " + caseId + " (" + event + " on " + composition
+            throw new IllegalStateException("[Seed] " + kind + " " + caseId + " (" + what + " on " + composition
                     + ") names no dat file in " + CATALOG + " cases: give it \"dat\": \"<file>.dat\", a file of "
                     + SEED_DAT_DIR + composition + "/");
         }
-        return forCase(caseId, composition, productId, null);
     }
 
     /**

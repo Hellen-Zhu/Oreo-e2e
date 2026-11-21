@@ -255,7 +255,8 @@ final class SeedReport {
                         cases.put(cells.get(h.indexOf("case")), List.of(cells.get(h.indexOf("composition")),
                                 cells.get(h.indexOf("product_id")),
                                 h.contains("taxonomy") ? cells.get(h.indexOf("taxonomy")) : "",
-                                h.contains("event") ? cells.get(h.indexOf("event")) : ""));
+                                h.contains("event") ? cells.get(h.indexOf("event")) : "",
+                                h.contains("variant") ? cells.get(h.indexOf("variant")) : ""));
                     }
                 }
             }
@@ -265,8 +266,9 @@ final class SeedReport {
         for (var e : cases.entrySet()) {
             List<String> c = e.getValue();
             String taxonomy = c.get(2).isEmpty() ? null : c.get(2);
-            SeedData.Trade trade = c.get(3).isEmpty() ? catalog.forCase(e.getKey(), c.get(0), c.get(1), taxonomy)
-                    : catalog.forEvent(e.getKey(), c.get(3), c.get(0), c.get(1));
+            SeedData.Trade trade = !c.get(3).isEmpty() ? catalog.forEvent(e.getKey(), c.get(3), c.get(0), c.get(1))
+                    : !c.get(4).isEmpty() ? catalog.forVariant(e.getKey(), c.get(4), c.get(0), c.get(1))
+                    : catalog.forCase(e.getKey(), c.get(0), c.get(1), taxonomy);
             String path = RESOURCES + trade.dat();
             String sameAs = firstCase.putIfAbsent(path, e.getKey());
             DatState state;

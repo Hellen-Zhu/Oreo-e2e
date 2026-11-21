@@ -28,11 +28,12 @@ A new trade is a **seed case** of the Excel's new-trade sheet: its case ID (`SEE
 taxonomy of column A after the asset class (`ComplexExotic`, `SimpleExotic:Digital`, `Metals:Precious:Exotic`). The
 taxonomy labels the booking in the manifest and the report and can pick a catalog entry; it is never sent to the API.
 An event row is a seed case too (`SEED-EVENT-001`): the event on a new live trade of a composition and product ID.
-Variants are named by composition and product ID. Each row is one booking:
+A step-in row is a seed case too (`SEED-STEPIN-001`): a variant's body with the case's own dat file, portfolio and
+entity. Each row is one booking:
 
 ```gherkin
 Given seed case 'SEED-TRADE-024' books a live trade of composition 'FX_PSCRIPT_TRF' and product ID 'FX_PSCRIPT' with taxonomy 'ComplexExotic' via api
-Given a 'stepin-full' seed trade of composition 'FX_TRF' and product ID 'FX_TRF' is booked live via api
+Given seed case 'SEED-STEPIN-001' books a live 'stepin-full' trade of composition 'FX_TRF' and product ID 'FX_TRF' via api
 Given seed case 'SEED-EVENT-004' books event 'termination' on a new live trade of composition 'FX_TRF' and product ID 'FX_TRF' via api
 ```
 
@@ -104,7 +105,10 @@ case sends of its own:
 - **Times**: every booking sends `basic.effectiveTimestamp` as the booking's time (`2026-11-20T11:42:59Z`) and
   `basic.mifidExeTime` as the same instant (`2026-11-20T11:42:59.000Z`), as the trade ticket does. A case's `request`
   that gives either keeps it; `mifidExeTime` follows a given `effectiveTimestamp`.
-- **`variants`**: another body for any pair, by name (StepIn Full, StepIn Partial), the `variant` column.
+- **`variants`**: another body for any pair, by name (StepIn Full, StepIn Partial), the `variant` column. A step-in
+  case (`SEED-STEPIN-001`) is booked with it and its own entry in `cases`: its dat file (`"dat": "stepin-full.dat"`,
+  a file of `seed/dat/<C>/`, required as for an event case) and its portfolio, risk portfolio and entity
+  (`EXAMPLE_PORTFOLIO_S<nnn>`, `EXAMPLE_ENTITY_S<nnn>`).
 - **`events`**: sent on a new live trade of the pair with the request of an E2E positive case (`case`, the Outline's
   ID), the seed case's `eventRequest` over it, its shares of the notional (`[50%, 50%]`) sent as amounts of the live
   trade's notional as the E2E step sends them, and the checker approves the task when the event creates one. `via` is how it is sent: `trigger-event` (the
@@ -151,7 +155,7 @@ environment.
 
 The steps check only that a booking happened: a trade ID and an approved task. A failed booking fails its scenario and
 is written to the manifest with its error. To rerun only the failed ones, use `--name` with their scenario names
-(`[SEED-TRADE-001]`, `[SEED-EVENT-004]`, `[SEED-TRADE-<variant>-<composition>-<product_id>]`): the rerun is a run of
+(`[SEED-TRADE-001]`, `[SEED-EVENT-004]`, `[SEED-STEPIN-001]`): the rerun is a run of
 its own.
 
 `seed-report` reports the latest run; `seed-report <run ID>` another one; `seed-report all` every run, the latest line
