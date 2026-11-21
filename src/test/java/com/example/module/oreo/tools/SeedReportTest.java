@@ -74,4 +74,16 @@ public class SeedReportTest {
             }
         }
     }
+
+    @Test
+    public void aStepInIsReportedAmongTheEventsWhateverItsRunWrote() {
+        List<JsonNode> in = List.of(
+                Json.parse("{\"kind\": \"trade\", \"case\": \"SEED-TRADE-001\"}"),
+                Json.parse("{\"kind\": \"trade\", \"variant\": \"stepin-full\"}"),
+                Json.parse("{\"kind\": \"event\", \"case\": \"SEED-STEPIN-002\", \"variant\": \"stepin-partial\"}"),
+                Json.parse("{\"kind\": \"event\", \"event\": \"termination\"}"));
+        List<String> kinds = SeedReport.asEvents(in).stream().map(e -> e.path("kind").asText()).toList();
+        assertEquals(List.of("trade", "event", "event", "event"), kinds);
+        assertEquals("the manifest's line is left as it was", "trade", in.get(1).path("kind").asText());
+    }
 }

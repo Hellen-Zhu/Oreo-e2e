@@ -76,7 +76,7 @@ final class SeedReport {
         }
         System.out.println("Run " + name + " (" + manifests.size() + " run(s) in "
                 + ProjectPaths.projectRoot().relativize(dir) + ")");
-        List<JsonNode> latest = withItradeableTypes(latest(entries), catalog.itradeableTypes());
+        List<JsonNode> latest = withItradeableTypes(latest(asEvents(entries)), catalog.itradeableTypes());
         Path csv = dir.resolve("seed-report-" + name + ".csv");
         Files.writeString(csv, csv(latest), StandardCharsets.UTF_8);
         Path templateFile = ProjectPaths.projectRoot().resolve(TEMPLATE);
@@ -126,6 +126,20 @@ final class SeedReport {
             throw new IllegalStateException("[Seed] " + TEMPLATE + " has no " + DATA_MARK);
         }
         return template.replace(DATA_MARK, json.replace("<", "\\u003c"));
+    }
+
+    /**
+     * {@code entries} with each step-in booking (a line with a {@code variant}) of kind {@code event}: the report lists
+     * step-ins among the lifecycle events, also those of runs that wrote them as {@code trade}.
+     */
+    static List<JsonNode> asEvents(List<JsonNode> entries) {
+        List<JsonNode> out = new ArrayList<>();
+        for (JsonNode entry : entries) {
+            boolean stepIn = entry.isObject() && !entry.path("variant").asText("").isEmpty()
+                    && !"event".equals(entry.path("kind").asText());
+            out.add(stepIn ? ((ObjectNode) entry.deepCopy()).put("kind", "event") : entry);
+        }
+        return out;
     }
 
     /** The latest entry of each booking, in the order of first appearance. */
