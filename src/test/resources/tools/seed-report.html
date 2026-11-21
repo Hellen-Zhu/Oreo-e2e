@@ -164,7 +164,7 @@ tbody tr:last-child td { border-bottom: 0; }
       + '<div class="seg" role="group" aria-label="Status">'
       + '<button data-v="" aria-pressed="true">All</button><button data-v="booked" aria-pressed="false">Booked</button>'
       + '<button data-v="failed" aria-pressed="false">Failed</button></div>'
-      + '<button class="btn copy-all" title="Case and trade ID of the booked rows shown, tab-separated">Copy trade IDs</button>'
+      + '<button class="btn copy-all" title="Case, trade ID and child trade IDs of the rows shown, tab-separated">Copy trade IDs</button>'
       + '<span class="count"></span></div>'
       + '<div class="table-wrap"><table><thead><tr></tr></thead><tbody></tbody></table></div>';
     const head = root.querySelector('thead tr'), body = root.querySelector('tbody'),
@@ -210,11 +210,13 @@ tbody tr:last-child td { border-bottom: 0; }
       render();
     });
     body.addEventListener('click', e => {
-      const btn = e.target.closest('.copy'); if (btn) copy(btn.dataset.copy, 'Copied ' + btn.dataset.copy);
+      const btn = e.target.closest('.copy'); if (btn) copy(btn.dataset.copy, 'Copied ' + btn.dataset.copy.split('\n').join(', '));
     });
     root.querySelector('.copy-all').addEventListener('click', () => {
       const rows = shown().filter(b => b.tradeId);
-      copy(rows.map(b => label(b) + '\t' + b.tradeId).join('\n'), 'Copied ' + rows.length + ' trade ID(s)');
+      // an event's child trades follow its trade ID, tab-separated
+      copy(rows.map(b => [label(b), b.tradeId, ...(b.childTradeIds || [])].join('\t')).join('\n'),
+        'Copied ' + rows.length + ' trade ID(s)');
     });
     render();
   }
@@ -223,9 +225,16 @@ tbody tr:last-child td { border-bottom: 0; }
     const v = value(b, c);
     if (c.key === 'tradeId') return v ? '<span class="trade">' + esc(v) + '</span><button class="copy" data-copy="'
       + esc(v) + '" title="Copy">⧉</button>' : '';
+    if (c.key === 'childTradeIds') {
+      const ids = b.childTradeIds || [];
+      return ids.map(id => '<span class="trade">' + esc(id) + '</span><button class="copy" data-copy="' + esc(id)
+        + '" title="Copy">⧉</button>').join(' ')
+        + (ids.length > 1 ? ' <button class="copy" data-copy="' + esc(ids.join('\n'))
+          + '" title="Copy all child trade IDs">all</button>' : '');
+    }
     if (c.key === 'status') return '<span class="pill ' + esc(v) + '">' + esc(v) + '</span>';
     if (c.key === 'itradeableType') return '<span class="type" title="' + esc(v) + '">' + esc(shortType(v)) + '</span>';
-    if (['case', 'composition', 'productId', 'portfolioId', 'riskPortfolio', 'run', 'childTradeIds', 'eventCase']
+    if (['case', 'composition', 'productId', 'portfolioId', 'riskPortfolio', 'run', 'eventCase']
       .includes(c.key)) return '<span class="mono">' + esc(v) + '</span>';
     return esc(v);
   }
