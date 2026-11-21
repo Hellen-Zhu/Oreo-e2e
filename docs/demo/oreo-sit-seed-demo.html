@@ -1,0 +1,402 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SIT 造数演示</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* The SIT seed demo for the team lead: same layout as oreo-e2e-demo.html (agenda rail, script column), plus a pipeline
+   diagram and a static mock of the seed report. Everything is inline: it opens offline. */
+:root {
+  --bg: #f6f7f5;
+  --paper: #ffffff;
+  --ink: #1d2623;
+  --muted: #5b6863;
+  --line: #dde3df;
+  --accent: #0f6b5c;      /* trading-desk green */
+  --accent-soft: #e3f0ec;
+  --cue: #8a5a14;         /* stage-direction amber */
+  --cue-soft: #fbf3e4;
+  --warn: #a3352b;        /* pitfall red */
+  --warn-soft: #fbecea;
+  --code-bg: #eef1ef;
+  --font-display: "Noto Serif SC", "Songti SC", serif;
+  --font-body: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #121816; --paper: #18201d; --ink: #e4ebe7; --muted: #9aa8a2; --line: #2b3632;
+    --accent: #5cc3ad; --accent-soft: #1b2e29; --cue: #e3b066; --cue-soft: #2a2317;
+    --warn: #f08a7e; --warn-soft: #2e1c1a; --code-bg: #1f2925;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #121816; --paper: #18201d; --ink: #e4ebe7; --muted: #9aa8a2; --line: #2b3632;
+  --accent: #5cc3ad; --accent-soft: #1b2e29; --cue: #e3b066; --cue-soft: #2a2317;
+  --warn: #f08a7e; --warn-soft: #2e1c1a; --code-bg: #1f2925;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink);
+  font-family: var(--font-body); font-size: 17px; line-height: 1.85;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.wrap { max-width: 1120px; margin: 0 auto; display: grid; grid-template-columns: 250px minmax(0, 1fr); gap: 48px; padding-block: 40px 80px; }
+nav.rail { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 24px); align-self: start; font-size: 14px; line-height: 1.5; }
+nav.rail h2 { font-family: var(--font-body); font-size: 12px; letter-spacing: .12em; color: var(--muted); font-weight: 500; margin: 0 0 12px; }
+nav.rail ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+nav.rail a { display: grid; grid-template-columns: 1fr auto; gap: 8px; padding: 6px 10px; border-radius: 6px; color: var(--ink); text-decoration: none; }
+nav.rail a:hover, nav.rail a:focus-visible { background: var(--accent-soft); outline: none; }
+nav.rail .min { color: var(--muted); font-variant-numeric: tabular-nums; font-family: var(--font-mono); font-size: 12px; }
+nav.rail .part { font-size: 11px; letter-spacing: .12em; color: var(--muted); padding: 10px 10px 2px; }
+.rail-foot { margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--line); color: var(--muted); display: grid; gap: 10px; }
+button.toggle { font: inherit; font-size: 13px; padding: 6px 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--paper); color: var(--ink); cursor: pointer; }
+button.toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+main { min-width: 0; }
+header.cover { padding-bottom: 28px; border-bottom: 1px solid var(--line); margin-bottom: 8px; }
+.eyebrow { font-size: 13px; letter-spacing: .14em; color: var(--accent); font-weight: 500; }
+h1 { font-family: var(--font-display); font-size: clamp(30px, 4.4vw, 42px); line-height: 1.25; margin: 8px 0 12px; text-wrap: balance; }
+.lede { color: var(--muted); max-width: 40em; margin: 0; }
+.facts { display: flex; flex-wrap: wrap; gap: 8px 22px; margin-top: 18px; font-size: 14px; color: var(--muted); }
+.facts b { color: var(--ink); font-family: var(--font-mono); font-weight: 600; font-variant-numeric: tabular-nums; }
+section { padding-block: 36px 8px; border-bottom: 1px solid var(--line); scroll-margin-top: 16px; }
+section:last-of-type { border-bottom: 0; }
+.sec-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px; margin-bottom: 6px; }
+.sec-no { font-family: var(--font-mono); color: var(--accent); font-size: 14px; font-weight: 600; }
+h2.sec { font-family: var(--font-display); font-size: 26px; line-height: 1.35; margin: 0; text-wrap: balance; }
+h3.sub { font-size: 18px; margin: 20px 0 6px; }
+.dur { font-size: 13px; color: var(--muted); font-family: var(--font-mono); }
+.say p { margin: 0 0 1em; max-width: 38em; }
+.say strong { color: var(--accent); font-weight: 700; }
+.cue { background: var(--cue-soft); border-left: 3px solid var(--cue); padding: 10px 14px; margin: 4px 0 18px; font-size: 15px; line-height: 1.7; border-radius: 0 6px 6px 0; max-width: 42em; }
+.cue .tag { color: var(--cue); font-weight: 700; font-size: 12px; letter-spacing: .1em; margin-right: 8px; }
+.cue code { background: transparent; padding: 0; }
+.pit { background: var(--warn-soft); border-left: 3px solid var(--warn); padding: 10px 14px; margin: 4px 0 18px; font-size: 15.5px; line-height: 1.75; border-radius: 0 6px 6px 0; max-width: 42em; }
+.pit .tag { color: var(--warn); font-weight: 700; font-size: 12px; letter-spacing: .1em; margin-right: 8px; }
+pre.code { background: var(--code-bg); border-radius: 8px; padding: 14px 16px; overflow-x: auto; font-family: var(--font-mono); font-size: 13.5px; line-height: 1.6; margin: 4px 0 20px; max-width: 100%; }
+code { font-family: var(--font-mono); font-size: .88em; background: var(--code-bg); padding: 1px 5px; border-radius: 4px; overflow-wrap: anywhere; }
+pre.code code { background: none; padding: 0; font-size: inherit; overflow-wrap: normal; }
+.diagram { overflow-x: auto; margin: 4px 0 20px; background: var(--paper); border: 1px solid var(--line); border-radius: 8px; padding: 12px; }
+table.t { border-collapse: collapse; width: 100%; font-size: 15px; line-height: 1.6; }
+.tbl { overflow-x: auto; margin: 4px 0 20px; }
+table.t th, table.t td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+table.t th { font-weight: 500; color: var(--muted); font-size: 13px; letter-spacing: .04em; white-space: nowrap; }
+table.t td:first-child { min-width: 9em; }
+.flow { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 4px 0 20px; font-size: 14px; }
+.flow span.n { background: var(--paper); border: 1px solid var(--line); border-radius: 6px; padding: 6px 10px; }
+.flow span.a { color: var(--muted); }
+.qa { background: var(--accent-soft); border-radius: 8px; padding: 14px 18px; margin: 4px 0 20px; max-width: 42em; }
+.qa p { margin: 0 0 .6em; }
+body.script-only .cue, body.script-only pre.code, body.script-only .diagram, body.script-only .tbl, body.script-only .flow { display: none; }
+@media (max-width: 860px) {
+  .wrap { grid-template-columns: minmax(0, 1fr); gap: 8px; padding-block: 24px 60px; }
+  nav.rail { position: static; border-bottom: 1px solid var(--line); padding-bottom: 16px; }
+  nav.rail ol { grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); }
+}
+@media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+
+/* pipeline: two lanes of steps */
+.pipe { display: grid; gap: 14px; margin: 4px 0 20px; }
+.lane { display: flex; flex-wrap: wrap; align-items: stretch; gap: 8px; }
+.lane .lbl { flex: 0 0 100%; font-size: 12px; letter-spacing: .1em; color: var(--muted); }
+.step { flex: 1 1 150px; background: var(--paper); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; font-size: 14px; line-height: 1.55; position: relative; }
+.step b { display: block; font-size: 15px; margin-bottom: 2px; }
+.step small { color: var(--muted); font-size: 12.5px; }
+.step.key { border-color: var(--accent); background: var(--accent-soft); }
+.arrow { align-self: center; color: var(--muted); font-size: 18px; }
+@media (max-width: 1100px) {
+  .lane { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; }
+  .lane .arrow { justify-self: center; transform: rotate(90deg); line-height: 1; }
+}
+/* stat cards */
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin: 4px 0 20px; }
+.stat { background: var(--paper); border: 1px solid var(--line); border-radius: 8px; padding: 10px 14px; }
+.stat .k { font-size: 12.5px; color: var(--muted); }
+.stat .v { font-family: var(--font-mono); font-size: 26px; font-weight: 600; color: var(--accent); line-height: 1.3; }
+/* mock of the seed report page */
+.mock { border: 1px solid var(--line); border-radius: 10px; background: var(--paper); margin: 4px 0 20px; overflow: hidden; }
+.mock .bar { display: flex; gap: 6px; padding: 8px 12px; border-bottom: 1px solid var(--line); background: var(--code-bg); }
+.mock .bar i { width: 9px; height: 9px; border-radius: 50%; background: var(--line); display: block; }
+.mock .bar span { margin-left: 8px; font-family: var(--font-mono); font-size: 12px; color: var(--muted); }
+.mock .body { padding: 14px 16px; font-size: 13.5px; line-height: 1.5; }
+.mock h4 { margin: 14px 0 8px; font-size: 14.5px; }
+.mock h4 small { color: var(--muted); font-weight: 400; margin-left: 6px; }
+.mock .cards { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.mock .card { background: var(--code-bg); border-radius: 6px; padding: 6px 10px; }
+.mock .card .k { font-size: 11.5px; color: var(--muted); }
+.mock .card .v { font-weight: 600; font-size: 18px; font-family: var(--font-mono); }
+.mock .ok { color: var(--accent); } .mock .bad { color: var(--warn); }
+.mock table { border-collapse: collapse; width: 100%; font-size: 12.5px; }
+.mock th, .mock td { text-align: left; padding: 5px 8px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+.mock th { color: var(--muted); font-weight: 500; font-size: 11.5px; }
+.mock .tw { overflow-x: auto; }
+.mock .mono { font-family: var(--font-mono); }
+.mock .cp { color: var(--muted); margin-left: 4px; }
+.pill { display: inline-block; padding: 0 7px; border-radius: 9px; font-size: 11.5px; }
+.pill.y { background: var(--accent-soft); color: var(--accent); }
+.pill.n { background: var(--warn-soft); color: var(--warn); }
+.mock tr.err td { color: var(--warn); background: var(--warn-soft); font-family: var(--font-mono); font-size: 12px; }
+@media (max-width: 640px) { .mock .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+body.script-only .pipe, body.script-only .stats, body.script-only .mock { display: none; }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <nav class="rail" aria-label="讲解顺序">
+    <h2>讲解顺序 · 约 15 分钟</h2>
+    <ol>
+      <li><a href="#s0"><span>开场：UAT 要什么数据</span><span class="min">1′</span></a></li>
+      <li><a href="#s1"><span>一页看全流程</span><span class="min">2′</span></a></li>
+      <li class="part">怎么用</li>
+      <li><a href="#s2"><span>种子用例：一行一笔单</span><span class="min">2′</span></a></li>
+      <li><a href="#s3"><span>生命周期事件与 Step-in</span><span class="min">2′</span></a></li>
+      <li><a href="#s4"><span>失败只重跑失败的</span><span class="min">1′</span></a></li>
+      <li><a href="#s5"><span>给 UAT 的报告</span><span class="min">2′</span></a></li>
+      <li><a href="#s6"><span>Cortex dat 自动导出</span><span class="min">2′</span></a></li>
+      <li class="part">怎么保证可靠</li>
+      <li><a href="#s7"><span>数据安全与质量</span><span class="min">1′</span></a></li>
+      <li><a href="#s8"><span>收益、待办与下一步</span><span class="min">2′</span></a></li>
+    </ol>
+    <div class="rail-foot">
+      <span>琥珀色框是屏幕上要做的事，红色框是需要留意的点；正文照读。</span>
+      <button class="toggle" id="toggle-cues" type="button" aria-pressed="false">只看口播</button>
+    </div>
+  </nav>
+
+  <main>
+    <header class="cover">
+      <div class="eyebrow">汇报 DEMO · 演讲稿</div>
+      <h1>SIT 造数：一条命令为 UAT 准备整套真实交易</h1>
+      <p class="lede">UAT 每一轮都需要 SIT 上有覆盖所有产品、所有生命周期事件的交易，按指定的 portfolio 和 entity 下单，还要有 Cortex 导出的 dat 文件。这套工具把造单、审批、记录、出报告和导出 dat 串成一条流水线，放在 oreo-e2e 项目里，和 E2E 用例共用同一套请求。</p>
+      <div class="facts">
+        <span>种子用例 <b>60</b></span>
+        <span>新交易 <b>38</b></span>
+        <span>事件用例 <b>20</b></span>
+        <span>Step-in <b>2</b></span>
+        <span>Composition <b>18</b></span>
+        <span>离线检查 <b>184</b> 项</span>
+      </div>
+    </header>
+
+    <section id="s0">
+      <div class="sec-head"><span class="sec-no">00</span><h2 class="sec">开场：UAT 要什么数据</h2><span class="dur">1 分钟</span></div>
+      <div class="say">
+        <p>UAT 开始前，业务要在 SIT 上看到一批“像真的一样”的交易：<strong>每个产品至少一笔 live 交易</strong>，每种<strong>生命周期事件</strong>（Allocation、Amendment、Termination、Novation、Step-out……）各做过一次，而且要落在业务指定的 portfolio 和 entity 下，再配上从 Cortex 导出的 dat 文件。</p>
+        <p>手工做这件事，要在页面上一笔一笔录入、找人审批、把 trade ID 抄下来，再到 Cortex 里一笔一笔导出。量大、容易错，SIT 一刷新又得重来，而且很难说清这一轮到底造了哪些单、哪几笔失败了。</p>
+        <p>今天演示的，就是把这整件事变成<strong>可重复、可追溯、失败可补跑</strong>的一条命令。</p>
+      </div>
+    </section>
+
+    <section id="s1">
+      <div class="sec-head"><span class="sec-no">01</span><h2 class="sec">一页看全流程</h2><span class="dur">2 分钟</span></div>
+      <div class="pipe" role="img" aria-label="SIT 造数流程：清单、批量下单、记录、报告；另一路：dat 清单、Cortex 导出">
+        <div class="lane">
+          <span class="lbl">造单 · 在 SIT 上</span>
+          <div class="step"><b>造数清单</b><small>Excel → feature 的一行行种子用例 + catalog</small></div>
+          <span class="arrow" aria-hidden="true">→</span>
+          <div class="step key"><b>SeedTest</b><small>走 API 下单，checker 自动审批；新交易和事件两组并行</small></div>
+          <span class="arrow" aria-hidden="true">→</span>
+          <div class="step"><b>Manifest</b><small>每笔结果一行：trade ID、任务、portfolio、错误</small></div>
+          <span class="arrow" aria-hidden="true">→</span>
+          <div class="step key"><b>seed-report</b><small>HTML + CSV，直接发给 UAT</small></div>
+        </div>
+        <div class="lane">
+          <span class="lbl">dat 文件 · 在 Cortex 上</span>
+          <div class="step"><b>seed-dats</b><small>每个用例该用哪个 dat、还缺哪些</small></div>
+          <span class="arrow" aria-hidden="true">→</span>
+          <div class="step key"><b>Cortex 导出脚本</b><small>给一批 trade ID，自动点完导出流程</small></div>
+          <span class="arrow" aria-hidden="true">→</span>
+          <div class="step"><b>dat 文件</b><small>放回用例对应的路径，下一轮下单就用它</small></div>
+        </div>
+      </div>
+      <div class="say">
+        <p>上面一路在 SIT 上造单：清单里每一行是一个<strong>种子用例</strong>，SeedTest 读清单，通过和 E2E 测试同一个 API 客户端下单、审批，把每一笔的结果写进 manifest，最后生成一份给 UAT 的报告。</p>
+        <p>下面一路解决 dat 文件：先列出每个用例需要哪个 dat、哪些还没有，再用脚本到 Cortex 里按 trade ID 批量导出。</p>
+        <p>关键的设计是<strong>复用</strong>：造数和 E2E 用例用同一套请求体、同一套事件数据、同一个 API 客户端。API 改了，修一处，两边都好。</p>
+      </div>
+    </section>
+
+    <section id="s2">
+      <div class="sec-head"><span class="sec-no">02</span><h2 class="sec">种子用例：一行一笔单</h2><span class="dur">2 分钟</span></div>
+      <div class="cue"><span class="tag">屏幕</span>打开 <code>src/test/resources/seed/features/seed_new_trades.feature</code>，再打开 <code>seed/catalog.json</code> 里对应的 <code>cases</code>。</div>
+      <pre class="code"><code>| case           | composition    | product_id | taxonomy      |
+| SEED-TRADE-024 | FX_PSCRIPT_TRF | FX_PSCRIPT | ComplexExotic |</code></pre>
+      <pre class="code"><code>"SEED-TRADE-024": { "request": { "basic": {
+    "portfolioId":   "EXAMPLE_PORTFOLIO_E",
+    "riskPortfolio": "EXAMPLE_PORTFOLIO_E",
+    "scbEntity":     "EXAMPLE_ENTITY_B" } } }</code></pre>
+      <div class="say">
+        <p>Excel 清单的每一行，在这里就是 feature 里的一行，有一个固定的<strong>用例编号</strong>，比如 SEED-TRADE-024。UAT 认的就是这个编号，所以编号只往后加，不重排。</p>
+        <p>这一行要用什么 portfolio、什么 entity、哪个 dat 文件，写在 catalog 里同名的条目下。没写的部分，就用和 E2E 一样的默认请求体。</p>
+        <p>仓库里放的都是占位符，<code>EXAMPLE_PORTFOLIO_*</code> 这样的值；真实的 SIT 值只在公司副本里，不进 git。</p>
+      </div>
+      <div class="tbl"><table class="t">
+        <thead><tr><th>类型</th><th>编号</th><th>数量</th><th>每笔做什么</th></tr></thead>
+        <tbody>
+          <tr><td>新交易</td><td><code>SEED-TRADE-001…038</code></td><td>38</td><td>按产品下一笔 live 交易</td></tr>
+          <tr><td>生命周期事件</td><td><code>SEED-EVENT-001…020</code></td><td>20</td><td>先下一笔新交易，再在上面做事件</td></tr>
+          <tr><td>Step-in</td><td><code>SEED-STEPIN-001…002</code></td><td>2</td><td>用 Step-in 的请求体下一笔交易</td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
+    <section id="s3">
+      <div class="sec-head"><span class="sec-no">03</span><h2 class="sec">生命周期事件与 Step-in</h2><span class="dur">2 分钟</span></div>
+      <div class="cue"><span class="tag">屏幕</span>打开 <code>seed/features/seed_lifecycle_events.feature</code>，指一下 case、event、composition 三列。</div>
+      <div class="say">
+        <p>事件用例覆盖 <strong>10 类事件</strong>，在 FX_TRF 和 FX_PSCRIPT_TRF 两个产品上各做一遍，一共 20 个。每个用例都会先下一笔新的 live 交易，再在这笔交易上发事件；事件产生审批任务的，由 checker 自动审批，生成的子交易（比如 Allocation 拆出来的两笔）也一起记下来。</p>
+        <p>事件的请求直接复用 <strong>E2E 正向用例的数据</strong>，不再维护第二份。比如 Allocation 在 E2E 里写的是“按名义本金 50% / 50% 拆分”，造数时会先读这笔交易的实际名义本金，换算成金额再发，和 E2E 的做法完全一致。</p>
+        <p>每个事件用例在 catalog 里都<strong>点名自己的 dat 文件</strong>，用自己的 portfolio 和 entity；Step-in full / partial 也一样，放在事件这一组里一起跑、一起出报告。</p>
+      </div>
+      <div class="tbl"><table class="t">
+        <thead><tr><th>事件</th><th>发送方式</th></tr></thead>
+        <tbody>
+          <tr><td>allocation-full · withdrawal · termination · partial-termination · portfolio-reassignment</td><td>trigger-event</td></tr>
+          <tr><td>remaining-party-full / partial · step-out-full / partial</td><td>trigger-event</td></tr>
+          <tr><td>amendment</td><td>交易的 update 接口</td></tr>
+          <tr><td>stepin-full · stepin-partial</td><td>用 Step-in 请求体直接下单</td></tr>
+        </tbody>
+      </table></div>
+      <div class="pit"><span class="tag">留意</span>一个事件用例如果没写 dat 文件名，工具会直接报错停下，而不是悄悄用 E2E 的 dat 文件下单。这是踩过一次坑之后加的保护。</div>
+    </section>
+
+    <section id="s4">
+      <div class="sec-head"><span class="sec-no">04</span><h2 class="sec">失败只重跑失败的</h2><span class="dur">1 分钟</span></div>
+      <div class="cue"><span class="tag">屏幕</span>在终端演示两条命令（公司机器上）。</div>
+      <pre class="code"><code># 全量跑一次
+mvn -B test -Dtest=SeedTest
+
+# 只补跑失败的两个用例
+mvn -B test -Dtest=SeedTest "-Dcucumber.options=--name ^\[(SEED-TRADE-001|SEED-EVENT-004)\].*$"
+
+# 把第一次全量和之后的补跑合成一份报告
+mvn -Ptest-data process-test-classes "-Dexec.args=seed-report 20261120-153000.."</code></pre>
+      <div class="say">
+        <p>SIT 不稳定的时候，难免有几笔失败。以前只能整批重来，重复下单；现在<strong>按用例编号只补跑失败的</strong>。</p>
+        <p>每次运行都会单独留一份记录。出报告时可以把“第一次全量 + 之后的补跑”合并起来，同一个用例以<strong>最新一次的结果为准</strong>：第一次失败、补跑成功的，报告里就显示成功和新的 trade ID。</p>
+      </div>
+    </section>
+
+    <section id="s5">
+      <div class="sec-head"><span class="sec-no">05</span><h2 class="sec">给 UAT 的报告</h2><span class="dur">2 分钟</span></div>
+      <div class="cue"><span class="tag">屏幕</span>打开 <code>target/seed/seed-report-&lt;run&gt;.html</code>。下面是它的样子（示例数据）。</div>
+      <div class="mock" aria-label="造数报告页面示意，示例数据">
+        <div class="bar"><i></i><i></i><i></i><span>seed-report-20261120-153000-on.html</span></div>
+        <div class="body">
+          <div class="cards">
+            <div class="card"><div class="k">Bookings</div><div class="v">60</div></div>
+            <div class="card"><div class="k">Booked</div><div class="v ok">59</div></div>
+            <div class="card"><div class="k">Failed</div><div class="v bad">1</div></div>
+            <div class="card"><div class="k">Itradeable Types</div><div class="v">18</div></div>
+          </div>
+          <h4>New trades <small>37 booked, 1 failed</small></h4>
+          <div class="tw"><table>
+            <thead><tr><th>Case</th><th>Run</th><th>Trade ID</th><th>Status</th><th>Itradeable Type</th><th>Product ID</th><th>Portfolio</th></tr></thead>
+            <tbody>
+              <tr><td class="mono">SEED-TRADE-001</td><td class="mono">…171200</td><td class="mono"><b>1000001</b><span class="cp">⧉</span></td><td><span class="pill y">booked</span></td><td>Tradeable.FXAccumulator</td><td class="mono">FX_ACCUMULATOR</td><td class="mono">EXAMPLE_PORTFOLIO_A</td></tr>
+              <tr><td class="mono">SEED-TRADE-024</td><td class="mono">…153000</td><td class="mono"><b>1000024</b><span class="cp">⧉</span></td><td><span class="pill y">booked</span></td><td>Ctrl.TRFGeneric</td><td class="mono">FX_PSCRIPT</td><td class="mono">EXAMPLE_PORTFOLIO_E</td></tr>
+              <tr><td class="mono">SEED-TRADE-031</td><td class="mono">…171200</td><td></td><td><span class="pill n">failed</span></td><td>Tradeable.FXRangeAccrualOption</td><td class="mono">FX_QUANTO_RA_DI</td><td class="mono">EXAMPLE_PORTFOLIO_V</td></tr>
+              <tr class="err"><td colspan="7">示例：失败原因会显示在这一行，方便直接转给开发</td></tr>
+            </tbody>
+          </table></div>
+          <h4>Lifecycle events <small>22 booked, 0 failed</small></h4>
+          <div class="tw"><table>
+            <thead><tr><th>Case</th><th>Event</th><th>Trade ID</th><th>Status</th><th>Itradeable Type</th><th>Child trade IDs</th></tr></thead>
+            <tbody>
+              <tr><td class="mono">SEED-EVENT-001</td><td>allocation-full</td><td class="mono"><b>2000001</b><span class="cp">⧉</span></td><td><span class="pill y">booked</span></td><td>Tradeable.TRF</td><td class="mono"><b>2000002</b><span class="cp">⧉</span> <b>2000003</b><span class="cp">⧉</span> <span class="cp">all</span></td></tr>
+              <tr><td class="mono">SEED-EVENT-004</td><td>termination</td><td class="mono"><b>2000004</b><span class="cp">⧉</span></td><td><span class="pill y">booked</span></td><td>Tradeable.TRF</td><td></td></tr>
+              <tr><td class="mono">SEED-STEPIN-001</td><td>stepin-full</td><td class="mono"><b>2000021</b><span class="cp">⧉</span></td><td><span class="pill y">booked</span></td><td>Tradeable.TRF</td><td></td></tr>
+            </tbody>
+          </table></div>
+        </div>
+      </div>
+      <div class="say">
+        <p>报告是一个单文件网页，<strong>不需要服务器，双击就能打开</strong>，同时还有一份 CSV。</p>
+        <p>上面是新交易，下面是生命周期事件和 Step-in，各自可以搜索、按成功 / 失败筛选、排序。每个 trade ID 和子交易 ID 旁边都有复制按钮，“Copy trade IDs” 能把当前看到的用例编号、trade ID、子交易 ID 一次复制出来，贴进 Excel 就是整齐的几列。失败的那一行下面直接显示原因。</p>
+      </div>
+    </section>
+
+    <section id="s6">
+      <div class="sec-head"><span class="sec-no">06</span><h2 class="sec">Cortex dat 自动导出</h2><span class="dur">2 分钟</span></div>
+      <div class="cue"><span class="tag">屏幕</span>在装有 Cortex 的 Windows 机器上，打开 TDS Browser，运行脚本，让大家看它自己点完流程。</div>
+      <div class="flow">
+        <span class="n">TDS Browser 输入 trade ID，F9 加载</span><span class="a">→</span>
+        <span class="n">打开交易，Export › View</span><span class="a">→</span>
+        <span class="n">只显示 INSTRUMENT 列，打开 ITradeable</span><span class="a">→</span>
+        <span class="n">Export › Save As，存成 &lt;trade ID&gt;.dat</span>
+      </div>
+      <pre class="code"><code>python scripts/cortex_dat_export.py --file trades.txt</code></pre>
+      <div class="say">
+        <p>dat 文件以前要在 Cortex 里一笔一笔点出来。现在给脚本一个 trade ID 列表，它会<strong>自己完成整套点击流程</strong>，逐笔保存成 dat 文件。</p>
+        <p>脚本会先关掉上一次留下的窗口，等窗口稳定了再操作；已经导出过的会跳过，一笔失败不影响后面的，每笔结果写进一份日志。导出的文件放在项目外面，因为里面是真实数据。</p>
+      </div>
+    </section>
+
+    <section id="s7">
+      <div class="sec-head"><span class="sec-no">07</span><h2 class="sec">数据安全与质量</h2><span class="dur">1 分钟</span></div>
+      <div class="say">
+        <p><strong>真实数据不进代码库。</strong>portfolio、entity、trade ID、dat 文件，在仓库里都是占位符；真实值只在公司副本或本地被 git 忽略的文件里。</p>
+        <p><strong>错了就早点停。</strong>清单里还写着 TODO 的值、没点名 dat 文件的事件用例、编号重复、找不到的产品，都会在下单前就报错，而不是造出一笔错误的单。</p>
+        <p><strong>离线就能检查。</strong>清单、catalog、报告和 dat 规则一共有 184 项离线检查，不连 SIT 就能跑，改动之后先过这一关。</p>
+      </div>
+    </section>
+
+    <section id="s8">
+      <div class="sec-head"><span class="sec-no">08</span><h2 class="sec">收益、待办与下一步</h2><span class="dur">2 分钟</span></div>
+      <div class="stats">
+        <div class="stat"><div class="k">一次命令覆盖</div><div class="v">60</div></div>
+        <div class="stat"><div class="k">产品 composition</div><div class="v">18</div></div>
+        <div class="stat"><div class="k">生命周期事件类型</div><div class="v">10</div></div>
+        <div class="stat"><div class="k">离线检查</div><div class="v">184</div></div>
+      </div>
+      <div class="say">
+        <p><strong>收益</strong>：整套 UAT 数据一条命令就能重建，每个 sprint、每次 SIT 刷新之后都能照样再来一遍；每一笔造了什么、成没成功，都有记录和报告；失败的只补跑失败的；dat 导出不再靠手点。</p>
+        <p><strong>还没做完的</strong>，如实列在这里：</p>
+      </div>
+      <div class="tbl"><table class="t">
+        <thead><tr><th>事项</th><th>现状</th></tr></thead>
+        <tbody>
+          <tr><td>真实 portfolio / entity</td><td>仓库里是占位符，公司副本里按 Excel 填真实 SIT 值</td></tr>
+          <tr><td>dat 文件</td><td>用导出脚本从 Cortex 导出后放回对应路径；<code>seed-dats</code> 列出还缺哪些</td></tr>
+          <tr><td>Excel 第 39–41 行</td><td>FX_VOLOPTION、FX_AMER_OPT 等待确认 composition 和 taxonomy</td></tr>
+          <tr><td>OptionEvent_knockout</td><td>需要能触发敲出的市场数据，暂不纳入</td></tr>
+          <tr><td>RemainingParty 等事件的映射</td><td>待和业务确认对应的事件类型</td></tr>
+        </tbody>
+      </table></div>
+      <div class="say">
+        <p><strong>下一步</strong>可以把它接到流水线上做成手动或定时任务，参数选环境和要跑的范围，每次的报告按版本留存。</p>
+      </div>
+      <div class="qa"><p><strong>Q&amp;A</strong></p><p>为什么放在 E2E 项目里？—— 因为请求、数据、API 客户端都和 E2E 用例共用，API 一变两边一起修，不会出现两套数据慢慢对不上的问题。</p><p>会不会重复造单？—— 补跑只跑指定的用例；报告合并时同一用例只保留最新结果。</p></div>
+    </section>
+  </main>
+</div>
+
+<script>
+(function () {
+  var btn = document.getElementById('toggle-cues');
+  function apply(on) {
+    document.body.classList.toggle('script-only', on);
+    btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    btn.textContent = on ? '显示屏幕提示和示例' : '只看口播';
+  }
+  var saved = false;
+  try { saved = localStorage.getItem('oreo-seed-demo-script-only') === '1'; } catch (e) {}
+  apply(saved);
+  btn.addEventListener('click', function () {
+    var on = !document.body.classList.contains('script-only');
+    apply(on);
+    try { localStorage.setItem('oreo-seed-demo-script-only', on ? '1' : '0'); } catch (e) {}
+  });
+})();
+</script>
+</body>
+</html>

@@ -118,9 +118,10 @@ a side effect of another change.
 
 ## 7. This repository
 
-- Everything in the repo is written in English. Two exceptions, on the user's decision, both in Chinese for the team:
-  `docs/demo/oreo-e2e-demo.html` (the demo script) and `docs/demo/oreo-ai-workflow.html` (the agent workflow
-  explainer; its English counterpart is `docs/ai-workflow.md`).
+- Everything in the repo is written in English. Three exceptions, on the user's decision, all in Chinese for the team:
+  `docs/demo/oreo-e2e-demo.html` (the demo script), `docs/demo/oreo-ai-workflow.html` (the agent workflow
+  explainer; its English counterpart is `docs/ai-workflow.md`) and `docs/demo/oreo-sit-seed-demo.html` (the SIT seed
+  demo; its English counterpart is `docs/sit-seed.md`).
 - This is the public copy. It builds and runs only on the company machine: elsewhere, give the commands instead of
   running them. Never commit a server address, IP, account, password, company name or real trade / task ID.
 - Transcribed files stay as typed in (only the `com.example` package and the `example.com` e-mail domain are
