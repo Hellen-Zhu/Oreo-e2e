@@ -76,8 +76,6 @@ tbody tr:last-child td { border-bottom: 0; }
 .error td { white-space: normal; color: var(--bad); font-family: var(--mono); font-size: 12px;
   background: var(--bad-bg); }
 .empty { padding: 28px; text-align: center; color: var(--muted); }
-.bar { display: inline-block; height: 8px; border-radius: 4px; background: var(--ok); vertical-align: middle; }
-.bar.bad { background: var(--bad); }
 .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--text);
   color: var(--bg); padding: 7px 14px; border-radius: 7px; font-size: 13px; opacity: 0; transition: opacity .2s;
   pointer-events: none; }
@@ -94,13 +92,6 @@ tbody tr:last-child td { border-bottom: 0; }
   <section id="trades"></section>
   <section id="events"></section>
 
-  <h2>By Itradeable Type</h2>
-  <div class="table-wrap">
-    <table>
-      <thead><tr><th>Itradeable Type</th><th>Booked</th><th>Failed</th><th></th></tr></thead>
-      <tbody id="types"></tbody>
-    </table>
-  </div>
 </main>
 <div class="toast" id="toast"></div>
 
@@ -128,6 +119,7 @@ tbody tr:last-child td { border-bottom: 0; }
     { id: 'events', title: 'Lifecycle events', rows: bookings.filter(b => b.kind === 'event'), columns: [
       { key: 'case', title: 'Case', get: label }, ...run, { key: 'event', title: 'Event', get: b => b.event || b.variant || '' },
       { key: 'tradeId', title: 'Trade ID' }, { key: 'status', title: 'Status' },
+      { key: 'itradeableType', title: 'Itradeable Type' },
       { key: 'childTradeIds', title: 'Child trade IDs', get: b => (b.childTradeIds || []).join(' ') },
       { key: 'composition', title: 'Composition' }, { key: 'productId', title: 'Product ID' },
       { key: 'eventCase', title: 'E2E case' }, ...common] }
@@ -238,20 +230,6 @@ tbody tr:last-child td { border-bottom: 0; }
       .includes(c.key)) return '<span class="mono">' + esc(v) + '</span>';
     return esc(v);
   }
-
-  const byType = {};
-  bookings.forEach(b => {
-    const t = b.itradeableType || '(none)';
-    byType[t] = byType[t] || [0, 0];
-    byType[t][b.status === 'booked' ? 0 : 1]++;
-  });
-  const max = Math.max(1, ...Object.values(byType).map(([o, f]) => o + f));
-  document.getElementById('types').innerHTML = Object.keys(byType).sort().map(t => {
-    const [o, f] = byType[t];
-    return '<tr><td class="mono" title="' + esc(t) + '">' + esc(t) + '</td><td>' + o + '</td><td>' + f + '</td><td>'
-      + '<span class="bar" style="width:' + (o / max * 160) + 'px"></span>'
-      + '<span class="bar bad" style="width:' + (f / max * 160) + 'px"></span></td></tr>';
-  }).join('');
 
   const toast = document.getElementById('toast');
   function copy(text, what) {

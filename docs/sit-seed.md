@@ -171,9 +171,10 @@ run. Merged, the latest run's line of each booking wins (a rerun's result over t
 each row's run, and the files are named after the runs (`seed-report-<run>+<run>`, `seed-report-<run>-on`). It keeps the latest line of each booking
 (environment, case, composition, product ID, taxonomy, variant, event) and writes it twice: a CSV, one row per booking
 (run, trade ID, then case, Itradeable Type, portfolio, risk portfolio, entity, child trade IDs for allocation,
-status, error), and an HTML page beside it, `seed-report-<runs>.html`, for UAT: counts, a table to search,
-filter by status and sort, each failure's error under its row, a button that copies the case and trade ID of the rows
-shown, and the counts by Itradeable Type. The page opens offline. The console prints the counts by kind and by
+status, error), and an HTML page beside it, `seed-report-<runs>.html`, for UAT: counts, then the new trades and the
+lifecycle events (step-ins included), each a table with the Itradeable Type to search, filter by status and sort, each
+failure's error under its row, a copy button by each trade ID and child trade ID, and a button that copies the case,
+trade ID and child trade IDs of the rows shown. The page opens offline. The console prints the counts by kind and by
 Itradeable Type and the failures.
 
 ## Dat files from Cortex
