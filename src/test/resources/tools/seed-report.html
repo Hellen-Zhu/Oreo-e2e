@@ -75,6 +75,19 @@ tbody tr:last-child td { border-bottom: 0; }
 .type { color: var(--text-2); }
 .error td { white-space: normal; color: var(--bad); font-family: var(--mono); font-size: 12px;
   background: var(--bad-bg); }
+.more { border: 0; background: none; color: var(--muted); cursor: pointer; font-size: 11px; padding: 0 6px 0 0;
+  width: 16px; }
+.more:hover, .more[aria-expanded="true"] { color: var(--accent); }
+.payload > td { white-space: normal; background: var(--surface); padding: 10px 12px 12px 26px; }
+.payload .blk { margin: 0 0 10px; }
+.payload .blk:last-child { margin-bottom: 0; }
+.payload .hd { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-2); font-weight: 600;
+  margin-bottom: 4px; }
+.payload .hd .copy { font-weight: 400; }
+.payload pre { margin: 0; padding: 8px 10px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px;
+  font-family: var(--mono); font-size: 12px; line-height: 1.5; max-height: 360px; overflow: auto;
+  white-space: pre; }
+.payload .none { color: var(--muted); font-size: 12px; }
 .empty { padding: 28px; text-align: center; color: var(--muted); }
 .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--text);
   color: var(--bg); padding: 7px 14px; border-radius: 7px; font-size: 13px; opacity: 0; transition: opacity .2s;
@@ -100,6 +113,9 @@ tbody tr:last-child td { border-bottom: 0; }
 (function () {
   const data = JSON.parse(document.getElementById('seed-data').textContent);
   const bookings = data.bookings || [];
+  bookings.forEach((b, i) => { b._i = i; });
+  // the rows whose payloads are shown: the request each booking sent, kept in the manifest
+  const opened = new Set();
   const label = b => b.case || b.event || b.variant || '';
   const common = [
     { key: 'portfolioId', title: 'Portfolio' },
@@ -156,6 +172,7 @@ tbody tr:last-child td { border-bottom: 0; }
       + '<div class="seg" role="group" aria-label="Status">'
       + '<button data-v="" aria-pressed="true">All</button><button data-v="booked" aria-pressed="false">Booked</button>'
       + '<button data-v="failed" aria-pressed="false">Failed</button></div>'
+      + '<button class="btn payloads" title="Show or hide the request each row sent">Show payloads</button>'
       + '<button class="btn copy-all" title="Case, trade ID and child trade IDs of the rows shown, tab-separated">Copy trade IDs</button>'
       + '<span class="count"></span></div>'
       + '<div class="table-wrap"><table><thead><tr></tr></thead><tbody></tbody></table></div>';
@@ -186,7 +203,8 @@ tbody tr:last-child td { border-bottom: 0; }
       const rows = shown();
       count.textContent = rows.length + ' of ' + all.length;
       body.innerHTML = rows.length ? rows.map(b =>
-        '<tr>' + columns.map(c => '<td>' + cell(b, c) + '</td>').join('') + '</tr>'
+        '<tr>' + columns.map((c, i) => '<td>' + (i === 0 ? more(b) : '') + cell(b, c) + '</td>').join('') + '</tr>'
+        + (opened.has(b._i) ? '<tr class="payload"><td colspan="' + columns.length + '">' + payload(b) + '</td></tr>' : '')
         + (b.status === 'failed' && b.error ? '<tr class="error"><td colspan="' + columns.length + '">'
           + esc(b.error) + '</td></tr>' : '')).join('')
         : '<tr><td class="empty" colspan="' + columns.length + '">'
@@ -202,7 +220,21 @@ tbody tr:last-child td { border-bottom: 0; }
       render();
     });
     body.addEventListener('click', e => {
-      const btn = e.target.closest('.copy'); if (btn) copy(btn.dataset.copy, 'Copied ' + btn.dataset.copy.split('\n').join(', '));
+      const toggle = e.target.closest('.more');
+      if (toggle) {
+        const i = Number(toggle.dataset.i);
+        if (!opened.delete(i)) opened.add(i);
+        render();
+        return;
+      }
+      const btn = e.target.closest('.copy');
+      if (btn) copy(btn.dataset.copy, btn.dataset.what || 'Copied ' + btn.dataset.copy.split('\n').join(', '));
+    });
+    root.querySelector('.payloads').addEventListener('click', () => {
+      const rows = shown();
+      const allOpen = rows.length && rows.every(b => opened.has(b._i));
+      rows.forEach(b => allOpen ? opened.delete(b._i) : opened.add(b._i));
+      render();
     });
     root.querySelector('.copy-all').addEventListener('click', () => {
       const rows = shown().filter(b => b.tradeId);
@@ -211,6 +243,28 @@ tbody tr:last-child td { border-bottom: 0; }
         'Copied ' + rows.length + ' trade ID(s)');
     });
     render();
+  }
+
+  function more(b) {
+    const on = opened.has(b._i);
+    return '<button class="more" data-i="' + b._i + '" aria-expanded="' + on + '" title="'
+      + (on ? 'Hide' : 'Show') + ' the request it sent">' + (on ? '▾' : '▸') + '</button>';
+  }
+
+  // what a booking sent: the trade part of the create request and its dat file; for an event, the event's body
+  function payload(b) {
+    const blocks = [];
+    if (b.dat) blocks.push('<div class="blk"><div class="hd">Dat file <span class="mono">' + esc(b.dat) + '</span></div></div>');
+    [['request', 'Trade request'], ['eventRequest', b.event === 'amendment' ? 'Amendment request' : 'Event request']]
+      .forEach(([key, title]) => {
+        if (!b[key]) return;
+        const json = JSON.stringify(b[key], null, 2);
+        blocks.push('<div class="blk"><div class="hd">' + title + '<button class="copy" data-copy="' + esc(json)
+          + '" data-what="Copied the ' + title.toLowerCase() + '" title="Copy the JSON">⧉ copy</button></div><pre>'
+          + esc(json) + '</pre></div>');
+      });
+    return blocks.length ? blocks.join('')
+      : '<div class="none">No request recorded: this line was written before the manifest kept what was sent.</div>';
   }
 
   function cell(b, c) {

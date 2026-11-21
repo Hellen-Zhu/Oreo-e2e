@@ -13,7 +13,7 @@ data). When the API changes, one fix serves both.
 | Catalog: composition → Itradeable Type, what a pair needs beyond its IDs, variants, events | `src/test/resources/seed/catalog.json` (`SeedData`) |
 | What a run books: one row per seed case (a new trade, or an event on a new trade) or variant | `src/test/resources/seed/features/*.feature` |
 | Steps | `glue/api/SeedSteps.java` |
-| Manifest: one file per run, one line per booking or failure | `target/seed/manifest-<run ID>.jsonl` (generated, never committed) |
+| Manifest: one file per run, one line per booking or failure, with what it sent (request, dat, event request) | `target/seed/manifest-<run ID>.jsonl` (generated, never committed) |
 | Summary for UAT | `TestDataTool seed-report [<run ID>\|<run ID>,<run ID>\|<run ID>..\|all]` → `target/seed/seed-report-<runs>.csv` and `.html` |
 | The page's template | `src/test/resources/tools/seed-report.html`: new trades and lifecycle events in two sections, each with its search, status filter and copy |
 | Each seed case's dat file and whether it is still to export | `TestDataTool seed-dats` → `target/seed/seed-dats.csv`, new trades then events and step-ins |
@@ -174,7 +174,11 @@ each row's run, and the files are named after the runs (`seed-report-<run>+<run>
 status, error), and an HTML page beside it, `seed-report-<runs>.html`, for UAT: counts, then the new trades and the
 lifecycle events (step-ins included), each a table with the Itradeable Type to search, filter by status and sort, each
 failure's error under its row, a copy button by each trade ID and child trade ID, and a button that copies the case,
-trade ID and child trade IDs of the rows shown. The page opens offline. The console prints the counts by kind and by
+trade ID and child trade IDs of the rows shown. Each row folds out (▸, or "Show payloads" for the rows shown) what the
+booking sent, as the manifest keeps it: the dat file, the trade part of the create request (its product ID set) and,
+for an event, the event's body (its trade ID and amounts set), each with a copy button; a line of a run before the
+manifest kept them says so. The page opens offline. A manifest and a report hold the SIT values sent: they stay on the
+company machine, never in a commit. The console prints the counts by kind and by
 Itradeable Type and the failures.
 
 ## Dat files from Cortex

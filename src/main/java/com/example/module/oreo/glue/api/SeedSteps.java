@@ -79,6 +79,7 @@ public class SeedSteps {
             CreatedTrade live = live(trade, entry);
             entry.put("tradeId", live.tradeId());
             request = withAmounts(request, live.tradeId(), trade);
+            entry.set("eventRequest", sentEvent(request, live.tradeId(), e));
             String taskId;
             if (SeedData.UPDATE.equals(e.via())) {
                 taskId = TradeApiClient.provisionPendingAmendmentWithBody(ctx.helper(), live.tradeId(), request,
@@ -113,9 +114,21 @@ public class SeedSteps {
     }
 
     /**
+     * The event body as sent, for the manifest: {@code request} with its {@code tradeIds} replaced by the trade's, as
+     * {@link TradeApiClient#triggerEventWithBody} does; an amendment's body as it is.
+     */
+    private static JsonNode sentEvent(String request, String tradeId, SeedData.Event e) {
+        JsonNode body = Json.parse(request);
+        if (!SeedData.UPDATE.equals(e.via()) && body instanceof ObjectNode object) {
+            object.putArray("tradeIds").add(tradeId);
+        }
+        return body;
+    }
+
+    /**
      * A live trade of {@code trade}: its body ({@link SeedData#request}, its effective and MiFID execution time the
      * booking's, {@link SeedData#withTimes}) and dat file. The body's portfolio, risk portfolio
-     * and entity go to {@code entry}.
+     * and entity go to {@code entry}, and so do the body as sent and the dat path.
      */
     private CreatedTrade live(SeedData.Trade trade, ObjectNode entry) throws Exception {
         String request = SeedData.withTimes(SeedData.request(trade), DateUtil.now());
@@ -123,6 +136,9 @@ public class SeedSteps {
         for (String field : List.of("portfolioId", "riskPortfolio", "scbEntity")) {
             if (basic.hasNonNull(field)) entry.put(field, basic.get(field).asText());
         }
+        // what is sent, for the report: the trade part of the request (its product ID set) and the dat file
+        entry.set("request", Json.parse(TradeApiClient.withProductId(request, trade.productId())));
+        entry.put("dat", trade.dat());
         CreatedTrade live = TradeApiClient.provisionLiveTradeWithBody(ctx.helper(), request, trade.productId(),
                 trade.dat(), trade.caseId() != null ? trade.caseId() : trade.setup());
         ctx.set("createdTradeId", live.tradeId());
@@ -147,7 +163,7 @@ public class SeedSteps {
     private void done(ObjectNode entry) {
         entry.put("status", "booked");
         SeedData.record(entry);
-        ctx.write("[seed] " + Json.compact(entry));
+        ctx.write("[seed] " + summary(entry));
     }
 
     private void fail(ObjectNode entry, Throwable e) {
@@ -155,6 +171,13 @@ public class SeedSteps {
         entry.put("status", "failed")
                 .put("error", message.length() > MAX_ERROR ? message.substring(0, MAX_ERROR) + "..." : message);
         SeedData.record(entry);
-        ctx.write("[seed] " + Json.compact(entry));
+        ctx.write("[seed] " + summary(entry));
+    }
+
+    /** {@code entry} without the bodies it sent, for the scenario log: the manifest keeps them. */
+    private static String summary(ObjectNode entry) {
+        ObjectNode copy = entry.deepCopy();
+        copy.remove(List.of("request", "eventRequest"));
+        return Json.compact(copy);
     }
 }

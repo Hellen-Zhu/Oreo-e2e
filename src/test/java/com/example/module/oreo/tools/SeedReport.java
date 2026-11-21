@@ -31,7 +31,7 @@ final class SeedReport {
 
     static final List<String> COLUMNS = List.of("run", "tradeId", "env", "kind", "case", "itradeableType",
             "composition", "productId", "taxonomy", "portfolioId", "riskPortfolio", "scbEntity", "variant", "event",
-            "setup", "childTradeIds", "status", "at", "error");
+            "setup", "dat", "childTradeIds", "status", "at", "error");
 
     /** The page's template: the report's data goes in place of {@link #DATA_MARK}. */
     static final String TEMPLATE = "src/test/resources/tools/seed-report.html";
