@@ -98,7 +98,7 @@ public class SeedDataTest {
                                     cell(header, cells, "taxonomy"), variant);
                     if (event != null) {
                         assertTrue(file + ": an event books a seed dat file: " + trade.dat(),
-                                trade.dat().equals(SeedData.SEED_DAT_DIR + trade.composition() + "/" + event + ".dat"));
+                                trade.dat().startsWith(SeedData.SEED_DAT_DIR + trade.composition() + "/"));
                     }
                     assertTrue(file + ": no dat file " + trade.dat(),
                             getClass().getClassLoader().getResource(trade.dat()) != null);
@@ -228,18 +228,22 @@ public class SeedDataTest {
     }
 
     @Test
-    public void anEventBooksItsOwnSeedDatFileNeverTheE2eOne() {
+    public void anEventBooksTheDatFileItsCaseNamesNeverTheE2eOne() {
         SeedData catalog = SeedData.fromJson("t.json", Json.parse("""
                 {"itradeableTypes": {"FX_TRF": "Cortex.Finance.Tradeable.TRF"},
                  "events": {"termination": {"case": "TC-TRADE-EARLY-TERMINATION-<product_type>-API-001"}},
-                 "cases": {"SEED-EVENT-004": {"request": {"basic": {"portfolioId": "EXAMPLE_PORTFOLIO_E"}}},
-                           "SEED-EVENT-014": {"dat": "termination-metals.dat"}}}"""));
-        assertEquals("a registered composition, no dat in the case: the event's, not data/dat",
-                "seed/dat/FX_TRF/termination.dat", catalog.forEvent("SEED-EVENT-004", "termination", "FX_TRF", "FX_TRF").dat());
+                 "cases": {"SEED-EVENT-004": {"dat": "termination.dat"},
+                           "SEED-EVENT-009": {"request": {"basic": {"portfolioId": "EXAMPLE_PORTFOLIO_E"}}}}}"""));
         assertEquals("seed/dat/FX_TRF/termination.dat",
-                catalog.forEvent("SEED-EVENT-009", "termination", "FX_TRF", "FX_TRF").dat());
-        assertEquals("seed/dat/FX_TRF/termination-metals.dat",
-                catalog.forEvent("SEED-EVENT-014", "termination", "FX_TRF", "FX_TRF").dat());
+                catalog.forEvent("SEED-EVENT-004", "termination", "FX_TRF", "FX_TRF").dat());
+        for (String caseId : List.of("SEED-EVENT-009", "SEED-EVENT-010")) {
+            try {
+                catalog.forEvent(caseId, "termination", "FX_TRF", "FX_TRF");
+                fail(caseId + ": an event case naming no dat file is refused, never booked with data/dat");
+            } catch (IllegalStateException e) {
+                assertTrue(e.getMessage(), e.getMessage().contains("names no dat file"));
+            }
+        }
         try {
             catalog.forEvent("SEED-EVENT-004", "no-such-event", "FX_TRF", "FX_TRF");
             fail("an unknown event is refused");
@@ -249,22 +253,19 @@ public class SeedDataTest {
     }
 
     @Test
-    public void everyEventCaseBooksItsTradeWithItsOwnPortfolioAndEntity() {
+    public void everyEventCaseOverridesOnlyItsTradesPortfolioAndEntity() {
         SeedData catalog = SeedData.catalog();
         for (String caseId : List.of("SEED-EVENT-001", "SEED-EVENT-011")) {
             String composition = caseId.equals("SEED-EVENT-001") ? "FX_TRF" : "FX_PSCRIPT_TRF";
-            SeedData.Trade trade = catalog.forCase(caseId, composition, composition.equals("FX_TRF") ? "FX_TRF" : "FX_PSCRIPT", null);
+            SeedData.Trade trade = catalog.forEvent(caseId, "allocation-full", composition,
+                    composition.equals("FX_TRF") ? "FX_TRF" : "FX_PSCRIPT");
+            assertEquals("seed/dat/" + composition + "/allocation-full.dat", trade.dat());
             JsonNode basic = Json.parse(SeedData.request(trade)).path("basic");
             for (String field : List.of("portfolioId", "riskPortfolio", "scbEntity")) {
                 assertTrue(caseId + " " + field + ": " + basic.path(field),
                         basic.path(field).asText().endsWith("_E" + caseId.substring(11)));
             }
-            String data = Json.parse(SeedData.eventRequest(catalog.event("allocation-full"), trade)).path("data")
-                    .toString();
-            assertTrue(caseId + " allocates to its own counterparties and portfolios: " + data,
-                    data.contains("EXAMPLE_COUNTERPARTY_E" + caseId.substring(11) + "_1")
-                            && data.contains("EXAMPLE_PORTFOLIO_E" + caseId.substring(11) + "_2")
-                            && data.contains("[50%, 50%]"));
+            assertEquals(caseId + ": the event sends its E2E case's request", 0, trade.caseEventRequest().size());
         }
     }
 

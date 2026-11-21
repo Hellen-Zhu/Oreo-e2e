@@ -294,20 +294,21 @@ public final class SeedData {
     }
 
     /**
-     * What seed case {@code caseId} books its event {@code event} on: {@link #forCase} with the event's own dat file,
-     * {@code seed/dat/<C>/<event>.dat}, unless the case names one ({@code dat}, also under {@code seed/dat/<C>/}).
-     * Never an E2E dat file of {@code data/dat}, whatever the catalog's {@code cases} hold.
+     * What seed case {@code caseId} books its event {@code event} on: {@link #forCase}, whose dat file is the one the
+     * case names in {@code cases} ({@code dat}, under {@code seed/dat/<C>/}). An event case must name one: without
+     * it the booking would take the composition's E2E dat file of {@code data/dat}.
      *
-     * @throws IllegalStateException when the event is not one, or as {@link #forCase}
+     * @throws IllegalStateException when the event is not one, the case names no dat file, or as {@link #forCase}
      */
     public Trade forEvent(String caseId, String event, String composition, String productId) {
         event(event);
-        Trade t = forCase(caseId, composition, productId, null);
         CaseEntry entry = cases.get(caseId);
-        if (entry != null && entry.dat() != null) return t;
-        return new Trade(t.caseId(), t.composition(), t.itradeableType(), t.productId(), t.taxonomy(), t.variant(),
-                SEED_DAT_DIR + composition + "/" + event + ".dat", t.setup(), t.caseRequest(), t.caseEventRequest(),
-                t.registered());
+        if (entry == null || entry.dat() == null) {
+            throw new IllegalStateException("[Seed] event case " + caseId + " (" + event + " on " + composition
+                    + ") names no dat file in " + CATALOG + " cases: give it \"dat\": \"<file>.dat\", a file of "
+                    + SEED_DAT_DIR + composition + "/");
+        }
+        return forCase(caseId, composition, productId, null);
     }
 
     /**

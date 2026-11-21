@@ -89,17 +89,15 @@ case sends of its own:
   the pair's. An event case (`SEED-EVENT-...`) books its trade with them too, and its `eventRequest` is merged the
   same way over its event's request (the E2E case's): the fields one event booking needs of its own. Each event
   books its own dat file, named after the event: `SEED-EVENT-004` (termination on FX_TRF) books
-  `seed/dat/FX_TRF/termination.dat`, by convention (`SeedData.forEvent`): never an E2E file of `data/dat`, even
-  with no `dat` in the case's entry; a case's `dat` names another file in the same folder. Placeholders until exported
-  from Cortex. Every case
+  `seed/dat/FX_TRF/termination.dat`. Every event case names its file in its entry (`"dat": "termination.dat"`, a
+  file of `seed/dat/<C>/`); one that names none is refused (`SeedData.forEvent`) rather than booked with the E2E
+  file of `data/dat`. Placeholders until exported from Cortex. Every case
   listed must be a row of the features (`SeedDataTest`), and a value starting with `TODO`
   stops the catalog from loading. The catalog has a case per row of the Excel with placeholders,
   `EXAMPLE_PORTFOLIO_<X>` and `EXAMPLE_ENTITY_<X>`, one letter per distinct portfolio and entity, so cases that share
   one share the placeholder. An event case books its new trade with its own placeholders, `EXAMPLE_PORTFOLIO_E<nnn>`
-  and `EXAMPLE_ENTITY_E<nnn>`, and gives in `eventRequest` the codes its event sends: an allocation its
-  counterparties and portfolios (`EXAMPLE_COUNTERPARTY_E001_1`, `EXAMPLE_PORTFOLIO_E001_1`), the whole `data` array,
-  since a merge replaces an array. The other events' codes (the novation and step-out parties, the reassignment's
-  portfolio) are added the same way once their E2E case data is here. The company copy replaces them with the real SIT values (`scbEntity` is the payload's
+  and `EXAMPLE_ENTITY_E<nnn>`: its `request` overrides only the portfolio, risk portfolio and entity, and its event
+  sends its E2E case's request. The company copy replaces them with the real SIT values (`scbEntity` is the payload's
   entity code, not the Excel's entity name); a git-ignored `seed/cases.local.json` (`*.local.json`) can hold them
   meanwhile. The manifest and the report carry the
   portfolio, risk portfolio and entity each booking sent.
