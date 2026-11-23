@@ -1,10 +1,5 @@
 {
-  "code": 200,
-  "status": "SUCCESS",
-  "msg": "${json-unit.ignore}",
-  "data": {
-    "metricType": "${json-unit.any-string}",
-    "value": "${json-unit.any-number}",
-    "tradeId": "${json-unit.any-string}"
-  }
+  "code": 400,
+  "status": "ERROR",
+  "msg": "${json-unit.any-string}"
 }

@@ -191,7 +191,7 @@ tbody tr:last-child td { border-bottom: 0; }
     function shown() {
       const q = query.toLowerCase();
       let out = all.filter(b => (!status || b.status === status)
-        && (!q || columns.some(c => value(b, c).toLowerCase().includes(q)) || ((b.failedStep || '') + ' ' + (b.error || '')).toLowerCase().includes(q)));
+        && (!q || columns.some(c => value(b, c).toLowerCase().includes(q)) || (b.error || '').toLowerCase().includes(q)));
       if (sortKey) {
         const c = columns.find(c => c.key === sortKey);
         out = out.slice().sort((a, b) => value(a, c).localeCompare(value(b, c), undefined, { numeric: true }) * sortDir);
@@ -206,7 +206,7 @@ tbody tr:last-child td { border-bottom: 0; }
         '<tr>' + columns.map((c, i) => '<td>' + (i === 0 ? more(b) : '') + cell(b, c) + '</td>').join('') + '</tr>'
         + (opened.has(b._i) ? '<tr class="payload"><td colspan="' + columns.length + '">' + payload(b) + '</td></tr>' : '')
         + (b.status === 'failed' && b.error ? '<tr class="error"><td colspan="' + columns.length + '">'
-          + (b.failedStep ? '<b>Failed at ' + esc(b.failedStep) + ':</b> ' : '') + esc(b.error) + '</td></tr>' : '')).join('')
+          + esc(b.error) + '</td></tr>' : '')).join('')
         : '<tr><td class="empty" colspan="' + columns.length + '">'
           + (all.length ? 'No booking matches' : 'No ' + sec.title.toLowerCase() + ' in this run') + '</td></tr>';
     }

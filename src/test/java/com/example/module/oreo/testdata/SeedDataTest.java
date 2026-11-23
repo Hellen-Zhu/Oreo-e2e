@@ -408,30 +408,6 @@ public class SeedDataTest {
                 "cases.SEED-TRADE-007: request.basic.scbEntity is still TODO");
     }
 
-    /** A dat file is the case's "dat", beside its request: in the request it would be a body field, silently. */
-    @Test
-    public void aDatFileIsNamedBesideTheRequestNeverInIt() {
-        bad("""
-                {"cases": {"SEED-TRADE-001": {"request": {"dat": "MINE.dat"}}}}""",
-                "cases.SEED-TRADE-001.request.dat: a dat file is not a field of the request");
-        bad("""
-                {"cases": {"SEED-TRADE-001": {"request": {"basic": {"datFile": "MINE.dat"}}}}}""",
-                "cases.SEED-TRADE-001.request.basic.datFile");
-        bad("""
-                {"cases": {"SEED-EVENT-004": {"eventRequest": {"legs": [{"dat": "MINE.dat"}]}}}}""",
-                "cases.SEED-EVENT-004.eventRequest.legs[0].dat");
-        bad("""
-                {"cases": {"SEED-TRADE-001": {"datFile": "MINE.dat"}}}""",
-                "unknown key \"datFile\", one of [dat, eventRequest, request, setup] (the dat file is \"dat\")");
-        bad("""
-                {"trades": [{"composition": "FX_TRF", "productId": "FX_TRF", "datfile": "MINE.dat"}]}""",
-                "trades[0]: unknown key \"datfile\"");
-        SeedData catalog = SeedData.fromJson("t.json", Json.parse("""
-                {"itradeableTypes": {"FX_TRF": "Cortex.Finance.Tradeable.TRF"},
-                 "cases": {"SEED-TRADE-001": {"_comment": "the Excel's row 1", "dat": "MINE.dat"}}}"""));
-        assertEquals("seed/dat/FX_TRF/MINE.dat", catalog.forCase("SEED-TRADE-001", "FX_TRF", "FX_TRF", null).dat());
-    }
-
     @Test
     public void theMifidExecutionTimeIsTheEffectiveTime() {
         Instant at = Instant.parse("2026-11-20T11:42:59.734Z");

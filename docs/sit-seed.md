@@ -87,10 +87,7 @@ case sends of its own:
   (objects deeply, arrays and values replaced, `null` deletes a field): the case's portfolio (`basic.portfolioId`),
   risk portfolio (`basic.riskPortfolio`) and entity (`basic.scbEntity`). The UI fills the last two from the portfolio;
   the API takes them as sent, so a case gives all three. `dat` and `setup` replace
-  the pair's. The dat file is the case's `dat`, beside `request`, never
-  a field of it: a `dat`, `datFile` or `datPath` key inside `request` or `eventRequest` is refused, since it would be
-  sent in the trade body while the booking uploads the default file, and so is any other key of a case or a `trades`
-  entry (`datFile` for `dat`). An event case (`SEED-EVENT-...`) books its trade with them too, and its `eventRequest` is merged the
+  the pair's. An event case (`SEED-EVENT-...`) books its trade with them too, and its `eventRequest` is merged the
   same way over its event's request (the E2E case's): the fields one event booking needs of its own. Each event
   books its own dat file, named after the event: `SEED-EVENT-004` (termination on FX_TRF) books
   `seed/dat/FX_TRF/termination.dat`. Every event case names its file in its entry (`"dat": "termination.dat"`, a
@@ -159,10 +156,7 @@ writes to the same file. A seed step run without `SeedTest` (from the IDE) start
 environment.
 
 The steps check only that a booking happened: a trade ID and an approved task. A failed booking fails its scenario and
-is written to the manifest with its error and the step it failed at (`failedStep`: read the seed catalog, build the
-trade request, create trade, approve trade, build the event request, read the trade's notional, trigger the event or
-submit the amendment, approve the event); its trade ID is kept as soon as the trade exists, so a trade whose approval
-or event failed is still found. A row the catalog cannot resolve (a case naming no dat file) is a failed line too. To rerun only the failed ones, use `--name` with their scenario names
+is written to the manifest with its error. To rerun only the failed ones, use `--name` with their scenario names
 (`[SEED-TRADE-001]`, `[SEED-EVENT-004]`, `[SEED-STEPIN-001]`): the rerun is a run of
 its own, and `seed-report` merges it with the first run, so nothing is booked twice:
 
@@ -177,9 +171,9 @@ run. Merged, the latest run's line of each booking wins (a rerun's result over t
 each row's run, and the files are named after the runs (`seed-report-<run>+<run>`, `seed-report-<run>-on`). It keeps the latest line of each booking
 (environment, case, composition, product ID, taxonomy, variant, event) and writes it twice: a CSV, one row per booking
 (run, trade ID, then case, Itradeable Type, portfolio, risk portfolio, entity, child trade IDs for allocation,
-status, failed step, error), and an HTML page beside it, `seed-report-<runs>.html`, for UAT: counts, then the new trades and the
+status, error), and an HTML page beside it, `seed-report-<runs>.html`, for UAT: counts, then the new trades and the
 lifecycle events (step-ins included), each a table with the Itradeable Type to search, filter by status and sort, each
-failure's step and error under its row, a copy button by each trade ID and child trade ID and by each field of the Excel (Itradeable Type in full,
+failure's error under its row, a copy button by each trade ID and child trade ID and by each field of the Excel (Itradeable Type in full,
 composition, product ID, taxonomy, portfolio, risk portfolio, entity, event), and a button that copies the case,
 trade ID and child trade IDs of the rows shown. Each row folds out (▸, or "Show payloads" for the rows shown) what the
 booking sent, as the manifest keeps it: the dat file, the trade part of the create request (its product ID set) and,

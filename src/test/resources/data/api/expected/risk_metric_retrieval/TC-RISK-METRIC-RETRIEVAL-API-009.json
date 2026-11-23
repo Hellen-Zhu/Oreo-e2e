@@ -1,0 +1,10 @@
+{
+  "code": 200,
+  "status": "SUCCESS",
+  "msg": "${json-unit.ignore}",
+  "data": {
+    "metricType": "${json-unit.any-string}",
+    "value": "${json-unit.any-number}",
+    "tradeId": "${json-unit.any-string}"
+  }
+}
