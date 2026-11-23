@@ -101,35 +101,134 @@ section.dark .tag { color: #F2A56B; }
 <section id="cover" class="dark cover">
 <p class="eyebrow">KNOWLEDGE TRANSFER · 新同学入门</p>
 <h1 class="cover-title">OREO E2E 自动化框架</h1>
-<p class="lead">从一个 case 怎么跑起来，讲到 Genie、测试数据和 AI 工作流</p>
-<p class="small">分四次讲 · 每次约 40 分钟 · 每次讲完配一个动手作业</p>
-<aside>开场先说明这次 KT 的节奏：分四次讲，每次之间隔两三天，让她自己看代码、跑命令，带着问题来听下一次。强调这套框架规则比较多，先讲清楚再动手，能少踩很多坑。</aside>
+<p class="lead">从一个最小的 Genie 项目讲起，到 oreo-e2e、测试数据和 AI 工作流</p>
+<p class="small">分两天讲 · 每天约 90 分钟 · 每天讲完配一个动手作业</p>
+<aside>开场先说明这次 KT 的节奏：分两天讲，中间隔一两天，让她自己看代码、跑命令，带着问题来听下一次。强调这套框架规则比较多，先讲清楚再动手，能少踩很多坑。</aside>
 </section>
 <section id="agenda" class="alt">
 <p class="eyebrow">日程</p>
-<h2 class="title">四次讲解，由外到内</h2>
+<h2 class="title">两天，四段：先 Genie，再 oreo-e2e</h2>
 <div class="grid4">
-<div class="card"><p class="tag">01 · 45 分钟</p><h3 class="ch">整体结构</h3><p class="ct">一个 case 是怎么跑起来的：分层、目录、改动放在哪</p></div>
-<div class="card"><p class="tag">02 · 40 分钟</p><h3 class="ch">Genie 运行机制</h3><p class="ct">入口、模块、snippet、生命周期、配置和并行</p></div>
-<div class="card"><p class="tag">03 · 40 分钟</p><h3 class="ch">测试数据</h3><p class="ct">case ID、四层合并、录制和离线检查</p></div>
-<div class="card"><p class="tag">04 · 40 分钟</p><h3 class="ch">AI 工作流</h3><p class="ct">两条流水线、两个 agent、五个 skill</p></div>
+<div class="card"><p class="tag">第 1 天 · 上半</p><h3 class="ch">Genie 本身</h3><p class="ct">一个最小的 Genie 项目：入口、feature、自定义 step、元素和配置</p></div>
+<div class="card"><p class="tag">第 1 天 · 下半</p><h3 class="ch">oreo-e2e 怎么用 Genie</h3><p class="ct">多了什么：模块、snippet、分层、目录、并行，最后追一个 case</p></div>
+<div class="card"><p class="tag">第 2 天 · 上半</p><h3 class="ch">测试数据</h3><p class="ct">case ID、四层合并、录制和离线检查</p></div>
+<div class="card"><p class="tag">第 2 天 · 下半</p><h3 class="ch">AI 工作流</h3><p class="ct">两条流水线、两个 agent、五个 skill</p></div>
 </div>
 <div class="spacer"></div>
-<p class="small">第 3、4 讲配合仓库里现成的中文讲稿：docs/demo/oreo-e2e-demo.html、docs/demo/oreo-ai-workflow.html</p>
-<aside>每次之间隔两三天。第二次开始，先请她用五分钟讲一下上次的内容，这是检验理解最快的办法。</aside>
+<p class="small">第 2 天配合仓库里现成的中文讲稿：docs/demo/oreo-e2e-demo.html、docs/demo/oreo-ai-workflow.html</p>
+<aside>先讲 Genie 本身，再讲我们在它上面加了什么：这样她能分清哪些是框架的规定，哪些是我们自己的设计。第 2 天开始，先请她用五分钟讲一下第 1 天的内容。</aside>
 </section>
 <section id="s1-what">
-<p class="eyebrow">第 1 讲 · 整体结构</p>
+<p class="eyebrow">第 1 天 · 开场</p>
 <h2 class="title">我们测什么，为什么要自动化</h2>
 <div class="grid2">
 <div class="card"><h3 class="ch">被测系统</h3><p class="ct">OREO FX 交易管理门户。覆盖 trade 的整个生命周期：创建、审批、修改、取消、提前终止、分配、fixing 等。</p></div>
 <div class="card"><h3 class="ch">要解决的问题</h3><p class="ct">产品一个个上线，每个产品都要覆盖所有 lifecycle event。产品数 × 事件数，靠手工回归跟不上。</p></div>
 </div>
 <p class="note"><b>核心设计：事件是文件，产品是行。</b>一个 lifecycle event 对应一个 feature；上线一个新产品，只是在 Examples 里多一行，就能复用所有 event 的 case。</p>
-<aside>这一页讲清楚“为什么这样设计”。理解了“产品是行”，后面看到 Examples 不能手改、要用 sync-examples 生成，她就知道原因了。</aside>
+<aside>只讲 5 分钟，先让她知道后面的设计是为了解决什么问题。理解了“产品是行”，后面看到 Examples 不能手改、要用 sync-examples 生成，她就知道原因了。</aside>
+</section>
+<section id="g-what">
+<p class="eyebrow">第 1 天 · Genie 本身</p>
+<h2 class="title">Genie 是什么</h2>
+<p class="lead">公司内部基于 Cucumber-JVM 和 JUnit 封装的测试框架。项目只写业务步骤，其余的它都包了。</p>
+<div class="grid3">
+<div class="card"><p class="tag">发动机</p><h3 class="ch">Cucumber-JVM</h3><p class="ct">把 feature 里的每一行 step 匹配到一个 step 定义上执行</p></div>
+<div class="card"><p class="tag">整辆车</p><h3 class="ch">Genie</h3><p class="ct">runner、模块（REST、数据库、Playwright）、内置 step、元素 JSON、配置、报告和并行</p></div>
+<div class="card"><p class="tag">车上的货</p><h3 class="ch">我们的项目</h3><p class="ct">feature，以及内置 step 做不到时才写的自定义 step</p></div>
+</div>
+<p class="note">先记住一件事：<b>内置 step 能做的，不写 Java。</b>内置 step 目录：docs/genie_rest_glue_catalog.md、docs/genie_playwright_glue_catalog.md。</p>
+<aside>这一页只讲概念，马上进入最小项目，让她看到实物。</aside>
+</section>
+<section id="g-mini" class="alt">
+<p class="eyebrow">第 1 天 · Genie 本身</p>
+<h2 class="title">一个最小的 Genie 项目</h2>
+<table class="tbl">
+<tr><th style="width:38%">文件</th><th style="width:30%">作用</th><th>讲的时候看什么</th></tr>
+<tr><td class="mono">test/java/…/RestTest.java</td><td>入口类（runner）</td><td>注解：用谁跑、feature 和 glue 在哪</td></tr>
+<tr><td class="mono">resources/features/playwright.feature</td><td>场景</td><td>大部分 step 直接是 Genie 内置的</td></tr>
+<tr><td class="mono">main/java/…/SampleGlue.java</td><td>自定义 step</td><td>@And 加正则，就是一个 step 定义</td></tr>
+<tr><td class="mono">resources/elements/*.json</td><td>定位器</td><td>feature 里用元素 key，不写选择器</td></tr>
+<tr><td class="mono">resources/genie.properties</td><td>配置</td><td>浏览器、headless、超时、元素文件路径</td></tr>
+</table>
+<p class="note">就这五类文件，一个 Genie 项目就能跑起来。oreo-e2e 的每一类文件，都能在这里找到对应的原型。</p>
+<aside>现场打开 develop 分支上的最小项目逐个文件讲，然后跑一次。讲之前先在自己机器上跑一遍，确认和当前 Genie 版本兼容。她的第一个动手任务，就是在自己机器上把它跑通。</aside>
+</section>
+<section id="g-run">
+<p class="eyebrow">第 1 天 · Genie 本身</p>
+<h2 class="title">跑一次，发生了什么</h2>
+<div class="flow">
+<div class="node"><p class="nl">启动</p><p class="ns">runner 接管 JUnit，读 genie.properties，加载模块</p></div>
+<div class="arrow-wrap"><x-shape kind="arrow-right" class="arrow"></x-shape></div>
+<div class="node"><p class="nl">匹配 step</p><p class="ns">feature 的每一行，匹配内置 step 或 SampleGlue 的正则</p></div>
+<div class="arrow-wrap"><x-shape kind="arrow-right" class="arrow"></x-shape></div>
+<div class="node"><p class="nl">执行</p><p class="ns">元素 key 到 elements JSON 里查定位器，驱动浏览器</p></div>
+<div class="arrow-wrap"><x-shape kind="arrow-right" class="arrow"></x-shape></div>
+<div class="node"><p class="nl">报告</p><p class="ns">每个 step 的结果，失败时截图</p></div>
+</div>
+<p class="note">这里还<b>没有</b> snippet、data/、case ID 和并行，这些都是 oreo-e2e 在 Genie 上加的。</p>
+<aside>现场故意把 feature 里的一个 step 改错一个字再跑，让她看 step undefined 长什么样：这是 Genie 层的错误，以后排查时第一个要认出来。</aside>
+</section>
+<section id="s2-snippet" class="alt">
+<p class="eyebrow">第 1 天 · Genie 本身</p>
+<h2 class="title">Snippet：用文本写的 step 定义</h2>
+<div class="grid2" style="grid-template-columns:1.15fr 1fr">
+<p class="code"><span class="cm"># snippet/api/common_api.snippet</span><br><span class="hl">@Given "^start a new api request as user '([^']*)'$"</span><br>&#160;&#160;&#160;&#160;Given start building a new request<br>&#160;&#160;&#160;&#160;And set the user header for '$1'<br>&#160;&#160;&#160;&#160;And set a new request id header</p>
+<div style="display:flex; flex-direction:column; gap:20px">
+<div class="card"><h3 class="ch">第一行是正则</h3><p class="ct">$1 是正则捕获的参数，比如 maker、checker</p></div>
+<div class="card"><h3 class="ch">下面是展开的步骤</h3><p class="ct">可以是内置 step、其他 snippet 或 Java glue，一层层展开</p></div>
+</div>
+</div>
+<p class="note">所以 feature 可以写成纯业务语言，技术细节全部沉到 snippet 和 glue 里。</p>
+<aside>现场改：在最小项目的 feature 里找三行连续的技术步骤，写一个 snippet 把它们合成一行业务语言，再跑一次。前提是最小项目的 glue 路径包含 snippet 目录（oreo 在 OreoModule 里注册 classpath:snippet），提前试一次；不行就直接用上面 oreo 的例子讲。</aside>
+</section>
+<section id="g-map" class="dark">
+<p class="eyebrow">过渡 · 从最小项目到 oreo-e2e</p>
+<h2 class="title">同一个骨架，oreo-e2e 多了什么</h2>
+<table class="tbl" style="color:#DCE3EC">
+<tr><th style="width:28%;color:#F7F6F2">最小 Genie 项目</th><th style="width:34%;color:#F7F6F2">oreo-e2e</th><th style="color:#F7F6F2">多了什么</th></tr>
+<tr><td>RestTest.java</td><td>OreoTest.java</td><td>固定 tag、FEATURE 模式 3 个并发</td></tr>
+<tr><td>SampleGlue.java</td><td>glue/api、glue/ui、glue/hooks</td><td>Java 只写缺少的能力</td></tr>
+<tr><td>feature 里写技术步骤</td><td>snippet/ + 业务语言的 feature</td><td>技术细节下沉到 snippet</td></tr>
+<tr><td>elements/*.json</td><td>elements/pages、components</td><td>按页面和组件拆分</td></tr>
+<tr><td>genie.properties</td><td>genie.properties + &lt;env&gt;.properties</td><td>多环境</td></tr>
+<tr><td>没有</td><td>data/、case ID</td><td>事件是文件，产品是行（第 2 天）</td></tr>
+</table>
+<aside>这一页是两段之间的桥。接下来讲的每一条 oreo 规则，都可以先问一句：这是 Genie 要求的，还是我们自己的设计？后者是可以讨论和改进的。</aside>
+</section>
+<section id="s2-genie">
+<p class="eyebrow">第 1 天 · oreo-e2e 怎么用 Genie</p>
+<h2 class="title">OreoModule：oreo-e2e 怎么接入 Genie</h2>
+<p class="lead">oreo-e2e 有自己的模块：声明依赖哪些 Genie 模块，glue 从哪里找。snippet 能被找到，就是因为这里注册了 classpath:snippet。</p>
+<div class="flow">
+<div class="node" style="flex:0 0 520px"><p class="nl">OreoModule（我们的模块）</p><p class="ns">注册 glue：Java 包 com.example.module.oreo.glue 和 classpath:snippet</p></div>
+<div class="arrow-wrap"><x-shape kind="arrow-right" class="arrow"></x-shape></div>
+<div style="flex:1; display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px">
+<div class="node soft"><p class="nl">Spring</p></div>
+<div class="node soft"><p class="nl">Rest</p></div>
+<div class="node soft"><p class="nl">Jdbc</p></div>
+<div class="node soft"><p class="nl">Sql</p></div>
+<div class="node soft"><p class="nl">Database</p></div>
+<div class="node soft"><p class="ns">依赖的模块按顺序加载，各自带来内置 step</p></div>
+</div>
+</div>
+<p class="note">写新步骤之前，先查内置 step 目录：docs/genie_rest_glue_catalog.md 和 docs/genie_playwright_glue_catalog.md。</p>
+<aside>打开 OreoModule.java，看 getDependencies 和 getGluePaths 两个方法，对比最小项目里 glue 是怎么被找到的。</aside>
+</section>
+<section id="s2-entry">
+<p class="eyebrow">第 1 天 · oreo-e2e 怎么用 Genie</p>
+<h2 class="title">入口：OreoTest，对照 RestTest 看</h2>
+<table class="tbl">
+<tr><th style="width:30%">注解</th><th style="width:36%">作用</th><th>要记住</th></tr>
+<tr><td>@RunWith(Genie.class)</td><td>由 Genie 接管 JUnit 的运行</td><td>mvn test -Dtest=OreoTest 跑的就是 Genie</td></tr>
+<tr><td>@CucumberOptions</td><td>feature 在哪、glue 在哪、默认 tag</td><td>glue 有两个来源：Java 包和 snippet</td></tr>
+<tr><td>@GenieOptions</td><td>环境配置文件、并行方式</td><td>qa.properties，FEATURE 模式，3 个并发</td></tr>
+</table>
+<p class="note"><b>固定 tag：</b>not @wip 和 @ADO#trade_creation，命令行的 filter 会和它们叠加。所以 mvn test 不等于全量；跑出 0 个 case 时，先查 tag。选 case 只用 -Dcucumber.options，不用 -Dcucumber.filter.*。</p>
+<aside>打开 src/test/java/com/example/module/oreo/OreoTest.java 对照讲。SeedTest 是另一个入口，用来给 UAT 批量下 SIT seed，不是测试，mvn test 不会跑它。</aside>
 </section>
 <section id="s1-layers">
-<p class="eyebrow">第 1 讲 · 整体结构</p>
+<p class="eyebrow">第 1 天 · oreo-e2e 怎么用 Genie</p>
 <h2 class="title">一张图看懂分层</h2>
 <div class="flow">
 <div class="node"><p class="nl">feature</p><p class="ns">业务语言，case ID 写在 scenario 名字里</p></div>
@@ -147,7 +246,7 @@ section.dark .tag { color: #F2A56B; }
 <aside>白板上可以重画这张图。重点：越往左越接近业务语言，越往右越接近技术实现。技术细节只能往右沉，不能出现在 feature 里。</aside>
 </section>
 <section id="s1-dirs">
-<p class="eyebrow">第 1 讲 · 整体结构</p>
+<p class="eyebrow">第 1 天 · oreo-e2e 怎么用 Genie</p>
 <h2 class="title">目录地图</h2>
 <table class="tbl">
 <tr><th style="width:44%">目录</th><th>放什么</th></tr>
@@ -164,7 +263,7 @@ section.dark .tag { color: #F2A56B; }
 <aside>现场打开 IDE 对照着点一遍，不要只看表。让她记住：找不到东西时先回到这张表。</aside>
 </section>
 <section id="s1-apiui">
-<p class="eyebrow">第 1 讲 · 整体结构</p>
+<p class="eyebrow">第 1 天 · oreo-e2e 怎么用 Genie</p>
 <h2 class="title">API 和 UI 各测什么</h2>
 <div class="grid2">
 <div class="card"><p class="tag">@api</p><h3 class="ch">测业务规则</h3><p class="ct">字段校验、状态流转、审批、返回结果。又快又稳，是覆盖的主力。</p></div>
@@ -174,7 +273,7 @@ section.dark .tag { color: #F2A56B; }
 <aside>分层的依据在 docs/standards/test-layering-standards.md。一个验收标准先问：这是业务规则还是用户操作？</aside>
 </section>
 <section id="s1-where">
-<p class="eyebrow">第 1 讲 · 整体结构</p>
+<p class="eyebrow">第 1 天 · oreo-e2e 怎么用 Genie</p>
 <h2 class="title">改动放在哪：先复用，最后才写 Java</h2>
 <div style="display:flex; flex-direction:column; gap:16px">
 <div class="rung"><p class="num">1</p><p class="rt">已有的 flow、page、component 或 API snippet 能表达 → 直接复用</p></div>
@@ -185,64 +284,8 @@ section.dark .tag { color: #F2A56B; }
 </div>
 <aside>这是 CLAUDE.md 第 3 节的规则，按顺序往下找，遇到第一个合适的就停。老代码里有一些 wrapper、sleep，不要模仿，也不要顺手重构。</aside>
 </section>
-<section id="s1-trace" class="alt">
-<p class="eyebrow">第 1 讲 · 现场演示</p>
-<h2 class="title">从头到尾追一个 case</h2>
-<div class="grid4">
-<div class="card"><p class="tag">01</p><h3 class="ch">找到 scenario</h3><p class="ct">看名字里的 case ID，比如 [TC-TRADE-CREATION-…-API-001]</p></div>
-<div class="card"><p class="tag">02</p><h3 class="ch">跳到 snippet</h3><p class="ct">每个 step 一层层展开，直到内置 step 或 Java</p></div>
-<div class="card"><p class="tag">03</p><h3 class="ch">打印数据</h3><p class="ct">用 case 命令看最终发送的请求和比对的期望响应</p></div>
-<div class="card"><p class="tag">04</p><h3 class="ch">跑一次</h3><p class="ct">在公司机器上，用最窄的 filter</p></div>
-</div>
-<p class="code" style="margin-top:36px"><span class="cm"># 打印一个 case 的数据（离线）</span><br>mvn -Ptest-data process-test-classes "-Dexec.args=case TC-…"<br><span class="cm"># 只跑这一个 case</span><br>mvn -B test -Dtest=OreoTest "-Dcucumber.options=--name ^\[TC-…\].*$"</p>
-<aside>这是第一讲最重要的部分，留足 15 分钟。挑一个简单的 trade_creation API case。追一遍，比讲十遍概念都有用。</aside>
-</section>
-<section id="s2-genie">
-<p class="eyebrow">第 2 讲 · Genie 运行机制</p>
-<h2 class="title">Genie 是什么</h2>
-<p class="lead">公司内部基于 Cucumber-JVM 和 JUnit 封装的测试框架。它把 REST、数据库、Playwright、报告和并行做成<b>模块</b>，项目只需要写业务步骤。</p>
-<div class="flow">
-<div class="node" style="flex:0 0 520px"><p class="nl">OreoModule（我们的模块）</p><p class="ns">注册 glue：Java 包 com.example.module.oreo.glue 和 classpath:snippet</p></div>
-<div class="arrow-wrap"><x-shape kind="arrow-right" class="arrow"></x-shape></div>
-<div style="flex:1; display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px">
-<div class="node soft"><p class="nl">Spring</p></div>
-<div class="node soft"><p class="nl">Rest</p></div>
-<div class="node soft"><p class="nl">Jdbc</p></div>
-<div class="node soft"><p class="nl">Sql</p></div>
-<div class="node soft"><p class="nl">Database</p></div>
-<div class="node soft"><p class="ns">依赖的模块按顺序加载，各自带来内置 step</p></div>
-</div>
-</div>
-<p class="note">写新步骤之前，先查内置 step 目录：docs/genie_rest_glue_catalog.md 和 docs/genie_playwright_glue_catalog.md。</p>
-<aside>打个比方：Cucumber 是发动机，Genie 是整辆车，oreo-e2e 是装在车上的货。打开 OreoModule.java，看 getDependencies 和 getGluePaths 两个方法。</aside>
-</section>
-<section id="s2-entry">
-<p class="eyebrow">第 2 讲 · Genie 运行机制</p>
-<h2 class="title">入口：OreoTest 的三个注解</h2>
-<table class="tbl">
-<tr><th style="width:30%">注解</th><th style="width:36%">作用</th><th>要记住</th></tr>
-<tr><td>@RunWith(Genie.class)</td><td>由 Genie 接管 JUnit 的运行</td><td>mvn test -Dtest=OreoTest 跑的就是 Genie</td></tr>
-<tr><td>@CucumberOptions</td><td>feature 在哪、glue 在哪、默认 tag</td><td>glue 有两个来源：Java 包和 snippet</td></tr>
-<tr><td>@GenieOptions</td><td>环境配置文件、并行方式</td><td>qa.properties，FEATURE 模式，3 个并发</td></tr>
-</table>
-<p class="note"><b>固定 tag：</b>not @wip 和 @ADO#trade_creation，命令行的 filter 会和它们叠加。所以 mvn test 不等于全量；跑出 0 个 case 时，先查 tag。选 case 只用 -Dcucumber.options，不用 -Dcucumber.filter.*。</p>
-<aside>打开 src/test/java/com/example/module/oreo/OreoTest.java 对照讲。SeedTest 是另一个入口，用来给 UAT 批量下 SIT seed，不是测试，mvn test 不会跑它。</aside>
-</section>
-<section id="s2-snippet" class="alt">
-<p class="eyebrow">第 2 讲 · Genie 运行机制</p>
-<h2 class="title">Snippet：用文本写的 step 定义</h2>
-<div class="grid2" style="grid-template-columns:1.15fr 1fr">
-<p class="code"><span class="cm"># snippet/api/common_api.snippet</span><br><span class="hl">@Given "^start a new api request as user '([^']*)'$"</span><br>&#160;&#160;&#160;&#160;Given start building a new request<br>&#160;&#160;&#160;&#160;And set the user header for '$1'<br>&#160;&#160;&#160;&#160;And set a new request id header</p>
-<div style="display:flex; flex-direction:column; gap:20px">
-<div class="card"><h3 class="ch">第一行是正则</h3><p class="ct">$1 是正则捕获的参数，比如 maker、checker</p></div>
-<div class="card"><h3 class="ch">下面是展开的步骤</h3><p class="ct">可以是内置 step、其他 snippet 或 Java glue，一层层展开</p></div>
-</div>
-</div>
-<p class="note">所以 feature 可以写成纯业务语言，技术细节全部沉到 snippet 和 glue 里。</p>
-<aside>这一页是第二讲的重点。现场演示：从 feature 里的一行 step 开始，跳到 snippet，一层层展开，最后落到一个内置 step 或 Java 方法。</aside>
-</section>
 <section id="s2-lifecycle">
-<p class="eyebrow">第 2 讲 · Genie 运行机制</p>
+<p class="eyebrow">第 1 天 · oreo-e2e 怎么用 Genie</p>
 <h2 class="title">一个 scenario 的生命周期</h2>
 <div class="flow">
 <div class="node"><p class="nl">启动与筛选</p><p class="ns">读 properties，加载模块，按 tag 和 name 过滤</p></div>
@@ -262,7 +305,7 @@ section.dark .tag { color: #F2A56B; }
 <aside>hooks 在 glue/hooks/。trace 的保留方式由 genie.properties 里的 oreo.playwright.trace.mode=RETAIN_ON_FAILURE 控制。</aside>
 </section>
 <section id="s2-config">
-<p class="eyebrow">第 2 讲 · Genie 运行机制</p>
+<p class="eyebrow">第 1 天 · oreo-e2e 怎么用 Genie</p>
 <h2 class="title">配置与环境</h2>
 <div class="grid2">
 <div class="card"><p class="tag">genie.properties</p><h3 class="ch">公共默认值</h3><p class="ct">Edge 浏览器、headless、超时、trace 模式、risk engine 用 MOCK、元素文件路径</p></div>
@@ -273,7 +316,7 @@ section.dark .tag { color: #F2A56B; }
 <aside>可以打开 genie.properties 看一下有哪些配置项，但不要在屏幕上展示真实的地址和账号。</aside>
 </section>
 <section id="s2-parallel" class="alt">
-<p class="eyebrow">第 2 讲 · Genie 运行机制</p>
+<p class="eyebrow">第 1 天 · oreo-e2e 怎么用 Genie</p>
 <h2 class="title">并行：多进程，不是多线程</h2>
 <div class="flow">
 <div class="node" style="flex:0 0 560px"><p class="nl">master 进程</p><p class="ns">加载 feature，按 FEATURE 模式切成工作单元，排队</p></div>
@@ -291,8 +334,20 @@ section.dark .tag { color: #F2A56B; }
 </div>
 <aside>细节见 docs/genie-parallel-execution.md 第 1 节。并发数不是越高越快：每个子进程都是完整的 JVM，UI case 还有自己的浏览器。</aside>
 </section>
+<section id="s1-trace" class="alt">
+<p class="eyebrow">第 1 天 · 现场演示</p>
+<h2 class="title">从头到尾追一个 case</h2>
+<div class="grid4">
+<div class="card"><p class="tag">01</p><h3 class="ch">找到 scenario</h3><p class="ct">看名字里的 case ID，比如 [TC-TRADE-CREATION-…-API-001]</p></div>
+<div class="card"><p class="tag">02</p><h3 class="ch">跳到 snippet</h3><p class="ct">每个 step 一层层展开，直到内置 step 或 Java</p></div>
+<div class="card"><p class="tag">03</p><h3 class="ch">打印数据</h3><p class="ct">用 case 命令看最终发送的请求和比对的期望响应</p></div>
+<div class="card"><p class="tag">04</p><h3 class="ch">跑一次</h3><p class="ct">在公司机器上，用最窄的 filter</p></div>
+</div>
+<p class="code" style="margin-top:36px"><span class="cm"># 打印一个 case 的数据（离线）</span><br>mvn -Ptest-data process-test-classes "-Dexec.args=case TC-…"<br><span class="cm"># 只跑这一个 case</span><br>mvn -B test -Dtest=OreoTest "-Dcucumber.options=--name ^\[TC-…\].*$"</p>
+<aside>这是第 1 天的收尾，也是最重要的部分，留足 15 分钟。挑一个简单的 trade_creation API case。追一遍，比讲十遍概念都有用。</aside>
+</section>
 <section id="s3-caseid">
-<p class="eyebrow">第 3 讲 · 测试数据</p>
+<p class="eyebrow">第 2 天 · 测试数据</p>
 <h2 class="title">Case ID 是数据的钥匙</h2>
 <div style="display:flex; gap:16px; justify-content:center; align-items:flex-start">
 <div class="chip"><p class="chip-box">TC</p><p class="chip-label">前缀</p></div>
@@ -302,10 +357,10 @@ section.dark .tag { color: #F2A56B; }
 <div class="chip"><p class="chip-box">001</p><p class="chip-label">编号<br>→ 数据里的那一行</p></div>
 </div>
 <p class="note">Case ID 写在 scenario 名字里，<b>不是 tag</b>。产品是 composition（如 FX_CO），不是 product ID（如 FX_PSCRIPT）。没有产品段的 ID 就是不分产品的 case。</p>
-<aside>这一讲配合 docs/demo/oreo-e2e-demo.html，那份讲稿约 38 分钟，有现成的讲解顺序和常见坑。</aside>
+<aside>这一段配合 docs/demo/oreo-e2e-demo.html，那份讲稿约 38 分钟，有现成的讲解顺序和常见坑。</aside>
 </section>
 <section id="s3-merge" class="alt">
-<p class="eyebrow">第 3 讲 · 测试数据</p>
+<p class="eyebrow">第 2 天 · 测试数据</p>
 <h2 class="title">四层合并，后面覆盖前面</h2>
 <div class="flow">
 <div class="node"><p class="nl">defaults</p><p class="ns">所有 case 共用</p></div>
@@ -325,7 +380,7 @@ section.dark .tag { color: #F2A56B; }
 <aside>每一层都是可选的。use 可以引用 common.json 或 event 文件自己的 shared 块，也可以引用 setup 文件。细节见 docs/test-data.md 的 Case data 一节。</aside>
 </section>
 <section id="s3-record">
-<p class="eyebrow">第 3 讲 · 测试数据</p>
+<p class="eyebrow">第 2 天 · 测试数据</p>
 <h2 class="title">录制、同步与离线检查</h2>
 <table class="tbl">
 <tr><th style="width:30%">场景</th><th>怎么做</th></tr>
@@ -339,14 +394,14 @@ section.dark .tag { color: #F2A56B; }
 <aside>期望文件和 Examples 都不能手改。每次提交前看一遍 git diff，确认没有真实 trade ID、地址或账号。</aside>
 </section>
 <section id="s4-pipeline">
-<p class="eyebrow">第 4 讲 · AI 工作流</p>
+<p class="eyebrow">第 2 天 · AI 工作流</p>
 <h2 class="title">两条流水线，每一步都有人审批</h2>
 <div class="grid2">
 <div class="card"><p class="tag">/writebddfeatures · bdd-agent</p><h3 class="ch">story → feature 文件</h3><p class="ct">1. 拆成测试点，决定放 API 还是 UI（qa-layer-test-design）<br>2. 审批<br>3. 写成业务语言的 Gherkin（qa-bdd-feature-authoring）<br>4. 审批</p></div>
 <div class="card"><p class="tag">/codetestcases · test-agent</p><h3 class="ch">feature → 能跑的 case</h3><p class="ct">1. 补齐数据、snippet、glue（qa-api-test-authoring、qa-e2e-test-authoring）<br>2. 离线检查和 dry run（qa-bdd-test-execution）<br>3. 审批后用最窄的 filter 真实运行</p></div>
 </div>
 <p class="note">跑出来的产品缺陷用 qa-defect-reporting 起草 ADO Bug，确认之后才创建。</p>
-<aside>这一讲配合 docs/demo/oreo-ai-workflow.html，里面有交接物、失败分流和一个完整的例子。强调 AI 生成的内容同样要经过人审批和 code review。</aside>
+<aside>这一段配合 docs/demo/oreo-ai-workflow.html，里面有交接物、失败分流和一个完整的例子。强调 AI 生成的内容同样要经过人审批和 code review。</aside>
 </section>
 <section id="redlines" class="accent">
 <p class="eyebrow">收尾 · 一定要记住</p>
@@ -378,7 +433,7 @@ section.dark .tag { color: #F2A56B; }
 <h2 class="title">前两周要做的事</h2>
 <div class="grid2">
 <div class="card"><p class="tag">01</p><h3 class="ch">读规则</h3><p class="ct">CLAUDE.md 和 docs/standards/ 的三份标准</p></div>
-<div class="card"><p class="tag">02</p><h3 class="ch">配环境</h3><p class="ct">在公司机器上跑通离线检查</p></div>
+<div class="card"><p class="tag">02</p><h3 class="ch">配环境</h3><p class="ct">先跑通最小 Genie 项目，再在公司机器上跑通离线检查</p></div>
 <div class="card"><p class="tag">03</p><h3 class="ch">追链路</h3><p class="ct">追一个 API case 和一个 UI case，把展开链路画出来，下次讲给我听</p></div>
 <div class="card"><p class="tag">04</p><h3 class="ch">挑问题</h3><p class="ct">记下文档和代码对不上的地方：以代码为准，再去修文档</p></div>
 </div>
