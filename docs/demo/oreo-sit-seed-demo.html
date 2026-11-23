@@ -160,19 +160,20 @@ body.script-only .pipe, body.script-only .stats, body.script-only .mock { displa
 
 <div class="wrap">
   <nav class="rail" aria-label="讲解顺序">
-    <h2>讲解顺序 · 约 15 分钟</h2>
+    <h2>讲解顺序 · 约 17 分钟</h2>
     <ol>
       <li><a href="#s0"><span>开场：UAT 要什么数据</span><span class="min">1′</span></a></li>
       <li><a href="#s1"><span>一页看全流程</span><span class="min">2′</span></a></li>
       <li class="part">怎么用</li>
       <li><a href="#s2"><span>种子用例：一行一笔单</span><span class="min">2′</span></a></li>
       <li><a href="#s3"><span>生命周期事件与 Step-in</span><span class="min">2′</span></a></li>
-      <li><a href="#s4"><span>失败只重跑失败的</span><span class="min">1′</span></a></li>
-      <li><a href="#s5"><span>给 UAT 的报告</span><span class="min">2′</span></a></li>
-      <li><a href="#s6"><span>Cortex dat 自动导出</span><span class="min">2′</span></a></li>
+      <li><a href="#s4"><span>Manifest：每一笔都有记录</span><span class="min">2′</span></a></li>
+      <li><a href="#s5"><span>失败只重跑失败的</span><span class="min">1′</span></a></li>
+      <li><a href="#s6"><span>给 UAT 的报告</span><span class="min">2′</span></a></li>
+      <li><a href="#s7"><span>Cortex dat 自动导出</span><span class="min">2′</span></a></li>
       <li class="part">怎么保证可靠</li>
-      <li><a href="#s7"><span>数据安全与质量</span><span class="min">1′</span></a></li>
-      <li><a href="#s8"><span>收益、待办与下一步</span><span class="min">2′</span></a></li>
+      <li><a href="#s8"><span>数据安全与质量</span><span class="min">1′</span></a></li>
+      <li><a href="#s9"><span>收益、待办与下一步</span><span class="min">2′</span></a></li>
     </ol>
     <div class="rail-foot">
       <span>琥珀色框是屏幕上要做的事，红色框是需要留意的点；正文照读。</span>
@@ -278,7 +279,52 @@ body.script-only .pipe, body.script-only .stats, body.script-only .mock { displa
     </section>
 
     <section id="s4">
-      <div class="sec-head"><span class="sec-no">04</span><h2 class="sec">失败只重跑失败的</h2><span class="dur">1 分钟</span></div>
+      <div class="sec-head"><span class="sec-no">04</span><h2 class="sec">Manifest：每一笔都有记录</h2><span class="dur">2 分钟</span></div>
+      <div class="cue"><span class="tag">屏幕</span>打开 <code>target/seed/</code>，指一下 <code>manifest-&lt;运行编号&gt;.jsonl</code> 和 <code>current-run</code>，再打开一个 manifest 看一行。</div>
+      <div class="say">
+        <p>报告、补跑合并、“这笔发了什么”，背后都是同一份东西：<strong>manifest</strong>。每跑一次 SeedTest 就生成一个新文件，文件名就是这次运行的编号，也就是开始时间，比如 <code>manifest-20261120-153000.jsonl</code>。</p>
+        <p>文件里<strong>一笔一行</strong>，成功和失败都写；每一行是一个完整的 JSON，写进去以后就不再改。</p>
+      </div>
+      <pre class="code"><code>{"run":"20261120-153000","case":"SEED-EVENT-001","kind":"event","event":"allocation-full",
+ "composition":"FX_TRF","productId":"FX_TRF","portfolioId":"EXAMPLE_PORTFOLIO_E001",
+ "dat":"seed/dat/FX_TRF/allocation-full.dat","request":{…},"eventRequest":{…},
+ "tradeId":"2000001","childTradeIds":["2000002","2000003"],"status":"booked"}</code></pre>
+      <div class="tbl"><table class="t">
+        <thead><tr><th>什么时候写进这一行</th><th>写了什么</th></tr></thead>
+        <tbody>
+          <tr><td>开始下单时</td><td>运行编号、用例编号、产品、Itradeable Type、taxonomy / variant</td></tr>
+          <tr><td>请求发出去<strong>之前</strong></td><td>portfolio、entity、实际发送的下单请求、dat 路径</td></tr>
+          <tr><td>交易建好后</td><td>trade ID、审批任务</td></tr>
+          <tr><td>事件发出后</td><td>事件名、实际发送的事件请求、子交易 ID、事件任务</td></tr>
+          <tr><td>最后</td><td>成功记 <code>booked</code>；出错记 <code>failed</code> 和错误原因</td></tr>
+        </tbody>
+      </table></div>
+      <div class="say">
+        <p>请求是<strong>先记再发</strong>的，所以即使这一笔失败了，也能看到它当时想发什么，排查的时候最有用。</p>
+        <p>第二个问题是并行。造数分成几个进程同时跑，它们怎么写进<strong>同一个文件</strong>、又不互相打架？</p>
+      </div>
+      <div class="pipe" role="img" aria-label="manifest 的写入：主进程生成运行编号，并行的子进程找到同一个运行，加锁追加到同一个文件">
+        <div class="lane">
+          <span class="lbl">一次 SeedTest 运行</span>
+          <div class="step key"><b>主进程启动</b><small>生成运行编号，写进 <code>current-run</code>：进程号 + 编号</small></div>
+          <span class="arrow" aria-hidden="true">→</span>
+          <div class="step"><b>并行的子进程</b><small>读 <code>current-run</code>，顺着进程树找到自己的主进程，用同一个编号</small></div>
+          <span class="arrow" aria-hidden="true">→</span>
+          <div class="step key"><b>加锁追加</b><small>每写一行先锁住文件，写完整的一行再放开</small></div>
+          <span class="arrow" aria-hidden="true">→</span>
+          <div class="step"><b>seed-report</b><small>按时间读一个或几个 manifest，同一用例取最新的一行</small></div>
+        </div>
+      </div>
+      <div class="say">
+        <p>主进程一启动，先生成这次的运行编号，连同自己的进程号写进一个标记文件。子进程写第一行之前，会读这个标记，<strong>顺着进程树往上找</strong>：标记里的进程号是自己的“祖先”，就说明是同一次运行，用同一个编号。上一次运行留下的旧标记对不上进程号，就不会被误用。</p>
+        <p>写入时每一行都先<strong>给文件加锁</strong>，写完整一行再放开，几个进程同时写也不会出现两行搅在一起。</p>
+        <p>因为文件<strong>只追加、不修改</strong>，补跑就是再生成一个新文件；报告在读的时候合并，同一个用例以最新一次为准。每一轮跑了什么，都能原样追溯。</p>
+      </div>
+      <div class="pit"><span class="tag">留意</span>manifest 和报告里是真实发送的 SIT 数据，只生成在公司机器的 <code>target/seed/</code> 下，不提交到代码库，也不要原样外发。</div>
+    </section>
+
+    <section id="s5">
+      <div class="sec-head"><span class="sec-no">05</span><h2 class="sec">失败只重跑失败的</h2><span class="dur">1 分钟</span></div>
       <div class="cue"><span class="tag">屏幕</span>在终端演示两条命令（公司机器上）。</div>
       <pre class="code"><code># 全量跑一次
 mvn -B test -Dtest=SeedTest
@@ -294,8 +340,8 @@ mvn -Ptest-data process-test-classes "-Dexec.args=seed-report 20261120-153000.."
       </div>
     </section>
 
-    <section id="s5">
-      <div class="sec-head"><span class="sec-no">05</span><h2 class="sec">给 UAT 的报告</h2><span class="dur">2 分钟</span></div>
+    <section id="s6">
+      <div class="sec-head"><span class="sec-no">06</span><h2 class="sec">给 UAT 的报告</h2><span class="dur">2 分钟</span></div>
       <div class="cue"><span class="tag">屏幕</span>打开 <code>target/seed/seed-report-&lt;run&gt;.html</code>。下面是它的样子（示例数据）：点 SEED-TRADE-024 或 SEED-EVENT-001 前面的 ▸，展开看这笔发了什么。</div>
       <div class="mock" aria-label="造数报告页面示意，示例数据">
         <div class="bar"><i></i><i></i><i></i><span>seed-report-20261120-153000-on.html</span></div>
@@ -366,8 +412,8 @@ mvn -Ptest-data process-test-classes "-Dexec.args=seed-report 20261120-153000.."
       </div>
     </section>
 
-    <section id="s6">
-      <div class="sec-head"><span class="sec-no">06</span><h2 class="sec">Cortex dat 自动导出</h2><span class="dur">2 分钟</span></div>
+    <section id="s7">
+      <div class="sec-head"><span class="sec-no">07</span><h2 class="sec">Cortex dat 自动导出</h2><span class="dur">2 分钟</span></div>
       <div class="cue"><span class="tag">屏幕</span>在装有 Cortex 的 Windows 机器上，打开 TDS Browser，运行脚本，让大家看它自己点完流程。</div>
       <div class="flow">
         <span class="n">TDS Browser 输入 trade ID，F9 加载</span><span class="a">→</span>
@@ -382,8 +428,8 @@ mvn -Ptest-data process-test-classes "-Dexec.args=seed-report 20261120-153000.."
       </div>
     </section>
 
-    <section id="s7">
-      <div class="sec-head"><span class="sec-no">07</span><h2 class="sec">数据安全与质量</h2><span class="dur">1 分钟</span></div>
+    <section id="s8">
+      <div class="sec-head"><span class="sec-no">08</span><h2 class="sec">数据安全与质量</h2><span class="dur">1 分钟</span></div>
       <div class="say">
         <p><strong>真实数据不进代码库。</strong>portfolio、entity、trade ID、dat 文件，在仓库里都是占位符；真实值只在公司副本或本地被 git 忽略的文件里。</p>
         <p><strong>错了就早点停。</strong>清单里还写着 TODO 的值、没点名 dat 文件的事件用例、编号重复、找不到的产品，都会在下单前就报错，而不是造出一笔错误的单。</p>
@@ -391,8 +437,8 @@ mvn -Ptest-data process-test-classes "-Dexec.args=seed-report 20261120-153000.."
       </div>
     </section>
 
-    <section id="s8">
-      <div class="sec-head"><span class="sec-no">08</span><h2 class="sec">收益、待办与下一步</h2><span class="dur">2 分钟</span></div>
+    <section id="s9">
+      <div class="sec-head"><span class="sec-no">09</span><h2 class="sec">收益、待办与下一步</h2><span class="dur">2 分钟</span></div>
       <div class="stats">
         <div class="stat"><div class="k">一次命令覆盖</div><div class="v">60</div></div>
         <div class="stat"><div class="k">产品 composition</div><div class="v">18</div></div>
