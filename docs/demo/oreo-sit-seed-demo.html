@@ -416,7 +416,7 @@ mvn -Ptest-data process-test-classes "-Dexec.args=seed-report 20261120-153000.."
       <div class="say">
         <p><strong>下一步</strong>可以把它接到流水线上做成手动或定时任务，参数选环境和要跑的范围，每次的报告按版本留存。</p>
       </div>
-      <div class="qa"><p><strong>Q&amp;A</strong></p><p>为什么放在 E2E 项目里？—— 因为请求、数据、API 客户端都和 E2E 用例共用，API 一变两边一起修，不会出现两套数据慢慢对不上的问题。</p><p>报告里的 payload 会不会泄露真实数据？—— 报告和 manifest 只生成在公司机器的 target 目录，从不提交；对外发送前要注意里面有真实的 portfolio 和 entity。</p><p>数据过期了怎么办？—— 交易的日期是相对下单当天算的（T+N），SIT 上别人也会改动这些交易，所以造好的数据会慢慢过期。办法是重新跑一遍：每个 sprint 或每次 SIT 刷新后整套重建，新的一轮按当天时间下单；也可以按标签或用例编号只重建一部分。每一轮的报告和对应的版本一起留存，过期的旧单不用去修。</p><p>会不会重复造单？—— 补跑只跑指定的用例；报告合并时同一用例只保留最新结果。</p></div>
+      <div class="qa"><p><strong>Q&amp;A</strong></p><p>为什么放在 E2E 项目里？—— 因为请求、数据、API 客户端都和 E2E 用例共用，API 一变两边一起修，不会出现两套数据慢慢对不上的问题。</p><p>报告里的 payload 会不会泄露真实数据？—— 报告和 manifest 只生成在公司机器的 target 目录，从不提交；对外发送前要注意里面有真实的 portfolio 和 entity。</p><p>数据过期了怎么办？—— 交易的日期是相对下单当天算的（T+N），SIT 上别人也会改动这些交易，所以造好的数据会慢慢过期。办法是重新跑一遍：每个 sprint 或每次 SIT 刷新后整套重建，新的一轮按当天时间下单；也可以按标签或用例编号只重建一部分。每一轮的报告和对应的版本一起留存，过期的旧单不用去修。</p><p>怎么新增一个产品的造数？—— 不用写代码，改三处数据：在 catalog 里登记这个 composition 对应的 Itradeable Type；在新交易的 feature 里加一行，用例编号接着往后排（SEED-TRADE-039），写上 composition、product ID 和 taxonomy；在 catalog 的 cases 里给这个编号写 portfolio、entity，需要的话再点名 dat 文件。dat 用导出脚本从 Cortex 导出来放到对应路径，离线检查通过后按用例编号单独跑一次。要给这个产品也造生命周期事件，前提是它已经接入 E2E 用例，因为事件的请求复用 E2E 的数据。</p><p>会不会重复造单？—— 补跑只跑指定的用例；报告合并时同一用例只保留最新结果。</p></div>
     </section>
   </main>
 </div>
