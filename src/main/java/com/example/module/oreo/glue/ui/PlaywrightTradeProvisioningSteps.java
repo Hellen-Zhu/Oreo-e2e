@@ -32,7 +32,7 @@ public class PlaywrightTradeProvisioningSteps {
     public void provisionDraftTrade(String product) throws Exception {
         ProductDatFiles p = composition(product);
         store("createdTradeId", "createdTaskId",
-                TradeApiClient.provisionDraftTrade(helper, "trade-create", productId(p), datPath(p)));
+                TradeApiClient.provisionDraftTrade(helper, "trade-create", p.name(), productId(p), datPath(p)));
     }
 
     /** Submitted by the maker: a trade pending the checker's approval. */
@@ -95,13 +95,13 @@ public class PlaywrightTradeProvisioningSteps {
     private void provisionPending(String product, String setupName) throws Exception {
         ProductDatFiles p = composition(product);
         store("createdTradeId", "createdTaskId",
-                TradeApiClient.provisionPendingTrade(helper, setupName, productId(p), datPath(p)));
+                TradeApiClient.provisionPendingTrade(helper, setupName, p.name(), productId(p), datPath(p)));
     }
 
     private CreatedTrade provisionLive(String product, String tradeKey, String taskKey) throws Exception {
         ProductDatFiles p = composition(product);
         return store(tradeKey, taskKey,
-                TradeApiClient.provisionLiveTrade(helper, "trade-create", productId(p), datPath(p)));
+                TradeApiClient.provisionLiveTrade(helper, "trade-create", p.name(), productId(p), datPath(p)));
     }
 
     private CreatedTrade provisionPendingCancellation(String product, String tradeKey, String taskKey)

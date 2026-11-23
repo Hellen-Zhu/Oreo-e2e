@@ -394,7 +394,8 @@ public class SeedDataTest {
         assertEquals("trade-create-stepin-full", two.setup());
         assertTrue(Json.parse(SeedData.request(two)).path("basic").path("counterpartyName").isMissingNode());
         SeedData.Trade three = catalog.forCase("SEED-TRADE-003", "FX_TRF", "FX_TRF", "ComplexExotic");
-        assertEquals(TestData.setup(SeedData.DEFAULT_SETUP).request(), SeedData.request(three));
+        // a case without fields of its own sends the setup body of its composition (the setup's byProduct included)
+        assertEquals(TestData.setup(SeedData.DEFAULT_SETUP).forProduct("FX_TRF").request(), SeedData.request(three));
         bad("""
                 {"cases": {"TC-TRADE-001": {}}}""", "cases.TC-TRADE-001");
         bad("""

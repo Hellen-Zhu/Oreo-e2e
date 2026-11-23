@@ -23,8 +23,9 @@ public class TradeApiSteps {
 
     @Given("^set multi-part form parameter '([^']*)' for product '([^']*)' from test data '([^']*)'$")
     public void setMultiPartFormParameterFromTestData(String partName, String product, String key) {
-        String requestWithProductId = setBasicProductId(TestData.setup(key).request(),
-                ProductDatFiles.of(product).productId(ctx.find("_tc.productId")), key);
+        ProductDatFiles composition = ProductDatFiles.of(product);
+        String requestWithProductId = setBasicProductId(TestData.setup(key).forProduct(composition.name()).request(),
+                composition.productId(ctx.find("_tc.productId")), key);
         ctx.helper().request().multiPart(partName, requestWithProductId, "application/json");
         log.info("[TradeApiSteps] set multi-part form parameter '{}' from test data '{}' as '{}'", partName, key,requestWithProductId);
     }

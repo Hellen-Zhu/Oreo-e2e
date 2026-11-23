@@ -1,5 +1,5 @@
 {
-  "_comment": "features/ui/trading/trade_creation.feature. UI-001 has no row: it runs on the defaults.",
+  "_comment": "features/ui/trading/trade_creation.feature. UI-001 has no row: it runs on the defaults. byProduct: each product's portfolio, as setup/trade-create's.",
   "shared": {
     "trade-basic": {
       "_comment": "New Trade form values; the flow takes the product from the case",
@@ -21,6 +21,12 @@
   },
   "defaults": {
     "use": ["trade-basic"]
+  },
+  "byProduct": {
+    "FX_TRF": { "request": { "basic": { "portfolioId": "EXAMPLE_PORTFOLIO_Z" } } },
+    "FX_CO": { "request": { "basic": { "portfolioId": "EXAMPLE_PORTFOLIO_R" } } },
+    "FX_FSB": { "request": { "basic": { "portfolioId": "EXAMPLE_PORTFOLIO_E" } } },
+    "FX_PSCRIPT_TRF": { "request": { "basic": { "portfolioId": "EXAMPLE_PORTFOLIO_T" } } }
   },
   "cases": [
     { "id": "TC-TRADE-CREATION-<product_type>-UI-002", "_comment": "StepIn Full", "use": ["stepin"] },

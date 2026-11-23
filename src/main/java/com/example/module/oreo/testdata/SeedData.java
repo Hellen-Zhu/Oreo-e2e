@@ -377,11 +377,12 @@ public final class SeedData {
     }
 
     /**
-     * The trade body {@code trade} sends without its product ID: its setup body with the case's fields merged over
-     * it (objects deeply, {@code null} deletes).
+     * The trade body {@code trade} sends without its product ID: its setup body (with the setup's {@code byProduct}
+     * values of its composition) with the case's fields merged over it (objects deeply, {@code null} deletes).
      */
     public static String request(Trade trade) {
-        ObjectNode body = (ObjectNode) Json.parse(TestData.setup(trade.setup()).request());
+        ObjectNode body = (ObjectNode) Json.parse(
+                TestData.setup(trade.setup()).forProduct(trade.composition()).request());
         return Json.compact(JsonLayers.merge(body, trade.caseRequest()));
     }
 

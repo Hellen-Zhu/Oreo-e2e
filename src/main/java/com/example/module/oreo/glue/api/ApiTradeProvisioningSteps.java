@@ -33,7 +33,7 @@ public class ApiTradeProvisioningSteps {
     public void pendingTradeStoredAs(String product, String tradeKey, String taskKey) throws Exception {
         ProductDatFiles p = product(product);
         store(tradeKey, taskKey,
-                TradeApiClient.provisionPendingTrade(ctx.helper(), "trade-create", productId(p), datPath(p)));
+                TradeApiClient.provisionPendingTrade(ctx.helper(), "trade-create", p.name(), productId(p), datPath(p)));
     }
 
     @Given("^a live '([^']*)' trade is created via api$")
@@ -91,7 +91,7 @@ public class ApiTradeProvisioningSteps {
     private CreatedTrade live(String product, String tradeKey, String taskKey) throws Exception {
         ProductDatFiles p = product(product);
         return store(tradeKey, taskKey,
-                TradeApiClient.provisionLiveTrade(ctx.helper(), "trade-create", productId(p), datPath(p)));
+                TradeApiClient.provisionLiveTrade(ctx.helper(), "trade-create", p.name(), productId(p), datPath(p)));
     }
 
     private CreatedTrade pendingCancellation(String product, String tradeKey, String taskKey) throws Exception {

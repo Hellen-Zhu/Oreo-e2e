@@ -185,6 +185,20 @@ public class TestDataRepositoryTest {
                 { "extends": ["child-setup", "udf-only-setup"], "request": { "basic": { "c": "3" } } }""");
         write("setup/loop-a.json", """
                 { "extends": "loop-b" }""");
+        // A product's own values: merged over the request for that product, along the extends chain
+        write("setup/product-setup.json", """
+                { "request": { "basic": { "portfolioId": "P-ALL", "a": "1" } },
+                  "byProduct": { "FX_TRF": { "request": { "basic": { "portfolioId": "P-TRF" } } },
+                                 "FX_CO": { "request": { "basic": { "portfolioId": "P-CO", "a": null } } } } }""");
+        write("setup/product-child-setup.json", """
+                { "extends": "product-setup", "request": { "basic": { "b": "2" } },
+                  "byProduct": { "FX_TRF": { "request": { "basic": { "c": "3" } } } } }""");
+        write("setup/bad-product-setup.json", """
+                { "request": { "basic": {} }, "byProduct": { "FX_NOPE": { "request": { "basic": {} } } } }""");
+        write("setup/bad-product-part-setup.json", """
+                { "request": { "basic": {} }, "byProduct": { "FX_TRF": { "response": { "code": 200 } } } }""");
+        write("api/setup_by_product.json", """
+                { "defaults": { "use": ["setup/product-child-setup"] } }""");
         write("setup/loop-b.json", """
                 { "extends": "loop-a" }""");
 
@@ -549,5 +563,40 @@ public class TestDataRepositoryTest {
         // child-setup (over base-setup), then udf-only-setup over it, then the file itself
         assertEquals("{\"basic\":{\"a\":\"from-udf\",\"b\":\"2\",\"udf\":[{\"key\":\"u\",\"value\":\"1\"}],"
                 + "\"c\":\"3\"}}", repo.setup("two-parents-setup").request());
+    }
+
+    @Test
+    public void aSetupGivesAProductItsOwnValues() {
+        assertJson("{\"basic\":{\"portfolioId\":\"P-TRF\",\"a\":\"1\"}}",
+                repo.setup("product-setup").forProduct("FX_TRF").request());
+        assertJson("{\"basic\":{\"portfolioId\":\"P-CO\"}}", repo.setup("product-setup").forProduct("FX_CO").request());
+        // a product without values of its own, or no product: the request as it is
+        assertJson("{\"basic\":{\"portfolioId\":\"P-ALL\",\"a\":\"1\"}}",
+                repo.setup("product-setup").forProduct("FX_FSB").request());
+        assertJson("{\"basic\":{\"portfolioId\":\"P-ALL\",\"a\":\"1\"}}",
+                repo.setup("product-setup").forProduct(null).request());
+    }
+
+    @Test
+    public void aSetupsProductValuesFollowItsExtendsChain() {
+        // the parent's and the child's values of the product, over the whole chain's request
+        assertJson("{\"basic\":{\"portfolioId\":\"P-TRF\",\"a\":\"1\",\"b\":\"2\",\"c\":\"3\"}}",
+                repo.setup("product-child-setup").forProduct("FX_TRF").request());
+        assertJson("{\"basic\":{\"portfolioId\":\"P-CO\",\"b\":\"2\"}}",
+                repo.setup("product-child-setup").forProduct("FX_CO").request());
+    }
+
+    @Test
+    public void aSetupBlockOfUseTakesTheCasesProduct() {
+        assertJson("{\"basic\":{\"portfolioId\":\"P-TRF\",\"a\":\"1\",\"b\":\"2\",\"c\":\"3\"}}",
+                repo.forCase("TC-SETUP-BY-PRODUCT-FX_TRF-API-001").request());
+        assertJson("{\"basic\":{\"portfolioId\":\"P-ALL\",\"a\":\"1\",\"b\":\"2\"}}",
+                repo.forCase("TC-SETUP-BY-PRODUCT-FX_FSB-API-001").request());
+    }
+
+    @Test
+    public void aSetupsByProductNamesARegisteredProductAndOnlyARequest() {
+        assertFailsWith(() -> repo.setup("bad-product-setup"), "byProduct.FX_NOPE", "not a product of ProductDatFiles");
+        assertFailsWith(() -> repo.setup("bad-product-part-setup"), "byProduct.FX_TRF");
     }
 }

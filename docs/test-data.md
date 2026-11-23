@@ -173,7 +173,15 @@ the product's `byProduct` values of the trade body stay) and the block with its 
 them merged in order, each over the one before, all merged under this one, their lists replaced whole:
 `trade-create-stepin-full` is `"extends": ["trade-create", "stepin-full"]`; `${date:...}` as in case data). Read by the steps `... from test data '<name>'` and by `TestData.setup("<name>")`; its `request()` /
 `response()` fail when the file (with its `extends` chain) has no such part, so a caller never checks for null and
-asks `hasRequest()` / `hasResponse()` only when the part is optional. The setup trade
+asks `hasRequest()` / `hasResponse()` only when the part is optional. `byProduct` gives a product (a composition of
+`ProductDatFiles`) its own values: `"byProduct": { "FX_TRF": { "request": { "basic": { "portfolioId": "..." } } } }`,
+a `request` only, merged over the whole chain's request for that product (`SetupData.forProduct`), each file's
+`byProduct` over its parents' product by product. The trade preconditions (`a live '<product_type>' trade is created
+via api`, the UI provisioning steps), `set multi-part form parameter ... for product ...`, a case's
+`use: ["setup/<name>"]` (the case's product) and the SIT seed (the booking's composition) take it; a step that names
+no product sends the request as it is. `trade-create` gives each product the portfolio its seed case books in SIT.
+A changed `byProduct` value that the response echoes (the portfolio in `_shared/basic/<C>`) is recorded again.
+The setup trade
 and the API case blocks hold the same values but are kept apart on purpose: what an API case sends must not change
 how a UI case prepares its trade. `trade-cancellation` and `trade-amendment` have no file yet (not covered).
 Names are lower case with `-`. `{currentSysSeconds}` in `product-create` and in a schema file becomes a second of the

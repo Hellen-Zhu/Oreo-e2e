@@ -108,20 +108,27 @@ public final class TradeApiClient {
     }
 
     /**
-     * Submits the setup body {@code testDataKey} as a trade of product ID {@code productId}
+     * Submits the setup body {@code testDataKey} of composition {@code composition} (its {@code byProduct} values
+     * included) as a trade of product ID {@code productId}
      * ({@link com.example.module.oreo.testdata.ProductDatFiles#productId(String)}) with the dat file at classpath
      * {@code datPath}.
      */
     public static CreatedTrade submitTrade(RequestResponseHelper helper, String userId, String testDataKey,
-                                           String productId, String datPath) throws URISyntaxException {
-        return createdTrade(createTrade(helper, SUBMIT_TRADE_PATH, userId, testDataKey, productId, datPath),
-                testDataKey);
+                                           String composition, String productId, String datPath)
+            throws URISyntaxException {
+        return createdTrade(createTrade(helper, SUBMIT_TRADE_PATH, userId, testDataKey, composition, productId,
+                datPath), testDataKey);
     }
 
-    /** Saves the setup body {@code testDataKey} as a draft of product ID {@code productId}. */
+    /**
+     * Saves the setup body {@code testDataKey} of composition {@code composition} as a draft of product ID
+     * {@code productId}.
+     */
     public static CreatedTrade saveTrade(RequestResponseHelper helper, String userId, String testDataKey,
-                                         String productId, String datPath) throws URISyntaxException {
-        return createdTrade(createTrade(helper, SAVE_TRADE_PATH, userId, testDataKey, productId, datPath), testDataKey);
+                                         String composition, String productId, String datPath)
+            throws URISyntaxException {
+        return createdTrade(createTrade(helper, SAVE_TRADE_PATH, userId, testDataKey, composition, productId,
+                datPath), testDataKey);
     }
 
     /** @throws AssertionError when the response names no trade */
@@ -137,9 +144,10 @@ public final class TradeApiClient {
     }
 
     private static JsonNode createTrade(RequestResponseHelper helper, String path, String userId, String testDataKey,
-                                        String productId, String datPath) throws URISyntaxException {
-        return createTradeWithBody(helper, path, userId, TestData.setup(testDataKey).request(), productId, datPath,
-                testDataKey);
+                                        String composition, String productId, String datPath)
+            throws URISyntaxException {
+        return createTradeWithBody(helper, path, userId, TestData.setup(testDataKey).forProduct(composition).request(),
+                productId, datPath, testDataKey);
     }
 
     private static JsonNode createTradeWithBody(RequestResponseHelper helper, String path, String userId,
@@ -251,22 +259,31 @@ public final class TradeApiClient {
 
     // ── Provisioning: maker submits, checker decides ─────────────────────
 
-    /** The setup body {@code testDataKey} of product ID {@code productId} submitted by the maker: pending approval. */
+    /**
+     * The setup body {@code testDataKey} of composition {@code composition} and product ID {@code productId}
+     * submitted by the maker: pending approval.
+     */
     public static CreatedTrade provisionPendingTrade(RequestResponseHelper helper, String testDataKey,
-                                                     String productId, String datPath) throws URISyntaxException {
-        return submitTrade(helper, TestUser.MAKER.email(), testDataKey, productId, datPath);
+                                                     String composition, String productId, String datPath)
+            throws URISyntaxException {
+        return submitTrade(helper, TestUser.MAKER.email(), testDataKey, composition, productId, datPath);
     }
 
-    /** The setup body {@code testDataKey} of product ID {@code productId} saved by the maker: a draft. */
+    /**
+     * The setup body {@code testDataKey} of composition {@code composition} and product ID {@code productId} saved
+     * by the maker: a draft.
+     */
     public static CreatedTrade provisionDraftTrade(RequestResponseHelper helper, String testDataKey,
-                                                   String productId, String datPath) throws URISyntaxException {
-        return saveTrade(helper, TestUser.MAKER.email(), testDataKey, productId, datPath);
+                                                   String composition, String productId, String datPath)
+            throws URISyntaxException {
+        return saveTrade(helper, TestUser.MAKER.email(), testDataKey, composition, productId, datPath);
     }
 
     /** {@link #provisionPendingTrade} approved by the checker: a live trade; its task is the approved one. */
     public static CreatedTrade provisionLiveTrade(RequestResponseHelper helper, String testDataKey,
-                                                  String productId, String datPath) throws URISyntaxException {
-        CreatedTrade trade = provisionPendingTrade(helper, testDataKey, productId, datPath);
+                                                  String composition, String productId, String datPath)
+            throws URISyntaxException {
+        CreatedTrade trade = provisionPendingTrade(helper, testDataKey, composition, productId, datPath);
         approveTask(helper, trade.taskId(), TestUser.CHECKER.email());
         log.info("[TradeApiClient] live trade provisioned: tradeId='{}'", trade.tradeId());
         return trade;

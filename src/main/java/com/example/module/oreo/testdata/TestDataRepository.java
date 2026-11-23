@@ -42,7 +42,7 @@ public final class TestDataRepository {
     /** A rule path that starts at a shared part: {@code {basic}.dealDate}, {@code {instrument}} (the whole part). */
     private static final Pattern PART_NAME = Pattern.compile("[A-Za-z0-9_-]+");
     private static final Pattern PART_RULE = Pattern.compile("\\{([A-Za-z0-9_-]+)}([.\\[].*)?");
-    private static final Set<String> SETUP_KEYS = Set.of("extends", "request", "response");
+    private static final Set<String> SETUP_KEYS = Set.of("extends", "request", "response", "byProduct");
     private static final Pattern SETUP_NAME = Pattern.compile("[a-z0-9][a-z0-9-]*");
     /** A {@code use} entry {@code setup/<name>}: the request of setup data {@code <name>} as a block. */
     static final String SETUP_USE = "setup/";
@@ -88,18 +88,18 @@ public final class TestDataRepository {
         event.path("shared").properties().forEach(e -> shared.put(e.getKey(), e.getValue()));
         String file = id.eventFile() + ".json";
 
-        apply(merged, objectOrNull(event.get("defaults")), file + " defaults", shared, eventPath);
+        apply(merged, objectOrNull(event.get("defaults")), file + " defaults", shared, eventPath, id.product());
         if (id.product() != null) {
             apply(merged, objectOrNull(event.path("byProduct").get(id.product())),
-                    file + " byProduct " + id.product(), shared, eventPath);
+                    file + " byProduct " + id.product(), shared, eventPath, id.product());
         }
         ObjectNode row = rowFor(id, event, eventPath);
         if (row != null) {
             String rowId = row.get("id").asText();
-            apply(merged, row, "row " + rowId, shared, eventPath);
+            apply(merged, row, "row " + rowId, shared, eventPath, id.product());
             if (id.product() != null) {
                 apply(merged, objectOrNull(row.path("byProduct").get(id.product())),
-                        "row " + rowId + " byProduct " + id.product(), shared, eventPath);
+                        "row " + rowId + " byProduct " + id.product(), shared, eventPath, id.product());
             }
         }
         checkDatFileExists(merged, id, eventPath);
@@ -134,14 +134,16 @@ public final class TestDataRepository {
     /**
      * Applies one layer: its {@code use} blocks in order, then its own {@code request}, {@code dynamicFields},
      * {@code sharedFragments} and {@code expectedBase}. A {@code use} entry {@code setup/<name>} is the request of
-     * that setup data ({@code extends} included, {@code ${date:...}} still unresolved: the case resolves them).
+     * that setup data ({@code extends} included, {@code ${date:...}} still unresolved: the case resolves them), for
+     * the case's {@code product} (its {@code byProduct}) when it has one.
      */
-    private void apply(Merged merged, ObjectNode layer, String label, Map<String, JsonNode> shared, String path) {
+    private void apply(Merged merged, ObjectNode layer, String label, Map<String, JsonNode> shared, String path,
+                       String product) {
         if (layer == null) return;
         List<String> uses = new ArrayList<>();
         for (JsonNode use : layer.path("use")) {
             String name = use.asText();
-            JsonNode block = name.startsWith(SETUP_USE) ? setupBlock(name, path, label) : shared.get(name);
+            JsonNode block = name.startsWith(SETUP_USE) ? setupBlock(name, path, label, product) : shared.get(name);
             if (block == null) {
                 throw error(path, label + " use", "no shared block '" + name + "' in common.json or this file "
                         + shared.keySet());
@@ -160,11 +162,14 @@ public final class TestDataRepository {
         merged.layers.add(uses.isEmpty() ? label : label + " (use " + String.join(", ", uses) + ")");
     }
 
-    /** The block of a {@code use} entry {@code setup/<name>}: {@code {"request": <the setup's request>}}. */
-    private ObjectNode setupBlock(String use, String path, String where) {
+    /**
+     * The block of a {@code use} entry {@code setup/<name>}: {@code {"request": <the setup's request>}}, its
+     * {@code byProduct} request of {@code product} (null: none) merged over it.
+     */
+    private ObjectNode setupBlock(String use, String path, String where, String product) {
         SetupData setup;
         try {
-            setup = setup(use.substring(SETUP_USE.length()));
+            setup = setup(use.substring(SETUP_USE.length())).forProduct(product);
         } catch (IllegalStateException e) {
             throw error(path, where + " use", e.getMessage());
         }
@@ -455,7 +460,7 @@ public final class TestDataRepository {
             }
             for (JsonNode name : use) {
                 if (name.isTextual() && name.asText().startsWith(SETUP_USE)) {
-                    setupBlock(name.asText(), path, where);
+                    setupBlock(name.asText(), path, where, null);
                 } else if (!name.isTextual() || !shared.contains(name.asText())) {
                     throw error(path, where + ".use", "no shared block " + name + " in "
                             + channelDir + "/common.json or this file's shared " + shared
@@ -631,22 +636,27 @@ public final class TestDataRepository {
                         + via(chain)));
         ObjectNode request = objectOrNull(file.get("request"));
         ObjectNode response = objectOrNull(file.get("response"));
-        // extends: one setup name, or a list merged in order (each later one over the earlier), then this file
+        // extends: one setup name, or a list merged in order (each later one over the earlier), then this file;
+        // byProduct the same way, product by product
         JsonNode parentNames = file.get("extends");
         ObjectNode parentRequest = null;
         ObjectNode parentResponse = null;
+        Map<String, ObjectNode> byProduct = new LinkedHashMap<>();
         if (parentNames != null) {
             chain.add(name);
             for (JsonNode parentName : parentNames.isArray() ? parentNames : List.of(parentNames)) {
                 SetupData parent = resolveSetup(parentName.asText(), chain);
                 parentRequest = under(parentRequest, parent.requestNode());
                 parentResponse = under(parentResponse, parent.responseNode());
+                parent.byProductNodes().forEach((product, over) -> byProduct.merge(product, over, SetupData::over));
             }
             chain.removeLast();
         }
+        file.path("byProduct").properties().forEach(e ->
+                byProduct.merge(e.getKey(), (ObjectNode) e.getValue().get("request"), SetupData::over));
         request = under(parentRequest, request);
         response = under(parentResponse, response);
-        return new SetupData(name, path, request, response);
+        return new SetupData(name, path, request, response, byProduct);
     }
 
     /** {@code child} merged over {@code parent}. */
@@ -678,6 +688,24 @@ public final class TestDataRepository {
                 throw error(path, key, "must be a JSON object");
             }
             checkValues(part, path, key);
+        }
+        JsonNode byProduct = setup.get("byProduct");
+        if (byProduct == null) return;
+        requireObject(byProduct, path, "byProduct");
+        Set<String> products = new LinkedHashSet<>();
+        for (ProductDatFiles p : ProductDatFiles.values()) products.add(p.name());
+        for (Map.Entry<String, JsonNode> entry : byProduct.properties()) {
+            String where = "byProduct." + entry.getKey();
+            if (!products.contains(entry.getKey())) {
+                throw error(path, where, "not a product of ProductDatFiles " + products);
+            }
+            requireObject(entry.getValue(), path, where);
+            checkKeys((ObjectNode) entry.getValue(), Set.of("request"), path, where);
+            JsonNode request = entry.getValue().get("request");
+            if (request == null || !request.isObject()) {
+                throw error(path, where + ".request", "must be a JSON object: what this product sends differently");
+            }
+            checkValues(request, path, where + ".request");
         }
     }
 

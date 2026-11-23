@@ -1,5 +1,5 @@
 {
-  "_comment": "The one trade body: submitted before a case by the provisioning steps (API, UI), and the request of the API trade creation cases (api/trade_creation.json: use setup/trade-create). The step sets basic.productId.",
+  "_comment": "The one trade body: submitted before a case by the provisioning steps (API, UI), and the request of the API trade creation cases (api/trade_creation.json: use setup/trade-create). The step sets basic.productId. byProduct: each product's portfolio, the one its seed case books in SIT (seed/catalog.json cases, the case of the composition's default product ID).",
   "request": {
     "basic": {
       "counterpartyFmId": "900000001",
@@ -9,5 +9,11 @@
       "premiumAmount": 10000,
       "premiumCurrency": "USD"
     }
+  },
+  "byProduct": {
+    "FX_TRF": { "_comment": "SEED-TRADE-035", "request": { "basic": { "portfolioId": "EXAMPLE_PORTFOLIO_Z" } } },
+    "FX_CO": { "_comment": "SEED-TRADE-020", "request": { "basic": { "portfolioId": "EXAMPLE_PORTFOLIO_R" } } },
+    "FX_FSB": { "_comment": "SEED-TRADE-028", "request": { "basic": { "portfolioId": "EXAMPLE_PORTFOLIO_E" } } },
+    "FX_PSCRIPT_TRF": { "_comment": "SEED-TRADE-029", "request": { "basic": { "portfolioId": "EXAMPLE_PORTFOLIO_T" } } }
   }
 }
