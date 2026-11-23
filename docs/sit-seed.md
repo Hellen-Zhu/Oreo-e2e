@@ -173,8 +173,7 @@ each row's run, and the files are named after the runs (`seed-report-<run>+<run>
 (run, trade ID, then case, Itradeable Type, portfolio, risk portfolio, entity, child trade IDs for allocation,
 status, error), and an HTML page beside it, `seed-report-<runs>.html`, for UAT: counts, then the new trades and the
 lifecycle events (step-ins included), each a table with the Itradeable Type to search, filter by status and sort, each
-failure's error under its row, a copy button by each trade ID and child trade ID and, shown on the row's hover, by
-every other field (the full Itradeable Type, the error, the dat path), and a button that copies the case,
+failure's error under its row, a copy button by each trade ID and child trade ID, and a button that copies the case,
 trade ID and child trade IDs of the rows shown. Each row folds out (▸, or "Show payloads" for the rows shown) what the
 booking sent, as the manifest keeps it: the dat file, the trade part of the create request (its product ID set) and,
 for an event, the event's body (its trade ID and amounts set), each with a copy button; a line of a run before the

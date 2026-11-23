@@ -407,7 +407,7 @@ mvn -Ptest-data process-test-classes "-Dexec.args=seed-report 20261120-153000.."
       </div>
       <div class="say">
         <p>报告是一个单文件网页，<strong>不需要服务器，双击就能打开</strong>，同时还有一份 CSV。</p>
-        <p>上面是新交易，下面是生命周期事件和 Step-in，各自可以搜索、按成功 / 失败筛选、排序。每个 trade ID 和子交易 ID 旁边都有复制按钮，其他字段（portfolio、entity、Itradeable Type 全名、失败原因等）鼠标移到那一行也会出现复制按钮，“Copy trade IDs” 能把当前看到的用例编号、trade ID、子交易 ID 一次复制出来，贴进 Excel 就是整齐的几列。失败的那一行下面直接显示原因。</p>
+        <p>上面是新交易，下面是生命周期事件和 Step-in，各自可以搜索、按成功 / 失败筛选、排序。每个 trade ID 和子交易 ID 旁边都有复制按钮，“Copy trade IDs” 能把当前看到的用例编号、trade ID、子交易 ID 一次复制出来，贴进 Excel 就是整齐的几列。失败的那一行下面直接显示原因。</p>
         <p>每一行前面还有一个 <strong>▸</strong>，平时收起，点开就是这笔<strong>实际发出去的请求</strong>：用的哪个 dat 文件、下单的 JSON、事件的 JSON，各自带复制按钮；“Show payloads” 一次展开当前看到的所有行。比如这笔 Allocation，能直接看到 50% / 50% 已经按名义本金换算成了 35000 / 35000。业务问“这笔是用什么数据造的”，打开报告就能回答，失败的单也一样能看到它当时想发什么。</p>
       </div>
     </section>

@@ -69,10 +69,6 @@ tbody tr:last-child td { border-bottom: 0; }
 .copy { margin-left: 6px; border: 0; background: none; color: var(--muted); cursor: pointer; font-size: 12px;
   padding: 0 2px; }
 .copy:hover { color: var(--accent); }
-/* the copy button of every other field: shown on the row's hover or focus, always on a touch screen */
-.copy.soft { opacity: 0; }
-tr:hover .copy.soft, .copy.soft:focus-visible { opacity: 1; }
-@media (hover: none) { .copy.soft { opacity: 1; } }
 .pill { display: inline-block; padding: 0 8px; border-radius: 9px; font-size: 12px; font-weight: 500; }
 .pill.booked { background: var(--ok-bg); color: var(--ok); }
 .pill.failed { background: var(--bad-bg); color: var(--bad); }
@@ -210,8 +206,7 @@ tr:hover .copy.soft, .copy.soft:focus-visible { opacity: 1; }
         '<tr>' + columns.map((c, i) => '<td>' + (i === 0 ? more(b) : '') + cell(b, c) + '</td>').join('') + '</tr>'
         + (opened.has(b._i) ? '<tr class="payload"><td colspan="' + columns.length + '">' + payload(b) + '</td></tr>' : '')
         + (b.status === 'failed' && b.error ? '<tr class="error"><td colspan="' + columns.length + '">'
-          + esc(b.error) + '<button class="copy" data-copy="' + esc(b.error)
-          + '" data-what="Copied the error" title="Copy the error">⧉</button></td></tr>' : '')).join('')
+          + esc(b.error) + '</td></tr>' : '')).join('')
         : '<tr><td class="empty" colspan="' + columns.length + '">'
           + (all.length ? 'No booking matches' : 'No ' + sec.title.toLowerCase() + ' in this run') + '</td></tr>';
     }
@@ -273,11 +268,9 @@ tr:hover .copy.soft, .copy.soft:focus-visible { opacity: 1; }
       : '<div class="none">No request recorded: this line was written before the manifest kept what was sent.</div>';
   }
 
-  // a copy button: always shown by a trade ID, on the row's hover by any other field (soft)
-  const copyBtn = (v, soft) => '<button class="copy' + (soft ? ' soft' : '') + '" data-copy="' + esc(v)
-    + '" title="Copy ' + esc(v) + '">⧉</button>';
+  // a copy button: by the trade IDs and by what a booking sent (dat path, request JSON), not by the other fields
+  const copyBtn = v => '<button class="copy" data-copy="' + esc(v) + '" title="Copy ' + esc(v) + '">⧉</button>';
 
-  // every field that has a value can be copied; the Itradeable Type copies its full name, not the short one shown
   function cell(b, c) {
     const v = value(b, c);
     if (c.key === 'tradeId') return v ? '<span class="trade">' + esc(v) + '</span>' + copyBtn(v) : '';
@@ -287,13 +280,11 @@ tr:hover .copy.soft, .copy.soft:focus-visible { opacity: 1; }
         + (ids.length > 1 ? ' <button class="copy" data-copy="' + esc(ids.join('\n'))
           + '" title="Copy all child trade IDs">all</button>' : '');
     }
-    if (!v) return '';
-    if (c.key === 'status') return '<span class="pill ' + esc(v) + '">' + esc(v) + '</span>' + copyBtn(v, true);
-    if (c.key === 'itradeableType') return '<span class="type" title="' + esc(v) + '">' + esc(shortType(v)) + '</span>'
-      + copyBtn(v, true);
+    if (c.key === 'status') return '<span class="pill ' + esc(v) + '">' + esc(v) + '</span>';
+    if (c.key === 'itradeableType') return '<span class="type" title="' + esc(v) + '">' + esc(shortType(v)) + '</span>';
     if (['case', 'composition', 'productId', 'portfolioId', 'riskPortfolio', 'run', 'eventCase']
-      .includes(c.key)) return '<span class="mono">' + esc(v) + '</span>' + copyBtn(v, true);
-    return esc(v) + copyBtn(v, true);
+      .includes(c.key)) return '<span class="mono">' + esc(v) + '</span>';
+    return esc(v);
   }
 
   const toast = document.getElementById('toast');
