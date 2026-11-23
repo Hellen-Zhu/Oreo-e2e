@@ -130,7 +130,10 @@ public final class TradeApiClient {
         if (tradeId.isBlank()) {
             throw new AssertionError("[TradeApiClient] " + testDataKey + " created no trade: " + response);
         }
-        return new CreatedTrade(tradeId, response.at("/data/checkerContext/taskId").asText(""));
+        String taskId = response.at("/data/checkerContext/taskId").asText("");
+        // logged before any approval, so a trade whose approval fails can still be found
+        log.info("[TradeApiClient] trade created: tradeId='{}', taskId='{}', body='{}'", tradeId, taskId, testDataKey);
+        return new CreatedTrade(tradeId, taskId);
     }
 
     private static JsonNode createTrade(RequestResponseHelper helper, String path, String userId, String testDataKey,
