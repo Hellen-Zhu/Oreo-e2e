@@ -140,7 +140,9 @@ coverage for the test lead.
   `META-INF/services/com.example.genie.module.GenieModule`, and the dat files
   `data/dat/{FX_TRF,FX_CO,FX_FSB,FX_PSCRIPT_TRF}` and `seed/dat/<C>/<productId>.dat`.
 - Missing: `qa.properties` and the other environments' properties; the setup files `trade-cancellation` and
-  `trade-amendment` (`check.knownMissingSetups` in `test-data.properties`).
+  `trade-amendment` (`check.knownMissingSetups` in `test-data.properties`), and `event-create`, `reason-create`,
+  `product-create` and `product-event-configure` (named by their snippets and `ProductApiClient`; `TestDataTool check`
+  reports them).
 - Event data files exist for API `trade_creation`, `trade_early_termination`, `trade_allocation`,
   `refdata_sync_management`, `risk_metric_retrieval` and UI `trade_creation`, `trade_early_termination`,
   `trade_novation_remaining`; the other features' cases run without case data until theirs are written.
