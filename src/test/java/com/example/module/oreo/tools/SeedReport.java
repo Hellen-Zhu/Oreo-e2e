@@ -31,7 +31,7 @@ final class SeedReport {
 
     static final List<String> COLUMNS = List.of("run", "tradeId", "env", "kind", "case", "itradeableType",
             "composition", "productId", "taxonomy", "portfolioId", "riskPortfolio", "scbEntity", "variant", "event",
-            "setup", "dat", "childTradeIds", "status", "at", "error");
+            "setup", "dat", "childTradeIds", "status", "at", "failedStep", "error");
 
     /** The page's template: the report's data goes in place of {@link #DATA_MARK}. */
     static final String TEMPLATE = "src/test/resources/tools/seed-report.html";
@@ -94,7 +94,8 @@ final class SeedReport {
         System.out.println("By Itradeable Type:");
         byType.forEach((type, n) -> System.out.println("  " + type + ": " + n[0] + " booked, " + n[1] + " failed"));
         for (JsonNode entry : failed) {
-            System.out.println("  failed " + entry.path("itradeableType").asText("?") + " " + key(entry) + ": "
+            System.out.println("  failed " + entry.path("itradeableType").asText("?") + " " + key(entry)
+                    + (entry.hasNonNull("failedStep") ? " at " + entry.get("failedStep").asText() : "") + ": "
                     + entry.path("error").asText());
         }
         System.out.println("Wrote " + ProjectPaths.projectRoot().relativize(csv) + " and "

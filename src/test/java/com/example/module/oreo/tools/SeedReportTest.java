@@ -21,7 +21,8 @@ public class SeedReportTest {
                         {"kind": "trade", "itradeableType": "T.Recorded", "composition": "FX_TRF",
                          "productId": "FX_TRF", "status": "booked"}"""),
                 Json.parse("""
-                        {"kind": "trade", "composition": "FX_NEW", "productId": "FX_NEW", "status": "failed"}"""));
+                        {"kind": "trade", "tradeId": "T-1", "composition": "FX_NEW", "productId": "FX_NEW",
+                         "status": "failed", "failedStep": "approve trade", "error": "403"}"""));
         List<JsonNode> filled = SeedReport.withItradeableTypes(entries,
                 Map.of("FX_FSB", "Cortex.Finance.Tradeable.PayoffScript.Ctrl.FloatingStrikeB",
                         "FX_TRF", "Cortex.Finance.Tradeable.TRF"));
@@ -32,6 +33,9 @@ public class SeedReportTest {
         String csv = SeedReport.csv(filled);
         assertTrue(csv, csv.startsWith("run,tradeId,env,kind,case,itradeableType,composition,productId,taxonomy,portfolioId,"));
         assertTrue(csv, csv.contains(",,,trade,,Cortex.Finance.Tradeable.PayoffScript.Ctrl.FloatingStrikeB,FX_FSB,FX_PSCRIPT,"));
+        assertTrue(csv, csv.startsWith(String.join(",", SeedReport.COLUMNS)) && csv.contains(",status,at,failedStep,error\n"));
+        assertTrue("a trade whose approval failed keeps its trade ID and names the step: " + csv,
+                csv.contains(",T-1,,trade,,,FX_NEW,FX_NEW,") && csv.contains(",failed,,approve trade,403\n"));
     }
 
     @Test

@@ -122,6 +122,17 @@ public final class TradeApiClient {
 
     /**
      * Saves the setup body {@code testDataKey} of composition {@code composition} as a draft of product ID
+    /**
+     * Submits {@code requestJson} as a trade of product ID {@code productId} with the dat file at classpath
+     * {@code datPath}, pending the checker; {@code what} names the body in the log and the error.
+     */
+    public static CreatedTrade submitTradeWithBody(RequestResponseHelper helper, String userId, String requestJson,
+                                                   String productId, String datPath, String what)
+            throws URISyntaxException {
+        return createdTrade(createTradeWithBody(helper, SUBMIT_TRADE_PATH, userId, requestJson, productId, datPath,
+                what), what);
+    }
+
      * {@code productId}.
      */
     public static CreatedTrade saveTrade(RequestResponseHelper helper, String userId, String testDataKey,
