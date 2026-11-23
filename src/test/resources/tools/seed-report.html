@@ -268,11 +268,20 @@ tbody tr:last-child td { border-bottom: 0; }
       : '<div class="none">No request recorded: this line was written before the manifest kept what was sent.</div>';
   }
 
-  // a copy button: by the trade IDs and by what a booking sent (dat path, request JSON), not by the other fields
+  // a copy button: by the trade IDs, by the fields of the seed's Excel the table shows and by what a booking sent (dat
+  // path, request JSON); not by the report's own fields (case, run, status, at, E2E case)
   const copyBtn = v => '<button class="copy" data-copy="' + esc(v) + '" title="Copy ' + esc(v) + '">⧉</button>';
+  const EXCEL = ['itradeableType', 'composition', 'productId', 'taxonomy', 'portfolioId', 'riskPortfolio', 'scbEntity',
+    'event'];
 
   function cell(b, c) {
     const v = value(b, c);
+    const shown = show(b, c, v);
+    return EXCEL.includes(c.key) && v ? shown + copyBtn(v) : shown;
+  }
+
+  // the Itradeable Type shows its last two parts and copies its full name
+  function show(b, c, v) {
     if (c.key === 'tradeId') return v ? '<span class="trade">' + esc(v) + '</span>' + copyBtn(v) : '';
     if (c.key === 'childTradeIds') {
       const ids = b.childTradeIds || [];
