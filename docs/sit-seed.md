@@ -76,9 +76,9 @@ case sends of its own:
   sheet's composition column is the E2E's except `FX_PSCRIPT_FSB`, booked as `FX_FSB`. A row whose composition is not
   in it fails, and so does an Itradeable Type given to two compositions. The manifest and the report carry the
   Itradeable Type beside the composition, so UAT reads its own name.
-- **Dat file**: a composition registered in `ProductDatFiles` takes `data/dat/<C>/<C>.dat`; any other takes
-  `seed/dat/<C>/<productId>.dat`. A case's own `dat` is always `seed/dat/<C>/<dat>`, registered composition or not:
-  the seed's files stay apart from the E2E cases'. Do not register a seed-only composition in `ProductDatFiles`: it would join every
+- **Dat file**: always in `seed/dat/<C>/`, `<productId>.dat` by default, registered composition or not; a case's
+  own `dat` is `seed/dat/<C>/<dat>`. The seed never books an E2E file of `data/dat`: the seed's files stay apart from
+  the E2E cases', and each product ID of a composition has its own template. Do not register a seed-only composition in `ProductDatFiles`: it would join every
   product Outline of the E2E cases.
 - **`trades`**: a pair whose dat file name (`dat`) or body (`setup`, default `trade-create`) is not the default, or
   a pair with one taxonomy (`taxonomy`): an entry with the row's taxonomy wins over one without, so one pair books
@@ -91,8 +91,8 @@ case sends of its own:
   same way over its event's request (the E2E case's): the fields one event booking needs of its own. Each event
   books its own dat file, named after the event: `SEED-EVENT-004` (termination on FX_TRF) books
   `seed/dat/FX_TRF/termination.dat`. Every event case names its file in its entry (`"dat": "termination.dat"`, a
-  file of `seed/dat/<C>/`); one that names none is refused (`SeedData.forEvent`) rather than booked with the E2E
-  file of `data/dat`. Placeholders until exported from Cortex. Every case
+  file of `seed/dat/<C>/`); one that names none is refused (`SeedData.forEvent`) rather than booked with the pair's
+  new-trade file. Placeholders until exported from Cortex. Every case
   listed must be a row of the features (`SeedDataTest`), and a value starting with `TODO`
   stops the catalog from loading. The catalog has a case per row of the Excel with placeholders,
   `EXAMPLE_PORTFOLIO_<X>` and `EXAMPLE_ENTITY_<X>`, one letter per distinct portfolio and entity, so cases that share
@@ -191,8 +191,7 @@ double-click its `{Object ITradeable}` ("View"), Export > Save As..., "Cortex ob
 
 1. `seed-dats` lists every seed case (commented-out rows too), its kind (`trade`, or `event` for an event or a
    step-in; the new trades first, then the events and step-ins together), the dat path it books and its state: `placeholder` or
-   `missing` (to export), `ok` (real), `e2e` (the default dat of a registered composition, the E2E cases': do not
-   overwrite it; give the case its own `"dat"` in `cases` to book another), `shared` (an earlier case, `sameAs`,
+   `missing` (to export), `ok` (real), `shared` (an earlier case, `sameAs`,
    books the same file).
 
    ```
@@ -238,7 +237,7 @@ double-click its `{Object ITradeable}` ("View"), Export > Save As..., "Cortex ob
   Excel's FX_PSCRIPT with payoff script TRFGeneric is the composition FX_PSCRIPT_TRF under product ID FX_PSCRIPT (the
   lifecycle rows book it so).
 - The new-trade sheet: `SEED-TRADE-001` to `038` are its first 38 rows; rows 39 to 41 (FX_VOLOPTION, FX_AMER_OPT
-  twice) wait for their composition and taxonomy. Each unregistered composition's dat file in `seed/dat/<C>/` is a
+  twice) wait for their composition and taxonomy. Each dat file in `seed/dat/<C>/` is a
   placeholder here: the real template, and the entity and portfolio of each row in `cases`, are on the company copy.
 - `008` and `009` (FXBO + FX_BO_MULTIDIGI) book different dat files: `008` names `FX_BO_MULTIDIGI_Precious.dat`
   (the name it is exported under from Cortex) in its `cases` entry, `009` takes the pair's default

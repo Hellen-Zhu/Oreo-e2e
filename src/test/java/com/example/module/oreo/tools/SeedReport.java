@@ -224,8 +224,6 @@ final class SeedReport {
         placeholder,
         /** No file yet: to export. */
         missing,
-        /** The default dat of a registered composition, the E2E cases': never overwritten by an export. */
-        e2e,
         /** An earlier case of the list books the same file: exported once, for that case. */
         shared
     }
@@ -306,10 +304,7 @@ final class SeedReport {
             String path = RESOURCES + trade.dat();
             String sameAs = firstCase.putIfAbsent(path, e.getKey());
             DatState state;
-            if (trade.registered() && trade.dat().equals(
-                    com.example.module.oreo.testdata.ProductDatFiles.valueOf(c.get(0)).path())) {
-                state = DatState.e2e;
-            } else if (sameAs != null) {
+            if (sameAs != null) {
                 state = DatState.shared;
             } else {
                 Path file = root.resolve(path);

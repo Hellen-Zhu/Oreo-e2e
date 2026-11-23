@@ -39,9 +39,8 @@ import java.util.regex.Pattern;
  *   <li>{@code itradeableTypes}, {@code {"<composition>": "<Itradeable Type>"}}: the Excel's full Itradeable Type
  *       of each composition the seed books ({@code FX_TRF} is {@code Cortex.Finance.Tradeable.TRF}), one to one. A
  *       booking's composition must be in it; its Itradeable Type goes to the manifest and the report.</li>
- *   <li>A pair's dat file: a composition registered in {@link ProductDatFiles} takes it from {@code data/dat/<C>/}
- *       ({@code <C>.dat}), any other from {@code seed/dat/<C>/} ({@code <productId>.dat}). A case's own
- *       {@code dat} is always in {@code seed/dat/<C>/}: the seed's files stay apart from the E2E cases'. {@code trades}, a list of
+ *   <li>A pair's dat file is always in {@code seed/dat/<C>/}, {@code <productId>.dat} by default, registered
+ *       composition or not: the seed never books an E2E file of {@code data/dat}. {@code trades}, a list of
  *       {@code {"composition", "productId", "taxonomy"?, "dat"?, "setup"?}}, gives another file name or another body
  *       for a pair, or for a pair with one taxonomy; the body is {@code data/setup/<name>.json}, {@code trade-create}
  *       by default.</li>
@@ -64,7 +63,7 @@ public final class SeedData {
 
     public static final String CATALOG = "seed/catalog.json";
     public static final String DEFAULT_SETUP = "trade-create";
-    /** Where the dat files of a composition the E2E cases do not register are, {@code seed/dat/<C>/}. */
+    /** Where the seed's dat files are, {@code seed/dat/<C>/}, registered composition or not. */
     public static final String SEED_DAT_DIR = "seed/dat/";
     private static final String PRODUCT = "<product_type>";
     private static final Pattern NAME = Pattern.compile("[a-z0-9][a-z0-9-]*");
@@ -296,7 +295,7 @@ public final class SeedData {
     /**
      * What seed case {@code caseId} books its event {@code event} on: {@link #forCase}, whose dat file is the one the
      * case names in {@code cases} ({@code dat}, under {@code seed/dat/<C>/}). An event case must name one: without
-     * it the booking would take the composition's E2E dat file of {@code data/dat}.
+     * it the booking would take the pair's new-trade file, {@code <productId>.dat}.
      *
      * @throws IllegalStateException when the event is not one, the case names no dat file, or as {@link #forCase}
      */
@@ -319,7 +318,7 @@ public final class SeedData {
         return resolve(caseId, composition, productId, null, variant);
     }
 
-    /** Refuses case {@code caseId} when it names no dat file: it would take the composition's E2E one. */
+    /** Refuses case {@code caseId} when it names no dat file: it would take the pair's new-trade one. */
     private void requireDat(String caseId, String kind, String what, String composition) {
         CaseEntry entry = cases.get(caseId);
         if (entry == null || entry.dat() == null) {
@@ -362,14 +361,8 @@ public final class SeedData {
         CaseEntry entry = caseId == null ? null : cases.get(caseId);
         if (entry != null && entry.setup() != null) setup = entry.setup();
         ProductDatFiles registered = registered(composition);
-        String path;
-        if (entry != null && entry.dat() != null) {
-            path = SEED_DAT_DIR + composition + "/" + entry.dat();          // the seed's own, never an E2E file
-        } else if (registered != null) {
-            path = registered.path(dat);
-        } else {
-            path = SEED_DAT_DIR + composition + "/" + (dat == null ? productId + ".dat" : dat);
-        }
+        if (entry != null && entry.dat() != null) dat = entry.dat();
+        String path = SEED_DAT_DIR + composition + "/" + (dat == null ? productId + ".dat" : dat);  // never data/dat
         ObjectNode caseRequest = entry == null ? Json.MAPPER.createObjectNode() : entry.request().deepCopy();
         ObjectNode caseEventRequest = entry == null ? Json.MAPPER.createObjectNode() : entry.eventRequest().deepCopy();
         return new Trade(caseId, composition, itradeableType, productId, taxonomy, variant, path, setup, caseRequest,

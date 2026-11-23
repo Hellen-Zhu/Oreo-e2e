@@ -136,7 +136,7 @@ public class SeedDataTest {
     }
 
     @Test
-    public void aPairTakesItsDatFileByWhetherItsCompositionIsRegistered() {
+    public void aPairTakesItsDatFileFromTheSeedsFolderRegisteredOrNot() {
         SeedData catalog = SeedData.fromJson("t.json", Json.parse("""
                 {"itradeableTypes": {"FX_X": "T.X", "FXBO": "T.FXBO", "FX_TRF": "Cortex.Finance.Tradeable.TRF"},
                  "trades": [{"composition": "FX_X", "productId": "FX_X2", "dat": "OTHER.dat", "setup": "other-body"}],
@@ -151,7 +151,8 @@ public class SeedDataTest {
         assertEquals("other-body", x2.setup());
         SeedData.Trade trf = catalog.trade("FX_TRF", "FX_TRF_DLYSTTL", "stepin-full");
         assertTrue(trf.registered());
-        assertEquals(ProductDatFiles.FX_TRF.path(), trf.dat());
+        assertEquals("a registered composition's dat file is the seed's too, never data/dat",
+                "seed/dat/FX_TRF/FX_TRF_DLYSTTL.dat", trf.dat());
         assertEquals("trade-create-stepin-full", trf.setup());
         assertEquals("stepin-full", trf.variant());
     }
@@ -181,9 +182,9 @@ public class SeedDataTest {
                              "dat": "FX_TRF_METALS.dat"},
                             {"composition": "FXBO", "productId": "FX_BO_X", "taxonomy": "Metals:Precious:Exotic",
                              "dat": "FX_BO_X_METALS.dat"}]}"""));
-        assertEquals(ProductDatFiles.FX_TRF.path("FX_TRF_METALS.dat"),
+        assertEquals("seed/dat/FX_TRF/FX_TRF_METALS.dat",
                 catalog.trade("FX_TRF", "FX_TRF", "Metals:Precious:Exotic", null).dat());
-        assertEquals(ProductDatFiles.FX_TRF.path(), catalog.trade("FX_TRF", "FX_TRF", "ComplexExotic", null).dat());
+        assertEquals("seed/dat/FX_TRF/FX_TRF.dat", catalog.trade("FX_TRF", "FX_TRF", "ComplexExotic", null).dat());
         assertEquals("seed/dat/FXBO/FX_BO_X_METALS.dat",
                 catalog.trade("FXBO", "FX_BO_X", "Metals:Precious:Exotic", null).dat());
         assertEquals("seed/dat/FXBO/FX_BO_X.dat", catalog.trade("FXBO", "FX_BO_X", "ComplexExotic", null).dat());
@@ -381,7 +382,7 @@ public class SeedDataTest {
         assertEquals(Set.of("SEED-TRADE-001", "SEED-TRADE-002"), catalog.caseIds());
         SeedData.Trade one = catalog.forCase("SEED-TRADE-001", "FX_TRF", "FX_TRF", "ComplexExotic");
         assertEquals("SEED-TRADE-001", one.caseId());
-        assertEquals(ProductDatFiles.FX_TRF.path("FX_TRF_PAIR.dat"), one.dat());
+        assertEquals("seed/dat/FX_TRF/FX_TRF_PAIR.dat", one.dat());
         JsonNode basic = Json.parse(SeedData.request(one)).path("basic");
         assertEquals("PORTFOLIO_1", basic.path("portfolioId").asText());
         assertEquals("PORTFOLIO_1R", basic.path("riskPortfolio").asText());

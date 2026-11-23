@@ -64,11 +64,11 @@ public class SeedReportTest {
         assertEquals("src/test/resources/seed/dat/FXBO/FX_BO_MULTIDIGI_Precious.dat",
                 byCase.get("SEED-TRADE-008").path());
         assertEquals("src/test/resources/seed/dat/FXBO/FX_BO_MULTIDIGI.dat", byCase.get("SEED-TRADE-009").path());
+        assertEquals("src/test/resources/seed/dat/FX_TRF/FX_TRF_DLYSTTL.dat", byCase.get("SEED-TRADE-037").path());
         for (SeedReport.CaseDat d : dats) {
-            if (d.state() == SeedReport.DatState.e2e) {
-                assertEquals(d.caseId(), SeedReport.RESOURCES
-                        + com.example.module.oreo.testdata.ProductDatFiles.valueOf(d.composition()).path(), d.path());
-            }
+            assertTrue(d.caseId() + " books a seed file, never data/dat: " + d.path(),
+                    d.path().startsWith(SeedReport.RESOURCES + com.example.module.oreo.testdata.SeedData.SEED_DAT_DIR
+                            + d.composition() + "/"));
             if (d.state() == SeedReport.DatState.shared) {
                 assertTrue(d.caseId(), d.sameAs() != null && !d.sameAs().equals(d.caseId()));
             }

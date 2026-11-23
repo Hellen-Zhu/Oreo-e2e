@@ -275,7 +275,7 @@ body.script-only .pipe, body.script-only .stats, body.script-only .mock { displa
           <tr><td>stepin-full · stepin-partial</td><td>用 Step-in 请求体直接下单</td></tr>
         </tbody>
       </table></div>
-      <div class="pit"><span class="tag">留意</span>一个事件用例如果没写 dat 文件名，工具会直接报错停下，而不是悄悄用 E2E 的 dat 文件下单。这是踩过一次坑之后加的保护。</div>
+      <div class="pit"><span class="tag">留意</span>一个事件用例如果没写 dat 文件名，工具会直接报错停下，而不是悄悄用这个产品新交易的 dat 文件下单。这是踩过一次坑之后加的保护。所有 seed 用例的 dat 都只从 <code>seed/dat</code> 取，从不借用 E2E 的 <code>data/dat</code>。</div>
     </section>
 
     <section id="s4">
