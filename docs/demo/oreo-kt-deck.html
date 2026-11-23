@@ -1,0 +1,431 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OREO E2E 框架 KT</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* KT deck for a new QA engineer: four sessions (structure, Genie, test data, AI workflow).
+   1920x1080 slides scaled to the window. Keys: arrows / space / PageUp / PageDown to move, N for speaker notes,
+   Home / End for the first and last slide. Everything but the fonts is inline. */
+html, body { margin: 0; height: 100%; background: #0B1222; overflow: hidden; }
+#stage { position: absolute; left: 50%; top: 50%; width: 1920px; height: 1080px; transform-origin: 0 0; }
+#stage > section { position: absolute; inset: 0; width: 1920px; height: 1080px; box-sizing: border-box; overflow: hidden; display: none; }
+#stage > section.active { display: flex; }
+:where(#stage h1, #stage h2, #stage h3, #stage p) { margin: 0; }
+:where(#stage ol) { margin: 0; padding-left: 1.4em; }
+#stage aside { display: none; }
+#stage table { border-collapse: collapse; }
+#stage td, #stage th { padding: 0.35em 0.6em; border-bottom: 1px solid #D3D9E2; vertical-align: top; }
+x-shape[kind="arrow-right"] { display: block; clip-path: polygon(0 30%, 60% 30%, 60% 0, 100% 50%, 60% 100%, 60% 70%, 0 70%); }
+#bar { position: fixed; left: 0; right: 0; bottom: 0; display: flex; justify-content: space-between; align-items: center;
+  padding: 8px 16px; font: 14px 'Noto Sans SC', 'PingFang SC', sans-serif; color: #9FB0C6; background: rgba(11,18,34,.85); }
+#bar button { font: inherit; color: #E3EAF3; background: #1E2D4F; border: 1px solid #2E4068; border-radius: 6px; padding: 4px 12px; cursor: pointer; }
+#notes { position: fixed; left: 16px; right: 16px; bottom: 48px; max-height: 30vh; overflow: auto; display: none;
+  padding: 16px 20px; border-radius: 10px; background: #FCEBDD; color: #14213D; font: 16px/1.6 'Noto Sans SC', 'PingFang SC', sans-serif; }
+#notes.show { display: block; }
+body { font-family: 'Noto Sans SC', 'PingFang SC', Arial, sans-serif; }
+
+section { padding: 128px; background: #F7F6F2; color: #3D4A5C; display: flex; flex-direction: column; font-family: 'Noto Sans SC', 'PingFang SC', Arial, sans-serif; }
+section.alt { background: #ECEFF4; }
+section.dark { background: #14213D; color: #C9D3E0; }
+section.accent { background: #E8833A; color: #14213D; }
+section.cover { justify-content: center; }
+
+.eyebrow { font-size: 24px; font-weight: 700; letter-spacing: 3px; color: #A84A14; margin: 0 0 16px 0; }
+section.dark .eyebrow { color: #F2A56B; }
+section.accent .eyebrow { color: #14213D; }
+
+.title { font-size: 60px; font-weight: 700; color: #14213D; line-height: 1.2; margin: 0 0 48px 0; }
+section.dark .title { color: #F7F6F2; }
+.cover-title { font-size: 104px; font-weight: 700; color: #F7F6F2; line-height: 1.15; margin: 0 0 40px 0; }
+
+.lead { font-size: 32px; line-height: 1.6; margin: 0 0 40px 0; }
+section.dark .lead { color: #C9D3E0; }
+.small { font-size: 24px; line-height: 1.5; color: #5A6678; }
+section.dark .small { color: #9FB0C6; }
+.spacer { flex: 1; }
+
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; }
+.grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 32px; }
+.grid4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 28px; }
+
+.card { background: #FEFEFC; border: 2px solid #DCE1E8; border-radius: 16px; padding: 36px 40px; display: flex; flex-direction: column; gap: 16px; }
+section.dark .card { background: #1E2D4F; border: 2px solid #2E4068; }
+.ch { font-size: 34px; font-weight: 700; color: #14213D; line-height: 1.3; }
+section.dark .ch { color: #F7F6F2; }
+.ct { font-size: 26px; line-height: 1.55; color: #3D4A5C; }
+section.dark .ct { color: #C9D3E0; }
+.tag { font-size: 24px; font-weight: 700; color: #A84A14; letter-spacing: 2px; }
+section.dark .tag { color: #F2A56B; }
+
+.code { font-family: 'JetBrains Mono', 'Courier New', monospace; font-size: 26px; line-height: 1.6; background: #14213D; color: #E3EAF3; padding: 36px 44px; border-radius: 16px; }
+.code .hl { color: #F2A56B; }
+.code .cm { color: #8FA2BD; }
+.mono { font-family: 'JetBrains Mono', 'Courier New', monospace; }
+
+.note { background: #FCEBDD; border-left: 8px solid #E8833A; padding: 24px 32px; border-radius: 8px; font-size: 26px; line-height: 1.55; color: #14213D; margin-top: 32px; }
+
+.tbl { font-size: 26px; color: #3D4A5C; width: 100%; }
+.tbl th { font-weight: 700; color: #14213D; text-align: left; }
+
+.flow { display: flex; align-items: stretch; gap: 20px; }
+.node { background: #14213D; border-radius: 14px; padding: 28px 30px; flex: 1; display: flex; flex-direction: column; gap: 10px; }
+.node.soft { background: #DDE4EE; }
+.nl { font-size: 30px; font-weight: 700; color: #F7F6F2; line-height: 1.3; }
+.ns { font-size: 24px; color: #BFCAD8; line-height: 1.45; }
+.node.soft .nl { color: #14213D; }
+.node.soft .ns { color: #3D4A5C; }
+.arrow-wrap { display: flex; align-items: center; }
+.arrow { width: 44px; height: 24px; background: #E8833A; }
+
+.rung { display: flex; align-items: center; gap: 28px; background: #FEFEFC; border: 2px solid #DCE1E8; border-radius: 14px; padding: 20px 32px; }
+.num { font-size: 40px; font-weight: 700; color: #E8833A; width: 56px; }
+.rt { font-size: 28px; line-height: 1.45; color: #14213D; }
+
+.chip { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+.chip-box { font-family: 'JetBrains Mono', 'Courier New', monospace; font-size: 44px; font-weight: 600; color: #F7F6F2; background: #14213D; border-radius: 12px; padding: 20px 28px; }
+.chip-box.hot { background: #E8833A; color: #14213D; }
+.chip-label { font-size: 24px; line-height: 1.4; color: #3D4A5C; text-align: center; }
+
+.big-list { font-size: 34px; line-height: 1.5; color: #14213D; }
+.big-list li { margin-bottom: 20px; }
+
+</style>
+</head>
+<body>
+<div id="stage">
+<section id="cover" class="dark cover">
+<p class="eyebrow">KNOWLEDGE TRANSFER · 新同学入门</p>
+<h1 class="cover-title">OREO E2E 自动化框架</h1>
+<p class="lead">从一个 case 怎么跑起来，讲到 Genie、测试数据和 AI 工作流</p>
+<p class="small">分四次讲 · 每次约 40 分钟 · 每次讲完配一个动手作业</p>
+<aside>开场先说明这次 KT 的节奏：分四次讲，每次之间隔两三天，让她自己看代码、跑命令，带着问题来听下一次。强调这套框架规则比较多，先讲清楚再动手，能少踩很多坑。</aside>
+</section>
+<section id="agenda" class="alt">
+<p class="eyebrow">日程</p>
+<h2 class="title">四次讲解，由外到内</h2>
+<div class="grid4">
+<div class="card"><p class="tag">01 · 45 分钟</p><h3 class="ch">整体结构</h3><p class="ct">一个 case 是怎么跑起来的：分层、目录、改动放在哪</p></div>
+<div class="card"><p class="tag">02 · 40 分钟</p><h3 class="ch">Genie 运行机制</h3><p class="ct">入口、模块、snippet、生命周期、配置和并行</p></div>
+<div class="card"><p class="tag">03 · 40 分钟</p><h3 class="ch">测试数据</h3><p class="ct">case ID、四层合并、录制和离线检查</p></div>
+<div class="card"><p class="tag">04 · 40 分钟</p><h3 class="ch">AI 工作流</h3><p class="ct">两条流水线、两个 agent、五个 skill</p></div>
+</div>
+<div class="spacer"></div>
+<p class="small">第 3、4 讲配合仓库里现成的中文讲稿：docs/demo/oreo-e2e-demo.html、docs/demo/oreo-ai-workflow.html</p>
+<aside>每次之间隔两三天。第二次开始，先请她用五分钟讲一下上次的内容，这是检验理解最快的办法。</aside>
+</section>
+<section id="s1-what">
+<p class="eyebrow">第 1 讲 · 整体结构</p>
+<h2 class="title">我们测什么，为什么要自动化</h2>
+<div class="grid2">
+<div class="card"><h3 class="ch">被测系统</h3><p class="ct">OREO FX 交易管理门户。覆盖 trade 的整个生命周期：创建、审批、修改、取消、提前终止、分配、fixing 等。</p></div>
+<div class="card"><h3 class="ch">要解决的问题</h3><p class="ct">产品一个个上线，每个产品都要覆盖所有 lifecycle event。产品数 × 事件数，靠手工回归跟不上。</p></div>
+</div>
+<p class="note"><b>核心设计：事件是文件，产品是行。</b>一个 lifecycle event 对应一个 feature；上线一个新产品，只是在 Examples 里多一行，就能复用所有 event 的 case。</p>
+<aside>这一页讲清楚“为什么这样设计”。理解了“产品是行”，后面看到 Examples 不能手改、要用 sync-examples 生成，她就知道原因了。</aside>
+</section>
+<section id="s1-layers">
+<p class="eyebrow">第 1 讲 · 整体结构</p>
+<h2 class="title">一张图看懂分层</h2>
+<div class="flow">
+<div class="node"><p class="nl">feature</p><p class="ns">业务语言，case ID 写在 scenario 名字里</p></div>
+<div class="arrow-wrap"><x-shape kind="arrow-right" class="arrow"></x-shape></div>
+<div class="node"><p class="nl">snippet</p><p class="ns">把业务步骤拼成技术步骤</p></div>
+<div class="arrow-wrap"><x-shape kind="arrow-right" class="arrow"></x-shape></div>
+<div class="node"><p class="nl">glue</p><p class="ns">Java，只写缺少的能力</p></div>
+<div class="arrow-wrap"><x-shape kind="arrow-right" class="arrow"></x-shape></div>
+<div class="node"><p class="nl">API / 浏览器</p><p class="ns">REST · Playwright</p></div>
+</div>
+<div class="grid2" style="margin-top:40px">
+<div class="card"><h3 class="ch">data/</h3><p class="ct">请求体和录制的期望响应，按 case ID 取数</p></div>
+<div class="card"><h3 class="ch">elements/</h3><p class="ct">UI 定位器 JSON，选择器不进 feature，也不写死在 Java 里</p></div>
+</div>
+<aside>白板上可以重画这张图。重点：越往左越接近业务语言，越往右越接近技术实现。技术细节只能往右沉，不能出现在 feature 里。</aside>
+</section>
+<section id="s1-dirs">
+<p class="eyebrow">第 1 讲 · 整体结构</p>
+<h2 class="title">目录地图</h2>
+<table class="tbl">
+<tr><th style="width:44%">目录</th><th>放什么</th></tr>
+<tr><td>features/api、features/ui</td><td>按领域分目录，一个 event 一个 feature</td></tr>
+<tr><td>snippet/api</td><td>API 的业务动作和结果断言</td></tr>
+<tr><td>snippet/ui/flows、pages、components</td><td>UI 三层：业务流程、页面原子操作、通用组件</td></tr>
+<tr><td>glue/api、glue/ui、glue/hooks</td><td>Java step 定义和 hooks</td></tr>
+<tr><td>data/api、ui、setup、dat，common.json</td><td>case 数据、前置条件数据、产品 dat、公共块</td></tr>
+<tr><td>elements/pages、components</td><td>UI 定位器</td></tr>
+<tr><td>*.properties</td><td>环境地址、账号和运行模式</td></tr>
+</table>
+<div class="spacer"></div>
+<p class="small">snippet 和 glue 在 src/main；features、data、elements 和 properties 在 src/test/resources</p>
+<aside>现场打开 IDE 对照着点一遍，不要只看表。让她记住：找不到东西时先回到这张表。</aside>
+</section>
+<section id="s1-apiui">
+<p class="eyebrow">第 1 讲 · 整体结构</p>
+<h2 class="title">API 和 UI 各测什么</h2>
+<div class="grid2">
+<div class="card"><p class="tag">@api</p><h3 class="ch">测业务规则</h3><p class="ct">字段校验、状态流转、审批、返回结果。又快又稳，是覆盖的主力。</p></div>
+<div class="card"><p class="tag">@playwright</p><h3 class="ch">测用户能否完成操作</h3><p class="ct">页面流程、提示信息、blotter 展示。只验证关键路径。</p></div>
+</div>
+<p class="note"><b>UI 的前置条件通过 API 准备：</b>比如 <span class="mono">a Live '&lt;product_type&gt;' trade exists in the blotter</span>。它不登录、不导航，trade ID 存在 createdTradeId。UI scenario 不能直接调用 API snippet。</p>
+<aside>分层的依据在 docs/standards/test-layering-standards.md。一个验收标准先问：这是业务规则还是用户操作？</aside>
+</section>
+<section id="s1-where">
+<p class="eyebrow">第 1 讲 · 整体结构</p>
+<h2 class="title">改动放在哪：先复用，最后才写 Java</h2>
+<div style="display:flex; flex-direction:column; gap:16px">
+<div class="rung"><p class="num">1</p><p class="rt">已有的 flow、page、component 或 API snippet 能表达 → 直接复用</p></div>
+<div class="rung"><p class="num">2</p><p class="rt">Genie 内置 step 能做到 → 在 snippet 里使用</p></div>
+<div class="rung"><p class="num">3</p><p class="rt">已有的 glue（glue/api、glue/ui）能做到 → 在 snippet 里调用</p></div>
+<div class="rung"><p class="num">4</p><p class="rt">用上面这些组合出一个新 snippet</p></div>
+<div class="rung"><p class="num">5</p><p class="rt">都做不到 → 才写新的 Java，一次只加一个能力</p></div>
+</div>
+<aside>这是 CLAUDE.md 第 3 节的规则，按顺序往下找，遇到第一个合适的就停。老代码里有一些 wrapper、sleep，不要模仿，也不要顺手重构。</aside>
+</section>
+<section id="s1-trace" class="alt">
+<p class="eyebrow">第 1 讲 · 现场演示</p>
+<h2 class="title">从头到尾追一个 case</h2>
+<div class="grid4">
+<div class="card"><p class="tag">01</p><h3 class="ch">找到 scenario</h3><p class="ct">看名字里的 case ID，比如 [TC-TRADE-CREATION-…-API-001]</p></div>
+<div class="card"><p class="tag">02</p><h3 class="ch">跳到 snippet</h3><p class="ct">每个 step 一层层展开，直到内置 step 或 Java</p></div>
+<div class="card"><p class="tag">03</p><h3 class="ch">打印数据</h3><p class="ct">用 case 命令看最终发送的请求和比对的期望响应</p></div>
+<div class="card"><p class="tag">04</p><h3 class="ch">跑一次</h3><p class="ct">在公司机器上，用最窄的 filter</p></div>
+</div>
+<p class="code" style="margin-top:36px"><span class="cm"># 打印一个 case 的数据（离线）</span><br>mvn -Ptest-data process-test-classes "-Dexec.args=case TC-…"<br><span class="cm"># 只跑这一个 case</span><br>mvn -B test -Dtest=OreoTest "-Dcucumber.options=--name ^\[TC-…\].*$"</p>
+<aside>这是第一讲最重要的部分，留足 15 分钟。挑一个简单的 trade_creation API case。追一遍，比讲十遍概念都有用。</aside>
+</section>
+<section id="s2-genie">
+<p class="eyebrow">第 2 讲 · Genie 运行机制</p>
+<h2 class="title">Genie 是什么</h2>
+<p class="lead">公司内部基于 Cucumber-JVM 和 JUnit 封装的测试框架。它把 REST、数据库、Playwright、报告和并行做成<b>模块</b>，项目只需要写业务步骤。</p>
+<div class="flow">
+<div class="node" style="flex:0 0 520px"><p class="nl">OreoModule（我们的模块）</p><p class="ns">注册 glue：Java 包 com.example.module.oreo.glue 和 classpath:snippet</p></div>
+<div class="arrow-wrap"><x-shape kind="arrow-right" class="arrow"></x-shape></div>
+<div style="flex:1; display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px">
+<div class="node soft"><p class="nl">Spring</p></div>
+<div class="node soft"><p class="nl">Rest</p></div>
+<div class="node soft"><p class="nl">Jdbc</p></div>
+<div class="node soft"><p class="nl">Sql</p></div>
+<div class="node soft"><p class="nl">Database</p></div>
+<div class="node soft"><p class="ns">依赖的模块按顺序加载，各自带来内置 step</p></div>
+</div>
+</div>
+<p class="note">写新步骤之前，先查内置 step 目录：docs/genie_rest_glue_catalog.md 和 docs/genie_playwright_glue_catalog.md。</p>
+<aside>打个比方：Cucumber 是发动机，Genie 是整辆车，oreo-e2e 是装在车上的货。打开 OreoModule.java，看 getDependencies 和 getGluePaths 两个方法。</aside>
+</section>
+<section id="s2-entry">
+<p class="eyebrow">第 2 讲 · Genie 运行机制</p>
+<h2 class="title">入口：OreoTest 的三个注解</h2>
+<table class="tbl">
+<tr><th style="width:30%">注解</th><th style="width:36%">作用</th><th>要记住</th></tr>
+<tr><td>@RunWith(Genie.class)</td><td>由 Genie 接管 JUnit 的运行</td><td>mvn test -Dtest=OreoTest 跑的就是 Genie</td></tr>
+<tr><td>@CucumberOptions</td><td>feature 在哪、glue 在哪、默认 tag</td><td>glue 有两个来源：Java 包和 snippet</td></tr>
+<tr><td>@GenieOptions</td><td>环境配置文件、并行方式</td><td>qa.properties，FEATURE 模式，3 个并发</td></tr>
+</table>
+<p class="note"><b>固定 tag：</b>not @wip 和 @ADO#trade_creation，命令行的 filter 会和它们叠加。所以 mvn test 不等于全量；跑出 0 个 case 时，先查 tag。选 case 只用 -Dcucumber.options，不用 -Dcucumber.filter.*。</p>
+<aside>打开 src/test/java/com/example/module/oreo/OreoTest.java 对照讲。SeedTest 是另一个入口，用来给 UAT 批量下 SIT seed，不是测试，mvn test 不会跑它。</aside>
+</section>
+<section id="s2-snippet" class="alt">
+<p class="eyebrow">第 2 讲 · Genie 运行机制</p>
+<h2 class="title">Snippet：用文本写的 step 定义</h2>
+<div class="grid2" style="grid-template-columns:1.15fr 1fr">
+<p class="code"><span class="cm"># snippet/api/common_api.snippet</span><br><span class="hl">@Given "^start a new api request as user '([^']*)'$"</span><br>&#160;&#160;&#160;&#160;Given start building a new request<br>&#160;&#160;&#160;&#160;And set the user header for '$1'<br>&#160;&#160;&#160;&#160;And set a new request id header</p>
+<div style="display:flex; flex-direction:column; gap:20px">
+<div class="card"><h3 class="ch">第一行是正则</h3><p class="ct">$1 是正则捕获的参数，比如 maker、checker</p></div>
+<div class="card"><h3 class="ch">下面是展开的步骤</h3><p class="ct">可以是内置 step、其他 snippet 或 Java glue，一层层展开</p></div>
+</div>
+</div>
+<p class="note">所以 feature 可以写成纯业务语言，技术细节全部沉到 snippet 和 glue 里。</p>
+<aside>这一页是第二讲的重点。现场演示：从 feature 里的一行 step 开始，跳到 snippet，一层层展开，最后落到一个内置 step 或 Java 方法。</aside>
+</section>
+<section id="s2-lifecycle">
+<p class="eyebrow">第 2 讲 · Genie 运行机制</p>
+<h2 class="title">一个 scenario 的生命周期</h2>
+<div class="flow">
+<div class="node"><p class="nl">启动与筛选</p><p class="ns">读 properties，加载模块，按 tag 和 name 过滤</p></div>
+<div class="arrow-wrap"><x-shape kind="arrow-right" class="arrow"></x-shape></div>
+<div class="node"><p class="nl">@Before</p><p class="ns">ScenarioLifecycleHooks 等准备工作</p></div>
+<div class="arrow-wrap"><x-shape kind="arrow-right" class="arrow"></x-shape></div>
+<div class="node"><p class="nl">执行 steps</p><p class="ns">逐个匹配 snippet 或 Java glue</p></div>
+<div class="arrow-wrap"><x-shape kind="arrow-right" class="arrow"></x-shape></div>
+<div class="node"><p class="nl">@After</p><p class="ns">失败截图，保存 Playwright trace</p></div>
+<div class="arrow-wrap"><x-shape kind="arrow-right" class="arrow"></x-shape></div>
+<div class="node"><p class="nl">报告</p><p class="ns">每个 scenario 的结果</p></div>
+</div>
+<div class="grid2" style="margin-top:40px">
+<div class="card"><h3 class="ch">scenario 之间不共享状态</h3><p class="ct">每个 scenario 都会创建新的 glue 实例</p></div>
+<div class="card"><h3 class="ch">step 之间靠 stored variable 传值</h3><p class="ct">比如 from stored variable 'createdTradeId'</p></div>
+</div>
+<aside>hooks 在 glue/hooks/。trace 的保留方式由 genie.properties 里的 oreo.playwright.trace.mode=RETAIN_ON_FAILURE 控制。</aside>
+</section>
+<section id="s2-config">
+<p class="eyebrow">第 2 讲 · Genie 运行机制</p>
+<h2 class="title">配置与环境</h2>
+<div class="grid2">
+<div class="card"><p class="tag">genie.properties</p><h3 class="ch">公共默认值</h3><p class="ct">Edge 浏览器、headless、超时、trace 模式、risk engine 用 MOCK、元素文件路径</p></div>
+<div class="card"><p class="tag">&lt;env&gt;.properties</p><h3 class="ch">各环境的地址和账号</h3><p class="ct">dev、sit、qa、uat、pt；默认 qa，由 @GenieOptions 指定</p></div>
+</div>
+<p class="code" style="margin-top:36px"><span class="cm"># 切换环境</span><br>-Dgenie.properties=./src/test/resources/&lt;env&gt;.properties</p>
+<p class="note">地址和账号只能放在 properties 里，不能写进代码、feature，也不能提交。账号按角色通过 config/TestUser 获取。</p>
+<aside>可以打开 genie.properties 看一下有哪些配置项，但不要在屏幕上展示真实的地址和账号。</aside>
+</section>
+<section id="s2-parallel" class="alt">
+<p class="eyebrow">第 2 讲 · Genie 运行机制</p>
+<h2 class="title">并行：多进程，不是多线程</h2>
+<div class="flow">
+<div class="node" style="flex:0 0 560px"><p class="nl">master 进程</p><p class="ns">加载 feature，按 FEATURE 模式切成工作单元，排队</p></div>
+<div class="arrow-wrap"><x-shape kind="arrow-right" class="arrow"></x-shape></div>
+<div style="flex:1; display:flex; flex-direction:column; gap:12px">
+<div class="node soft"><p class="ns">子 JVM 1：串行跑一个 feature</p></div>
+<div class="node soft"><p class="ns">子 JVM 2：串行跑一个 feature</p></div>
+<div class="node soft"><p class="ns">子 JVM 3：一个结束，马上补下一个</p></div>
+</div>
+</div>
+<div class="grid3" style="margin-top:36px">
+<div class="card"><h3 class="ch">为什么</h3><p class="ct">Cucumber-JVM 不是线程安全的</p></div>
+<div class="card"><h3 class="ch">DISCRETE 目录</h3><p class="ct">每个子进程有独立临时目录，读文件必须走 classpath</p></div>
+<div class="card"><h3 class="ch">对 case 的要求</h3><p class="ct">不依赖其他 feature 会改的数据，比如固定的 trade 或用户设置</p></div>
+</div>
+<aside>细节见 docs/genie-parallel-execution.md 第 1 节。并发数不是越高越快：每个子进程都是完整的 JVM，UI case 还有自己的浏览器。</aside>
+</section>
+<section id="s3-caseid">
+<p class="eyebrow">第 3 讲 · 测试数据</p>
+<h2 class="title">Case ID 是数据的钥匙</h2>
+<div style="display:flex; gap:16px; justify-content:center; align-items:flex-start">
+<div class="chip"><p class="chip-box">TC</p><p class="chip-label">前缀</p></div>
+<div class="chip"><p class="chip-box hot">TRADE-CREATION</p><p class="chip-label">event<br>→ data/api/trade_creation.json</p></div>
+<div class="chip"><p class="chip-box hot">FX_TRF</p><p class="chip-label">产品<br>（composition）</p></div>
+<div class="chip"><p class="chip-box hot">API</p><p class="chip-label">层<br>（API / UI）</p></div>
+<div class="chip"><p class="chip-box">001</p><p class="chip-label">编号<br>→ 数据里的那一行</p></div>
+</div>
+<p class="note">Case ID 写在 scenario 名字里，<b>不是 tag</b>。产品是 composition（如 FX_CO），不是 product ID（如 FX_PSCRIPT）。没有产品段的 ID 就是不分产品的 case。</p>
+<aside>这一讲配合 docs/demo/oreo-e2e-demo.html，那份讲稿约 38 分钟，有现成的讲解顺序和常见坑。</aside>
+</section>
+<section id="s3-merge" class="alt">
+<p class="eyebrow">第 3 讲 · 测试数据</p>
+<h2 class="title">四层合并，后面覆盖前面</h2>
+<div class="flow">
+<div class="node"><p class="nl">defaults</p><p class="ns">所有 case 共用</p></div>
+<div class="arrow-wrap"><x-shape kind="arrow-right" class="arrow"></x-shape></div>
+<div class="node"><p class="nl">byProduct[P]</p><p class="ns">这个产品不同的地方</p></div>
+<div class="arrow-wrap"><x-shape kind="arrow-right" class="arrow"></x-shape></div>
+<div class="node"><p class="nl">case 的行</p><p class="ns">这个 case 自己的数据</p></div>
+<div class="arrow-wrap"><x-shape kind="arrow-right" class="arrow"></x-shape></div>
+<div class="node"><p class="nl">行里的 byProduct[P]</p><p class="ns">这个 case 在这个产品上的差异</p></div>
+</div>
+<div class="grid3" style="margin-top:36px">
+<div class="card"><h3 class="ch">对象</h3><p class="ct">按 key 合并</p></div>
+<div class="card"><h3 class="ch">数组和值</h3><p class="ct">整体替换，没有“追加”</p></div>
+<div class="card"><h3 class="ch">null</h3><p class="ct">删除这个字段</p></div>
+</div>
+<p class="note">一行数据只为“和默认值不一样”的 case 存在。正向 case 用默认值就够了，不用写行。</p>
+<aside>每一层都是可选的。use 可以引用 common.json 或 event 文件自己的 shared 块，也可以引用 setup 文件。细节见 docs/test-data.md 的 Case data 一节。</aside>
+</section>
+<section id="s3-record">
+<p class="eyebrow">第 3 讲 · 测试数据</p>
+<h2 class="title">录制、同步与离线检查</h2>
+<table class="tbl">
+<tr><th style="width:30%">场景</th><th>怎么做</th></tr>
+<tr><td>新 case 第一次跑</td><td>没有录制时，会把响应写进 src 并失败一次；检查后再跑</td></tr>
+<tr><td>看一个 case 发什么</td><td>TestDataTool 的 case &lt;ID&gt;</td></tr>
+<tr><td>每次都变的字段</td><td>写 dynamicFields 规则做 mask，再 compact &lt;event&gt;</td></tr>
+<tr><td>新产品或新 capability</td><td>在 ProductDatFiles 注册，再用 sync-examples 生成 Examples</td></tr>
+<tr><td>提交之前</td><td>mvn -Ptest-data process-test-classes（单元测试 + check）</td></tr>
+</table>
+<p class="note">录制展示的是系统<b>做了什么</b>，不是系统<b>应该做什么</b>。录下来的响应和需求对不上时，先停下来问，不要直接接受。</p>
+<aside>期望文件和 Examples 都不能手改。每次提交前看一遍 git diff，确认没有真实 trade ID、地址或账号。</aside>
+</section>
+<section id="s4-pipeline">
+<p class="eyebrow">第 4 讲 · AI 工作流</p>
+<h2 class="title">两条流水线，每一步都有人审批</h2>
+<div class="grid2">
+<div class="card"><p class="tag">/writebddfeatures · bdd-agent</p><h3 class="ch">story → feature 文件</h3><p class="ct">1. 拆成测试点，决定放 API 还是 UI（qa-layer-test-design）<br>2. 审批<br>3. 写成业务语言的 Gherkin（qa-bdd-feature-authoring）<br>4. 审批</p></div>
+<div class="card"><p class="tag">/codetestcases · test-agent</p><h3 class="ch">feature → 能跑的 case</h3><p class="ct">1. 补齐数据、snippet、glue（qa-api-test-authoring、qa-e2e-test-authoring）<br>2. 离线检查和 dry run（qa-bdd-test-execution）<br>3. 审批后用最窄的 filter 真实运行</p></div>
+</div>
+<p class="note">跑出来的产品缺陷用 qa-defect-reporting 起草 ADO Bug，确认之后才创建。</p>
+<aside>这一讲配合 docs/demo/oreo-ai-workflow.html，里面有交接物、失败分流和一个完整的例子。强调 AI 生成的内容同样要经过人审批和 code review。</aside>
+</section>
+<section id="redlines" class="accent">
+<p class="eyebrow">收尾 · 一定要记住</p>
+<h2 class="title">五条红线</h2>
+<ol class="big-list">
+<li>API 运行会<b>下真实的 trade</b>，只能用最窄的 filter</li>
+<li>mvn test 不是全量：有固定 tag，选 case 用 -Dcucumber.options</li>
+<li>Examples 和期望响应<b>不能手改</b>：用 sync-examples，录制后 compact</li>
+<li>feature 里不出现 endpoint、请求体和选择器</li>
+<li>不提交账号、密码、环境地址和真实 trade ID</li>
+</ol>
+<aside>其余规则让她自己读 CLAUDE.md 第 4 节 Hard stops。这五条是新人最容易出事的地方。</aside>
+</section>
+<section id="debug">
+<p class="eyebrow">收尾 · 排查</p>
+<h2 class="title">出问题时，先查哪一层</h2>
+<table class="tbl">
+<tr><th style="width:34%">现象</th><th>先查</th></tr>
+<tr><td>step undefined</td><td>snippet 的正则是否匹配，glue 路径是否正确</td></tr>
+<tr><td>跑了 0 个 case</td><td>filter 和固定 tag 叠加后是否为空</td></tr>
+<tr><td>单独能过，并行时失败</td><td>是否有共享状态，或者用了相对路径</td></tr>
+<tr><td>连不上，或者返回 401</td><td>用的是哪个 properties，账号对不对</td></tr>
+<tr><td>和期望响应对不上</td><td>动态字段没有 mask，还是系统行为真的变了</td></tr>
+</table>
+<aside>最后一行最需要判断力：如果是行为变了，要对照需求，确认是缺陷还是需求变更，不能直接重新录制。</aside>
+</section>
+<section id="next" class="dark">
+<p class="eyebrow">接下来</p>
+<h2 class="title">前两周要做的事</h2>
+<div class="grid2">
+<div class="card"><p class="tag">01</p><h3 class="ch">读规则</h3><p class="ct">CLAUDE.md 和 docs/standards/ 的三份标准</p></div>
+<div class="card"><p class="tag">02</p><h3 class="ch">配环境</h3><p class="ct">在公司机器上跑通离线检查</p></div>
+<div class="card"><p class="tag">03</p><h3 class="ch">追链路</h3><p class="ct">追一个 API case 和一个 UI case，把展开链路画出来，下次讲给我听</p></div>
+<div class="card"><p class="tag">04</p><h3 class="ch">挑问题</h3><p class="ct">记下文档和代码对不上的地方：以代码为准，再去修文档</p></div>
+</div>
+<div class="spacer"></div>
+<p class="small">有任何问题随时问，不用攒着。</p>
+<aside>第四项本身就是她的第一个贡献：新人的视角最容易发现文档和代码不一致的地方。</aside>
+</section>
+</div>
+<div id="notes"></div>
+<div id="bar">
+<span><button id="prev">←</button> <button id="next">→</button> <span id="count"></span></span>
+<button id="toggle">讲稿备注 (N)</button>
+</div>
+<script>
+(function () {
+  var stage = document.getElementById('stage');
+  var slides = Array.prototype.slice.call(stage.querySelectorAll(':scope > section'));
+  var notes = document.getElementById('notes');
+  var count = document.getElementById('count');
+  var i = 0;
+  function fit() {
+    var s = Math.min(window.innerWidth / 1920, (window.innerHeight - 40) / 1080);
+    stage.style.transform = 'scale(' + s + ') translate(-50%, -50%)';
+    stage.style.top = ((window.innerHeight - 40) / 2) + 'px';
+  }
+  function show(n) {
+    i = Math.max(0, Math.min(slides.length - 1, n));
+    slides.forEach(function (el, k) { el.classList.toggle('active', k === i); });
+    var aside = slides[i].querySelector('aside');
+    notes.textContent = aside ? aside.textContent : '';
+    count.textContent = (i + 1) + ' / ' + slides.length;
+    if (history.replaceState) history.replaceState(null, '', '#' + (i + 1));
+  }
+  document.addEventListener('keydown', function (e) {
+    if (['ArrowRight', 'ArrowDown', 'PageDown', ' '].indexOf(e.key) >= 0) { show(i + 1); e.preventDefault(); }
+    else if (['ArrowLeft', 'ArrowUp', 'PageUp'].indexOf(e.key) >= 0) { show(i - 1); e.preventDefault(); }
+    else if (e.key === 'Home') show(0);
+    else if (e.key === 'End') show(slides.length - 1);
+    else if (e.key === 'n' || e.key === 'N') notes.classList.toggle('show');
+  });
+  document.getElementById('prev').onclick = function () { show(i - 1); };
+  document.getElementById('next').onclick = function () { show(i + 1); };
+  document.getElementById('toggle').onclick = function () { notes.classList.toggle('show'); };
+  window.addEventListener('resize', fit);
+  fit();
+  show((parseInt(location.hash.slice(1), 10) || 1) - 1);
+})();
+</script>
+</body>
+</html>
