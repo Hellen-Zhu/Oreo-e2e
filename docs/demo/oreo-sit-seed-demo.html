@@ -416,7 +416,7 @@ mvn -Ptest-data process-test-classes "-Dexec.args=seed-report 20261120-153000.."
       <div class="say">
         <p><strong>下一步</strong>可以把它接到流水线上做成手动或定时任务，参数选环境和要跑的范围，每次的报告按版本留存。</p>
       </div>
-      <div class="qa"><p><strong>Q&amp;A</strong></p><p>为什么放在 E2E 项目里？—— 因为请求、数据、API 客户端都和 E2E 用例共用，API 一变两边一起修，不会出现两套数据慢慢对不上的问题。</p><p>报告里的 payload 会不会泄露真实数据？—— 报告和 manifest 只生成在公司机器的 target 目录，从不提交；对外发送前要注意里面有真实的 portfolio 和 entity。</p><p>会不会重复造单？—— 补跑只跑指定的用例；报告合并时同一用例只保留最新结果。</p></div>
+      <div class="qa"><p><strong>Q&amp;A</strong></p><p>为什么放在 E2E 项目里？—— 因为请求、数据、API 客户端都和 E2E 用例共用，API 一变两边一起修，不会出现两套数据慢慢对不上的问题。</p><p>报告里的 payload 会不会泄露真实数据？—— 报告和 manifest 只生成在公司机器的 target 目录，从不提交；对外发送前要注意里面有真实的 portfolio 和 entity。</p><p>数据过期了怎么办？—— 交易的日期是相对下单当天算的（T+N），SIT 上别人也会改动这些交易，所以造好的数据会慢慢过期。办法是重新跑一遍：每个 sprint 或每次 SIT 刷新后整套重建，新的一轮按当天时间下单；也可以按标签或用例编号只重建一部分。每一轮的报告和对应的版本一起留存，过期的旧单不用去修。</p><p>会不会重复造单？—— 补跑只跑指定的用例；报告合并时同一用例只保留最新结果。</p></div>
     </section>
   </main>
 </div>
