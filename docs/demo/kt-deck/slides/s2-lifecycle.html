@@ -1,0 +1,20 @@
+<section id="s2-lifecycle">
+<p class="eyebrow">第 1 天 · oreo-e2e 怎么用 Genie</p>
+<h2 class="title">一个 scenario 的生命周期</h2>
+<div class="flow">
+<div class="node"><p class="nl">启动与筛选</p><p class="ns">读 properties，加载模块，按 tag 和 name 过滤</p></div>
+<div class="arrow-wrap"><x-shape kind="arrow-right" class="arrow"></x-shape></div>
+<div class="node"><p class="nl">@Before</p><p class="ns">ScenarioLifecycleHooks 等准备工作</p></div>
+<div class="arrow-wrap"><x-shape kind="arrow-right" class="arrow"></x-shape></div>
+<div class="node"><p class="nl">执行 steps</p><p class="ns">逐个匹配 snippet 或 Java glue</p></div>
+<div class="arrow-wrap"><x-shape kind="arrow-right" class="arrow"></x-shape></div>
+<div class="node"><p class="nl">@After</p><p class="ns">失败截图，保存 Playwright trace</p></div>
+<div class="arrow-wrap"><x-shape kind="arrow-right" class="arrow"></x-shape></div>
+<div class="node"><p class="nl">报告</p><p class="ns">每个 scenario 的结果</p></div>
+</div>
+<div class="grid2" style="margin-top:40px">
+<div class="card"><h3 class="ch">scenario 之间不共享状态</h3><p class="ct">每个 scenario 都会创建新的 glue 实例</p></div>
+<div class="card"><h3 class="ch">step 之间靠 stored variable 传值</h3><p class="ct">比如 from stored variable 'createdTradeId'</p></div>
+</div>
+<aside>hooks 在 glue/hooks/。trace 的保留方式由 genie.properties 里的 oreo.playwright.trace.mode=RETAIN_ON_FAILURE 控制。</aside>
+</section>

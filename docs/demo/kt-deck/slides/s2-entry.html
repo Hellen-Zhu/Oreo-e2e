@@ -1,0 +1,12 @@
+<section id="s2-entry">
+<p class="eyebrow">第 1 天 · oreo-e2e 怎么用 Genie</p>
+<h2 class="title">入口：OreoTest，对照 RestTest 看</h2>
+<table class="tbl">
+<tr><th style="width:30%">注解</th><th style="width:36%">作用</th><th>要记住</th></tr>
+<tr><td>@RunWith(Genie.class)</td><td>由 Genie 接管 JUnit 的运行</td><td>mvn test -Dtest=OreoTest 跑的就是 Genie</td></tr>
+<tr><td>@CucumberOptions</td><td>feature 在哪、glue 在哪、默认 tag</td><td>glue 有两个来源：Java 包和 snippet</td></tr>
+<tr><td>@GenieOptions</td><td>环境配置文件、并行方式</td><td>qa.properties，FEATURE 模式，3 个并发</td></tr>
+</table>
+<p class="note"><b>固定 tag：</b>not @wip 和 @ADO#trade_creation，命令行的 filter 会和它们叠加。所以 mvn test 不等于全量；跑出 0 个 case 时，先查 tag。选 case 只用 -Dcucumber.options，不用 -Dcucumber.filter.*。</p>
+<aside>打开 src/test/java/com/example/module/oreo/OreoTest.java 对照讲。SeedTest 是另一个入口，用来给 UAT 批量下 SIT seed，不是测试，mvn test 不会跑它。</aside>
+</section>

@@ -1,0 +1,11 @@
+<section id="s2-config">
+<p class="eyebrow">第 1 天 · oreo-e2e 怎么用 Genie</p>
+<h2 class="title">配置与环境</h2>
+<div class="grid2">
+<div class="card"><p class="tag">genie.properties</p><h3 class="ch">公共默认值</h3><p class="ct">Edge 浏览器、headless、超时、trace 模式、risk engine 用 MOCK、元素文件路径</p></div>
+<div class="card"><p class="tag">&lt;env&gt;.properties</p><h3 class="ch">各环境的地址和账号</h3><p class="ct">dev、sit、qa、uat、pt；默认 qa，由 @GenieOptions 指定</p></div>
+</div>
+<p class="code" style="margin-top:36px"><span class="cm"># 切换环境</span><br>-Dgenie.properties=./src/test/resources/&lt;env&gt;.properties</p>
+<p class="note">地址和账号只能放在 properties 里，不能写进代码、feature，也不能提交。账号按角色通过 config/TestUser 获取。</p>
+<aside>可以打开 genie.properties 看一下有哪些配置项，但不要在屏幕上展示真实的地址和账号。</aside>
+</section>

@@ -1,0 +1,10 @@
+<section id="s4-pipeline">
+<p class="eyebrow">第 2 天 · AI 工作流</p>
+<h2 class="title">两条流水线，每一步都有人审批</h2>
+<div class="grid2">
+<div class="card"><p class="tag">/writebddfeatures · bdd-agent</p><h3 class="ch">story → feature 文件</h3><p class="ct">1. 拆成测试点，决定放 API 还是 UI（qa-layer-test-design）<br>2. 审批<br>3. 写成业务语言的 Gherkin（qa-bdd-feature-authoring）<br>4. 审批</p></div>
+<div class="card"><p class="tag">/codetestcases · test-agent</p><h3 class="ch">feature → 能跑的 case</h3><p class="ct">1. 补齐数据、snippet、glue（qa-api-test-authoring、qa-e2e-test-authoring）<br>2. 离线检查和 dry run（qa-bdd-test-execution）<br>3. 审批后用最窄的 filter 真实运行</p></div>
+</div>
+<p class="note">跑出来的产品缺陷用 qa-defect-reporting 起草 ADO Bug，确认之后才创建。</p>
+<aside>这一段配合 docs/demo/oreo-ai-workflow.html，里面有交接物、失败分流和一个完整的例子。强调 AI 生成的内容同样要经过人审批和 code review。</aside>
+</section>

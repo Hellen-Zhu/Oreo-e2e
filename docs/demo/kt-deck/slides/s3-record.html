@@ -1,0 +1,14 @@
+<section id="s3-record">
+<p class="eyebrow">第 2 天 · 测试数据</p>
+<h2 class="title">录制、同步与离线检查</h2>
+<table class="tbl">
+<tr><th style="width:30%">场景</th><th>怎么做</th></tr>
+<tr><td>新 case 第一次跑</td><td>没有录制时，会把响应写进 src 并失败一次；检查后再跑</td></tr>
+<tr><td>看一个 case 发什么</td><td>TestDataTool 的 case &lt;ID&gt;</td></tr>
+<tr><td>每次都变的字段</td><td>写 dynamicFields 规则做 mask，再 compact &lt;event&gt;</td></tr>
+<tr><td>新产品或新 capability</td><td>在 ProductDatFiles 注册，再用 sync-examples 生成 Examples</td></tr>
+<tr><td>提交之前</td><td>mvn -Ptest-data process-test-classes（单元测试 + check）</td></tr>
+</table>
+<p class="note">录制展示的是系统<b>做了什么</b>，不是系统<b>应该做什么</b>。录下来的响应和需求对不上时，先停下来问，不要直接接受。</p>
+<aside>期望文件和 Examples 都不能手改。每次提交前看一遍 git diff，确认没有真实 trade ID、地址或账号。</aside>
+</section>

@@ -1,0 +1,12 @@
+<section id="redlines" class="accent">
+<p class="eyebrow">收尾 · 一定要记住</p>
+<h2 class="title">五条红线</h2>
+<ol class="big-list">
+<li>API 运行会<b>下真实的 trade</b>，只能用最窄的 filter</li>
+<li>mvn test 不是全量：有固定 tag，选 case 用 -Dcucumber.options</li>
+<li>Examples 和期望响应<b>不能手改</b>：用 sync-examples，录制后 compact</li>
+<li>feature 里不出现 endpoint、请求体和选择器</li>
+<li>不提交账号、密码、环境地址和真实 trade ID</li>
+</ol>
+<aside>其余规则让她自己读 CLAUDE.md 第 4 节 Hard stops。这五条是新人最容易出事的地方。</aside>
+</section>

@@ -124,8 +124,10 @@ a side effect of another change.
   demo; its English counterpart is `docs/sit-seed.md`), `docs/demo/oreo-kt-deck.html` (the onboarding KT slides
   for a new QA engineer, with speaker notes; it summarizes this file and the documents of section 2; its English
   counterpart, as Markdown to paste into Confluence one part per page, is `docs/demo/oreo-kt-confluence.md`) and
-  `docs/demo/oreo-kt-script.md` (the presenter's word-for-word script for those slides, page by page over two days;
-  the deck embeds it in its notes panel, so a change to the script means rebuilding the deck).
+  `docs/demo/oreo-kt-script.md` (the presenter's word-for-word script for those slides, page by page over two days).
+  The deck is generated: its slides are `docs/demo/kt-deck/` (`deck.json`, `deck.css`, `slides/`, Chinese like the
+  deck) and it embeds the script in its notes panel. After changing either, run `python3 docs/demo/kt-deck/build.py`;
+  never edit `oreo-kt-deck.html` by hand.
 - This is the public copy. It builds and runs only on the company machine: elsewhere, give the commands instead of
   running them. Never commit a server address, IP, account, password, company name or real trade / task ID.
 - Transcribed files stay as typed in (only the `com.example` package and the `example.com` e-mail domain are

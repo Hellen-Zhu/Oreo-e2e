@@ -1,0 +1,15 @@
+<section id="g-run">
+<p class="eyebrow">第 1 天 · Genie 本身</p>
+<h2 class="title">跑一次，发生了什么</h2>
+<div class="flow">
+<div class="node"><p class="nl">启动</p><p class="ns">runner 接管 JUnit，读 genie.properties，加载模块</p></div>
+<div class="arrow-wrap"><x-shape kind="arrow-right" class="arrow"></x-shape></div>
+<div class="node"><p class="nl">匹配 step</p><p class="ns">feature 的每一行，匹配内置 step 或 SampleGlue 的正则</p></div>
+<div class="arrow-wrap"><x-shape kind="arrow-right" class="arrow"></x-shape></div>
+<div class="node"><p class="nl">执行</p><p class="ns">元素 key 到 elements JSON 里查定位器，驱动浏览器</p></div>
+<div class="arrow-wrap"><x-shape kind="arrow-right" class="arrow"></x-shape></div>
+<div class="node"><p class="nl">报告</p><p class="ns">每个 step 的结果，失败时截图</p></div>
+</div>
+<p class="note">这里还<b>没有</b> snippet、data/、case ID 和并行，这些都是 oreo-e2e 在 Genie 上加的。</p>
+<aside>现场故意把 feature 里的一个 step 改错一个字再跑，让她看 step undefined 长什么样：这是 Genie 层的错误，以后排查时第一个要认出来。</aside>
+</section>

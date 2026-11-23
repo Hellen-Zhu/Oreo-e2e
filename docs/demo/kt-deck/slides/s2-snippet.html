@@ -1,0 +1,13 @@
+<section id="s2-snippet" class="alt">
+<p class="eyebrow">第 1 天 · Genie 本身</p>
+<h2 class="title">Snippet：用文本写的 step 定义</h2>
+<div class="grid2" style="grid-template-columns:1.15fr 1fr">
+<p class="code"><span class="cm"># snippet/api/common_api.snippet</span><br><span class="hl">@Given "^start a new api request as user '([^']*)'$"</span><br>&#160;&#160;&#160;&#160;Given start building a new request<br>&#160;&#160;&#160;&#160;And set the user header for '$1'<br>&#160;&#160;&#160;&#160;And set a new request id header</p>
+<div style="display:flex; flex-direction:column; gap:20px">
+<div class="card"><h3 class="ch">第一行是正则</h3><p class="ct">$1 是正则捕获的参数，比如 maker、checker</p></div>
+<div class="card"><h3 class="ch">下面是展开的步骤</h3><p class="ct">可以是内置 step、其他 snippet 或 Java glue，一层层展开</p></div>
+</div>
+</div>
+<p class="note">所以 feature 可以写成纯业务语言，技术细节全部沉到 snippet 和 glue 里。</p>
+<aside>现场改：在最小项目的 feature 里找三行连续的技术步骤，写一个 snippet 把它们合成一行业务语言，再跑一次。前提是最小项目的 glue 路径包含 snippet 目录（oreo 在 OreoModule 里注册 classpath:snippet），提前试一次；不行就直接用上面 oreo 的例子讲。</aside>
+</section>

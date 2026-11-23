@@ -1,0 +1,20 @@
+<section id="s3-merge" class="alt">
+<p class="eyebrow">第 2 天 · 测试数据</p>
+<h2 class="title">四层合并，后面覆盖前面</h2>
+<div class="flow">
+<div class="node"><p class="nl">defaults</p><p class="ns">所有 case 共用</p></div>
+<div class="arrow-wrap"><x-shape kind="arrow-right" class="arrow"></x-shape></div>
+<div class="node"><p class="nl">byProduct[P]</p><p class="ns">这个产品不同的地方</p></div>
+<div class="arrow-wrap"><x-shape kind="arrow-right" class="arrow"></x-shape></div>
+<div class="node"><p class="nl">case 的行</p><p class="ns">这个 case 自己的数据</p></div>
+<div class="arrow-wrap"><x-shape kind="arrow-right" class="arrow"></x-shape></div>
+<div class="node"><p class="nl">行里的 byProduct[P]</p><p class="ns">这个 case 在这个产品上的差异</p></div>
+</div>
+<div class="grid3" style="margin-top:36px">
+<div class="card"><h3 class="ch">对象</h3><p class="ct">按 key 合并</p></div>
+<div class="card"><h3 class="ch">数组和值</h3><p class="ct">整体替换，没有“追加”</p></div>
+<div class="card"><h3 class="ch">null</h3><p class="ct">删除这个字段</p></div>
+</div>
+<p class="note">一行数据只为“和默认值不一样”的 case 存在。正向 case 用默认值就够了，不用写行。</p>
+<aside>每一层都是可选的。use 可以引用 common.json 或 event 文件自己的 shared 块，也可以引用 setup 文件。细节见 docs/test-data.md 的 Case data 一节。</aside>
+</section>

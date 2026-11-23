@@ -1,0 +1,14 @@
+<section id="g-mini" class="alt">
+<p class="eyebrow">第 1 天 · Genie 本身</p>
+<h2 class="title">一个最小的 Genie 项目</h2>
+<table class="tbl">
+<tr><th style="width:38%">文件</th><th style="width:30%">作用</th><th>讲的时候看什么</th></tr>
+<tr><td class="mono">test/java/…/RestTest.java</td><td>入口类（runner）</td><td>注解：用谁跑、feature 和 glue 在哪</td></tr>
+<tr><td class="mono">resources/features/playwright.feature</td><td>场景</td><td>大部分 step 直接是 Genie 内置的</td></tr>
+<tr><td class="mono">main/java/…/SampleGlue.java</td><td>自定义 step</td><td>@And 加正则，就是一个 step 定义</td></tr>
+<tr><td class="mono">resources/elements/*.json</td><td>定位器</td><td>feature 里用元素 key，不写选择器</td></tr>
+<tr><td class="mono">resources/genie.properties</td><td>配置</td><td>浏览器、headless、超时、元素文件路径</td></tr>
+</table>
+<p class="note">就这五类文件，一个 Genie 项目就能跑起来。oreo-e2e 的每一类文件，都能在这里找到对应的原型。</p>
+<aside>现场打开 develop 分支上的最小项目逐个文件讲，然后跑一次。讲之前先在自己机器上跑一遍，确认和当前 Genie 版本兼容。她的第一个动手任务，就是在自己机器上把它跑通。</aside>
+</section>

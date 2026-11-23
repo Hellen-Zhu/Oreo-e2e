@@ -1,0 +1,12 @@
+<section id="s1-trace" class="alt">
+<p class="eyebrow">第 1 天 · 现场演示</p>
+<h2 class="title">从头到尾追一个 case</h2>
+<div class="grid4">
+<div class="card"><p class="tag">01</p><h3 class="ch">找到 scenario</h3><p class="ct">看名字里的 case ID，比如 [TC-TRADE-CREATION-…-API-001]</p></div>
+<div class="card"><p class="tag">02</p><h3 class="ch">跳到 snippet</h3><p class="ct">每个 step 一层层展开，直到内置 step 或 Java</p></div>
+<div class="card"><p class="tag">03</p><h3 class="ch">打印数据</h3><p class="ct">用 case 命令看最终发送的请求和比对的期望响应</p></div>
+<div class="card"><p class="tag">04</p><h3 class="ch">跑一次</h3><p class="ct">在公司机器上，用最窄的 filter</p></div>
+</div>
+<p class="code" style="margin-top:36px"><span class="cm"># 打印一个 case 的数据（离线）</span><br>mvn -Ptest-data process-test-classes "-Dexec.args=case TC-…"<br><span class="cm"># 只跑这一个 case</span><br>mvn -B test -Dtest=OreoTest "-Dcucumber.options=--name ^\[TC-…\].*$"</p>
+<aside>这是第 1 天的收尾，也是最重要的部分，留足 15 分钟。挑一个简单的 trade_creation API case。追一遍，比讲十遍概念都有用。</aside>
+</section>

@@ -1,0 +1,14 @@
+<section id="g-map" class="dark">
+<p class="eyebrow">过渡 · 从最小项目到 oreo-e2e</p>
+<h2 class="title">同一个骨架，oreo-e2e 多了什么</h2>
+<table class="tbl" style="color:#DCE3EC">
+<tr><th style="width:28%;color:#F7F6F2">最小 Genie 项目</th><th style="width:34%;color:#F7F6F2">oreo-e2e</th><th style="color:#F7F6F2">多了什么</th></tr>
+<tr><td>RestTest.java</td><td>OreoTest.java</td><td>固定 tag、FEATURE 模式 3 个并发</td></tr>
+<tr><td>SampleGlue.java</td><td>glue/api、glue/ui、glue/hooks</td><td>Java 只写缺少的能力</td></tr>
+<tr><td>feature 里写技术步骤</td><td>snippet/ + 业务语言的 feature</td><td>技术细节下沉到 snippet</td></tr>
+<tr><td>elements/*.json</td><td>elements/pages、components</td><td>按页面和组件拆分</td></tr>
+<tr><td>genie.properties</td><td>genie.properties + &lt;env&gt;.properties</td><td>多环境</td></tr>
+<tr><td>没有</td><td>data/、case ID</td><td>事件是文件，产品是行（第 2 天）</td></tr>
+</table>
+<aside>这一页是两段之间的桥。接下来讲的每一条 oreo 规则，都可以先问一句：这是 Genie 要求的，还是我们自己的设计？后者是可以讨论和改进的。</aside>
+</section>

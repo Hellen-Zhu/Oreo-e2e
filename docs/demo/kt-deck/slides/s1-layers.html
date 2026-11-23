@@ -1,0 +1,18 @@
+<section id="s1-layers">
+<p class="eyebrow">第 1 天 · oreo-e2e 怎么用 Genie</p>
+<h2 class="title">一张图看懂分层</h2>
+<div class="flow">
+<div class="node"><p class="nl">feature</p><p class="ns">业务语言，case ID 写在 scenario 名字里</p></div>
+<div class="arrow-wrap"><x-shape kind="arrow-right" class="arrow"></x-shape></div>
+<div class="node"><p class="nl">snippet</p><p class="ns">把业务步骤拼成技术步骤</p></div>
+<div class="arrow-wrap"><x-shape kind="arrow-right" class="arrow"></x-shape></div>
+<div class="node"><p class="nl">glue</p><p class="ns">Java，只写缺少的能力</p></div>
+<div class="arrow-wrap"><x-shape kind="arrow-right" class="arrow"></x-shape></div>
+<div class="node"><p class="nl">API / 浏览器</p><p class="ns">REST · Playwright</p></div>
+</div>
+<div class="grid2" style="margin-top:40px">
+<div class="card"><h3 class="ch">data/</h3><p class="ct">请求体和录制的期望响应，按 case ID 取数</p></div>
+<div class="card"><h3 class="ch">elements/</h3><p class="ct">UI 定位器 JSON，选择器不进 feature，也不写死在 Java 里</p></div>
+</div>
+<aside>白板上可以重画这张图。重点：越往左越接近业务语言，越往右越接近技术实现。技术细节只能往右沉，不能出现在 feature 里。</aside>
+</section>

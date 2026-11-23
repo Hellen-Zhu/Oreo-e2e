@@ -1,0 +1,17 @@
+<section id="s1-dirs">
+<p class="eyebrow">第 1 天 · oreo-e2e 怎么用 Genie</p>
+<h2 class="title">目录地图</h2>
+<table class="tbl">
+<tr><th style="width:44%">目录</th><th>放什么</th></tr>
+<tr><td>features/api、features/ui</td><td>按领域分目录，一个 event 一个 feature</td></tr>
+<tr><td>snippet/api</td><td>API 的业务动作和结果断言</td></tr>
+<tr><td>snippet/ui/flows、pages、components</td><td>UI 三层：业务流程、页面原子操作、通用组件</td></tr>
+<tr><td>glue/api、glue/ui、glue/hooks</td><td>Java step 定义和 hooks</td></tr>
+<tr><td>data/api、ui、setup、dat，common.json</td><td>case 数据、前置条件数据、产品 dat、公共块</td></tr>
+<tr><td>elements/pages、components</td><td>UI 定位器</td></tr>
+<tr><td>*.properties</td><td>环境地址、账号和运行模式</td></tr>
+</table>
+<div class="spacer"></div>
+<p class="small">snippet 和 glue 在 src/main；features、data、elements 和 properties 在 src/test/resources</p>
+<aside>现场打开 IDE 对照着点一遍，不要只看表。让她记住：找不到东西时先回到这张表。</aside>
+</section>

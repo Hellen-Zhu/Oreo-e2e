@@ -1,0 +1,13 @@
+<section id="debug">
+<p class="eyebrow">收尾 · 排查</p>
+<h2 class="title">出问题时，先查哪一层</h2>
+<table class="tbl">
+<tr><th style="width:34%">现象</th><th>先查</th></tr>
+<tr><td>step undefined</td><td>snippet 的正则是否匹配，glue 路径是否正确</td></tr>
+<tr><td>跑了 0 个 case</td><td>filter 和固定 tag 叠加后是否为空</td></tr>
+<tr><td>单独能过，并行时失败</td><td>是否有共享状态，或者用了相对路径</td></tr>
+<tr><td>连不上，或者返回 401</td><td>用的是哪个 properties，账号对不对</td></tr>
+<tr><td>和期望响应对不上</td><td>动态字段没有 mask，还是系统行为真的变了</td></tr>
+</table>
+<aside>最后一行最需要判断力：如果是行为变了，要对照需求，确认是缺陷还是需求变更，不能直接重新录制。</aside>
+</section>

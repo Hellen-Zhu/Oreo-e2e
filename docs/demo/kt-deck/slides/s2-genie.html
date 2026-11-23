@@ -1,0 +1,19 @@
+<section id="s2-genie">
+<p class="eyebrow">第 1 天 · oreo-e2e 怎么用 Genie</p>
+<h2 class="title">OreoModule：oreo-e2e 怎么接入 Genie</h2>
+<p class="lead">oreo-e2e 有自己的模块：声明依赖哪些 Genie 模块，glue 从哪里找。snippet 能被找到，就是因为这里注册了 classpath:snippet。</p>
+<div class="flow">
+<div class="node" style="flex:0 0 520px"><p class="nl">OreoModule（我们的模块）</p><p class="ns">注册 glue：Java 包 com.example.module.oreo.glue 和 classpath:snippet</p></div>
+<div class="arrow-wrap"><x-shape kind="arrow-right" class="arrow"></x-shape></div>
+<div style="flex:1; display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px">
+<div class="node soft"><p class="nl">Spring</p></div>
+<div class="node soft"><p class="nl">Rest</p></div>
+<div class="node soft"><p class="nl">Jdbc</p></div>
+<div class="node soft"><p class="nl">Sql</p></div>
+<div class="node soft"><p class="nl">Database</p></div>
+<div class="node soft"><p class="ns">依赖的模块按顺序加载，各自带来内置 step</p></div>
+</div>
+</div>
+<p class="note">写新步骤之前，先查内置 step 目录：docs/genie_rest_glue_catalog.md 和 docs/genie_playwright_glue_catalog.md。</p>
+<aside>打开 OreoModule.java，看 getDependencies 和 getGluePaths 两个方法，对比最小项目里 glue 是怎么被找到的。</aside>
+</section>

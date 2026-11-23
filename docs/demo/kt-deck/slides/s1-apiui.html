@@ -1,0 +1,10 @@
+<section id="s1-apiui">
+<p class="eyebrow">第 1 天 · oreo-e2e 怎么用 Genie</p>
+<h2 class="title">API 和 UI 各测什么</h2>
+<div class="grid2">
+<div class="card"><p class="tag">@api</p><h3 class="ch">测业务规则</h3><p class="ct">字段校验、状态流转、审批、返回结果。又快又稳，是覆盖的主力。</p></div>
+<div class="card"><p class="tag">@playwright</p><h3 class="ch">测用户能否完成操作</h3><p class="ct">页面流程、提示信息、blotter 展示。只验证关键路径。</p></div>
+</div>
+<p class="note"><b>UI 的前置条件通过 API 准备：</b>比如 <span class="mono">a Live '&lt;product_type&gt;' trade exists in the blotter</span>。它不登录、不导航，trade ID 存在 createdTradeId。UI scenario 不能直接调用 API snippet。</p>
+<aside>分层的依据在 docs/standards/test-layering-standards.md。一个验收标准先问：这是业务规则还是用户操作？</aside>
+</section>
