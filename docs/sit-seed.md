@@ -87,7 +87,10 @@ case sends of its own:
   (objects deeply, arrays and values replaced, `null` deletes a field): the case's portfolio (`basic.portfolioId`),
   risk portfolio (`basic.riskPortfolio`) and entity (`basic.scbEntity`). The UI fills the last two from the portfolio;
   the API takes them as sent, so a case gives all three. `dat` and `setup` replace
-  the pair's. An event case (`SEED-EVENT-...`) books its trade with them too, and its `eventRequest` is merged the
+  the pair's. The dat file is the case's `dat`, beside `request`, never
+  a field of it: a `dat`, `datFile` or `datPath` key inside `request` or `eventRequest` is refused, since it would be
+  sent in the trade body while the booking uploads the default file, and so is any other key of a case or a `trades`
+  entry (`datFile` for `dat`). An event case (`SEED-EVENT-...`) books its trade with them too, and its `eventRequest` is merged the
   same way over its event's request (the E2E case's): the fields one event booking needs of its own. Each event
   books its own dat file, named after the event: `SEED-EVENT-004` (termination on FX_TRF) books
   `seed/dat/FX_TRF/termination.dat`. Every event case names its file in its entry (`"dat": "termination.dat"`, a

@@ -66,6 +66,10 @@ public final class SeedData {
     /** Where the seed's dat files are, {@code seed/dat/<C>/}, registered composition or not. */
     public static final String SEED_DAT_DIR = "seed/dat/";
     private static final String PRODUCT = "<product_type>";
+    private static final Set<String> TRADE_KEYS = Set.of("composition", "productId", "taxonomy", "dat", "setup");
+    private static final Set<String> CASE_KEYS = Set.of("request", "eventRequest", "dat", "setup");
+    /** Names of a dat file that belong beside a request, never in it. */
+    private static final Set<String> DAT_KEYS = Set.of("dat", "datFile", "datPath");
     private static final Pattern NAME = Pattern.compile("[a-z0-9][a-z0-9-]*");
     private static final Pattern ID = Pattern.compile("[A-Za-z0-9][A-Za-z0-9_]*");
     /** An Itradeable Type, the full name of the Excel's column: {@code Cortex.Finance.Tradeable.TRF}. */
@@ -179,6 +183,7 @@ public final class SeedData {
         for (int i = 0; i < trades.size(); i++) {
             JsonNode node = trades.get(i);
             String at = "[Seed] " + resource + " trades[" + i + "]";
+            checkKeys(at, node, TRADE_KEYS);
             String composition = id(at, "composition", text(node, "composition"));
             String productId = id(at, "productId", text(node, "productId"));
             String taxonomy = text(node, "taxonomy");
@@ -205,8 +210,11 @@ public final class SeedData {
                 throw new IllegalStateException(at + ": " + ex.getMessage(), ex);
             }
             JsonNode node = e.getValue();
+            checkKeys(at, node, CASE_KEYS);
             JsonNode request = node.path("request");
             JsonNode eventRequest = node.path("eventRequest");
+            noDatIn(at + ".request", request);
+            noDatIn(at + ".eventRequest", eventRequest);
             if (!node.isObject() || (!request.isMissingNode() && !request.isObject())
                     || (!eventRequest.isMissingNode() && !eventRequest.isObject())) {
                 throw new IllegalStateException(at + ": {\"request\": {fields over the setup body},"
@@ -467,6 +475,39 @@ public final class SeedData {
     private static void checkName(String at, String name) {
         if (!NAME.matcher(name).matches()) {
             throw new IllegalStateException(at + ": a name is lower case, digits and -");
+        }
+    }
+
+    /**
+     * Refuses a key of {@code node} that is not one of {@code keys} ({@code _comment} aside): a misspelled key, the
+     * E2E's {@code datFile}, would otherwise be ignored without a word.
+     */
+    private static void checkKeys(String at, JsonNode node, Set<String> keys) {
+        if (!node.isObject()) return;
+        node.properties().forEach(e -> {
+            if (!keys.contains(e.getKey()) && !e.getKey().equals(JsonLayers.COMMENT)) {
+                throw new IllegalStateException(at + ": unknown key \"" + e.getKey() + "\", one of "
+                        + new java.util.TreeSet<>(keys)
+                        + (DAT_KEYS.contains(e.getKey()) ? " (the dat file is \"dat\")" : ""));
+            }
+        });
+    }
+
+    /**
+     * Refuses a dat file named inside a request ({@code request.dat}, {@code request.basic.datFile}, at any depth): it
+     * would be sent as a field of the trade body and the booking would upload the default file.
+     */
+    private static void noDatIn(String at, JsonNode node) {
+        node.properties().forEach(e -> {
+            if (DAT_KEYS.contains(e.getKey())) {
+                throw new IllegalStateException(at + "." + e.getKey() + ": a dat file is not a field of the request:"
+                        + " give it as the case's \"dat\", beside \"request\" (\"dat\": \"<file>.dat\", a file of "
+                        + SEED_DAT_DIR + "<C>/)");
+            }
+            noDatIn(at + "." + e.getKey(), e.getValue());
+        });
+        if (node.isArray()) {
+            for (int i = 0; i < node.size(); i++) noDatIn(at + "[" + i + "]", node.get(i));
         }
     }
 
