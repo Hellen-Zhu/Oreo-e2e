@@ -1,5 +1,5 @@
 {
-  "_comment": "The one trade body: submitted before a case by the provisioning steps (API, UI), and the request of the API trade creation cases (api/trade_creation.json: use setup/trade-create). The step sets basic.productId. byProduct: each product's portfolio, the one its seed case books in SIT (seed/catalog.json cases, the case of the composition's default product ID).",
+  "_comment": "The one trade body: submitted before a case by the provisioning steps (API, UI), and the request of the API trade creation cases (api/trade_creation.json: use setup/trade-create). The step sets basic.productId. byProduct: each composition the SIT seed books gets the portfolio, risk portfolio and entity of one of its seed cases (seed/catalog.json cases; the case of a registered composition's default product ID, else of the product ID named as the composition, else the first).",
   "request": {
     "basic": {
       "counterpartyFmId": "900000001",
@@ -11,9 +11,23 @@
     }
   },
   "byProduct": {
-    "FX_TRF": { "_comment": "SEED-TRADE-035", "request": { "basic": { "portfolioId": "EXAMPLE_PORTFOLIO_Z" } } },
-    "FX_CO": { "_comment": "SEED-TRADE-020", "request": { "basic": { "portfolioId": "EXAMPLE_PORTFOLIO_R" } } },
-    "FX_FSB": { "_comment": "SEED-TRADE-028", "request": { "basic": { "portfolioId": "EXAMPLE_PORTFOLIO_E" } } },
-    "FX_PSCRIPT_TRF": { "_comment": "SEED-TRADE-029", "request": { "basic": { "portfolioId": "EXAMPLE_PORTFOLIO_T" } } }
+    "FXBO": { "_comment": "SEED-TRADE-008", "request": { "basic": { "portfolioId": "EXAMPLE_PORTFOLIO_H", "riskPortfolio": "EXAMPLE_PORTFOLIO_H", "scbEntity": "EXAMPLE_ENTITY_B" } } },
+    "FXStructure": { "_comment": "SEED-TRADE-034", "request": { "basic": { "portfolioId": "EXAMPLE_PORTFOLIO_Y", "riskPortfolio": "EXAMPLE_PORTFOLIO_Y", "scbEntity": "EXAMPLE_ENTITY_B" } } },
+    "FX_ACCUMULATOR": { "_comment": "SEED-TRADE-001", "request": { "basic": { "portfolioId": "EXAMPLE_PORTFOLIO_A", "riskPortfolio": "EXAMPLE_PORTFOLIO_A", "scbEntity": "EXAMPLE_ENTITY_A" } } },
+    "FX_ARO": { "_comment": "SEED-TRADE-004", "request": { "basic": { "portfolioId": "EXAMPLE_PORTFOLIO_D", "riskPortfolio": "EXAMPLE_PORTFOLIO_D", "scbEntity": "EXAMPLE_ENTITY_D" } } },
+    "FX_ASO": { "_comment": "SEED-TRADE-006", "request": { "basic": { "portfolioId": "EXAMPLE_PORTFOLIO_F", "riskPortfolio": "EXAMPLE_PORTFOLIO_F", "scbEntity": "EXAMPLE_ENTITY_E" } } },
+    "FX_CO": { "_comment": "SEED-TRADE-020", "request": { "basic": { "portfolioId": "EXAMPLE_PORTFOLIO_R", "riskPortfolio": "EXAMPLE_PORTFOLIO_R", "scbEntity": "EXAMPLE_ENTITY_B" } } },
+    "FX_FF": { "_comment": "SEED-TRADE-012", "request": { "basic": { "portfolioId": "EXAMPLE_PORTFOLIO_L", "riskPortfolio": "EXAMPLE_PORTFOLIO_L", "scbEntity": "EXAMPLE_ENTITY_G" } } },
+    "FX_FSB": { "_comment": "SEED-TRADE-028", "request": { "basic": { "portfolioId": "EXAMPLE_PORTFOLIO_E", "riskPortfolio": "EXAMPLE_PORTFOLIO_E", "scbEntity": "EXAMPLE_ENTITY_B" } } },
+    "FX_FVA": { "_comment": "SEED-TRADE-013", "request": { "basic": { "portfolioId": "EXAMPLE_PORTFOLIO_M", "riskPortfolio": "EXAMPLE_PORTFOLIO_M", "scbEntity": "EXAMPLE_ENTITY_B" } } },
+    "FX_OOS": { "_comment": "SEED-TRADE-016", "request": { "basic": { "portfolioId": "EXAMPLE_PORTFOLIO_P", "riskPortfolio": "EXAMPLE_PORTFOLIO_P", "scbEntity": "EXAMPLE_ENTITY_B" } } },
+    "FX_PSCRIPT_BOBO": { "_comment": "SEED-TRADE-023", "request": { "basic": { "portfolioId": "EXAMPLE_PORTFOLIO_H", "riskPortfolio": "EXAMPLE_PORTFOLIO_H", "scbEntity": "EXAMPLE_ENTITY_B" } } },
+    "FX_PSCRIPT_CCK": { "_comment": "SEED-TRADE-021", "request": { "basic": { "portfolioId": "EXAMPLE_PORTFOLIO_H", "riskPortfolio": "EXAMPLE_PORTFOLIO_H", "scbEntity": "EXAMPLE_ENTITY_B" } } },
+    "FX_PSCRIPT_EASO": { "_comment": "SEED-TRADE-026", "request": { "basic": { "portfolioId": "EXAMPLE_PORTFOLIO_S", "riskPortfolio": "EXAMPLE_PORTFOLIO_S", "scbEntity": "EXAMPLE_ENTITY_J" } } },
+    "FX_PSCRIPT_TRF": { "_comment": "SEED-TRADE-029", "request": { "basic": { "portfolioId": "EXAMPLE_PORTFOLIO_T", "riskPortfolio": "EXAMPLE_PORTFOLIO_T", "scbEntity": "EXAMPLE_ENTITY_B" } } },
+    "FX_PSCRIPT_VBD": { "_comment": "SEED-TRADE-025", "request": { "basic": { "portfolioId": "EXAMPLE_PORTFOLIO_H", "riskPortfolio": "EXAMPLE_PORTFOLIO_H", "scbEntity": "EXAMPLE_ENTITY_B" } } },
+    "FX_RAO": { "_comment": "SEED-TRADE-030", "request": { "basic": { "portfolioId": "EXAMPLE_PORTFOLIO_U", "riskPortfolio": "EXAMPLE_PORTFOLIO_U", "scbEntity": "EXAMPLE_ENTITY_K" } } },
+    "FX_RVO": { "_comment": "SEED-TRADE-038", "request": { "basic": { "portfolioId": "EXAMPLE_PORTFOLIO_AC", "riskPortfolio": "EXAMPLE_PORTFOLIO_AC", "scbEntity": "EXAMPLE_ENTITY_B" } } },
+    "FX_TRF": { "_comment": "SEED-TRADE-035", "request": { "basic": { "portfolioId": "EXAMPLE_PORTFOLIO_Z", "riskPortfolio": "EXAMPLE_PORTFOLIO_Z", "scbEntity": "EXAMPLE_ENTITY_N" } } }
   }
 }

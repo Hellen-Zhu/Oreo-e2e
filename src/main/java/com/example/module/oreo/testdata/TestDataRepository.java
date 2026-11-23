@@ -692,12 +692,15 @@ public final class TestDataRepository {
         JsonNode byProduct = setup.get("byProduct");
         if (byProduct == null) return;
         requireObject(byProduct, path, "byProduct");
+        // a product the E2E cases register, or one the SIT seed books (the seed's catalog): a setup body serves both
         Set<String> products = new LinkedHashSet<>();
         for (ProductDatFiles p : ProductDatFiles.values()) products.add(p.name());
         for (Map.Entry<String, JsonNode> entry : byProduct.properties()) {
             String where = "byProduct." + entry.getKey();
-            if (!products.contains(entry.getKey())) {
-                throw error(path, where, "not a product of ProductDatFiles " + products);
+            if (!products.contains(entry.getKey())
+                    && !SeedData.catalog().itradeableTypes().containsKey(entry.getKey())) {
+                throw error(path, where, "not a product of ProductDatFiles " + products + " nor a composition of "
+                        + SeedData.CATALOG + " itradeableTypes");
             }
             requireObject(entry.getValue(), path, where);
             checkKeys((ObjectNode) entry.getValue(), Set.of("request"), path, where);

@@ -189,7 +189,8 @@ public class TestDataRepositoryTest {
         write("setup/product-setup.json", """
                 { "request": { "basic": { "portfolioId": "P-ALL", "a": "1" } },
                   "byProduct": { "FX_TRF": { "request": { "basic": { "portfolioId": "P-TRF" } } },
-                                 "FX_CO": { "request": { "basic": { "portfolioId": "P-CO", "a": null } } } } }""");
+                                 "FX_CO": { "request": { "basic": { "portfolioId": "P-CO", "a": null } } },
+                                 "FX_ACCUMULATOR": { "request": { "basic": { "portfolioId": "P-ACC" } } } } }""");
         write("setup/product-child-setup.json", """
                 { "extends": "product-setup", "request": { "basic": { "b": "2" } },
                   "byProduct": { "FX_TRF": { "request": { "basic": { "c": "3" } } } } }""");
@@ -570,6 +571,9 @@ public class TestDataRepositoryTest {
         assertJson("{\"basic\":{\"portfolioId\":\"P-TRF\",\"a\":\"1\"}}",
                 repo.setup("product-setup").forProduct("FX_TRF").request());
         assertJson("{\"basic\":{\"portfolioId\":\"P-CO\"}}", repo.setup("product-setup").forProduct("FX_CO").request());
+        // a composition only the SIT seed books (seed/catalog.json itradeableTypes)
+        assertJson("{\"basic\":{\"portfolioId\":\"P-ACC\",\"a\":\"1\"}}",
+                repo.setup("product-setup").forProduct("FX_ACCUMULATOR").request());
         // a product without values of its own, or no product: the request as it is
         assertJson("{\"basic\":{\"portfolioId\":\"P-ALL\",\"a\":\"1\"}}",
                 repo.setup("product-setup").forProduct("FX_FSB").request());
@@ -596,7 +600,8 @@ public class TestDataRepositoryTest {
 
     @Test
     public void aSetupsByProductNamesARegisteredProductAndOnlyARequest() {
-        assertFailsWith(() -> repo.setup("bad-product-setup"), "byProduct.FX_NOPE", "not a product of ProductDatFiles");
+        assertFailsWith(() -> repo.setup("bad-product-setup"), "byProduct.FX_NOPE", "not a product of ProductDatFiles",
+                "itradeableTypes");
         assertFailsWith(() -> repo.setup("bad-product-part-setup"), "byProduct.FX_TRF");
     }
 }
