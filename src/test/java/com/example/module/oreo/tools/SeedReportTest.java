@@ -35,25 +35,6 @@ public class SeedReportTest {
     }
 
     @Test
-    public void thePageHoldsTheDataWhereTheMarkIs() throws java.io.IOException {
-        String template = java.nio.file.Files.readString(
-                com.example.module.oreo.testdata.ProjectPaths.projectRoot().resolve(SeedReport.TEMPLATE));
-        String json = SeedReport.model("20261120-153000", 2, List.of(Json.parse("""
-                {"kind": "trade", "case": "SEED-TRADE-001", "tradeId": "T1", "status": "failed",
-                 "error": "</script><b>"}""")));
-        String page = SeedReport.page(template, json);
-        assertTrue(!page.contains(SeedReport.DATA_MARK));
-        assertTrue(page.contains("\\u003c/script>\\u003cb>"));
-        assertTrue(page.contains("\"run\":\"20261120-153000\""));
-        try {
-            SeedReport.page("<html></html>", json);
-            org.junit.Assert.fail("a template without the mark");
-        } catch (IllegalStateException e) {
-            assertTrue(e.getMessage(), e.getMessage().contains(SeedReport.DATA_MARK));
-        }
-    }
-
-    @Test
     public void eachSeedCaseHasTheDatFileItBooks() throws java.io.IOException {
         List<SeedReport.CaseDat> dats = SeedReport.caseDats(
                 com.example.module.oreo.testdata.ProjectPaths.projectRoot(),

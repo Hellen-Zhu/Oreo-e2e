@@ -29,7 +29,7 @@ import java.util.stream.Stream;
  *                       coverage.json
  * seed-report [<run>|<run>,<run>|<run>..|all] summarises the SIT seed for UAT: the latest run by default, runs merged
  *                       (a rerun of the failed cases over its first run; <run>..: that run and the later ones; all):
- *                       target/seed/seed-report-<run>.csv and .html (docs/sit-seed.md)
+ *                       target/seed/seed-report-<run>.csv (docs/sit-seed.md)
  * seed-dats             each seed case's dat file and whether it is still to be exported from Cortex:
  *                       target/seed/seed-dats.csv, new trades then events and step-ins (docs/sit-seed.md)
  * </pre>

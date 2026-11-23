@@ -10,7 +10,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@600;700&family=JetBrains+Mono:wght@400;600&display=swap">
 <style>
 /* The SIT seed demo for the team lead: same layout as oreo-e2e-demo.html (agenda rail, script column), plus a pipeline
-   diagram and a static mock of the seed report. Everything is inline: it opens offline. */
+   diagram and a static mock of the seed report (a CSV). Everything is inline: it opens offline. */
 :root {
   --bg: #f6f7f5;
   --paper: #ffffff;
@@ -121,38 +121,20 @@ body.script-only .cue, body.script-only pre.code, body.script-only .diagram, bod
 .stat { background: var(--paper); border: 1px solid var(--line); border-radius: 8px; padding: 10px 14px; }
 .stat .k { font-size: 12.5px; color: var(--muted); }
 .stat .v { font-family: var(--font-mono); font-size: 26px; font-weight: 600; color: var(--accent); line-height: 1.3; }
-/* mock of the seed report page */
+/* mock of the seed report (a CSV in a spreadsheet) */
 .mock { border: 1px solid var(--line); border-radius: 10px; background: var(--paper); margin: 4px 0 20px; overflow: hidden; }
 .mock .bar { display: flex; gap: 6px; padding: 8px 12px; border-bottom: 1px solid var(--line); background: var(--code-bg); }
 .mock .bar i { width: 9px; height: 9px; border-radius: 50%; background: var(--line); display: block; }
 .mock .bar span { margin-left: 8px; font-family: var(--font-mono); font-size: 12px; color: var(--muted); }
 .mock .body { padding: 14px 16px; font-size: 13.5px; line-height: 1.5; }
-.mock h4 { margin: 14px 0 8px; font-size: 14.5px; }
-.mock h4 small { color: var(--muted); font-weight: 400; margin-left: 6px; }
-.mock .cards { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
-.mock .card { background: var(--code-bg); border-radius: 6px; padding: 6px 10px; }
-.mock .card .k { font-size: 11.5px; color: var(--muted); }
-.mock .card .v { font-weight: 600; font-size: 18px; font-family: var(--font-mono); }
-.mock .ok { color: var(--accent); } .mock .bad { color: var(--warn); }
 .mock table { border-collapse: collapse; width: 100%; font-size: 12.5px; }
 .mock th, .mock td { text-align: left; padding: 5px 8px; border-bottom: 1px solid var(--line); white-space: nowrap; }
 .mock th { color: var(--muted); font-weight: 500; font-size: 11.5px; }
 .mock .tw { overflow-x: auto; }
 .mock .mono { font-family: var(--font-mono); }
-.mock .cp { color: var(--muted); margin-left: 4px; }
 .pill { display: inline-block; padding: 0 7px; border-radius: 9px; font-size: 11.5px; }
 .pill.y { background: var(--accent-soft); color: var(--accent); }
 .pill.n { background: var(--warn-soft); color: var(--warn); }
-.mock tr.err td { color: var(--warn); background: var(--warn-soft); font-family: var(--font-mono); font-size: 12px; }
-.mock .tg { border: 0; background: none; color: var(--muted); cursor: pointer; font: inherit; font-size: 11px; padding: 0 6px 0 0; }
-.mock .tg[aria-expanded="true"], .mock .tg:hover { color: var(--accent); }
-.mock .tools { display: flex; justify-content: flex-end; margin: -4px 0 6px; }
-.mock .tools button { font: inherit; font-size: 12px; padding: 3px 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--paper); color: var(--ink); cursor: pointer; }
-.mock tr.pl > td { white-space: normal; background: var(--code-bg); padding: 8px 10px 10px 24px; }
-.mock tr.pl .hd { font-size: 11.5px; color: var(--muted); font-weight: 600; margin: 6px 0 3px; }
-.mock tr.pl .hd:first-child { margin-top: 0; }
-.mock tr.pl pre { margin: 0; padding: 6px 9px; background: var(--paper); border: 1px solid var(--line); border-radius: 6px; font-family: var(--font-mono); font-size: 11.5px; line-height: 1.5; overflow-x: auto; }
-@media (max-width: 640px) { .mock .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 body.script-only .pipe, body.script-only .stats, body.script-only .mock { display: none; }
 </style>
 </head>
@@ -192,7 +174,7 @@ body.script-only .pipe, body.script-only .stats, body.script-only .mock { displa
         <span>事件用例 <b>20</b></span>
         <span>Step-in <b>2</b></span>
         <span>Composition <b>18</b></span>
-        <span>离线检查 <b>184</b> 项</span>
+        <span>离线检查 <b>183</b> 项</span>
       </div>
     </header>
 
@@ -216,7 +198,7 @@ body.script-only .pipe, body.script-only .stats, body.script-only .mock { displa
           <span class="arrow" aria-hidden="true">→</span>
           <div class="step"><b>Manifest</b><small>每笔结果一行：trade ID、任务、portfolio、错误</small></div>
           <span class="arrow" aria-hidden="true">→</span>
-          <div class="step key"><b>seed-report</b><small>HTML + CSV，直接发给 UAT</small></div>
+          <div class="step key"><b>seed-report</b><small>一份 CSV，直接发给 UAT</small></div>
         </div>
         <div class="lane">
           <span class="lbl">dat 文件 · 在 Cortex 上</span>
@@ -342,73 +324,30 @@ mvn -Ptest-data process-test-classes "-Dexec.args=seed-report 20261120-153000.."
 
     <section id="s6">
       <div class="sec-head"><span class="sec-no">06</span><h2 class="sec">给 UAT 的报告</h2><span class="dur">2 分钟</span></div>
-      <div class="cue"><span class="tag">屏幕</span>打开 <code>target/seed/seed-report-&lt;run&gt;.html</code>。下面是它的样子（示例数据）：点 SEED-TRADE-024 或 SEED-EVENT-001 前面的 ▸，展开看这笔发了什么。</div>
-      <div class="mock" aria-label="造数报告页面示意，示例数据">
-        <div class="bar"><i></i><i></i><i></i><span>seed-report-20261120-153000-on.html</span></div>
+      <div class="cue"><span class="tag">屏幕</span>用 Excel 打开 <code>target/seed/seed-report-&lt;run&gt;.csv</code>，并在终端看命令打印的统计。下面是它的样子（示例数据，只列了部分列）。</div>
+      <div class="mock" aria-label="造数报告 CSV 示意，示例数据">
+        <div class="bar"><i></i><i></i><i></i><span>seed-report-20261120-153000-on.csv</span></div>
         <div class="body">
-          <div class="cards">
-            <div class="card"><div class="k">Bookings</div><div class="v">60</div></div>
-            <div class="card"><div class="k">Booked</div><div class="v ok">59</div></div>
-            <div class="card"><div class="k">Failed</div><div class="v bad">1</div></div>
-            <div class="card"><div class="k">Itradeable Types</div><div class="v">18</div></div>
-          </div>
-          <h4>New trades <small>37 booked, 1 failed</small></h4>
-          <div class="tools"><button type="button" class="all-pl">Show payloads</button></div>
           <div class="tw"><table>
-            <thead><tr><th>Case</th><th>Run</th><th>Trade ID</th><th>Status</th><th>Itradeable Type</th><th>Product ID</th><th>Portfolio</th></tr></thead>
+            <thead><tr><th>run</th><th>tradeId</th><th>kind</th><th>case</th><th>itradeableType</th><th>productId</th><th>portfolioId</th><th>event / variant</th><th>childTradeIds</th><th>status</th><th>error</th></tr></thead>
             <tbody>
-              <tr><td class="mono">SEED-TRADE-001</td><td class="mono">…171200</td><td class="mono"><b>1000001</b><span class="cp">⧉</span></td><td><span class="pill y">booked</span></td><td>Tradeable.FXAccumulator</td><td class="mono">FX_ACCUMULATOR</td><td class="mono">EXAMPLE_PORTFOLIO_A</td></tr>
-              <tr><td class="mono"><button type="button" class="tg" aria-expanded="false" title="展开这笔发送的请求">▸</button>SEED-TRADE-024</td><td class="mono">…153000</td><td class="mono"><b>1000024</b><span class="cp">⧉</span></td><td><span class="pill y">booked</span></td><td>Ctrl.TRFGeneric</td><td class="mono">FX_PSCRIPT</td><td class="mono">EXAMPLE_PORTFOLIO_E</td></tr>
-              <tr class="pl" hidden><td colspan="7">
-                <div class="hd">Dat file · seed/dat/FX_PSCRIPT_TRF/FX_PSCRIPT.dat</div>
-                <div class="hd">Trade request <span class="cp">⧉ copy</span></div>
-<pre>{
-  "basic": {
-    "productId": "FX_PSCRIPT",
-    "portfolioId": "EXAMPLE_PORTFOLIO_E",
-    "riskPortfolio": "EXAMPLE_PORTFOLIO_E",
-    "scbEntity": "EXAMPLE_ENTITY_B",
-    "effectiveTimestamp": "2026-11-20T11:42:59Z",
-    …
-  },
-  …
-}</pre>
-              </td></tr>
-              <tr><td class="mono">SEED-TRADE-031</td><td class="mono">…171200</td><td></td><td><span class="pill n">failed</span></td><td>Tradeable.FXRangeAccrualOption</td><td class="mono">FX_QUANTO_RA_DI</td><td class="mono">EXAMPLE_PORTFOLIO_V</td></tr>
-              <tr class="err"><td colspan="7">示例：失败原因会显示在这一行，方便直接转给开发</td></tr>
-            </tbody>
-          </table></div>
-          <h4>Lifecycle events <small>22 booked, 0 failed</small></h4>
-          <div class="tools"><button type="button" class="all-pl">Show payloads</button></div>
-          <div class="tw"><table>
-            <thead><tr><th>Case</th><th>Event</th><th>Trade ID</th><th>Status</th><th>Itradeable Type</th><th>Child trade IDs</th></tr></thead>
-            <tbody>
-              <tr><td class="mono"><button type="button" class="tg" aria-expanded="false" title="展开这笔发送的请求">▸</button>SEED-EVENT-001</td><td>allocation-full</td><td class="mono"><b>2000001</b><span class="cp">⧉</span></td><td><span class="pill y">booked</span></td><td>Tradeable.TRF</td><td class="mono"><b>2000002</b><span class="cp">⧉</span> <b>2000003</b><span class="cp">⧉</span> <span class="cp">all</span></td></tr>
-              <tr class="pl" hidden><td colspan="6">
-                <div class="hd">Dat file · seed/dat/FX_TRF/allocation-full.dat</div>
-                <div class="hd">Trade request <span class="cp">⧉ copy</span></div>
-<pre>{ "basic": { "productId": "FX_TRF", "portfolioId": "EXAMPLE_PORTFOLIO_E001",
-             "scbEntity": "EXAMPLE_ENTITY_E001", … }, … }</pre>
-                <div class="hd">Event request <span class="cp">⧉ copy</span></div>
-<pre>{
-  "eventType": "Allocation",
-  "data": [
-    { "key": "notionalAmounts", "value": "[35000, 35000]", "type": "Numeric Array" },
-    …
-  ],
-  "tradeIds": ["2000001"]
-}</pre>
-              </td></tr>
-              <tr><td class="mono">SEED-EVENT-004</td><td>termination</td><td class="mono"><b>2000004</b><span class="cp">⧉</span></td><td><span class="pill y">booked</span></td><td>Tradeable.TRF</td><td></td></tr>
-              <tr><td class="mono">SEED-STEPIN-001</td><td>stepin-full</td><td class="mono"><b>2000021</b><span class="cp">⧉</span></td><td><span class="pill y">booked</span></td><td>Tradeable.TRF</td><td></td></tr>
+              <tr><td class="mono">…171200</td><td class="mono">1000001</td><td>trade</td><td class="mono">SEED-TRADE-001</td><td>Tradeable.FXAccumulator</td><td class="mono">FX_ACCUMULATOR</td><td class="mono">EXAMPLE_PORTFOLIO_A</td><td></td><td></td><td><span class="pill y">booked</span></td><td></td></tr>
+              <tr><td class="mono">…153000</td><td class="mono">1000024</td><td>trade</td><td class="mono">SEED-TRADE-024</td><td>Ctrl.TRFGeneric</td><td class="mono">FX_PSCRIPT</td><td class="mono">EXAMPLE_PORTFOLIO_E</td><td></td><td></td><td><span class="pill y">booked</span></td><td></td></tr>
+              <tr><td class="mono">…171200</td><td></td><td>trade</td><td class="mono">SEED-TRADE-031</td><td>Tradeable.FXRangeAccrualOption</td><td class="mono">FX_QUANTO_RA_DI</td><td class="mono">EXAMPLE_PORTFOLIO_V</td><td></td><td></td><td><span class="pill n">failed</span></td><td>示例：失败原因</td></tr>
+              <tr><td class="mono">…153000</td><td class="mono">2000001</td><td>event</td><td class="mono">SEED-EVENT-001</td><td>Tradeable.TRF</td><td class="mono">FX_TRF</td><td class="mono">EXAMPLE_PORTFOLIO_E001</td><td>allocation-full</td><td class="mono">2000002 2000003</td><td><span class="pill y">booked</span></td><td></td></tr>
+              <tr><td class="mono">…153000</td><td class="mono">2000021</td><td>event</td><td class="mono">SEED-STEPIN-001</td><td>Tradeable.TRF</td><td class="mono">FX_TRF</td><td class="mono">EXAMPLE_PORTFOLIO_S001</td><td>stepin-full</td><td></td><td><span class="pill y">booked</span></td><td></td></tr>
             </tbody>
           </table></div>
         </div>
       </div>
+      <pre class="code"><code>trade: 37 booked, 1 failed
+event: 22 booked, 0 failed
+  failed Tradeable.FXRangeAccrualOption SEED-TRADE-031 ...: 示例：失败原因
+Wrote target/seed/seed-report-20261120-153000-on.csv</code></pre>
       <div class="say">
-        <p>报告是一个单文件网页，<strong>不需要服务器，双击就能打开</strong>，同时还有一份 CSV。</p>
-        <p>上面是新交易，下面是生命周期事件和 Step-in，各自可以搜索、按成功 / 失败筛选、排序。每个 trade ID 和子交易 ID 旁边都有复制按钮，“Copy trade IDs” 能把当前看到的用例编号、trade ID、子交易 ID 一次复制出来，贴进 Excel 就是整齐的几列。失败的那一行下面直接显示原因。</p>
-        <p>每一行前面还有一个 <strong>▸</strong>，平时收起，点开就是这笔<strong>实际发出去的请求</strong>：用的哪个 dat 文件、下单的 JSON、事件的 JSON，各自带复制按钮；“Show payloads” 一次展开当前看到的所有行。比如这笔 Allocation，能直接看到 50% / 50% 已经按名义本金换算成了 35000 / 35000。业务问“这笔是用什么数据造的”，打开报告就能回答，失败的单也一样能看到它当时想发什么。</p>
+        <p>报告就是<strong>一份 CSV</strong>，每笔造单一行，Excel 直接打开，UAT 拿来就能筛选、排序、复制 trade ID。</p>
+        <p><code>kind</code> 一列区分新交易和生命周期事件，Step-in 也算在事件里；每行有用例编号、trade ID、Itradeable Type、portfolio、entity、用的 dat 文件，Allocation 的子交易 ID 也在同一行。失败的行 <code>status</code> 是 failed，<code>error</code> 列直接写着原因，方便转给开发。合并补跑时还有一列 <code>run</code>，看得出每一行来自哪一次运行。</p>
+        <p>命令行同时打印按类型的成功 / 失败统计和失败清单。业务要问“这笔是用什么数据造的”，实际发出去的请求都在 manifest 里，按用例编号就能查到。</p>
       </div>
     </section>
 
@@ -433,7 +372,7 @@ mvn -Ptest-data process-test-classes "-Dexec.args=seed-report 20261120-153000.."
       <div class="say">
         <p><strong>真实数据不进代码库。</strong>portfolio、entity、trade ID、dat 文件，在仓库里都是占位符；真实值只在公司副本或本地被 git 忽略的文件里。</p>
         <p><strong>错了就早点停。</strong>清单里还写着 TODO 的值、没点名 dat 文件的事件用例、编号重复、找不到的产品，都会在下单前就报错，而不是造出一笔错误的单。</p>
-        <p><strong>离线就能检查。</strong>清单、catalog、报告和 dat 规则一共有 184 项离线检查，不连 SIT 就能跑，改动之后先过这一关。</p>
+        <p><strong>离线就能检查。</strong>清单、catalog、报告和 dat 规则一共有 183 项离线检查，不连 SIT 就能跑，改动之后先过这一关。</p>
       </div>
     </section>
 
@@ -443,7 +382,7 @@ mvn -Ptest-data process-test-classes "-Dexec.args=seed-report 20261120-153000.."
         <div class="stat"><div class="k">一次命令覆盖</div><div class="v">60</div></div>
         <div class="stat"><div class="k">产品 composition</div><div class="v">18</div></div>
         <div class="stat"><div class="k">生命周期事件类型</div><div class="v">10</div></div>
-        <div class="stat"><div class="k">离线检查</div><div class="v">184</div></div>
+        <div class="stat"><div class="k">离线检查</div><div class="v">183</div></div>
       </div>
       <div class="say">
         <p><strong>收益</strong>：整套 UAT 数据一条命令就能重建，每个 sprint、每次 SIT 刷新之后都能照样再来一遍；每一笔造了什么、成没成功，都有记录和报告；失败的只补跑失败的；dat 导出不再靠手点。</p>
@@ -462,30 +401,12 @@ mvn -Ptest-data process-test-classes "-Dexec.args=seed-report 20261120-153000.."
       <div class="say">
         <p><strong>下一步</strong>可以把它接到流水线上做成手动或定时任务，参数选环境和要跑的范围，每次的报告按版本留存。</p>
       </div>
-      <div class="qa"><p><strong>Q&amp;A</strong></p><p>为什么放在 E2E 项目里？—— 因为请求、数据、API 客户端都和 E2E 用例共用，API 一变两边一起修，不会出现两套数据慢慢对不上的问题。</p><p>报告里的 payload 会不会泄露真实数据？—— 报告和 manifest 只生成在公司机器的 target 目录，从不提交；对外发送前要注意里面有真实的 portfolio 和 entity。</p><p>数据过期了怎么办？—— 交易的日期是相对下单当天算的（T+N），SIT 上别人也会改动这些交易，所以造好的数据会慢慢过期。办法是重新跑一遍：每个 sprint 或每次 SIT 刷新后整套重建，新的一轮按当天时间下单；也可以按标签或用例编号只重建一部分。每一轮的报告和对应的版本一起留存，过期的旧单不用去修。</p><p>怎么新增一个产品的造数？—— 不用写代码，改三处数据：在 catalog 里登记这个 composition 对应的 Itradeable Type；在新交易的 feature 里加一行，用例编号接着往后排（SEED-TRADE-039），写上 composition、product ID 和 taxonomy；在 catalog 的 cases 里给这个编号写 portfolio、entity，需要的话再点名 dat 文件。dat 用导出脚本从 Cortex 导出来放到对应路径，离线检查通过后按用例编号单独跑一次。要给这个产品也造生命周期事件，前提是它已经接入 E2E 用例，因为事件的请求复用 E2E 的数据。</p><p>会不会重复造单？—— 补跑只跑指定的用例；报告合并时同一用例只保留最新结果。</p></div>
+      <div class="qa"><p><strong>Q&amp;A</strong></p><p>为什么放在 E2E 项目里？—— 因为请求、数据、API 客户端都和 E2E 用例共用，API 一变两边一起修，不会出现两套数据慢慢对不上的问题。</p><p>报告和 manifest 会不会泄露真实数据？—— 两者只生成在公司机器的 target 目录，从不提交；manifest 里有完整的请求，报告 CSV 里有真实的 portfolio 和 entity，对外发送前要注意。</p><p>数据过期了怎么办？—— 交易的日期是相对下单当天算的（T+N），SIT 上别人也会改动这些交易，所以造好的数据会慢慢过期。办法是重新跑一遍：每个 sprint 或每次 SIT 刷新后整套重建，新的一轮按当天时间下单；也可以按标签或用例编号只重建一部分。每一轮的报告和对应的版本一起留存，过期的旧单不用去修。</p><p>怎么新增一个产品的造数？—— 不用写代码，改三处数据：在 catalog 里登记这个 composition 对应的 Itradeable Type；在新交易的 feature 里加一行，用例编号接着往后排（SEED-TRADE-039），写上 composition、product ID 和 taxonomy；在 catalog 的 cases 里给这个编号写 portfolio、entity，需要的话再点名 dat 文件。dat 用导出脚本从 Cortex 导出来放到对应路径，离线检查通过后按用例编号单独跑一次。要给这个产品也造生命周期事件，前提是它已经接入 E2E 用例，因为事件的请求复用 E2E 的数据。</p><p>会不会重复造单？—— 补跑只跑指定的用例；报告合并时同一用例只保留最新结果。</p></div>
     </section>
   </main>
 </div>
 
 <script>
-// the mock report: ▸ folds out a row's payload, "Show payloads" every row of its table
-(function () {
-  function set(tg, on) {
-    tg.setAttribute('aria-expanded', on ? 'true' : 'false');
-    tg.textContent = on ? '▾' : '▸';
-    tg.closest('tr').nextElementSibling.hidden = !on;
-  }
-  document.querySelectorAll('.mock .tg').forEach(function (tg) {
-    tg.addEventListener('click', function () { set(tg, tg.getAttribute('aria-expanded') !== 'true'); });
-  });
-  document.querySelectorAll('.mock .all-pl').forEach(function (b) {
-    b.addEventListener('click', function () {
-      var tgs = b.parentElement.nextElementSibling.querySelectorAll('.tg');
-      var open = Array.prototype.every.call(tgs, function (t) { return t.getAttribute('aria-expanded') === 'true'; });
-      tgs.forEach(function (t) { set(t, !open); });
-    });
-  });
-})();
 (function () {
   var btn = document.getElementById('toggle-cues');
   function apply(on) {

@@ -1,11 +1,8 @@
 package com.example.module.oreo.tools;
 
-import com.example.module.oreo.testdata.Json;
 import com.example.module.oreo.testdata.ProjectPaths;
 import com.example.module.oreo.testdata.SeedData;
-import com.example.module.oreo.utils.DateUtil;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import java.io.IOException;
@@ -33,10 +30,6 @@ final class SeedReport {
             "composition", "productId", "taxonomy", "portfolioId", "riskPortfolio", "scbEntity", "variant", "event",
             "setup", "dat", "childTradeIds", "status", "at", "error");
 
-    /** The page's template: the report's data goes in place of {@link #DATA_MARK}. */
-    static final String TEMPLATE = "src/test/resources/tools/seed-report.html";
-    static final String DATA_MARK = "@@SEED_DATA@@";
-
     private SeedReport() {}
 
     /** All runs, the latest line of each booking: {@code seed-report all}. */
@@ -44,8 +37,7 @@ final class SeedReport {
 
     /**
      * The report of run {@code which}: {@code null} for the latest run, a run ID ({@code 20261120-153000}), or
-     * {@link #ALL}. Writes {@code target/seed/seed-report-<run ID or all>.csv} and the same as a page,
-     * {@code seed-report-<run ID or all>.html}.
+     * {@link #ALL}. Writes {@code target/seed/seed-report-<run ID or all>.csv}.
      */
     static int run(String which) throws IOException {
         SeedData catalog = SeedData.catalog();
@@ -73,13 +65,6 @@ final class SeedReport {
         List<JsonNode> latest = withItradeableTypes(latest(asEvents(entries)), catalog.itradeableTypes());
         Path csv = dir.resolve("seed-report-" + name + ".csv");
         Files.writeString(csv, csv(latest), StandardCharsets.UTF_8);
-        Path templateFile = ProjectPaths.projectRoot().resolve(TEMPLATE);
-        if (!Files.isRegularFile(templateFile)) {
-            throw new IllegalStateException("[Seed] no page template " + TEMPLATE);
-        }
-        Path html = dir.resolve("seed-report-" + name + ".html");
-        Files.writeString(html, page(Files.readString(templateFile, StandardCharsets.UTF_8),
-                model(name, manifests.size(), latest)), StandardCharsets.UTF_8);
 
         Map<String, int[]> counts = new TreeMap<>();
         Map<String, int[]> byType = new TreeMap<>();
@@ -97,8 +82,7 @@ final class SeedReport {
             System.out.println("  failed " + entry.path("itradeableType").asText("?") + " " + key(entry) + ": "
                     + entry.path("error").asText());
         }
-        System.out.println("Wrote " + ProjectPaths.projectRoot().relativize(csv) + " and "
-                + ProjectPaths.projectRoot().relativize(html));
+        System.out.println("Wrote " + ProjectPaths.projectRoot().relativize(csv));
         return 0;
     }
 
@@ -125,26 +109,6 @@ final class SeedReport {
             if (!named.contains(id)) named.add(id);
         }
         return all.stream().filter(named::contains).toList();
-    }
-
-    /** The data of the page: the run, how many runs there are, when, and the bookings. */
-    static String model(String run, int runs, List<JsonNode> entries) {
-        ObjectNode model = Json.MAPPER.createObjectNode();
-        model.put("run", run).put("runs", runs).put("generated", DateUtil.format(DateUtil.now()));
-        ArrayNode rows = model.putArray("bookings");
-        entries.forEach(rows::add);
-        return Json.compact(model);
-    }
-
-    /**
-     * The page: {@code template} with {@code json} in place of {@link #DATA_MARK}. Every {@code <} of the JSON is
-     * escaped, so no value can end the script element that holds it.
-     */
-    static String page(String template, String json) {
-        if (!template.contains(DATA_MARK)) {
-            throw new IllegalStateException("[Seed] " + TEMPLATE + " has no " + DATA_MARK);
-        }
-        return template.replace(DATA_MARK, json.replace("<", "\\u003c"));
     }
 
     /**
