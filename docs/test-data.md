@@ -456,9 +456,8 @@ or with `-U`.
   lifecycle first), one row per composition, product ID or trade type, each cell two dots, API and UI, the counts on
   hover, a row's cases on a click, with the product ID each sends. The
   page is one file with nothing loaded from elsewhere: it opens offline, and a pipeline can publish it as a build
-  artifact. Its data is written beside it, `coverage.json`, for other tools (and for the planned dashboard,
-  [test-dashboard-plan.md](test-dashboard-plan.md)). Both are generated: never commit them. The
-  page's template is `src/test/resources/tools/coverage-report.html`.
+  artifact. Its data is written beside it, `coverage.json`, for other tools. Both are generated: never commit
+  them. The page's template is `src/test/resources/tools/coverage-report.html`.
 - `seed-report [<run ID>|all]`: the summary of a run of the SIT seed for UAT (the latest by default, `all` for every
   run), `target/seed/seed-report-<run ID or all>.csv` and the same as a page (`.html`, from the template
   `src/test/resources/tools/seed-report.html`), from the seed's manifests ([sit-seed.md](sit-seed.md)), a row per

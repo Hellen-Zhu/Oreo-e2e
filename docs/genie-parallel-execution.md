@@ -104,8 +104,8 @@ that 4 instances can bring a firm-issued laptop to a halt, with IntelliJ too unr
   features, a browser, plus the IDE, a 32 GB laptop with a low-power CPU runs out of CPU and native memory. Lower
   `forkCount` to 2 on a laptop, or run the full suite on a build agent.
 - **Logs and reports**: run `mvn test -X` to see the children's logs. Each child writes its own results; a run in
-  `FEATURE` mode reaches the Genie report service as one report, which the planned dashboard reads
-  (`docs/test-dashboard-plan.md`).
+  `FEATURE` mode reaches the Genie report service as one report, which the QA dashboard (a separate project) reads
+  by run ID: a fork mode that splits a run into several reports breaks it.
 
 ## Open questions
 

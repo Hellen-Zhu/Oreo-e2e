@@ -128,9 +128,9 @@ src/test/resources/
 
 ## Documentation
 
-The map of the documents and skills is [CLAUDE.md §2](CLAUDE.md#2-where-to-look). Also
-[test-dashboard-plan.md](docs/test-dashboard-plan.md): the design, not built yet, of a QA dashboard (a small web
-app fed by the Genie report API): run history, trends, coverage and failure triage.
+The map of the documents and skills is [CLAUDE.md §2](CLAUDE.md#2-where-to-look). Run results are also kept by the
+QA dashboard, a separate internal project that reads them from the Genie report service: it relies on the case IDs in
+scenario names, and its only link to this repository is a step of the test pipeline.
 
 ## This copy
 
