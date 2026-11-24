@@ -1,167 +1,224 @@
 # Test Dashboard Plan
 
-**Status: a plan, not scheduled** (decided 2026-11-05). Of everything below, only `coverage --html` exists. When the
-work is scheduled, answer the [open questions](#open-questions) first: several choices depend on them.
+**Status: designed, not built** (design agreed 2026-11-23; it replaces the 2026-11-05 plan of a static page fed by
+an after-hook). Of everything below, only `coverage --html` exists. Before building, answer the
+[open questions](#open-questions): several choices depend on them.
 
 ## Why
 
-- The Genie report records one run. It is a page to read, not data to compute on, and it is kept for 90 days. It cannot
-  show a trend, or what one case has done over the last month.
-- `coverage --html` ([test-data.md](test-data.md)) answers one question at one moment: which product x capability cells
-  have cases.
-- A test lead needs both, over time, in one place.
+- The Genie report shows one run, is kept for 90 days and cannot show a trend or what one case did over a month.
+- `coverage --html` ([test-data.md](test-data.md)) answers one question at one moment: which product x capability
+  cells have cases.
+- A test lead needs both, over time, in one place, and has to show them to people who do not read test reports.
 
-## The questions it answers
+## Readers
 
-| Question | Measure | Source |
+| Level | Reader | Questions | Language |
+|---|---|---|---|
+| L1 | Leadership, business | Can we release? Which business flows are at risk? Is quality improving? | Products and lifecycle events, status colours, trend arrows; no case IDs |
+| L2 | Test lead | Is the coverage enough? Which cases are unstable? Is a red case a product defect or the environment? | Product x capability matrix, failure classes, red age |
+| L3 | Test engineer | Which case failed, where, why? | Case ID, failed step, error, link to the Genie report |
+
+One page per level, each drilling into the next. L1 is one page.
+
+## Measures
+
+| Measure | Reader | Source |
 |---|---|---|
-| Can we release? | The last baseline run on the target environment, per product: red cases and their failure class | Run records |
-| Is the coverage enough? | Covered / supported cells per product and the trend; each product's onboarding stage | `coverage.json` of each baseline run |
-| Can the suite be trusted? | Flaky cases, failures by class, how long each red case has been red | Run records |
-| Is quality improving? | E2E defects opened and closed, per product | ADO Bugs, linked by case ID |
+| Release readiness per product: Go, Go with risk, No-go, by a written rule (smoke all green, regression pass rate at least an agreed value, no open severe defect, the agreed cells covered) | L1 | Last baseline run, ADO Bugs |
+| Business coverage: covered / supported lifecycle events per product, and its trend | L1, L2 | `case_catalog`, `coverage.json` |
+| Pass-rate trend of baseline runs, per product | L1, L2 | Baseline runs |
+| E2E defects opened and closed, per product | L1 | ADO Bugs |
+| Why the red cases are red: product behavior, environment, automation, recording | L1, L2 | Triage in the app |
+| Unstable cases, red age, cases not run | L2 | Case results, `case_catalog` |
+| Failing and slow steps, hook overhead | L2, L3 | Step and hook results |
+| Manual effort saved | L1 | `manDayHours` of the run ([open question](#open-questions)) |
 
 Left out on purpose:
 
-- A pass rate over all runs together. Narrow runs and recording runs would dominate it
+- A pass rate over all runs together: narrow runs and recording runs would dominate it
   ([Which runs count](#which-runs-count)).
-- Case counts as a measure of work done.
+- Case counts or run counts as a measure of work done.
 
-## Data before pages
+The rules (Go / No-go, pass-rate threshold) are agreed with the readers before the page shows them.
 
-History cannot be rebuilt later. Each run that is not archived leaves a gap in every trend. So the first piece is a
-lasting, structured record of each run, and pages are generated from the records. The pages can change at any time;
-the records have to start early.
+## Decisions
 
-### The run record
+| Decision | Why |
+|---|---|
+| A small web app, not a static page | Failure triage writes back, and the readers need filters and drill-down (the user's decision) |
+| No Grafana, no BI tool (Metabase, Power BI) | The user's decision. Consequence: every chart is code, so the app stays small and its pages few |
+| Results come from the Genie report API, not from an after-hook | The API already holds run, scenario, step and hook results, one report per run; no test code changes; it allows a backfill of the last 90 days |
+| PostgreSQL, a schema of its own (`oreo_qa`) | The instance exists; the pipeline can reach it |
+| Test cases stay in git; the database holds a read-only catalog exported from this repository | Genie runs feature files, not database rows; cases keep code review and `TestDataTool check` |
+| The app does not parse case IDs; it joins the `[TC-...]` of a scenario name to the catalog | `CaseId` and the product expansion stay defined once, in this repository |
+| The app lives in its own internal repository | It has its own build and deployment, and holds connection settings this public copy must not |
+| Login by username and password, accounts kept by the app | Simple is enough for an internal QA tool (the user's decision) |
 
-One JSON file per run. The values below are synthetic:
+## Genie report API
 
-```json
-{
-  "run": "2026-11-05T02-00Z-qa-nightly",
-  "started": "2026-11-05T02:00:00Z",
-  "finished": "2026-11-05T02:41:10Z",
-  "env": "qa",
-  "kind": "nightly",
-  "scope": "--tags not @wip",
-  "commit": "a044293",
-  "branch": "main",
-  "build": null,
-  "cases": [
-    { "id": "TC-TRADE-CREATION-FX_TRF-API-001", "event": "TRADE-CREATION", "product": "FX_TRF", "layer": "API",
-      "status": "passed", "seconds": 12.4, "attempt": 1 },
-    { "id": "TC-TRADE-CANCELLATION-UI-002", "event": "TRADE-CANCELLATION", "product": null, "layer": "UI",
-      "status": "failed", "seconds": 61.0, "attempt": 1,
-      "class": "environment", "error": "TimeoutError: waiting for <locator> exceeded 30000 ms" }
-  ]
-}
+As observed in an API client, base `https://<genie-report-host>/api`:
+
+| # | Call | Returns |
+|---|---|---|
+| 1 | `POST /auth/login` with `{"username", "password"}` | A temporary token |
+| 2 | `POST /auth/perm-token`, bearer the temporary token | The token for the other calls, its expiry (about two days) and the projects it may read (`authorities`, `project:<projectId>`) |
+| 3 | `GET /reports/details/{runIdentifier}` | One run's summary (below) |
+| 4 | `POST` *Get All Reports* | The list of runs. Request and paging not seen yet ([open question](#open-questions)) |
+| 5 | `POST /reports/details/{runIdentifier}/fragments` with `{"featureName", "status", "tag", "duplication"}` (each may be `null`) | One record per scenario, paged (`pageCurrent`, `pageTotal`, `recordTotal`) |
+
+A token expires, so each sync logs in again. The account and password are pipeline secrets, never in a repository.
+
+**The run summary (3)**, the fields the dashboard uses:
+
+| Field | Use |
+|---|---|
+| `runIdentifier`, `runStartTime`, `runEndTime` | Key, time axis, duration |
+| `status`, `fragmentCount` (`passed`, `failed`, `skipped`, `deferred`, `blocked`, `executedTotal`, `expectedTotal`, `filteredTotal`, `grossTotal`) | Result; `filteredTotal` / `grossTotal` shows how much of the suite the run left out |
+| `genieRunArguments` | The run's scope (`--tags ...`) and fork settings |
+| `labels` | The run's kind ([Which runs count](#which-runs-count)) |
+| `traceability.testSourceDetails` (`branch`, `commitHash`, `hasModifiedFiles`) | Which code ran; `hasModifiedFiles: true` means uncommitted changes |
+| `traceability.releaseName` | Release |
+| `hostname`, `userId` | A build agent or a person's machine |
+| `manDayHours` | Manual effort the run stands for ([open question](#open-questions)) |
+| `reportState` | Whether the report is still live |
+
+**A fragment (5)** is one scenario in the Cucumber result model:
+
+- `scenario.name` with the case ID (`[TC-TRADE-FIXINGS-FX_TRF-UI-001] ...`), `scenario.id` (feature file and line),
+  `feature.tags` and `scenario.tags`;
+- `before` / `after` hooks: `location` (`ScenarioLifecycleHooks.beforeScenario(Scenario)`), `result` (`status`,
+  `startDate`, `endDate`);
+- `steps`: `keyword`, `name`, `arguments`, `result`, `stepDefinition.location` (a glue method or a snippet), nested
+  through `parent` / `isLeaf` for the steps a snippet expands to;
+- `embeddings`: type and length only, never content.
+
+## Architecture
+
+```text
+Genie report service --API--> sync job --> PostgreSQL (oreo_qa) --> REST API --> pages
+this repository --exports---> catalog, coverage.json --^                ^
+ADO (Bugs, later) ------------------------------------------------------'
 ```
 
-| Field | Rule |
-|---|---|
-| `kind` | `nightly`, `adhoc` or `recording` ([Which runs count](#which-runs-count)) |
-| `scope` | The exact selection of the run, as passed to `-Dcucumber.options`, together with `OreoTest`'s fixed tags |
-| `commit`, `branch` | This repository at the time of the run |
-| `build` | The environment's deployed version, when it can be read; `null` otherwise |
-| `event`, `product`, `layer` | From the case ID (`CaseId.parse`, `TC-<EVENT>[-<PRODUCT>]-<API\|UI>-<NNN>`); no extra tags |
-| capability | Not stored: a case ID joins the cell of `coverage.json` whose `cases` list it. A case without a product (a Scenario, not a product Outline) has none, as in `coverage` |
-| `status` | `passed`, `failed`, `skipped` or `undefined` |
-| `class` | Failed cases only: one of the four classes of `qa-bdd-test-execution`, `automation`, `recording`, `behavior`, `environment`. Set by rule only where the signal is unambiguous (no expected file: `recording`; connection refused or login failure: `environment`); otherwise `unclassified` until someone triages it. Never guessed |
-| `error` | The exception type and its first line, masked: trade and task IDs, hosts, URLs and accounts become placeholders. Never a request or response body |
-| `attempt` | One entry per attempt when a case is retried in the run; needed to tell a flaky case |
+One deployable: a Spring Boot service (sync job, REST API) with its pages (Vue and ECharts) built into it.
 
-### Where the record comes from
+**Sync job.**
 
-`ScenarioLifecycleHooks` (`glue/hooks`) already writes `target/results/failed-scenarios-<time>.log`: failed scenarios
-only, one file per fork JVM. There are two sources:
+1. Log in (calls 1 and 2).
+2. List the runs (call 4) since the last sync; skip the run identifiers already stored.
+3. For each new run: its summary (3) and all its fragments (5, every page).
+4. Transform and write in one transaction, keyed by `runIdentifier` and `fragmentId`: a second sync of a run replaces
+   it, never duplicates it.
+5. Mask errors before storing: trade and task IDs, hosts, URLs and accounts become placeholders. No request or
+   response bodies, no attachments.
 
-1. The same after-hook also writes one line per scenario, passed ones included, to
-   `target/results/scenarios-<time>.jsonl`. A new `TestDataTool results` command merges the fork files into one run
-   record. The format belongs to this repository and does not depend on Genie's report.
-2. Genie's own output, if it writes a machine-readable file. `OreoTest` configures no Cucumber JSON plugin; what Genie
-   writes is still to be checked on the company machine.
+It runs as the last step of the nightly pipeline, and on a schedule (hourly) to catch runs from other machines. Its
+first run backfills every report the service still holds, so the trends start with up to 90 days of history.
 
-Prefer 1, unless 2 turns out to give the same data with no code. In both cases, `OreoTest` runs `forkMode FEATURE`
-with `forkCount 3` and a discrete working directory per fork: three JVMs write three files, and merging them is the
-command's job.
+**Login.** Username and password, accounts kept by the app (passwords hashed), created by an administrator; no
+self sign-up. Two roles: `viewer` reads, `qa` also triages and corrects a run's kind. HTTPS only.
 
-### Which runs count
+## Which runs count
 
-- **`nightly`**: scheduled, with a fixed, written scope. Only nightly runs enter the trends and the release view.
-- **`adhoc`**: a person's narrow run (`--name ^\[TC-...\].*$`). Kept and listed; never averaged in.
-- **`recording`**: the first run of a new case fails by design when it has no recording. Kept and listed; never
-  averaged in.
-- A nightly scope does not exist yet. `OreoTest` fixes `not @wip` and `@ADO#trade_creation`, which is not a full
-  regression. The scope is to be decided, and the record states it.
-- API cases book real trades: the volume of a nightly run and its environment need approval.
+A run's `kind` is derived, and a `qa` user can correct it:
 
-### Where the records live
+- **`baseline`**: its `labels` hold the baseline label, `branch` is `main`, `hasModifiedFiles` is false and it ran on a
+  build agent. Only baseline runs enter trends, release readiness and stability.
+- **`adhoc`**: anything else (a narrow run, a branch, local changes). Kept and listed, never averaged in.
+- **`recording`**: a run whose purpose was recording new cases (their first run fails by design). Set by hand. Kept,
+  never averaged in.
 
-Inside the company network: an internal git repository (one file per run, which gives history and diffs for free) or a
-file share. Never this public copy, never an external service. This repository holds only the format, the code and
-synthetic test fixtures.
+The baseline scope does not exist yet: `OreoTest` fixes `not @wip` and `@ADO#trade_creation`, which is not a full
+regression. API cases book real trades, so the scope, environment and trade volume of a baseline run need approval.
 
-## Options
+## Data model
 
-| Option | For | Against |
+| Table | One row per | Columns |
 |---|---|---|
-| A. ADO Test Analytics (`PublishTestResults` in the pipeline) | Almost no work; trends and flaky marking built in; ADO is already in use | No product x capability view, no coverage; retention is set by the ADO administrators |
-| B. ReportPortal, self-hosted | The strongest test analytics: history, flaky detection, automatic failure grouping | Its own infrastructure (database, search engine, message queue) and a security review; `OreoTest` uses `cucumber.api`, an old Cucumber, so its agent may not fit |
-| C. Grafana and a database | Grafana may already be available; flexible trend charts | Needs a database; a matrix or an onboarding funnel is awkward to draw |
-| D. A static dashboard generated here, like `coverage --html` | No new infrastructure; opens offline inside the network; every view fits OREO | No shared triage write-back; maintained by the team |
+| `run` | Run | `run_id` (`runIdentifier`), name, start, end, status, the `fragmentCount` counts, labels, scope arguments, branch, commit, `has_modified_files`, host, release, `man_day_hours`, `kind` (derived), `kind_set_by`, report link |
+| `case_result` | Scenario of a run | `run_id`, `fragment_id`, `case_id`, feature file, tags, status, start, end, seconds, hook seconds, failed step and its step definition, masked error, `failure_class`, `triaged_by`, `triaged_at` |
+| `step_result` (phase 3) | Leaf step of a scenario | `fragment_id`, order, keyword, name, step definition, status, seconds |
+| `case_catalog` | Case ID at a commit | `case_id`, event, product, layer, capability, tags, `wip`, feature file, story, first seen, retired |
+| `coverage_snapshot` | Product x capability cell per day | product, capability, supported, covered |
+| `app_user` | Account | username, password hash, role |
 
-## Recommendation
+`status` of a scenario: `failed` when a hook or step failed; else `skipped` / `undefined` as Cucumber reports;
+else `passed`. `failure_class` is one of the classes of `qa-bdd-test-execution` (`automation`, `recording`,
+`behavior`, `environment`), or `unclassified` until triaged; never guessed.
 
-Start with D and keep the way to B or C open. The records are the asset; every option above can read them.
+## Exports from this repository
 
-1. **Records.** The record format, the after-hook change and the `results` command. The nightly pipeline archives each
-   run's record and its `coverage.json`. Start this phase before any page: history starts the day it is archived.
-2. **Static dashboard.** A `dashboard` command reads every record and the latest `coverage.json` and writes one offline
-   page, built the same way as `coverage --html`. The nightly pipeline publishes it, as a build artifact or on internal
-   static hosting.
-3. **Only if needed.** When several people have to triage failures on the page, or analysis beyond these views is
-   wanted, import the same records into ReportPortal or Grafana. The format stays; nothing from phases 1 and 2 is lost.
+| Export | Content | Status |
+|---|---|---|
+| `coverage` | `coverage.json` ([test-data.md](test-data.md), "Commands") | Exists |
+| `catalog` | One row per case ID after expanding the product `Examples`: event, product, layer (`CaseId`), capability, tags, `@wip`, feature file, story (the feature's `# source:` comment) | To build, a `TestDataTool` command |
+
+The pipeline runs them after each merge to `main` and the app loads the result. Rules about cases stay here: the app
+only stores and shows.
+
+`# source:` comments ([bdd-feature-generation-standards.md](standards/bdd-feature-generation-standards.md) §7) are
+the only link from a case to its story; no feature carries one yet.
 
 ## Pages
 
-| Page | Content |
-|---|---|
-| Overview | One row of measures, each with its trend; pass rate and executed cases over 90, 180 and 365 days; the current red cases, by failure class |
-| Coverage | The `coverage --html` page, plus the trend of covered / supported cells |
-| Products | Each product's onboarding stage: registered in `ProductDatFiles` → `Examples` synced (nothing to sync) → API recorded (`check` finds no missing recording) → API green (last nightly) → UI green. The first three stages need no run |
-| Stability | A case x last 30 nightly runs grid: flaky cases and cases red for a long time stand out |
-| Runs | Every run, its scope and result; a run's detail; a link to its Genie report while that still exists |
-| Defects | ADO Bugs raised through `qa-defect-reporting`, per product, opened and closed over time |
+| Page | Content | Phase |
+|---|---|---|
+| Home (L1) | Product x lifecycle event matrix (status of the last baseline run, trend arrow), pass-rate trend, red cases by class, release readiness | 2 |
+| Runs | Every run, filtered by kind, branch, label; a run's scope, commit, counts, Genie report link while live | 2 |
+| Case history | One case across runs; a case x last 30 baseline runs grid (unstable and long-red cases) | 2 |
+| Triage | Failed cases of a run, set their class | 3 |
+| Gaps | Catalog cases no baseline run ran in N days; supported cells without cases | 3 |
+| Hot spots | Step definitions and snippets that fail most, slowest steps, hook overhead per scenario | 3 |
+| Products | Each product's onboarding stage: registered in `ProductDatFiles` → `Examples` synced → API recorded → API green → UI green | 4 |
+| Defects, effort | ADO Bugs per product, opened and closed; manual effort saved | 4 |
 
 ## Definitions
 
-Every number on the dashboard follows one written definition:
-
 | Measure | Definition |
 |---|---|
-| Pass rate (of a nightly run) | Passed / (passed + failed). Skipped, undefined and `@wip` cases are not counted |
+| Pass rate (of a baseline run) | Passed / (passed + failed). Skipped, undefined and `@wip` cases are not counted |
 | Covered cell | As `coverage` counts it: a supported product x capability cell with at least one case that runs (not `@wip`) |
-| Flaky case | Over the last 30 nightly runs: it failed and then passed on a retry within one run, or its status changed at least twice between consecutive runs with the same `commit` and the same `build`. Without a `build`, the case is shown as unstable, not flaky |
-| Red age | Days since the case's last passing nightly run |
+| Unstable case | Over the last 30 baseline runs, its status changed at least twice between consecutive runs of the same commit |
+| Red age | Days since the case's last passing baseline run |
+| Not run | A catalog case (not `@wip`) absent from every baseline run of the last N days |
 | E2E defect | An ADO Bug whose tags carry a case ID; `qa-defect-reporting` writes the case ID and the product into `System.Tags` |
+
+## Phases
+
+| Phase | Work | What readers get |
+|---|---|---|
+| 1 | Schema, sync job, backfill | No page yet; history is kept from that day, with up to 90 days before it |
+| 2 | Login, Home, Runs, Case history | Trends and the business matrix |
+| 3 | `catalog` export, Triage, Gaps, Hot spots | Why cases are red, what is not run |
+| 4 | ADO Bugs, Products, effort, release readiness | Go / No-go per product |
+
+## ADO Test Plans
+
+Separate from the dashboard, and kept as a second view for stories:
+
+- `genie-report-ado` (`report.ado.*` in `genie.properties`, off today) writes each run's results into an ADO test
+  plan and suite given per run. It matches a scenario to an ADO Test Case by the case ID in the scenario name; the
+  `@ADO#` tags become the test case's labels.
+- The ADO Test Cases are created from this repository, one per case ID after expanding `Examples`. A new product row
+  means new test cases to sync (a step for `onboarding-e2e-product`); a retired one is closed, not deleted.
+- A case ID synced to ADO is permanent: renaming it loses its history there.
 
 ## Open questions
 
-To answer on the company side before phase 1:
+1. *Get All Reports*: its request (filter by project, time, label?) and paging.
+2. A failed step's error: its field and length (runs pass `--maxReasonSizeLimit 2000`).
+3. How a run gets its `labels`, so the pipeline can mark baseline runs.
+4. What `manDayHours` means (fixed per run or per case) and where it is set.
+5. What happens to a report after 90 days: deleted, or kept with another `reportState`.
+6. A Genie API account with read access to the project, for the sync job.
+7. Where the app runs (platform, HTTPS certificate) and who administers its accounts.
+8. The baseline scope, environment and approved trade volume per run.
+9. For ADO: the suite structure, and whether a run given a parent suite also records results in its child suites.
 
-1. Which files does a Genie run leave under `target/`? Is one of them machine-readable? Does each fork write its own?
-2. The real `azure-pipelines-maven.yml`: is anything scheduled today, and can a pipeline write to the record store?
-3. Where do the records live, where are the pages published, and who reads them?
-4. The nightly scope and environment, and the approved number of API trades per run.
-5. Can a run read the environment's deployed version (`build`)?
-6. Can a pipeline query ADO Bugs by tag (case ID) in the project?
+## What lives where
 
-## What can be built in this repository
-
-When the work is scheduled, the public copy can hold, with synthetic data only:
-
-- the record format and synthetic fixtures;
-- the after-hook change, and the `results` command with unit tests on synthetic fork files;
-- the `dashboard` command, tested on a synthetic history.
-
-Runs against real data, and the records they produce, stay on the company machine.
+- **This repository** (public copy): this plan, the `catalog` and `coverage` exports, synthetic fixtures for their
+  tests. Never a host, account, token, real run identifier or result.
+- **The app repository** (internal): the sync job, schema, API, pages.
+- **Secrets** (pipeline variables or the company's secret store): the Genie account, the database accounts.

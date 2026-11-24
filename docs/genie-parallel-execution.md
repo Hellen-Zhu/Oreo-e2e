@@ -103,8 +103,9 @@ that 4 instances can bring a firm-issued laptop to a halt, with IntelliJ too unr
 - **Memory**: surefire's `argLine` gives `-Xmx2048m`. With three children each running a JVM and, for `@playwright`
   features, a browser, plus the IDE, a 32 GB laptop with a low-power CPU runs out of CPU and native memory. Lower
   `forkCount` to 2 on a laptop, or run the full suite on a build agent.
-- **Logs and reports**: run `mvn test -X` to see the children's logs. Each child writes its own results, which a
-  merged report has to combine (`docs/test-dashboard-plan.md`).
+- **Logs and reports**: run `mvn test -X` to see the children's logs. Each child writes its own results; a run in
+  `FEATURE` mode reaches the Genie report service as one report, which the planned dashboard reads
+  (`docs/test-dashboard-plan.md`).
 
 ## Open questions
 
