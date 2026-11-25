@@ -118,13 +118,15 @@ a side effect of another change.
 
 ## 7. This repository
 
-- Everything in the repo is written in English. Five exceptions, on the user's decision, all in Chinese for the team:
+- Everything in the repo is written in English. Six exceptions, on the user's decision, all in Chinese for the team:
   `docs/demo/oreo-e2e-demo.html` (the demo script), `docs/demo/oreo-ai-workflow.html` (the agent workflow
   explainer; its English counterpart is `docs/ai-workflow.md`), `docs/demo/oreo-sit-seed-demo.html` (the SIT seed
   demo; its English counterpart is `docs/sit-seed.md`), `docs/demo/oreo-kt-deck.html` (the onboarding KT slides
   for a new QA engineer, with speaker notes; it summarizes this file and the documents of section 2; its English
-  counterpart, as Markdown to paste into Confluence one part per page, is `docs/demo/oreo-kt-confluence.md`) and
-  `docs/demo/oreo-kt-script.md` (the presenter's word-for-word script for those slides, page by page over two days).
+  counterpart, as Markdown to paste into Confluence one part per page, is `docs/demo/oreo-kt-confluence.md`),
+  `docs/demo/oreo-kt-script.md` (the presenter's word-for-word script for those slides, page by page over two days)
+  and `docs/demo/oreo-ado-test-feature.html` (the ADO testing Feature draft for the test manager: Chinese guidance
+  around the English fields to paste into ADO, the child stories and the coverage).
   The deck is generated: its slides are `docs/demo/kt-deck/` (`deck.json`, `deck.css`, `slides/`, Chinese like the
   deck) and it embeds the script in its notes panel. After changing either, run `python3 docs/demo/kt-deck/build.py`;
   never edit `oreo-kt-deck.html` by hand.

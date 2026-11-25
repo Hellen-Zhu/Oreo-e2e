@@ -1,0 +1,616 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>OREO E2E 测试 Feature</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* The ADO testing Feature draft for the test manager: how to set the Feature up, paste-ready English fields with
+   copy buttons, child stories, the onboarding story template and the coverage. Chinese by the user's decision.
+   Layout: one reading column in the shape of a work item form; paste-ready fields look like ADO form fields, wide tables scroll in their own frame. */
+:root {
+  --bg: #f5f6f3;
+  --surface: #ffffff;
+  --surface-2: #eceff0;
+  --ink: #17202a;
+  --ink-2: #47525e;
+  --muted: #727d88;
+  --line: #dbe0de;
+  --line-strong: #bfc8c6;
+  --accent: #0c6762;
+  --accent-bg: #ddf0ed;
+  --ok: #1b7340;
+  --ok-bg: #e1f2e6;
+  --warn: #8f5300;
+  --warn-bg: #fbefd9;
+  --info: #2a5596;
+  --info-bg: #e4ecf8;
+  --idle: #59626c;
+  --idle-bg: #e9ecee;
+  --font-text: "IBM Plex Sans", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #10151a; --surface: #161d24; --surface-2: #1d252d; --ink: #e5eaee; --ink-2: #a9b3bd; --muted: #7e8994;
+    --line: #29333c; --line-strong: #3a4651; --accent: #52c3b8; --accent-bg: #133330;
+    --ok: #63cf8e; --ok-bg: #16301f; --warn: #f0b45c; --warn-bg: #33270f; --info: #8db5f0; --info-bg: #182a43;
+    --idle: #a4aeb8; --idle-bg: #252d35; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #10151a; --surface: #161d24; --surface-2: #1d252d; --ink: #e5eaee; --ink-2: #a9b3bd; --muted: #7e8994;
+  --line: #29333c; --line-strong: #3a4651; --accent: #52c3b8; --accent-bg: #133330;
+  --ok: #63cf8e; --ok-bg: #16301f; --warn: #f0b45c; --warn-bg: #33270f; --info: #8db5f0; --info-bg: #182a43;
+  --idle: #a4aeb8; --idle-bg: #252d35; color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-text);
+  font-size: 15px;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+}
+.wrap {
+  max-width: 980px;
+  margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 40px 72px;
+  display: grid;
+  gap: 56px;
+}
+h1, h2, h3 { text-wrap: balance; margin: 0; line-height: 1.25; }
+h1 { font-size: clamp(28px, 4.4vw, 38px); font-weight: 600; letter-spacing: -0.01em; }
+h2 { font-size: 22px; font-weight: 600; }
+h3 { font-size: 16px; font-weight: 600; }
+p { margin: 0; }
+code, .mono { font-family: var(--font-mono); font-size: 0.88em; }
+code { background: var(--surface-2); padding: 0.08em 0.36em; border-radius: 4px; }
+a { color: var(--accent); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+section { display: grid; gap: 18px; min-width: 0; }
+.sec-head { display: grid; gap: 6px; }
+.sec-head p { color: var(--ink-2); max-width: 68ch; }
+.prose { display: grid; gap: 12px; max-width: 72ch; color: var(--ink-2); }
+.prose strong { color: var(--ink); font-weight: 600; }
+
+/* Header */
+header.top { display: grid; gap: 14px; }
+header.top .lead { font-size: 17px; color: var(--ink-2); max-width: 64ch; }
+.asof { font-size: 13px; color: var(--muted); }
+.stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  margin-top: 8px;
+}
+.stat { padding: 14px 16px; display: grid; gap: 2px; min-width: 0; }
+.stat + .stat { border-left: 1px solid var(--line); }
+.stat .n { font-size: 26px; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1.2; }
+.stat .k { font-size: 13px; color: var(--ink-2); }
+.stat .src { font-size: 11.5px; color: var(--muted); font-family: var(--font-mono); }
+@media (max-width: 720px) {
+  .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .stat:nth-child(3) { border-left: 0; }
+  .stat:nth-child(n+3) { border-top: 1px solid var(--line); }
+}
+
+/* Hierarchy */
+.tree {
+  display: grid;
+  gap: 10px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 18px;
+}
+.chain { display: flex; flex-wrap: wrap; align-items: stretch; gap: 8px; }
+.node {
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  padding: 8px 12px;
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  flex: 1 1 150px;
+  background: var(--surface);
+}
+.node .t { font-family: var(--font-mono); font-size: 12px; color: var(--muted); letter-spacing: 0.04em; }
+.node .d { font-size: 13.5px; }
+.node.here { border-color: var(--accent); background: var(--accent-bg); }
+.node.here .t { color: var(--accent); }
+.arrow { align-self: center; color: var(--muted); font-family: var(--font-mono); }
+.related {
+  display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+  font-size: 13.5px; color: var(--ink-2);
+  border-top: 1px dashed var(--line-strong);
+  padding-top: 10px;
+}
+.chip {
+  font-family: var(--font-mono); font-size: 12px;
+  border: 1px solid var(--line-strong); border-radius: 999px; padding: 1px 9px; color: var(--ink-2);
+}
+.points { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; max-width: 76ch; }
+.points li { display: grid; grid-template-columns: 22px 1fr; gap: 8px; color: var(--ink-2); }
+.points li::before { content: "—"; color: var(--accent); font-weight: 600; }
+.points strong { color: var(--ink); font-weight: 600; }
+
+/* Tables */
+.tbl { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+thead th {
+  font-size: 12px; font-weight: 500; color: var(--muted);
+  letter-spacing: 0.05em; text-transform: uppercase; background: var(--surface-2);
+}
+tbody tr:last-child td, tbody tr:last-child th { border-bottom: 0; }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+tr.group td { background: var(--surface-2); font-size: 12px; font-weight: 600; color: var(--ink-2); letter-spacing: 0.04em; }
+tr.total td { font-weight: 600; border-top: 1px solid var(--line-strong); }
+.who { font-size: 12px; color: var(--muted); white-space: nowrap; }
+
+/* Pills */
+.pill {
+  display: inline-block; font-size: 12px; font-weight: 500; line-height: 1.5;
+  padding: 1px 9px; border-radius: 999px; white-space: nowrap;
+}
+.pill.done { background: var(--ok-bg); color: var(--ok); }
+.pill.repeat { background: var(--info-bg); color: var(--info); }
+.pill.discuss { background: var(--warn-bg); color: var(--warn); }
+.pill.planned { background: var(--idle-bg); color: var(--idle); }
+
+/* Work item form fields */
+.form {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 18px;
+  display: grid;
+  gap: 18px;
+}
+.field { display: grid; gap: 6px; min-width: 0; }
+.field-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.field-label { font-size: 13px; font-weight: 600; color: var(--ink-2); }
+.field-body {
+  border: 1px solid var(--line-strong);
+  border-radius: 6px;
+  padding: 12px 14px;
+  background: var(--bg);
+  font-size: 14px;
+  line-height: 1.6;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.field-body.one { font-weight: 500; }
+.field-body h4 { margin: 14px 0 4px; font-size: 14px; font-weight: 600; }
+.field-body h4:first-child { margin-top: 0; }
+.field-body ul, .field-body ol { margin: 4px 0 0; padding-left: 20px; }
+.field-body li + li { margin-top: 3px; }
+.field-note { font-size: 12.5px; color: var(--muted); }
+.tf {
+  background: var(--warn-bg); color: var(--warn);
+  font-family: var(--font-mono); font-size: 0.86em;
+  padding: 0 4px; border-radius: 3px; white-space: nowrap;
+}
+.copy {
+  font: inherit; font-size: 12.5px; font-weight: 500;
+  border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink);
+  border-radius: 6px; padding: 3px 12px; cursor: pointer; white-space: nowrap;
+}
+.copy:hover { border-color: var(--accent); color: var(--accent); }
+.copy.ok { border-color: var(--ok); color: var(--ok); }
+
+/* Matrix */
+.matrix th, .matrix td { padding: 6px 8px; text-align: center; white-space: nowrap; }
+.matrix thead th { text-transform: none; letter-spacing: 0; font-family: var(--font-mono); font-size: 11.5px; vertical-align: bottom; }
+.matrix th.cap, .matrix td.cap {
+  text-align: left; position: sticky; left: 0; background: var(--surface); z-index: 1;
+  font-family: var(--font-mono); font-size: 12.5px; border-right: 1px solid var(--line);
+}
+.matrix thead th.cap { background: var(--surface-2); }
+.matrix td.cnt { font-family: var(--font-mono); font-size: 12.5px; color: var(--ink-2); border-right: 1px solid var(--line); }
+.matrix tr.group td { text-align: left; position: static; }
+.matrix tr.group td.cap { background: var(--surface-2); }
+.dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: var(--ok); vertical-align: middle; }
+.no { color: var(--muted); }
+.uncertain td.cap::after { content: " ≈"; color: var(--warn); }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 13px; color: var(--ink-2); align-items: center; }
+.legend span { display: inline-flex; gap: 6px; align-items: center; }
+.callout {
+  border: 1px solid var(--line-strong);
+  border-left: 3px solid var(--warn);
+  border-radius: 6px;
+  background: var(--surface);
+  padding: 12px 14px;
+  font-size: 13.5px;
+  color: var(--ink-2);
+  display: grid;
+  gap: 4px;
+  max-width: 80ch;
+}
+.callout strong { color: var(--ink); }
+
+.two { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+@media (max-width: 760px) { .two { grid-template-columns: 1fr; } }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; display: grid; gap: 8px; min-width: 0; }
+.card ul { margin: 0; padding-left: 18px; color: var(--ink-2); font-size: 14px; }
+.card li + li { margin-top: 4px; }
+
+footer { font-size: 12.5px; color: var(--muted); border-top: 1px solid var(--line); padding-top: 16px; }
+
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="top">
+  <span class="eyebrow">ADO · Feature 草稿</span>
+  <h1>OREO E2E 测试 Feature</h1>
+  <p class="lead">从测试经理的角度看这个 Feature：怎么建、每个字段怎么填、一份可以直接粘贴进 ADO 的英文草稿，以及我们已经做了哪些测试。</p>
+  <p class="asof">数字截至 2026-11-25。黄底的 <span class="tf">&lt;to fill&gt;</span> 是仓库里查不到、需要你补的内容。</p>
+  <div class="stats" role="list">
+    <div class="stat" role="listitem"><span class="n">19</span><span class="k">个 composition 已接入</span><span class="src">公司 · TestDataTool coverage</span></div>
+    <div class="stat" role="listitem"><span class="n">16</span><span class="k">项 capability（14 生命周期 + 2 产品功能）</span><span class="src">公司 · TestDataTool coverage</span></div>
+    <div class="stat" role="listitem"><span class="n">253</span><span class="k">条可执行用例（API 147 / UI 106）</span><span class="src">公开副本 · 待替换</span></div>
+    <div class="stat" role="listitem"><span class="n">60</span><span class="k">个 SIT seed case</span><span class="src">公开副本 · 待替换</span></div>
+  </div>
+</header>
+
+<section id="build">
+  <div class="sec-head">
+    <span class="eyebrow">怎么建</span>
+    <h2>一个 Feature 管一次测试交付，下面按工作流拆 Story</h2>
+  </div>
+  <div class="tree" aria-label="ADO 工作项层级">
+    <div class="chain">
+      <div class="node"><span class="t">EPIC · 可选</span><span class="d">OREO 整体质量保障，跨多个版本</span></div>
+      <span class="arrow" aria-hidden="true">→</span>
+      <div class="node here"><span class="t">FEATURE · 你要建的</span><span class="d">一个版本或 PI 的 E2E 测试交付</span></div>
+      <span class="arrow" aria-hidden="true">→</span>
+      <div class="node"><span class="t">USER STORY</span><span class="d">每个工作流一个，接入新产品用模板</span></div>
+      <span class="arrow" aria-hidden="true">→</span>
+      <div class="node"><span class="t">TASK</span><span class="d">Story 下面具体的活</span></div>
+    </div>
+    <div class="related">用 <strong>Related</strong> 链接挂到 Feature，不当子项：<span class="chip">Test Plan</span><span class="chip">Bug</span><span class="chip">仓库 / 文档</span></div>
+  </div>
+  <ul class="points">
+    <li><span><strong>不要按产品建 Feature。</strong>在仓库里，一个产品只是每个事件 Examples 里的一行。接入新产品用一个可复用的 User Story 模板（见下面"接入产品"），每上一个产品复制一份，工作项和代码的结构就是对应的。</span></li>
+    <li><span><strong>Test Plan 按标签分 suite。</strong>用例已经打了 <code>@ADO#&lt;suite&gt;</code>、<code>@ADO#positive</code> / <code>negative</code>、<code>@ADO#smoke</code> / <code>regression</code>。Test Plan 按同样的方式分 suite，Feature 里的覆盖数字和 Test Plan 就能对上。</span></li>
+    <li><span><strong>验收标准写成能核对的矩阵。</strong>"每个事件 × 每个产品 × 每一层都有用例"能逐项检查，"提高覆盖率"检查不了。</span></li>
+  </ul>
+</section>
+
+<section id="fields">
+  <div class="sec-head">
+    <span class="eyebrow">字段清单</span>
+    <h2>Feature 上要填的字段</h2>
+  </div>
+  <div class="tbl">
+    <table>
+      <thead><tr><th>字段</th><th>填法</th><th>谁来填</th></tr></thead>
+      <tbody>
+        <tr><td>Title</td><td>写范围和版本，别只写"测试"两个字</td><td class="who">草稿已有，补版本</td></tr>
+        <tr><td>Assigned To</td><td>测试经理</td><td class="who">你</td></tr>
+        <tr><td>Area Path / Iteration</td><td>QA 的区域路径，目标版本或 PI</td><td class="who">你</td></tr>
+        <tr><td>Value Area</td><td>自动化建设一般选 Architectural</td><td class="who">你</td></tr>
+        <tr><td>Priority / Target Date</td><td>按版本计划填</td><td class="who">你</td></tr>
+        <tr><td>Tags</td><td><code>QA; E2E; Automation</code></td><td class="who">草稿已有</td></tr>
+        <tr><td>Description</td><td>目标、范围、方法、环境、交付物、当前覆盖、风险</td><td class="who">草稿已有，补黄底项</td></tr>
+        <tr><td>Acceptance Criteria</td><td>能核对的完成标准</td><td class="who">草稿已有</td></tr>
+        <tr><td>Links</td><td>Related：仓库、Test Plan、Bug、文档；Child：各个 User Story</td><td class="who">你</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="draft">
+  <div class="sec-head">
+    <span class="eyebrow">可直接粘贴 · English</span>
+    <h2>Feature 草稿</h2>
+    <p>"复制"会尽量带上格式（标题、列表），粘贴进 ADO 的富文本框就能保留。浏览器不允许时退回纯文本；再不行就选中整段，你按 Ctrl+C。</p>
+  </div>
+  <div class="form">
+    <div class="field">
+      <div class="field-head"><span class="field-label">Title</span><button class="copy" type="button" data-copy="f-title">复制</button></div>
+      <div class="field-body one" id="f-title">OREO FX — E2E Test Automation (API + UI) for <span class="tf">&lt;to fill: Release/PI&gt;</span></div>
+    </div>
+
+    <div class="field">
+      <div class="field-head"><span class="field-label">Tags</span><button class="copy" type="button" data-copy="f-tags">复制</button></div>
+      <div class="field-body one mono" id="f-tags">QA; E2E; Automation</div>
+    </div>
+
+    <div class="field">
+      <div class="field-head"><span class="field-label">Description</span><button class="copy" type="button" data-copy="f-desc">复制</button></div>
+      <div class="field-body" id="f-desc">
+        <h4>Goal</h4>
+        <p>Prove the OREO FX trade management portal end to end before each release: every in-scope trade lifecycle event, for every live product, at the API layer (business rules) and on the critical UI paths. Provide UAT with ready-to-use SIT trades.</p>
+        <h4>Scope: in</h4>
+        <ul>
+          <li>Trade lifecycle (API + UI): creation (incl. step-in full/partial), creation approval, amendment and its approval, cancellation and its approval, early termination, partial termination, allocation, fixings, novation (remaining party, full and partial), portfolio reassignment, step-out full/partial, trade query, audit trail.</li>
+          <li>Supporting areas: trade blotter (API + UI), risk metrics retrieval, reference data (currency, marketer, portfolio, product IDs, reasons), refdata sync, Cortex formula management, product compose and schema upload (UI), WebSocket notifications, user preferences.</li>
+          <li>Products: 19 compositions registered in E2E (see the attached coverage matrix). New products are onboarded one at a time with the "Onboard product &lt;X&gt; to E2E" story.</li>
+          <li>SIT seed for UAT: bulk booking of live trades and lifecycle events, with a report for UAT.</li>
+        </ul>
+        <h4>Scope: out</h4>
+        <ul><li><span class="tf">&lt;to fill: e.g. performance testing, downstream systems beyond OREO's own API&gt;</span></li></ul>
+        <h4>Approach</h4>
+        <ul>
+          <li>Layering: @api cases carry most of the coverage (validation, state transitions, approvals, responses); @playwright cases cover what a user must be able to do. UI preconditions are provisioned through the API.</li>
+          <li>Products are rows: each lifecycle event is one feature file, and a new product adds one Examples row to every event it supports.</li>
+          <li>Expected API responses are recorded with dynamic values masked; an offline test data check runs before any environment run.</li>
+          <li>Parallel execution (3 feature files at a time, in separate JVMs). Environments: dev, SIT, QA, UAT, PT.</li>
+          <li>Defects found by a run are raised as ADO Bugs and linked to this Feature.</li>
+        </ul>
+        <h4>Current coverage (as of <span class="tf">&lt;to fill: date&gt;</span>)</h4>
+        <ul>
+          <li>Composition × capability matrix: 19 compositions × 16 capabilities, <span class="tf">&lt;to fill: attach the TestDataTool coverage output&gt;</span></li>
+          <li>Executable cases: <span class="tf">&lt;to fill: total&gt;</span> (<span class="tf">&lt;to fill&gt;</span> API, <span class="tf">&lt;to fill&gt;</span> UI)</li>
+          <li>SIT seed: <span class="tf">&lt;to fill: seed cases booked in the latest run&gt;</span></li>
+          <li>Last full run: <span class="tf">&lt;to fill: pass rate&gt;</span>; <span class="tf">&lt;to fill: n&gt;</span> defects raised (<span class="tf">&lt;to fill: links&gt;</span>)</li>
+        </ul>
+        <h4>Open items / risks</h4>
+        <ul>
+          <li>Async downstream booking: test strategy drafted (live trade pool, downstream stub); waiting on Dev for the final behavior.</li>
+          <li>Shared SIT data can be changed by other teams; seeded trades age and are rebuilt each sprint or after an SIT refresh.</li>
+          <li><span class="tf">&lt;to fill: environment availability, dat file exports from Cortex, ...&gt;</span></li>
+        </ul>
+      </div>
+      <p class="field-note">公开副本的参考值（不要直接粘贴，换成公司的输出）：46 个 feature 文件；253 条可执行用例（API 147 / UI 106）；127 个 scenario 定义，其中 96 positive / 31 negative，62 smoke / 68 regression；SIT seed 60 个 case（38 笔新交易覆盖 18 个 Itradeable Type，10 类事件共 20 笔，2 笔 step-in）。</p>
+    </div>
+
+    <div class="field">
+      <div class="field-head"><span class="field-label">Acceptance Criteria</span><button class="copy" type="button" data-copy="f-ac">复制</button></div>
+      <div class="field-body" id="f-ac">
+        <ol>
+          <li>Every in-scope lifecycle event has at least one positive API case for each in-scope product, plus negative cases for its validation rules.</li>
+          <li>Each critical user journey (create, approve, each lifecycle event's happy path) has a UI case per in-scope product.</li>
+          <li>The offline test data check passes, with no case left @wip in the release scope unless listed here with a reason.</li>
+          <li>The full regression on QA passes, or every failure is triaged and linked to an ADO Bug; new cases pass twice in a row.</li>
+          <li>The SIT seed is booked for UAT, failed bookings are re-run, and the seed report is handed to UAT.</li>
+          <li>The coverage matrix (event × product × layer) and the run report are attached to this Feature.</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="stories">
+  <div class="sec-head">
+    <span class="eyebrow">子 User Story</span>
+    <h2>按工作流拆的 Story 和当前状态</h2>
+  </div>
+  <div class="tbl">
+    <table>
+      <thead><tr><th>Story</th><th>状态</th><th>备注</th></tr></thead>
+      <tbody>
+        <tr><td>E2E framework, parallel run, environments, offline data checks</td><td><span class="pill done">Done</span></td><td>Genie + Cucumber，每次 3 个 feature 并行</td></tr>
+        <tr><td>API regression: trade lifecycle × products</td><td><span class="pill done">Done</span></td><td>新产品按行加入</td></tr>
+        <tr><td>UI critical paths: trade lifecycle × products</td><td><span class="pill done">Done</span></td><td>UI cancellation approval 里有 1 个 <code>@wip</code></td></tr>
+        <tr><td>Blotter, risk metrics, reference data, product management</td><td><span class="pill done">Done</span></td><td></td></tr>
+        <tr><td>SIT seed for UAT (manifest + report)</td><td><span class="pill done">Done</span></td><td>每个 sprint 或 SIT 刷新后重跑</td></tr>
+        <tr><td>Onboard product &lt;X&gt; to E2E</td><td><span class="pill repeat">每个产品一份</span></td><td>用下面的模板</td></tr>
+        <tr><td>Async downstream booking test strategy</td><td><span class="pill discuss">讨论中</span></td><td>等 Dev 确定最终行为</td></tr>
+        <tr><td>QA results dashboard</td><td><span class="pill planned">计划中</span></td><td>放在单独的仓库</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="onboard">
+  <div class="sec-head">
+    <span class="eyebrow">接入产品 · 可复用模板 · English</span>
+    <h2>"接入产品 X" User Story</h2>
+    <p>每上线一个产品复制一份，把 &lt;X&gt; 换成它的 composition。验收标准就是仓库里接入一个产品的固定步骤。</p>
+  </div>
+  <div class="form">
+    <div class="field">
+      <div class="field-head"><span class="field-label">Title</span><button class="copy" type="button" data-copy="o-title">复制</button></div>
+      <div class="field-body one" id="o-title">Onboard product <span class="tf">&lt;X&gt;</span> to OREO E2E</div>
+    </div>
+    <div class="field">
+      <div class="field-head"><span class="field-label">Description</span><button class="copy" type="button" data-copy="o-desc">复制</button></div>
+      <div class="field-body" id="o-desc">
+        <p>As the QA team, we want product <span class="tf">&lt;X&gt;</span> (composition <span class="tf">&lt;C&gt;</span>, product ID <span class="tf">&lt;P&gt;</span>) covered by the OREO E2E regression, so that every lifecycle event it supports is proven at the API layer and on the critical UI paths before it goes live.</p>
+        <p>Inputs needed: the product's dat file, its product ID, and the lifecycle events it supports (confirmed by the product owner).</p>
+      </div>
+    </div>
+    <div class="field">
+      <div class="field-head"><span class="field-label">Acceptance Criteria</span><button class="copy" type="button" data-copy="o-ac">复制</button></div>
+      <div class="field-body" id="o-ac">
+        <ol>
+          <li>The dat file and product ID are provided, and the composition is registered in ProductDatFiles.</li>
+          <li>Its supported capabilities are confirmed; sync-examples writes its Examples rows (no row edited by hand).</li>
+          <li>The offline test data check (mvn -Ptest-data process-test-classes) passes with no new problem.</li>
+          <li>New recorded responses are reviewed against the requirement, dynamic values masked, expected files compacted.</li>
+          <li>The new rows pass twice in a row on QA.</li>
+          <li>If UAT needs it: a seed row for the product in the SIT seed catalog.</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="coverage">
+  <div class="sec-head">
+    <span class="eyebrow">我们做了哪些测试</span>
+    <h2>Composition × capability</h2>
+    <p>读自公司机器上 2026-11-25 那次 <code>TestDataTool coverage</code> 的控制台输出。一个 Outline 会给每个支持它的产品各写一行，所以支持同一项 capability 的产品，用例数都一样。用例数放在第二列，每格只标支持与否。</p>
+  </div>
+  <div class="legend">
+    <span><i class="dot" aria-hidden="true"></i>支持，有用例</span>
+    <span><span class="no">–</span>不支持（ProductDatFiles 里没登记）</span>
+    <span><span style="color: var(--warn)">≈</span>照片上看不清，可能有误</span>
+  </div>
+  <div class="tbl">
+    <table class="matrix">
+      <thead><tr><th class="cap">capability</th><th>API / UI 用例</th><th>FX_TRF</th><th>FX_CO</th><th>FX_FSB</th><th>FX_PSCRIPT_TRF</th><th>FX_ARO</th><th>FX_ASO</th><th>FXBO</th><th>FX_FF</th><th>FX_FVA</th><th>FX_OOS</th><th>FX_RAO</th><th>FX_RVO</th><th>FX_AO</th><th>FXStructure</th><th>FX_ACCUMULATOR</th><th>FX_PSCRIPT_EASO</th><th>FX_PSCRIPT_BOBO</th><th>FX_PSCRI…</th></tr></thead>
+      <tbody><tr class="group"><td class="cap">Trade lifecycle</td><td colspan="19"></td></tr>
+<tr><td class="cap">create</td><td class="cnt">4 / 1</td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td></tr>
+<tr><td class="cap">stepInFull</td><td class="cnt">1 / 1</td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td class="no">–</td><td class="no">–</td><td class="no">–</td><td class="no">–</td><td class="no">–</td><td class="no">–</td><td class="no">–</td><td class="no">–</td><td class="no">–</td><td class="no">–</td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td></tr>
+<tr><td class="cap">stepInPartial</td><td class="cnt">1 / 1</td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td class="no">–</td><td class="no">–</td><td class="no">–</td><td class="no">–</td><td class="no">–</td><td class="no">–</td><td class="no">–</td><td class="no">–</td><td class="no">–</td><td class="no">–</td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td></tr>
+<tr><td class="cap">earlyTermination</td><td class="cnt">1 / 1</td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td></tr>
+<tr><td class="cap">novationRemaining</td><td class="cnt">1 / 1</td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td></tr>
+<tr><td class="cap">cancellation</td><td class="cnt">3 / 1</td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td></tr>
+<tr><td class="cap">allocation</td><td class="cnt">2 / 1</td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td></tr>
+<tr><td class="cap">amendment</td><td class="cnt">3 / 1</td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td></tr>
+<tr class="uncertain"><td class="cap">partialTermination</td><td class="cnt">1 / 1</td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td class="no">–</td><td><i class="dot" title="supported"></i></td><td class="no">–</td><td class="no">–</td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td class="no">–</td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td></tr>
+<tr class="uncertain"><td class="cap">partialNovationRemaining</td><td class="cnt">1 / 1</td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td class="no">–</td><td class="no">–</td><td class="no">–</td><td><i class="dot" title="supported"></i></td><td class="no">–</td><td class="no">–</td><td class="no">–</td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td class="no">–</td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td></tr>
+<tr><td class="cap">stepOutFull</td><td class="cnt">1 / 1</td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td class="no">–</td><td class="no">–</td><td class="no">–</td><td class="no">–</td><td class="no">–</td><td class="no">–</td><td class="no">–</td><td class="no">–</td><td class="no">–</td><td class="no">–</td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td></tr>
+<tr><td class="cap">stepOutPartial</td><td class="cnt">1 / 1</td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td class="no">–</td><td class="no">–</td><td class="no">–</td><td class="no">–</td><td class="no">–</td><td class="no">–</td><td class="no">–</td><td class="no">–</td><td class="no">–</td><td class="no">–</td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td></tr>
+<tr><td class="cap">portfolioReassignment</td><td class="cnt">1 / 1</td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td></tr>
+<tr class="uncertain"><td class="cap">fixings</td><td class="cnt">1 / 0</td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td class="no">–</td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td class="no">–</td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td></tr>
+<tr class="group"><td class="cap">Product features</td><td colspan="19"></td></tr>
+<tr><td class="cap">cortexFormula</td><td class="cnt">1 / 0</td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td class="no">–</td><td class="no">–</td><td class="no">–</td><td class="no">–</td><td class="no">–</td><td class="no">–</td><td class="no">–</td><td class="no">–</td><td class="no">–</td><td class="no">–</td><td class="no">–</td><td class="no">–</td><td class="no">–</td><td class="no">–</td></tr>
+<tr><td class="cap">productUpload</td><td class="cnt">0 / 1</td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td><i class="dot" title="supported"></i></td><td class="no">–</td><td class="no">–</td><td class="no">–</td><td class="no">–</td><td class="no">–</td><td class="no">–</td><td class="no">–</td><td class="no">–</td><td class="no">–</td><td class="no">–</td><td class="no">–</td><td class="no">–</td><td class="no">–</td><td class="no">–</td></tr></tbody>
+    </table>
+  </div>
+  <div class="callout">
+    <span><strong>这张表是从屏幕照片读出来的。</strong>第 18 列的名字被截断了，第 19 个 composition 不在截图里；对照 seed catalog，这两个应该是 <code>FX_PSCRIPT_CCK</code> 和 <code>FX_PSCRIPT_VBD</code>。标 ≈ 的三行在中间几列看不太清。放进 ADO 前，请换成公司机器上 <code>TestDataTool coverage</code> 的原始输出。</span>
+  </div>
+</section>
+
+<section id="events">
+  <div class="sec-head">
+    <span class="eyebrow">按事件 × 层 · 公开副本</span>
+    <h2>每个 feature 文件的可执行用例</h2>
+    <p>Outline 按产品行展开，不算 <code>@wip</code>。这里统计的是公开副本，只接入了 4 个产品，所以只能看出各事件之间的比例。总数请以公司的输出为准。</p>
+  </div>
+  <div class="tbl">
+    <table>
+      <thead><tr><th>事件 / 功能</th><th class="num">API</th><th class="num">UI</th><th>说明</th></tr></thead>
+      <tbody>
+        <tr class="group"><td colspan="4">交易生命周期</td></tr>
+        <tr><td>Creation</td><td class="num">15</td><td class="num">20</td><td>含 step-in 全部 / 部分</td></tr>
+        <tr><td>Creation approval</td><td class="num">9</td><td class="num">12</td><td></td></tr>
+        <tr><td>Amendment</td><td class="num">9</td><td class="num">6</td><td></td></tr>
+        <tr><td>Amendment approval</td><td class="num">3</td><td class="num">2</td><td></td></tr>
+        <tr><td>Cancellation</td><td class="num">10</td><td class="num">8</td><td></td></tr>
+        <tr><td>Cancellation approval</td><td class="num">10</td><td class="num">2</td><td>UI 另有 1 个 <code>@wip</code></td></tr>
+        <tr><td>Early termination</td><td class="num">5</td><td class="num">4</td><td></td></tr>
+        <tr><td>Partial termination</td><td class="num">6</td><td class="num">4</td><td></td></tr>
+        <tr><td>Allocation</td><td class="num">14</td><td class="num">5</td><td></td></tr>
+        <tr><td>Fixings</td><td class="num">4</td><td class="num">4</td><td></td></tr>
+        <tr><td>Novation remaining (full)</td><td class="num">4</td><td class="num">4</td><td></td></tr>
+        <tr><td>Partial novation remaining</td><td class="num">6</td><td class="num">5</td><td></td></tr>
+        <tr><td>Portfolio reassignment</td><td class="num">5</td><td class="num">4</td><td></td></tr>
+        <tr><td>Step-out full</td><td class="num">4</td><td class="num">4</td><td></td></tr>
+        <tr><td>Step-out partial</td><td class="num">4</td><td class="num">4</td><td></td></tr>
+        <tr><td>Trade query</td><td class="num">4</td><td class="num">–</td><td></td></tr>
+        <tr><td>Audit trail</td><td class="num">7</td><td class="num">–</td><td>SUBMIT、APPROVED、REJECTED 和各个事件</td></tr>
+        <tr class="group"><td colspan="4">支撑功能</td></tr>
+        <tr><td>Trade blotter</td><td class="num">7</td><td class="num">5</td><td>创建、发布到 marketplace、导入、计数</td></tr>
+        <tr><td>Risk metrics</td><td class="num">7</td><td class="num">–</td><td>批量取数、按指标取数、不支持的指标类型</td></tr>
+        <tr><td>Refdata sync</td><td class="num">3</td><td class="num">–</td><td></td></tr>
+        <tr><td>Cortex formula</td><td class="num">4</td><td class="num">–</td><td></td></tr>
+        <tr><td>Reference data: marketer / portfolio / reason</td><td class="num">7</td><td class="num">–</td><td>3 / 3 / 1</td></tr>
+        <tr><td>Product compose / schema upload</td><td class="num">–</td><td class="num">10</td><td>4 / 6</td></tr>
+        <tr><td>WebSocket notification</td><td class="num">–</td><td class="num">1</td><td></td></tr>
+        <tr><td>User preferences</td><td class="num">–</td><td class="num">2</td><td></td></tr>
+        <tr class="total"><td>合计（公开副本）</td><td class="num">147</td><td class="num">106</td><td>共 46 个 feature 文件，253 条</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="two">
+    <div class="card">
+      <h3>测试之外，已经在用的</h3>
+      <ul>
+        <li>SIT seed：给 UAT 批量造新交易和生命周期事件，每笔都记进 manifest，并生成一份给 UAT 的报告</li>
+        <li>离线数据检查：上环境之前先跑，查用例数据、录制的响应和产品登记</li>
+        <li>录制的预期响应：动态字段先遮掉，再压缩存档</li>
+        <li>跑出来的缺陷直接在 ADO 里提 Bug，挂到对应的 Feature 下</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>需要你补的</h3>
+      <ul>
+        <li>最近一次全量运行的通过率</li>
+        <li>已经提的 Bug 数量和链接</li>
+        <li>日期、负责人、Area / Iteration、Test Plan ID</li>
+        <li>不在范围内的内容（Scope: out）</li>
+        <li>公司的用例总数和 seed 数（替换公开副本的数字）</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<footer>
+  覆盖矩阵读自公司机器 2026-11-25 的 <code>TestDataTool coverage</code> 控制台输出。其余数字是同一天按 oreo-e2e 公开副本的 feature 文件统计的：Outline 按产品行展开，<code>@wip</code> 不算。
+</footer>
+
+</div>
+
+<script>
+(function () {
+  function flash(btn, label, ok) {
+    var old = btn.dataset.label || btn.textContent;
+    btn.dataset.label = old;
+    btn.textContent = label;
+    btn.classList.toggle('ok', !!ok);
+    clearTimeout(btn._t);
+    btn._t = setTimeout(function () { btn.textContent = old; btn.classList.remove('ok'); }, 2200);
+  }
+  function selectText(el) {
+    try {
+      var range = document.createRange();
+      range.selectNodeContents(el);
+      var sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(range);
+    } catch (e) {}
+  }
+  function copy(el, btn) {
+    var html = el.innerHTML;
+    var text = el.innerText.trim();
+    function plain() {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        return navigator.clipboard.writeText(text).then(function () { flash(btn, '已复制（纯文本）', true); });
+      }
+      return Promise.reject(new Error('no clipboard'));
+    }
+    var attempt;
+    try {
+      if (window.ClipboardItem && navigator.clipboard && navigator.clipboard.write) {
+        attempt = navigator.clipboard.write([new ClipboardItem({
+          'text/html': new Blob([html], { type: 'text/html' }),
+          'text/plain': new Blob([text], { type: 'text/plain' })
+        })]).then(function () { flash(btn, '已复制', true); }, plain);
+      } else {
+        attempt = plain();
+      }
+    } catch (e) {
+      attempt = plain();
+    }
+    attempt.catch(function () { selectText(el); flash(btn, '已选中，按 Ctrl+C', false); });
+  }
+  document.querySelectorAll('[data-copy]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var el = document.getElementById(btn.getAttribute('data-copy'));
+      if (el) copy(el, btn);
+    });
+  });
+})();
+</script>
+</body>
+</html>
