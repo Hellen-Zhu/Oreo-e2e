@@ -135,7 +135,7 @@ the product's `byProduct` values of the trade body stay) and the block with its 
 
   Any other `${...}` is left for the step that fills it. Another expression (`${date:tomorrow}`,
   `${datetime:T+1 24:00}`) is a load error. Not business days. Steps that read today themselves (`store today plus N
-  business day as ...`, the fixings check) use this machine's date (`DateUtil.today()`).
+  business day as ...`, the fixings check) take the UTC date too, when they run (`DateUtil.today()`).
 - A row exists only for a case that differs from the defaults. Its `id` is the feature's, as written: an Outline's
   `TC-TRADE-CREATION-<product_type>-API-002` covers every product; product differences go into the row's `byProduct`.
   A case matched by two rows is an error.

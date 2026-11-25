@@ -31,8 +31,9 @@ public final class DateUtil {
         return Instant.now();
     }
 
+    /** Today's date in UTC, whatever this machine's time zone, as the test data's {@code ${date:T}} counts it. */
     public static LocalDate today() {
-        return LocalDate.now();
+        return LocalDate.now(ZoneOffset.UTC);
     }
 
     public static String format(Instant instant) {
