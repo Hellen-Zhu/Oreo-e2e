@@ -13,7 +13,7 @@ data). When the API changes, one fix serves both.
 | Catalog: composition → Itradeable Type, what a pair needs beyond its IDs, variants, events | `src/test/resources/seed/catalog.json` (`SeedData`) |
 | What a run books: one row per seed case (a new trade, or an event on a new trade) or variant | `src/test/resources/seed/features/*.feature` |
 | Steps | `glue/api/SeedSteps.java` |
-| Manifest: one file per run, one line per booking or failure, with what it sent (request, dat, event request) | `target/seed/manifest-<run ID>.jsonl` (generated, never committed) |
+| Manifest: one file per run, one line per trade submitted, then one per booking or failure, with what it sent (request, dat, event request) | `target/seed/manifest-<run ID>.jsonl` (generated, never committed) |
 | Summary for UAT | `TestDataTool seed-report [<run ID>\|<run ID>,<run ID>\|<run ID>..\|all]` → `target/seed/seed-report-<runs>.csv` and `.html` |
 | The page's template | `src/test/resources/tools/seed-report.html`: new trades and lifecycle events in two sections, each with its search, status filter and copy |
 | Each seed case's dat file and whether it is still to export | `TestDataTool seed-dats` → `target/seed/seed-dats.csv`, new trades then events and step-ins |
@@ -155,8 +155,11 @@ writes to the same file. A seed step run without `SeedTest` (from the IDE) start
 `OREO_SEED_ENV=sit` (an environment variable, which reaches the forked JVMs) labels each line of the manifest with the
 environment.
 
-The steps check only that a booking happened: a trade ID and an approved task. A failed booking fails its scenario and
-is written to the manifest with its error. To rerun only the failed ones, use `--name` with their scenario names
+The steps check only that a booking happened: a trade ID and an approved task. Each trade goes to the manifest as soon
+as it is submitted, before its approval: a line with `status` `submitted` and its trade and task IDs. The booking's
+result follows as a line of its own, `booked`, or `failed` with its error and, once submitted, its trade ID. A failed
+booking fails its scenario. A booking whose latest line is still `submitted` (the run was killed or timed out after the
+submit) is reported failed, its trade ID kept: look the trade up, it may still be pending. To rerun only the failed ones, use `--name` with their scenario names
 (`[SEED-TRADE-001]`, `[SEED-EVENT-004]`, `[SEED-STEPIN-001]`): the rerun is a run of
 its own, and `seed-report` merges it with the first run, so nothing is booked twice:
 

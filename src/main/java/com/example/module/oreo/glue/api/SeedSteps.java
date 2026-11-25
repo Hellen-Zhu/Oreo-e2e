@@ -17,7 +17,8 @@ import java.util.List;
 
 /**
  * The steps of the SIT seed ({@code SeedTest}, {@code docs/sit-seed.md}): book the trades and events of
- * {@link SeedData#catalog()} and write each booking, or its failure, to the run's manifest. They check only that a booking
+ * {@link SeedData#catalog()} and write each trade, as soon as it is submitted, then each booking, or its failure, to the
+ * run's manifest. They check only that a booking
  * happened (a trade ID, an approved task), never the response: the seed makes data, the E2E cases test it.
  */
 public class SeedSteps {
@@ -54,8 +55,7 @@ public class SeedSteps {
     private void book(SeedData.Trade trade, String kind) throws Exception {
         ObjectNode entry = entry(kind, trade);
         try {
-            CreatedTrade live = live(trade, entry);
-            entry.put("tradeId", live.tradeId()).put("taskId", live.taskId());
+            live(trade, entry);
             done(entry);
         } catch (Exception | AssertionError e) {
             fail(entry, e);
@@ -77,7 +77,6 @@ public class SeedSteps {
         try {
             String request = SeedData.eventRequest(e, trade);
             CreatedTrade live = live(trade, entry);
-            entry.put("tradeId", live.tradeId());
             request = withAmounts(request, live.tradeId(), trade);
             entry.set("eventRequest", sentEvent(request, live.tradeId(), e));
             String taskId;
@@ -128,7 +127,8 @@ public class SeedSteps {
     /**
      * A live trade of {@code trade}: its body ({@link SeedData#request}, its effective and MiFID execution time the
      * booking's, {@link SeedData#withTimes}) and dat file. The body's portfolio, risk portfolio
-     * and entity go to {@code entry}, and so do the body as sent and the dat path.
+     * and entity go to {@code entry}, and so do the body as sent and the dat path; its trade and task IDs as soon as
+     * it is submitted, when {@code entry} goes to the manifest as {@code submitted} ({@link #submitted}).
      */
     private CreatedTrade live(SeedData.Trade trade, ObjectNode entry) throws Exception {
         String request = SeedData.withTimes(SeedData.request(trade), DateUtil.now());
@@ -140,9 +140,20 @@ public class SeedSteps {
         entry.set("request", Json.parse(TradeApiClient.withProductId(request, trade.productId())));
         entry.put("dat", trade.dat());
         CreatedTrade live = TradeApiClient.provisionLiveTradeWithBody(ctx.helper(), request, trade.productId(),
-                trade.dat(), trade.caseId() != null ? trade.caseId() : trade.setup());
+                trade.dat(), trade.caseId() != null ? trade.caseId() : trade.setup(),
+                submitted -> submitted(entry, submitted));
         ctx.set("createdTradeId", live.tradeId());
         return live;
+    }
+
+    /**
+     * Writes {@code entry} to the manifest as {@code submitted}, with the IDs of {@code trade}, just submitted, before
+     * its approval: a booking that ends in no line of its own (the run killed, timed out) still names its trade, and
+     * its {@code booked} or {@code failed} line, later, keeps them.
+     */
+    private static void submitted(ObjectNode entry, CreatedTrade trade) {
+        entry.put("tradeId", trade.tradeId()).put("taskId", trade.taskId()).put("status", "submitted");
+        SeedData.record(entry);
     }
 
     private static ObjectNode entry(String kind, SeedData.Trade trade) {

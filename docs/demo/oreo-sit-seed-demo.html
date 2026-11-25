@@ -283,7 +283,7 @@ body.script-only .pipe, body.script-only .stats, body.script-only .mock { displa
       <div class="cue"><span class="tag">屏幕</span>打开 <code>target/seed/</code>，指一下 <code>manifest-&lt;运行编号&gt;.jsonl</code> 和 <code>current-run</code>，再打开一个 manifest 看一行。</div>
       <div class="say">
         <p>报告、补跑合并、“这笔发了什么”，背后都是同一份东西：<strong>manifest</strong>。每跑一次 SeedTest 就生成一个新文件，文件名就是这次运行的编号，也就是开始时间，比如 <code>manifest-20261120-153000.jsonl</code>。</p>
-        <p>文件里<strong>一笔一行</strong>，成功和失败都写；每一行是一个完整的 JSON，写进去以后就不再改。</p>
+        <p>每一笔交易<strong>一提交就先写一行</strong> <code>submitted</code>，结束后再写一行结果，成功和失败都写；每一行是一个完整的 JSON，写进去以后就不再改。</p>
       </div>
       <pre class="code"><code>{"run":"20261120-153000","case":"SEED-EVENT-001","kind":"event","event":"allocation-full",
  "composition":"FX_TRF","productId":"FX_TRF","portfolioId":"EXAMPLE_PORTFOLIO_E001",
@@ -294,13 +294,14 @@ body.script-only .pipe, body.script-only .stats, body.script-only .mock { displa
         <tbody>
           <tr><td>开始下单时</td><td>运行编号、用例编号、产品、Itradeable Type、taxonomy / variant</td></tr>
           <tr><td>请求发出去<strong>之前</strong></td><td>portfolio、entity、实际发送的下单请求、dat 路径</td></tr>
-          <tr><td>交易建好后</td><td>trade ID、审批任务</td></tr>
+          <tr><td>交易提交后、审批<strong>之前</strong></td><td>trade ID、审批任务，马上写一行 <code>submitted</code></td></tr>
           <tr><td>事件发出后</td><td>事件名、实际发送的事件请求、子交易 ID、事件任务</td></tr>
           <tr><td>最后</td><td>成功记 <code>booked</code>；出错记 <code>failed</code> 和错误原因</td></tr>
         </tbody>
       </table></div>
       <div class="say">
         <p>请求是<strong>先记再发</strong>的，所以即使这一笔失败了，也能看到它当时想发什么，排查的时候最有用。</p>
+        <p>trade ID 也是<strong>一提交就记</strong>：审批失败，或者进程中途被杀、超时，manifest 里照样有这笔单的 ID，可以去 SIT 上找到它。报告里最后一行还停在 <code>submitted</code> 的，算失败，并提示这笔单可能还在等审批。</p>
         <p>第二个问题是并行。造数分成几个进程同时跑，它们怎么写进<strong>同一个文件</strong>、又不互相打架？</p>
       </div>
       <div class="pipe" role="img" aria-label="manifest 的写入：主进程生成运行编号，并行的子进程找到同一个运行，加锁追加到同一个文件">

@@ -25,13 +25,18 @@ import java.util.TreeMap;
  * (environment, case, composition, product ID, taxonomy, variant, event) and writes
  * {@code target/seed/seed-report-<run ID or all>.csv}, one row per booking with its Itradeable Type (from the catalog's
  * {@code itradeableTypes} when the line has none), portfolio, risk portfolio and entity; prints the counts, by kind and by Itradeable
- * Type, and the bookings that failed. Checks the catalog first. Never fails on a failed booking: the report lists it.
+ * Type, and the bookings that failed, a booking whose latest line is {@code submitted} among them. Checks the catalog
+ * first. Never fails on a failed booking: the report lists it.
  */
 final class SeedReport {
 
     static final List<String> COLUMNS = List.of("run", "tradeId", "env", "kind", "case", "itradeableType",
             "composition", "productId", "taxonomy", "portfolioId", "riskPortfolio", "scbEntity", "variant", "event",
             "setup", "dat", "childTradeIds", "status", "at", "error");
+
+    /** The error of a booking whose latest line is {@code submitted}: {@link #unfinishedAsFailed}. */
+    static final String UNFINISHED = "submitted, then no result: the run stopped before this booking ended;"
+            + " look the trade up, it may still be pending";
 
     /** The page's template: the report's data goes in place of {@link #DATA_MARK}. */
     static final String TEMPLATE = "src/test/resources/tools/seed-report.html";
@@ -70,7 +75,8 @@ final class SeedReport {
         }
         System.out.println("Run(s) " + String.join(", ", runs) + " (" + manifests.size() + " run(s) in "
                 + ProjectPaths.projectRoot().relativize(dir) + ")");
-        List<JsonNode> latest = withItradeableTypes(latest(asEvents(entries)), catalog.itradeableTypes());
+        List<JsonNode> latest = withItradeableTypes(unfinishedAsFailed(latest(asEvents(entries))),
+                catalog.itradeableTypes());
         Path csv = dir.resolve("seed-report-" + name + ".csv");
         Files.writeString(csv, csv(latest), StandardCharsets.UTF_8);
         Path templateFile = ProjectPaths.projectRoot().resolve(TEMPLATE);
@@ -157,6 +163,21 @@ final class SeedReport {
             boolean stepIn = entry.isObject() && !entry.path("variant").asText("").isEmpty()
                     && !"event".equals(entry.path("kind").asText());
             out.add(stepIn ? ((ObjectNode) entry.deepCopy()).put("kind", "event") : entry);
+        }
+        return out;
+    }
+
+    /**
+     * {@code entries} with each booking whose latest line is {@code submitted} reported {@code failed}: its trade was
+     * submitted and the run wrote no result after it (killed, timed out), so the trade may still be pending. Its trade
+     * ID stays.
+     */
+    static List<JsonNode> unfinishedAsFailed(List<JsonNode> entries) {
+        List<JsonNode> out = new ArrayList<>();
+        for (JsonNode entry : entries) {
+            boolean unfinished = entry.isObject() && "submitted".equals(entry.path("status").asText());
+            out.add(unfinished ? ((ObjectNode) entry.deepCopy()).put("status", "failed").put("error", UNFINISHED)
+                    : entry);
         }
         return out;
     }

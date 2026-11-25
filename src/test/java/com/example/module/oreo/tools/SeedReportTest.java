@@ -88,6 +88,22 @@ public class SeedReportTest {
     }
 
     @Test
+    public void aBookingLeftSubmittedIsReportedFailedWithItsTrade() {
+        List<JsonNode> in = List.of(
+                Json.parse("{\"kind\": \"trade\", \"case\": \"SEED-TRADE-001\", \"tradeId\": \"T-1\", \"status\": \"submitted\"}"),
+                Json.parse("{\"kind\": \"trade\", \"case\": \"SEED-TRADE-002\", \"tradeId\": \"T-2\", \"status\": \"submitted\"}"),
+                Json.parse("{\"kind\": \"trade\", \"case\": \"SEED-TRADE-002\", \"tradeId\": \"T-2\", \"status\": \"booked\"}"));
+        List<JsonNode> latest = SeedReport.unfinishedAsFailed(SeedReport.latest(in));
+        assertEquals(2, latest.size());
+        assertEquals("failed", latest.get(0).path("status").asText());
+        assertEquals("T-1", latest.get(0).path("tradeId").asText());
+        assertEquals(SeedReport.UNFINISHED, latest.get(0).path("error").asText());
+        assertEquals("a later line of the booking wins over its submitted line", "booked",
+                latest.get(1).path("status").asText());
+        assertEquals("the manifest's line is left as it was", "submitted", in.get(0).path("status").asText());
+    }
+
+    @Test
     public void aReportMergesTheRunsItNamesTheLatestLineWinning() {
         List<String> all = List.of("20261120-100000", "20261120-110000", "20261120-120000");
         assertEquals(List.of("20261120-120000"), SeedReport.runs(null, all));

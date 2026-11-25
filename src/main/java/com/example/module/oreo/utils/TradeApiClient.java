@@ -17,6 +17,7 @@ import java.net.URL;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -291,13 +292,16 @@ public final class TradeApiClient {
 
     /**
      * {@link #provisionLiveTrade} with the trade body {@code requestJson} instead of a setup body; {@code what} names
-     * the body in the log and the error.
+     * the body in the log and the error. {@code submitted} gets the trade as soon as it is submitted, before its
+     * approval: a caller keeps its ID even when the approval fails.
      */
     public static CreatedTrade provisionLiveTradeWithBody(RequestResponseHelper helper, String requestJson,
-                                                          String productId, String datPath, String what)
+                                                          String productId, String datPath, String what,
+                                                          Consumer<CreatedTrade> submitted)
             throws URISyntaxException {
         CreatedTrade trade = createdTrade(createTradeWithBody(helper, SUBMIT_TRADE_PATH, TestUser.MAKER.email(),
                 requestJson, productId, datPath, what), what);
+        submitted.accept(trade);
         approveTask(helper, trade.taskId(), TestUser.CHECKER.email());
         log.info("[TradeApiClient] live trade provisioned: tradeId='{}'", trade.tradeId());
         return trade;
