@@ -23,6 +23,12 @@ final class CoverageHtml {
 
     static final String TEMPLATE = "src/test/resources/tools/coverage-report.html";
     static final String DATA_MARK = "@@COVERAGE_DATA@@";
+    /**
+     * The form of {@link #model}, named by the template on its data element ({@code data-format="2"}): 2 is the views
+     * ({@code views[].groups}), 1 was the groups alone. A copy that takes this class without its template would write
+     * a page that cannot read its data.
+     */
+    static final String FORMAT = "data-format=\"2\"";
 
     private static final Set<String> SUFFIX_VARIANTS = Set.of("full", "partial");
     private static final Set<String> PREFIX_VARIANTS = Set.of("early", "partial");
@@ -166,10 +172,17 @@ final class CoverageHtml {
     /**
      * The page: {@code template} with the JSON in place of {@link #DATA_MARK}. Every {@code <} of the JSON is written
      * {@code <}, so no value can end the script element that holds it.
+     *
+     * @throws IllegalStateException when the template has no {@link #DATA_MARK}, or does not read this form of the data
+     *                               ({@link #FORMAT})
      */
     static String page(String template, String json) {
         if (!template.contains(DATA_MARK)) {
             throw new IllegalStateException("[Coverage] " + TEMPLATE + " has no " + DATA_MARK);
+        }
+        if (!template.contains(FORMAT)) {
+            throw new IllegalStateException("[Coverage] " + TEMPLATE + " does not read the data this tool writes (no "
+                    + FORMAT + " on its data element): take the template of the same commit as CoverageHtml.java");
         }
         return template.replace(DATA_MARK, json.replace("<", "\\u003c"));
     }

@@ -149,11 +149,20 @@ code { font-family: var(--mono); font-size: 12px; }
     recorded trade (<code>expected/_shared/basic</code>). Outlines tagged <code>@wip</code> are not counted. A Scenario with a fixed
     product is not counted. Whether a case has its data and its recording is what <code>check</code> reports.</footer>
 </main>
-<script id="coverage-data" type="application/json">@@COVERAGE_DATA@@</script>
+<script id="coverage-data" type="application/json" data-format="2">@@COVERAGE_DATA@@</script>
 <script>
 (function () {
   "use strict";
   var DATA = JSON.parse(document.getElementById("coverage-data").textContent);
+  if (!Array.isArray(DATA.views)) {
+    // data of another form than this template reads (data-format): say so rather than show an empty table
+    var meta = document.getElementById("meta");
+    meta.style.color = "var(--bad)";
+    meta.textContent = "This page cannot read its data: it was written with a template of another version than the"
+        + " tool. Take src/test/resources/tools/coverage-report.html of the same commit as the tool and run"
+        + " coverage --html again.";
+    return;
+  }
   var WIDE = 5; // a group with this many columns or fewer shows the counts in its cells
   var HINTS = {
     composition: "one row per composition (ProductDatFiles)",

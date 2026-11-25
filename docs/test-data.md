@@ -468,7 +468,10 @@ or with `-U`.
   hover, a row's cases on a click, with the product ID each sends. The
   page is one file with nothing loaded from elsewhere: it opens offline, and a pipeline can publish it as a build
   artifact. Its data is written beside it, `coverage.json`, for other tools. Both are generated: never commit
-  them. The page's template is `src/test/resources/tools/coverage-report.html`.
+  them. The page's template is `src/test/resources/tools/coverage-report.html`; it changes with `CoverageHtml`, so
+  copy both together. The template names the form of data it reads (`data-format` on its data element):
+  `coverage --html` refuses a template of another form, and a page that cannot read its data says so instead of
+  showing an empty table.
 - `seed-report [<run ID>|all]`: the summary of a run of the SIT seed for UAT (the latest by default, `all` for every
   run), `target/seed/seed-report-<run ID or all>.csv` and the same as a page (`.html`, from the template
   `src/test/resources/tools/seed-report.html`), from the seed's manifests ([sit-seed.md](sit-seed.md)), a row per

@@ -1,11 +1,14 @@
 package com.example.module.oreo.tools;
 
 import com.example.module.oreo.testdata.Capability;
+import com.example.module.oreo.testdata.ProjectPaths;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -14,6 +17,7 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class CoverageHtmlTest {
 
@@ -91,12 +95,26 @@ public class CoverageHtmlTest {
 
     @Test
     public void theDataCannotEndItsScriptElement() {
-        String page = CoverageHtml.page("<script>" + CoverageHtml.DATA_MARK + "</script>", "{\"id\":\"</script>\"}");
-        assertEquals("<script>{\"id\":\"\\u003c/script>\"}</script>", page);
+        String page = CoverageHtml.page("<script " + CoverageHtml.FORMAT + ">" + CoverageHtml.DATA_MARK + "</script>",
+                "{\"id\":\"</script>\"}");
+        assertEquals("<script " + CoverageHtml.FORMAT + ">{\"id\":\"\\u003c/script>\"}</script>", page);
     }
 
     @Test(expected = IllegalStateException.class)
     public void aTemplateWithoutTheMarkFails() {
         CoverageHtml.page("<html></html>", "{}");
+    }
+
+    @Test
+    public void aTemplateOfAnotherDataFormatFailsAndTheTemplateReadsThisOne() throws IOException {
+        try {
+            CoverageHtml.page("<script data-format=\"1\">" + CoverageHtml.DATA_MARK + "</script>", "{}");
+            fail("a template that reads another form of the data is refused");
+        } catch (IllegalStateException e) {
+            assertTrue(e.getMessage(), e.getMessage().contains(CoverageHtml.FORMAT));
+        }
+        String template = Files.readString(ProjectPaths.projectRoot().resolve(CoverageHtml.TEMPLATE),
+                StandardCharsets.UTF_8);
+        assertTrue(CoverageHtml.page(template, "{}").contains(CoverageHtml.FORMAT + ">{}</script>"));
     }
 }
