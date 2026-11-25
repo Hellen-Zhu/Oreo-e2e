@@ -1,6 +1,5 @@
 package com.example.module.oreo.testdata;
 
-import com.example.module.oreo.utils.DateUtil;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -14,8 +13,11 @@ import java.net.URLClassLoader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Map;
+import java.util.TimeZone;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -77,6 +79,9 @@ public class TestDataRepositoryTest {
                       "use": ["target-amount"] }
                   ]
                 }""");
+        // A date and time: the date placeholder, then the time in UTC
+        write("api/time_event.json", """
+                { "defaults": { "request": { "basic": { "effectiveTimestamp": "${date:T+1}T09:00:00Z" } } } }""");
         // The dat file as case data
         write("api/dat_event.json", """
                 {
@@ -228,9 +233,9 @@ public class TestDataRepositoryTest {
         assertEquals(Json.parse(expected), Json.parse(actual));
     }
 
-    /** Today plus {@code days}, as {@code ${date:T+days}} gives it. */
+    /** Today in UTC plus {@code days}, as {@code ${date:T+days}} gives it. */
     private static String day(int days) {
-        return DateUtil.today().plusDays(days).toString();
+        return LocalDate.now(ZoneOffset.UTC).plusDays(days).toString();
     }
 
     private static void assertFailsWith(Runnable load, String... parts) {
@@ -413,6 +418,21 @@ public class TestDataRepositoryTest {
         CaseData data = repo.forCase("TC-BLOCK-EVENT-FX_PSCRIPT_TRF-API-001");
         assertEquals(2, Json.parse(data.request()).get("data").size());
         assertEquals(day(0), data.flattenRequest().get("data[1].value"));
+    }
+
+    @Test
+    public void dateIsTodayInUtcWhateverTheMachinesZoneAndATimeFollowsIt() {
+        TimeZone machine = TimeZone.getDefault();
+        try {
+            // UTC+14 and UTC-12: at any moment, one of the two is on another date than UTC
+            for (String zone : List.of("Etc/GMT-14", "Etc/GMT+12")) {
+                TimeZone.setDefault(TimeZone.getTimeZone(zone));
+                assertJson("{\"basic\":{\"effectiveTimestamp\":\"" + day(1) + "T09:00:00Z\"}}",
+                        repo.forCase("TC-TIME-EVENT-API-001").request());
+            }
+        } finally {
+            TimeZone.setDefault(machine);
+        }
     }
 
     @Test

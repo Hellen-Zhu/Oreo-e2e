@@ -4,6 +4,7 @@ import java.time.DayOfWeek;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 
 public final class DateUtil {
@@ -22,6 +23,11 @@ public final class DateUtil {
 
     public static LocalDate today() {
         return LocalDate.now();
+    }
+
+    /** Today's date in UTC, whatever this machine's time zone: the date of the test data's {@code ${date:...}}. */
+    public static LocalDate todayUtc() {
+        return LocalDate.now(ZoneOffset.UTC);
     }
 
     public static String format(Instant instant) {
@@ -71,7 +77,8 @@ public final class DateUtil {
     }
 
     /**
-     * Resolve a relative date expression to an absolute {@code yyyy-MM-dd} string.
+     * Resolve a relative date expression to an absolute {@code yyyy-MM-dd} string, counted from today in UTC
+     * ({@link #todayUtc()}).
      *
      * <ul>
      *   <li>{@code T}   — today</li>
@@ -89,15 +96,15 @@ public final class DateUtil {
         }
         String s = expression.trim();
         if ("T".equalsIgnoreCase(s)) {
-            return today().format(DATE_FMT);
+            return todayUtc().format(DATE_FMT);
         }
         if (s.toUpperCase().startsWith("T+")) {
             int days = Integer.parseInt(s.substring(2));
-            return today().plusDays(days).format(DATE_FMT);
+            return todayUtc().plusDays(days).format(DATE_FMT);
         }
         if (s.toUpperCase().startsWith("T-")) {
             int days = Integer.parseInt(s.substring(2));
-            return today().minusDays(days).format(DATE_FMT);
+            return todayUtc().minusDays(days).format(DATE_FMT);
         }
         return s;
     }

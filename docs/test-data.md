@@ -122,10 +122,13 @@ the product's `byProduct` values of the trade body stay) and the block with its 
   layer both channels and the provisioning steps share.
 - Objects merge key by key; arrays and values replace whole; `null` removes a key. `_comment` is a comment at any
   depth. To change one element of a list, give the whole list.
-- `${date:T}`, `${date:T+N}`, `${date:T-N}` in a text value, alone or in a longer text: today's date plus or minus N
-  calendar days, `yyyy-MM-dd`, this machine's time zone (`DateUtil.resolveDate`), filled in each time a step reads the
-  data (`request()`, `flattenRequest()`, a setup's `request()` / `response()`). Any other `${...}` is left for the step
-  that fills it. Another expression (`${date:tomorrow}`) is a load error. Not business days.
+- `${date:T}`, `${date:T+N}`, `${date:T-N}` in a text value, alone or in a longer text: today's date in UTC plus or
+  minus N calendar days, `yyyy-MM-dd`, whatever this machine's time zone (`DateUtil.resolveDate`), filled in each time
+  a step reads the data (`request()`, `flattenRequest()`, a setup's `request()` / `response()`). A date and time is
+  the placeholder followed by the time in UTC: `"effectiveTimestamp": "${date:T}T09:00:00Z"` is 09:00 UTC today,
+  `"${date:T+1}T09:00:00Z"` tomorrow. Any other `${...}` is left for the step that fills it. Another expression
+  (`${date:tomorrow}`) is a load error. Not business days. Steps that read today themselves (`store today plus N
+  business day as ...`, the fixings check) use this machine's date (`DateUtil.today()`).
 - A row exists only for a case that differs from the defaults. Its `id` is the feature's, as written: an Outline's
   `TC-TRADE-CREATION-<product_type>-API-002` covers every product; product differences go into the row's `byProduct`.
   A case matched by two rows is an error.

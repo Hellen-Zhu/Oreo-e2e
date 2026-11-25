@@ -12,9 +12,10 @@ import java.util.regex.Pattern;
 
 /**
  * Values of the test data that are filled in when the case runs: {@code ${date:T}}, {@code ${date:T+N}} and
- * {@code ${date:T-N}} in a string value become today's date plus or minus N calendar days, {@code yyyy-MM-dd} in
- * this machine's time zone ({@link DateUtil#resolveDate}). The placeholder can be the whole value or a part of it.
- * Every other {@code ${...}} is left as it is: a step fills it in, or json-unit reads it.
+ * {@code ${date:T-N}} in a string value become today's date in UTC plus or minus N calendar days, {@code yyyy-MM-dd},
+ * whatever this machine's time zone ({@link DateUtil#resolveDate}). The placeholder can be the whole value or a part of
+ * it: a date and time is the placeholder followed by the time in UTC, {@code ${date:T}T09:00:00Z}. Every other
+ * {@code ${...}} is left as it is: a step fills it in, or json-unit reads it.
  */
 final class DataPlaceholders {
 
