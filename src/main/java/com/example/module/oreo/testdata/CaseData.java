@@ -34,7 +34,10 @@ public final class CaseData {
 
     public CaseId id() { return id; }
 
-    /** Compact JSON of the merged request, {@code ${date:...}} filled in; {@code {}} when no layer has one. */
+    /**
+     * Compact JSON of the merged request, {@code ${date:...}} and {@code ${datetime:...}} filled in; {@code {}} when no
+     * layer has one.
+     */
     public String request() { return Json.compact(DataPlaceholders.resolve(request)); }
 
     /** {@code true} when the merged request has at least one field. */
@@ -72,7 +75,8 @@ public final class CaseData {
 
     /**
      * The request flattened into dot-path keys ({@code basic.counterpartyName}, {@code subTrades[0].portfolioId})
-     * with text leaf values, as the hook stores them in the scenario context; {@code ${date:...}} filled in for today.
+     * with text leaf values, as the hook stores them in the scenario context; {@code ${date:...}} and
+     * {@code ${datetime:...}} filled in as by {@link #request()}.
      */
     public Map<String, String> flattenRequest() {
         Map<String, String> result = new LinkedHashMap<>();

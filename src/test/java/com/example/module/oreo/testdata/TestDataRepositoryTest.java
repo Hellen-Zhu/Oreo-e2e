@@ -13,6 +13,7 @@ import java.net.URLClassLoader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.util.List;
@@ -79,9 +80,16 @@ public class TestDataRepositoryTest {
                       "use": ["target-amount"] }
                   ]
                 }""");
-        // A date and time: the date placeholder, then the time in UTC
+        // Dates and times in UTC: the current time, a relative date at a fixed time
         write("api/time_event.json", """
-                { "defaults": { "request": { "basic": { "effectiveTimestamp": "${date:T+1}T09:00:00Z" } } } }""");
+                { "defaults": { "request": { "basic": {
+                    "tradeDate": "${date:T}",
+                    "effectiveTimestamp": "${datetime:T}",
+                    "expiry": "${datetime:T+1}",
+                    "valueTime": "${datetime:T+1 09:00}",
+                    "cutOff": "cut off at ${datetime:t-2 17:30:15}" } } } }""");
+        write("api/bad_datetime.json", """
+                { "defaults": { "request": { "basic": { "valueTime": "${datetime:T+1 24:00}" } } } }""");
         // The dat file as case data
         write("api/dat_event.json", """
                 {
@@ -421,18 +429,29 @@ public class TestDataRepositoryTest {
     }
 
     @Test
-    public void dateIsTodayInUtcWhateverTheMachinesZoneAndATimeFollowsIt() {
+    public void datesAndTimesAreUtcAtTheFixedMoment() {
         TimeZone machine = TimeZone.getDefault();
         try {
-            // UTC+14 and UTC-12: at any moment, one of the two is on another date than UTC
-            for (String zone : List.of("Etc/GMT-14", "Etc/GMT+12")) {
-                TimeZone.setDefault(TimeZone.getTimeZone(zone));
-                assertJson("{\"basic\":{\"effectiveTimestamp\":\"" + day(1) + "T09:00:00Z\"}}",
-                        repo.forCase("TC-TIME-EVENT-API-001").request());
-            }
+            // On UTC+14 the fixed moment is already 2026-11-25: the data still gives UTC
+            TimeZone.setDefault(TimeZone.getTimeZone("Etc/GMT-14"));
+            DataPlaceholders.fixNow(Instant.parse("2026-11-24T23:59:30.789Z"));
+            CaseData data = repo.forCase("TC-TIME-EVENT-API-001");
+            assertJson("{\"basic\":{\"tradeDate\":\"2026-11-24\","
+                    + "\"effectiveTimestamp\":\"2026-11-24T23:59:30Z\","
+                    + "\"expiry\":\"2026-11-25T23:59:30Z\","
+                    + "\"valueTime\":\"2026-11-25T09:00:00Z\","
+                    + "\"cutOff\":\"cut off at 2026-11-22T17:30:15Z\"}}", data.request());
+            assertEquals("2026-11-24T23:59:30Z", data.flattenRequest().get("basic.effectiveTimestamp"));
         } finally {
+            DataPlaceholders.fixNow(null);
             TimeZone.setDefault(machine);
         }
+    }
+
+    @Test
+    public void unknownDateTimeIsALoadErrorNamingTheField() {
+        assertFailsWith(() -> repo.forCase("TC-BAD-DATETIME-API-001"),
+                "bad_datetime.json [defaults.request]", "basic.valueTime", "${datetime:T+1 24:00}");
     }
 
     @Test

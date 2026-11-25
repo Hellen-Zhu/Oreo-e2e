@@ -45,10 +45,10 @@ public final class SetupData {
 
     public String name() { return name; }
 
-    /** Compact JSON of the request, {@code ${date:...}} filled in for today. */
+    /** Compact JSON of the request, {@code ${date:...}} and {@code ${datetime:...}} filled in. */
     public String request() { return Json.compact(DataPlaceholders.resolve(required(request, "request"))); }
 
-    /** Compact JSON of the response, {@code ${date:...}} filled in for today. */
+    /** Compact JSON of the response, {@code ${date:...}} and {@code ${datetime:...}} filled in. */
     public String response() { return Json.compact(DataPlaceholders.resolve(required(response, "response"))); }
 
     public boolean hasRequest() { return request != null; }

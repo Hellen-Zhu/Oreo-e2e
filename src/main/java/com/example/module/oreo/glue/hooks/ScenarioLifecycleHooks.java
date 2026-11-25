@@ -63,6 +63,8 @@ public class ScenarioLifecycleHooks {
     @Before(order = 0)
     public void beforeScenario(Scenario scenario) {
         scenarioStartTime = DateUtil.now();
+        // T of the test data's ${date:...} and ${datetime:...}: the same values for every read in this scenario
+        TestData.fixNow(scenarioStartTime);
         ThreadContext.put("threadName", Thread.currentThread().getName() + "_" + Thread.currentThread().threadId());
         log.info("========================================");
         log.info("[SCENARIO BEGIN] {} | Start: {}", scenario.getName(), DateUtil.format(scenarioStartTime));

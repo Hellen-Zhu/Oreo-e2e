@@ -122,12 +122,19 @@ the product's `byProduct` values of the trade body stay) and the block with its 
   layer both channels and the provisioning steps share.
 - Objects merge key by key; arrays and values replace whole; `null` removes a key. `_comment` is a comment at any
   depth. To change one element of a list, give the whole list.
-- `${date:T}`, `${date:T+N}`, `${date:T-N}` in a text value, alone or in a longer text: today's date in UTC plus or
-  minus N calendar days, `yyyy-MM-dd`, whatever this machine's time zone (`DateUtil.resolveDate`), filled in each time
-  a step reads the data (`request()`, `flattenRequest()`, a setup's `request()` / `response()`). A date and time is
-  the placeholder followed by the time in UTC: `"effectiveTimestamp": "${date:T}T09:00:00Z"` is 09:00 UTC today,
-  `"${date:T+1}T09:00:00Z"` tomorrow. Any other `${...}` is left for the step that fills it. Another expression
-  (`${date:tomorrow}`) is a load error. Not business days. Steps that read today themselves (`store today plus N
+- Dates and times, in a text value, alone or in a longer text, are filled in each time a step reads the data
+  (`request()`, `flattenRequest()`, a setup's `request()` / `response()`), in UTC whatever this machine's time zone.
+  `T` is the start of the scenario (the hook fixes it, so every read in a scenario gives the same values; the offline
+  tool takes the moment it runs):
+  - `${date:T}`, `${date:T+N}`, `${date:T-N}`: the date plus or minus N calendar days, `yyyy-MM-dd`
+    (`DateUtil.resolveDate`).
+  - `${datetime:T}`, `${datetime:T+N}`, `${datetime:T-N}`: the time, to the second, plus or minus N days;
+    `${datetime:T+N HH:mm}` or `HH:mm:ss` (also after `T`, `T-N`): that UTC time on that date. Written
+    `yyyy-MM-dd'T'HH:mm:ss'Z'` (`DateUtil.resolveDateTime`): `"effectiveTimestamp": "${datetime:T}"` is
+    `2026-11-24T08:15:42Z` when the scenario starts then, `"${datetime:T+1 09:00}"` is `2026-11-25T09:00:00Z`.
+
+  Any other `${...}` is left for the step that fills it. Another expression (`${date:tomorrow}`,
+  `${datetime:T+1 24:00}`) is a load error. Not business days. Steps that read today themselves (`store today plus N
   business day as ...`, the fixings check) use this machine's date (`DateUtil.today()`).
 - A row exists only for a case that differs from the defaults. Its `id` is the feature's, as written: an Outline's
   `TC-TRADE-CREATION-<product_type>-API-002` covers every product; product differences go into the row's `byProduct`.
@@ -240,7 +247,8 @@ scenario that has not stored the variable fails. Example, a risk query by the tr
 
 `request:<path>` works the same way with the request of the run: it records `"${request:<path>}"`, only when the
 actual value is the request's value at `<path>`, and each comparison puts in the value this run sent (an event's
-request as sent, its shares as amounts; otherwise the case's request, its dates resolved that day). The expected file
+request as sent, its shares as amounts; otherwise the case's request, its dates and times resolved at the scenario's
+start, so a `${datetime:T}` compares too). The expected file
 never holds the date, so it does not go stale, and the response is still checked against the exact value given. The
 path starts at the request body and names one value (no `*`, `[*]` or `{part}`); a key on an array takes the
 `value` of the element with that `key`, so an event's `{ "key": "settleDate", "value": "${date:T+2}" }` is

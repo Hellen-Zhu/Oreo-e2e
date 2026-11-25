@@ -1,5 +1,6 @@
 package com.example.module.oreo.testdata;
 
+import java.time.Instant;
 import java.util.List;
 
 /**
@@ -33,5 +34,14 @@ public final class TestData {
     /** The setup payload {@code data/setup/<name>.json}. */
     public static SetupData setup(String name) {
         return DEFAULT.setup(name);
+    }
+
+    /**
+     * Fixes the moment {@code T} stands for in the data's {@code ${date:...}} and {@code ${datetime:...}} until the
+     * next call; {@code null}: the moment of each read. The scenario hook fixes the scenario's start, so every read of
+     * its data, when a request is sent or when a response is compared with it, gives the same date and time.
+     */
+    public static void fixNow(Instant now) {
+        DataPlaceholders.fixNow(now);
     }
 }

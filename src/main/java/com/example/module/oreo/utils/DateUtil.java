@@ -3,9 +3,13 @@ package com.example.module.oreo.utils;
 import java.time.DayOfWeek;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public final class DateUtil {
 
@@ -15,6 +19,12 @@ public final class DateUtil {
     private static final DateTimeFormatter DATE_FMT =
             DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
+    private static final DateTimeFormatter UTC_DATE_TIME_FMT =
+            DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'").withZone(ZoneOffset.UTC);
+
+    private static final Pattern DATE_TIME =
+            Pattern.compile("[Tt]([+-]\\d{1,5})?(?: ((?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d)?))?");
+
     private DateUtil() {}
 
     public static Instant now() {
@@ -23,11 +33,6 @@ public final class DateUtil {
 
     public static LocalDate today() {
         return LocalDate.now();
-    }
-
-    /** Today's date in UTC, whatever this machine's time zone: the date of the test data's {@code ${date:...}}. */
-    public static LocalDate todayUtc() {
-        return LocalDate.now(ZoneOffset.UTC);
     }
 
     public static String format(Instant instant) {
@@ -77,8 +82,8 @@ public final class DateUtil {
     }
 
     /**
-     * Resolve a relative date expression to an absolute {@code yyyy-MM-dd} string, counted from today in UTC
-     * ({@link #todayUtc()}).
+     * Resolve a relative date expression to an absolute {@code yyyy-MM-dd} string, counted from the date of
+     * {@code now} in UTC, whatever this machine's time zone.
      *
      * <ul>
      *   <li>{@code T}   — today</li>
@@ -87,25 +92,55 @@ public final class DateUtil {
      *   <li>Any other value — returned as-is (pass-through for already-absolute dates)</li>
      * </ul>
      *
-     * @param expression date expression from a Cucumber DataTable cell, e.g. {@code "T+3"}
+     * @param expression date expression of the test data's {@code ${date:...}}, e.g. {@code "T+3"}
+     * @param now        the moment {@code T} stands for
      * @return resolved {@code yyyy-MM-dd} string, or the original value if not a T-expression
      */
-    public static String resolveDate(String expression) {
+    public static String resolveDate(String expression, Instant now) {
         if (expression == null || expression.trim().isEmpty()) {
             return expression;
         }
         String s = expression.trim();
+        LocalDate today = now.atZone(ZoneOffset.UTC).toLocalDate();
         if ("T".equalsIgnoreCase(s)) {
-            return todayUtc().format(DATE_FMT);
+            return today.format(DATE_FMT);
         }
         if (s.toUpperCase().startsWith("T+")) {
             int days = Integer.parseInt(s.substring(2));
-            return todayUtc().plusDays(days).format(DATE_FMT);
+            return today.plusDays(days).format(DATE_FMT);
         }
         if (s.toUpperCase().startsWith("T-")) {
             int days = Integer.parseInt(s.substring(2));
-            return todayUtc().minusDays(days).format(DATE_FMT);
+            return today.minusDays(days).format(DATE_FMT);
         }
         return s;
+    }
+
+    /**
+     * Resolve a relative date and time expression to a UTC time, {@code yyyy-MM-dd'T'HH:mm:ss'Z'}
+     * ({@code 2026-11-24T09:00:00Z}), whatever this machine's time zone.
+     *
+     * <ul>
+     *   <li>{@code T}, {@code T+N}, {@code T-N} — {@code now}, to the second, plus or minus N days</li>
+     *   <li>{@code T+N HH:mm}, {@code T+N HH:mm:ss} (also after {@code T}, {@code T-N}) — that UTC time on the UTC
+     *       date of {@code now} plus or minus N days</li>
+     * </ul>
+     *
+     * @param expression date and time expression of the test data's {@code ${datetime:...}}, e.g. {@code "T+1 09:00"}
+     * @param now        the moment {@code T} stands for
+     * @throws IllegalArgumentException when {@code expression} is none of these
+     */
+    public static String resolveDateTime(String expression, Instant now) {
+        Matcher m = DATE_TIME.matcher(expression == null ? "" : expression.trim());
+        if (!m.matches()) {
+            throw new IllegalArgumentException("'" + expression + "' is not a date and time:"
+                    + " write T, T+N or T-N, optionally followed by a UTC time HH:mm or HH:mm:ss");
+        }
+        long days = m.group(1) == null ? 0 : Long.parseLong(m.group(1));
+        Instant at = m.group(2) == null
+                ? now.truncatedTo(ChronoUnit.SECONDS).plus(days, ChronoUnit.DAYS)
+                : now.atZone(ZoneOffset.UTC).toLocalDate().plusDays(days)
+                        .atTime(LocalTime.parse(m.group(2))).toInstant(ZoneOffset.UTC);
+        return UTC_DATE_TIME_FMT.format(at);
     }
 }
