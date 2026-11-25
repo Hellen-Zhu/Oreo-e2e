@@ -67,9 +67,9 @@ public class CoverageHtmlTest {
         Coverage.Facts facts = new Coverage.Facts((p, c) -> true, (id, c) -> "ID-" + c, c -> "ID-" + c, c -> "T");
         Map<String, Object> model = CoverageHtml.model(entries, wip, List.of("P1", "P2"), facts, "now");
         JsonNode views = new ObjectMapper().readTree(CoverageHtml.json(model)).get("views");
-        assertEquals(List.of("composition", "productId", "tradeType"),
+        assertEquals(List.of("composition", "productId", "tradeType", "tradeTypeProductId"),
                 List.of(views.get(0).get("key").asText(), views.get(1).get("key").asText(),
-                        views.get(2).get("key").asText()));
+                        views.get(2).get("key").asText(), views.get(3).get("key").asText()));
         JsonNode lifecycle = views.get(0).get("groups").get(0);
         assertEquals("Trade lifecycle", lifecycle.get("title").asText());
         int column = indexOf(CoverageHtml.columns(Capability.SUPPORT_CAPABILITY), Capability.CANCELLATION);
@@ -87,6 +87,9 @@ public class CoverageHtmlTest {
         JsonNode byType = views.get(2).get("groups").get(0).get("rows");
         assertEquals(1, byType.size());
         assertEquals("T", byType.get(0).get("label").asText());
+        JsonNode byTypeAndId = views.get(3).get("groups").get(0).get("rows");
+        assertEquals("T / ID-P1", byTypeAndId.get(0).get("label").asText());
+        assertEquals("[\"P2\"]", byTypeAndId.get(1).get("compositions").toString());
 
         JsonNode p2 = lifecycle.get("rows").get(1).get("cells").get(column);
         assertEquals("TC-CANCEL-P2-API-001", p2.get("toSync").get(0).asText());

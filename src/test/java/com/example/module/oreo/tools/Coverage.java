@@ -35,8 +35,8 @@ import java.util.stream.Stream;
  * ({@link ProductDatFiles}) and the product Outlines ({@code @capability#} tags, {@link ProductExamples}); it writes
  * nothing and never fails. A Scenario with a fixed product is not counted: only the product Outlines say which
  * capability they test. Whether a case has its data and its recording is the check's business, not this report's.
- * The rows can be the compositions (the default), the product IDs the cases send with their composition, or the trade
- * types ({@link View}, {@code --by}). {@code coverage --html} also writes the matrix as a page and its data as JSON
+ * The rows can be the compositions (the default), the product IDs the cases send with their composition, the trade
+ * types, or the trade types with the product IDs their cases send ({@link View}, {@code --by}). {@code coverage --html} also writes the matrix as a page and its data as JSON
  * ({@link CoverageHtml}) under {@code target/coverage}, every view in it.
  */
 final class Coverage {
@@ -52,12 +52,14 @@ final class Coverage {
      * The ways to look at the matrix, by row: each composition of the registry; each product ID a case sends, with
      * its composition ({@code FX_PSCRIPT / FX_CO}: a product ID many compositions send has a row for each); each trade
      * type, the {@code tradeType} of the composition's recorded trade ({@code expected/_shared/basic/<C>.json}),
-     * gathering its compositions.
+     * gathering its compositions; each trade type with each product ID its compositions' cases send
+     * ({@code FXTRF / FX_PSCRIPT}), gathering the compositions that send it: which product IDs a trade type has.
      */
     enum View {
         COMPOSITION("composition", "Composition", "composition"),
         PRODUCT_ID("productId", "Product ID / composition", "product ID"),
-        TRADE_TYPE("tradeType", "Trade type", "trade type");
+        TRADE_TYPE("tradeType", "Trade type", "trade type"),
+        TRADE_TYPE_PRODUCT_ID("tradeTypeProductId", "Trade type / product ID", "trade type / product ID");
 
         final String key;
         final String title;
@@ -69,13 +71,16 @@ final class Coverage {
             this.noun = noun;
         }
 
-        /** The view named {@code key} ({@code composition}, {@code productId}, {@code tradeType}). */
+        /**
+         * The view named {@code key} ({@code composition}, {@code productId}, {@code tradeType},
+         * {@code tradeTypeProductId}).
+         */
         static View of(String key) {
             for (View view : values()) {
                 if (view.key.equalsIgnoreCase(key)) return view;
             }
-            throw new IllegalArgumentException("[Coverage] no view '" + key + "': --by composition, productId or"
-                    + " tradeType");
+            throw new IllegalArgumentException("[Coverage] no view '" + key + "': --by composition, productId,"
+                    + " tradeType or tradeTypeProductId");
         }
     }
 
@@ -200,7 +205,8 @@ final class Coverage {
 
     /**
      * The rows of {@code view} over {@code compositions}, in registry order: a composition's rows of product IDs
-     * after one another, its default product ID first; a trade type at the place of its first composition.
+     * after one another, its default product ID first; a trade type at the place of its first composition, and its
+     * product IDs in the order its compositions send them.
      */
     static List<Row> rows(View view, List<String> compositions, List<ProductExamples.Entry> entries, Facts facts) {
         List<Row> rows = new ArrayList<>();
@@ -208,15 +214,8 @@ final class Coverage {
             case COMPOSITION -> compositions.forEach(c -> rows.add(new Row(c, List.of(new Member(c, null, true)))));
             case PRODUCT_ID -> {
                 for (String c : compositions) {
-                    String defaultId = facts.defaultProductId().apply(c);
-                    rows.add(new Row(defaultId + " / " + c, List.of(new Member(c, defaultId, true))));
-                    Set<String> others = new TreeSet<>();
-                    for (ProductExamples.Entry entry : entries) {
-                        if (!entry.before().contains(c)) continue;
-                        String sent = facts.productIdOf().apply(caseId(entry, c), c);
-                        if (sent != null && !sent.equals(defaultId)) others.add(sent);
-                    }
-                    others.forEach(id -> rows.add(new Row(id + " / " + c, List.of(new Member(c, id, false)))));
+                    productIds(c, entries, facts)
+                            .forEach(m -> rows.add(new Row(m.productId() + " / " + c, List.of(m))));
                 }
             }
             case TRADE_TYPE -> {
@@ -227,8 +226,37 @@ final class Coverage {
                 }
                 byType.forEach((type, members) -> rows.add(new Row(type, List.copyOf(members))));
             }
+            case TRADE_TYPE_PRODUCT_ID -> {
+                Map<String, Map<String, List<Member>>> byType = new LinkedHashMap<>();
+                for (String c : compositions) {
+                    Map<String, List<Member>> byId =
+                            byType.computeIfAbsent(facts.tradeTypeOf().apply(c), t -> new LinkedHashMap<>());
+                    productIds(c, entries, facts)
+                            .forEach(m -> byId.computeIfAbsent(m.productId(), id -> new ArrayList<>()).add(m));
+                }
+                byType.forEach((type, byId) -> byId.forEach((id, members) ->
+                        rows.add(new Row(type + " / " + id, List.copyOf(members)))));
+            }
         }
         return rows;
+    }
+
+    /**
+     * Composition {@code c} once per product ID its cases send: its default product ID first, the row that answers
+     * for the composition, then the others its cases send, in order, each showing only those cases.
+     */
+    private static List<Member> productIds(String c, List<ProductExamples.Entry> entries, Facts facts) {
+        String defaultId = facts.defaultProductId().apply(c);
+        List<Member> members = new ArrayList<>();
+        members.add(new Member(c, defaultId, true));
+        Set<String> others = new TreeSet<>();
+        for (ProductExamples.Entry entry : entries) {
+            if (!entry.before().contains(c)) continue;
+            String sent = facts.productIdOf().apply(caseId(entry, c), c);
+            if (sent != null && !sent.equals(defaultId)) others.add(sent);
+        }
+        others.forEach(id -> members.add(new Member(c, id, false)));
+        return members;
     }
 
     /** The case ID of an Outline row for {@code composition}. */
@@ -340,15 +368,14 @@ final class Coverage {
             }
         }
         StringBuilder out = new StringBuilder();
-        out.append("Coverage: ").append(view.noun).append(" x capability");
-        if (view == View.TRADE_TYPE && viewRows.stream().anyMatch(r -> !r.compositions().equals(List.of(r.label())))) {
-            out.append(" (").append(view.title).append(": ")
-                    .append(String.join(", ", viewRows.stream()
-                            .filter(r -> !r.compositions().equals(List.of(r.label())))
-                            .map(r -> r.label() + " = " + String.join(" + ", r.compositions())).toList()))
-                    .append(')');
+        out.append("Coverage: ").append(view.noun).append(" x capability\n");
+        // a row that gathers compositions under another name: which ones, a line each
+        List<Row> gathering = viewRows.stream().filter(r -> !r.compositions().equals(List.of(r.label()))).toList();
+        if ((view == View.TRADE_TYPE || view == View.TRADE_TYPE_PRODUCT_ID) && !gathering.isEmpty()) {
+            out.append(view.title).append(" = its compositions:\n");
+            gathering.forEach(r -> out.append("  ").append(r.label()).append(" = ")
+                    .append(String.join(" + ", r.compositions())).append('\n'));
         }
-        out.append('\n');
         out.append("Each cell is API/UI: the number of API cases / the number of UI cases that test the capability"
                 + " for the ").append(view.noun).append(".\n");
         out.append("  e.g. 4/5 = 4 API cases and 5 UI cases, 1/0 = API cases only, 0/1 = UI cases only\n\n");

@@ -398,6 +398,7 @@ mvn -Ptest-data process-test-classes "-Dexec.args=unused-steps"
 mvn -Ptest-data process-test-classes "-Dexec.args=coverage"
 mvn -Ptest-data process-test-classes "-Dexec.args=coverage --by productId"
 mvn -Ptest-data process-test-classes "-Dexec.args=coverage --by tradeType"
+mvn -Ptest-data process-test-classes "-Dexec.args=coverage --by tradeTypeProductId"
 mvn -Ptest-data process-test-classes "-Dexec.args=coverage --html"
 mvn -Ptest-data process-test-classes "-Dexec.args=seed-report"
 ```
@@ -461,9 +462,13 @@ or with `-U`.
   composition's default from `ProductDatFiles`, and another column for the cases whose data sends another
   `productId`; such a column has no gaps of its own, the default one answers for the composition), `--by tradeType`
   one column per trade type, the `tradeType` of the composition's recorded trade (`expected/_shared/basic/<C>.json`;
-  `(not recorded)` before its first recording), its compositions counted together. `coverage --html` prints the
+  `(not recorded)` before its first recording), its compositions counted together, and `--by tradeTypeProductId`
+  one column per trade type and product ID its compositions' cases send (`FXTRF / FX_PSCRIPT`), the compositions
+  that send it counted together: which product IDs a trade type has, as the default and the other columns of
+  `--by productId` do (`--by tradeType` and this one print which compositions each column gathers, a line each).
+  `coverage --html` prints the
   matrix and also writes it as a page, `target/coverage/coverage.html`, for readers outside the team, every view in
-  it behind a switch (composition, product ID / composition, trade type): one tab per capability group (the trade
+  it behind a switch (composition, product ID / composition, trade type, trade type / product ID): one tab per capability group (the trade
   lifecycle first), one row per composition, product ID or trade type, each cell two dots, API and UI, the counts on
   hover, a row's cases on a click, with the product ID each sends. The
   page is one file with nothing loaded from elsewhere: it opens offline, and a pipeline can publish it as a build

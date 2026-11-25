@@ -57,8 +57,9 @@ answers. It holds:
    title), from `git diff` of the feature files or `grep -rn -A1 "@capability#" src/test/resources/features`; the
    product's column of `mvn -Ptest-data process-test-classes "-Dexec.args=coverage"` shows how many API and UI
    Outlines each capability runs and which have none (`NONE`, listed as gaps; `"-Dexec.args=coverage --html"` writes
-   the same as a page, `target/coverage/coverage.html`, a product's cases on a click; `--by productId` or
-   `--by tradeType` count the same by product ID or trade type, when QA asks for those views); with a
+   the same as a page, `target/coverage/coverage.html`, a product's cases on a click; `--by productId`,
+   `--by tradeType` or `--by tradeTypeProductId` count the same by product ID, trade type, or trade type and
+   product ID, when QA asks for those views); with a
    column QA fills in: **supported / not supported, row by row**, in two parts as `Capability.GROUPS` has them: the
    trade lifecycle, then the product features (fixings, cortex formula, product upload), asked on their own: products
    differ there most, so "the same as the others" for the lifecycle is no answer for them. A general "looks fine" is not an answer: ask again

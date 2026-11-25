@@ -24,7 +24,8 @@ import java.util.stream.Stream;
  * unused-steps          lists the snippets and Java steps no feature reaches; writes nothing, never fails
  * coverage [--by &lt;view&gt;] [--html]
  *                       prints the product x capability matrix of the product Outlines, one row per composition, or
- *                       per product ID / composition (--by productId) or trade type (--by tradeType); never fails;
+ *                       per product ID / composition (--by productId), trade type (--by tradeType) or trade type /
+ *                       product ID (--by tradeTypeProductId); never fails;
  *                       --html also writes every view as a page, target/coverage/coverage.html, and its data,
  *                       coverage.json
  * seed-report [<run>|<run>,<run>|<run>..|all] summarises the SIT seed for UAT: the latest run by default, runs merged
@@ -39,7 +40,7 @@ public class TestDataTool {
 
     private static final String USAGE =
             "usage: TestDataTool check | sync-examples | compact <event>|all | suggest <event> | case <case ID>"
-                    + " | shared <case ID> | unused-steps | coverage [--by composition|productId|tradeType] [--html]"
+                    + " | shared <case ID> | unused-steps | coverage [--by composition|productId|tradeType|tradeTypeProductId] [--html]"
                     + " | seed-report [<run ID>|<run ID>,<run ID>|<run ID>..|all] | seed-dats";
 
     public static void main(String[] args) throws IOException, InterruptedException {

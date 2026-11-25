@@ -167,8 +167,11 @@ code { font-family: var(--mono); font-size: 12px; }
   var HINTS = {
     composition: "one row per composition (ProductDatFiles)",
     productId: "one row per product ID a case sends, with its composition",
-    tradeType: "one row per trade type, its compositions together"
+    tradeType: "one row per trade type, its compositions together",
+    tradeTypeProductId: "one row per trade type and product ID its cases send, the compositions that send it together"
   };
+  // views whose rows gather compositions under another name: each row lists them, each case names its own
+  function gathers() { return view().key === "tradeType" || view().key === "tradeTypeProductId"; }
   var state = { view: 0, tab: 0, product: null, filter: "", gapsFirst: false };
   function view() { return DATA.views[state.view]; }
 
@@ -312,7 +315,7 @@ code { font-family: var(--mono); font-size: 12px; }
     var span = group.columns.length + 1;
     var html = rows.map(function (r) {
       var pct = Math.round(100 * r.s.covered / r.s.supported);
-      var sub = view().key === "tradeType" && r.row.compositions.join() !== r.row.label ? "<div class=\"sub\">" + esc(r.row.compositions.join(", ")) + "</div>" : "";
+      var sub = gathers() && r.row.compositions.join() !== r.row.label ? "<div class=\"sub\">" + esc(r.row.compositions.join(", ")) + "</div>" : "";
       return "<tr tabindex=\"0\" data-p=\"" + esc(r.row.label) + "\" aria-selected=\""
           + (r.row.label === state.product) + "\"><td class=\"product\"><div class=\"pname\">" + esc(r.row.label)
           + "</div>" + sub + "<div class=\"bar\"><span><i class=\"" + (r.s.covered < r.s.supported ? "part" : "")
@@ -354,7 +357,7 @@ code { font-family: var(--mono); font-size: 12px; }
       c.cases.forEach(function (k) {
         html += "<div class=\"case" + (k.wip ? " wip" : "") + "\"><span class=\"layer\">" + k.layer + "</span>"
             + esc(k.id) + (k.wip ? " (@wip)" : "") + " <span class=\"from\">" + esc(k.productId || "")
-            + (view().key === "tradeType" ? " · " + esc(k.composition) : "") + "</span> <span class=\"file\">"
+            + (gathers() ? " · " + esc(k.composition) : "") + "</span> <span class=\"file\">"
             + esc(k.file) + "</span></div>";
       });
       c.toSync.forEach(function (id) {

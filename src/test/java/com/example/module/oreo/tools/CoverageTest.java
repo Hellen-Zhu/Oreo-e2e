@@ -119,7 +119,31 @@ public class CoverageTest {
         assertEquals(Coverage.NOT_SUPPORTED, Coverage.cell(rows.get(0), Capability.FIXINGS, ENTRIES, Set.of(), FACTS)
                 .counts().text());
         String report = Coverage.render(Coverage.View.TRADE_TYPE, rows, ENTRIES, Set.of(), FACTS);
-        assertTrue(report, report.contains("T = P1 + P2"));
+        assertTrue(report, report.contains("\n  T = P1 + P2\n"));
+    }
+
+    @Test
+    public void aTradeTypeAndProductIdGathersTheCompositionsThatSendIt() {
+        // P1 and P2 are trade type T and send ID-1 by default; the API case of cancellation sends ID-X for P2
+        Coverage.Facts facts = new Coverage.Facts((product, capability) -> capability != Capability.FIXINGS,
+                (id, composition) -> id.equals("TC-CANCEL-P2-API-001") ? "ID-X" : "ID-1",
+                composition -> "ID-1", composition -> "T");
+        Coverage.View view = Coverage.View.of("tradeTypeProductId");
+        List<Coverage.Row> rows = Coverage.rows(view, List.of("P1", "P2"), ENTRIES, facts);
+        assertEquals(List.of("T / ID-1", "T / ID-X"), rows.stream().map(Coverage.Row::label).toList());
+        assertEquals(List.of("P1", "P2"), rows.get(0).compositions());
+        assertEquals(List.of("P2"), rows.get(1).compositions());
+        // P1's API and UI cases send ID-1; P2's API case sends ID-X and its UI one is to sync
+        assertEquals("1/1 *", Coverage.cell(rows.get(0), Capability.CANCELLATION, ENTRIES, Set.of(), facts)
+                .counts().text());
+        // a product ID only some cases send shows them and has no gap of its own
+        assertEquals("1/0", Coverage.cell(rows.get(1), Capability.CANCELLATION, ENTRIES, Set.of(), facts)
+                .counts().text());
+        assertEquals(Coverage.NOT_SUPPORTED, Coverage.cell(rows.get(1), Capability.ALLOCATION, ENTRIES, Set.of(),
+                facts).counts().text());
+        String report = Coverage.render(view, rows, ENTRIES, Set.of(), facts);
+        assertTrue(report, report.contains("Trade type / product ID = its compositions:\n  T / ID-1 = P1 + P2\n"
+                + "  T / ID-X = P2\n"));
     }
 
     @Test(expected = IllegalArgumentException.class)
