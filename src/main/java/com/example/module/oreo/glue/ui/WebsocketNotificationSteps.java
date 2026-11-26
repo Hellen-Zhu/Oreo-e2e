@@ -3,7 +3,6 @@ package com.example.module.oreo.glue.ui;
 import com.microsoft.playwright.Locator;
 import com.example.genie.module.rest.service.RequestResponseHelper;
 import com.example.module.oreo.utils.RestApiUtil;
-import com.example.module.oreo.utils.TradeApiClient;
 import com.example.module.oreo.playwright.PlaywrightServiceResolver;
 import com.example.module.oreo.config.TestUser;
 import cucumber.api.Scenario;
@@ -26,6 +25,8 @@ public class WebsocketNotificationSteps {
     private static final String NO_UNREAD_BADGE_VALUE = "0";
     private static final Pattern POSITIVE_UNREAD_BADGE_PATTERN = Pattern.compile("^[1-9]\\d*$");
     private static final long NOTIFICATION_UPDATE_TIMEOUT_MILLIS = 10_000L;
+    /** Marks every notification of the calling user as read. */
+    private static final String READ_ALL_NOTIFICATIONS_PATH = "/notifications/read-all";
 
     private PlaywrightServiceResolver.Context ctx;
     private RequestResponseHelper helper;
@@ -39,7 +40,7 @@ public class WebsocketNotificationSteps {
     /** Marks every notification of the checker as read. */
     @Given("^checker marks all notifications as read via api$")
     public void markAllNotificationsAsReadForChecker() {
-        TradeApiClient.markAllNotificationsRead(helper, TestUser.CHECKER.email());
+        RestApiUtil.post(helper, READ_ALL_NOTIFICATIONS_PATH, TestUser.CHECKER.email());
     }
 
     /** Captures baseline unread badge value before triggering checker action. */

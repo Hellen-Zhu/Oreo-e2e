@@ -49,7 +49,6 @@ public final class TradeApiClient {
     public static final String CHECKER_TASKS_PATH = "/checker/tasks/";
     /** Triggers a lifecycle event (cancellation, allocation, novation, ...) on one or more trades. */
     public static final String TRIGGER_EVENT_PATH = "/trades/trigger-event";
-    private static final String READ_ALL_NOTIFICATIONS_PATH = "/notifications/read-all";
 
     /**
      * A provisioned trade: its ID and the ID of its latest checker task, blank when it has none. After
@@ -370,11 +369,5 @@ public final class TradeApiClient {
     public static JsonNode rejectTask(RequestResponseHelper helper, String taskId, String userId) {
         log.info("[TradeApiClient] rejectTask: taskId='{}', userId='{}'", taskId, userId);
         return RestApiUtil.post(helper, CHECKER_TASKS_PATH + taskId + "/reject", userId);
-    }
-
-    /** Marks every notification of {@code userId} as read. */
-    public static JsonNode markAllNotificationsRead(RequestResponseHelper helper, String userId) {
-        log.info("[TradeApiClient] markAllNotificationsRead: userId='{}'", userId);
-        return RestApiUtil.post(helper, READ_ALL_NOTIFICATIONS_PATH, userId);
     }
 }
