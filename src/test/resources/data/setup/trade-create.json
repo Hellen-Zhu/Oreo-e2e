@@ -1,5 +1,5 @@
 {
-  "_comment": "The one trade body: submitted before a case by the provisioning steps (API, UI), and the request of the API trade creation cases (api/trade_creation.json: use setup/trade-create). The step sets basic.productId. byProduct: each composition the SIT seed books gets the portfolio, risk portfolio and entity of one of its seed cases (seed/catalog.json cases; the case of a registered composition's default product ID, else of the product ID named as the composition, else the first).",
+  "_comment": "The one trade body: submitted before a case by the provisioning steps (API, UI), the request of the API trade creation cases and the values of the UI New Trade form (api/ and ui/trade_creation.json: use setup/trade-create). The step sets basic.productId. byProduct: each composition the SIT seed books gets the portfolio, risk portfolio and entity of one of its seed cases (seed/catalog.json cases; the case of a registered composition's default product ID, else of the product ID named as the composition, else the first).",
   "request": {
     "basic": {
       "counterpartyFmId": "900000001",

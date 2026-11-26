@@ -1,17 +1,6 @@
 {
-  "_comment": "features/ui/trading/trade_creation.feature. UI-001 has no row: it runs on the defaults. byProduct: each product's portfolio, as setup/trade-create's.",
+  "_comment": "features/ui/trading/trade_creation.feature. UI-001 has no row: it runs on the defaults. The New Trade form takes its values (counterparty, portfolio, direction) from setup/trade-create, the body the trade preconditions submit, with that product's byProduct: one place for both.",
   "shared": {
-    "trade-basic": {
-      "_comment": "New Trade form values; the flow takes the product from the case",
-      "request": {
-        "basic": {
-          "counterpartyFmId": "900000001",
-          "counterpartyName": "EXAMPLE COUNTERPARTY A",
-          "portfolioId": "EXAMPLE_PORTFOLIO_A",
-          "direction": "Buy"
-        }
-      }
-    },
     "stepin": {
       "_comment": "StepIn section of the New Trade form",
       "request": {
@@ -20,13 +9,7 @@
     }
   },
   "defaults": {
-    "use": ["trade-basic"]
-  },
-  "byProduct": {
-    "FX_TRF": { "request": { "basic": { "portfolioId": "EXAMPLE_PORTFOLIO_Z" } } },
-    "FX_CO": { "request": { "basic": { "portfolioId": "EXAMPLE_PORTFOLIO_R" } } },
-    "FX_FSB": { "request": { "basic": { "portfolioId": "EXAMPLE_PORTFOLIO_E" } } },
-    "FX_PSCRIPT_TRF": { "request": { "basic": { "portfolioId": "EXAMPLE_PORTFOLIO_T" } } }
+    "use": ["setup/trade-create"]
   },
   "cases": [
     { "id": "TC-TRADE-CREATION-<product_type>-UI-002", "_comment": "StepIn Full", "use": ["stepin"] },

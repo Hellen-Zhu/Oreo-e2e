@@ -98,7 +98,7 @@ with the columns `| case | dataset |` (`001`, `002` ...); each case is its own r
 ```jsonc
 {
   "_comment": "features/api/trading/trade_creation.feature",
-  "defaults":  { "use": ["trade-basic"], "dynamicFields": { "data.trade.id": "type" } },
+  "defaults":  { "use": ["setup/trade-create"], "dynamicFields": { "data.trade.id": "type" } },
   "byProduct": { "FX_PSCRIPT_TRF": { "request": { "basic": { "direction": "Sell", "premiumAmount": null } } } },
   "cases": [
     { "id": "TC-TRADE-CREATION-<product_type>-API-002", "_comment": "StepIn Partial", "use": ["stepin-partial"] },
@@ -546,8 +546,8 @@ every variant differ from it.
 | A new field in every product's response | "A new response field", below |
 | The API changed a response on purpose; a case fails its comparison | "Updating a recorded response", below |
 | A shared part (`basic`, `instrument`) has to change | "Updating a shared part", below |
-| A new field in every product's request | its value in the block the event's rows `use` (`trade-basic`) or in `defaults.request`; a product whose value differs overrides it in its row; then record its responses as for a new response field |
-| Change the default counterparty | `api/common.json`, `ui/common.json`, `setup/trade-create*.json` (three places, on purpose); record the API cases again |
+| A new field in every product's request | its value in the block the event's rows `use` (trade creation, API and UI: `setup/trade-create`) or in `defaults.request`; a product whose value differs overrides it in its row; then record its responses as for a new response field |
+| Change the default counterparty or portfolio | `setup/trade-create.json` (a product's portfolio: its `byProduct`): the trade preconditions, the API trade creation cases and the UI New Trade form all take it from there; record the API cases again |
 | New setup payload | `data/setup/<what-it-prepares>.json`, referenced by that name |
 
 ### A new response field
