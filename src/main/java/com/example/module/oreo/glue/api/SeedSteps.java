@@ -12,17 +12,21 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import cucumber.api.Scenario;
 import cucumber.api.java.Before;
 import cucumber.api.java.en.Given;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
 /**
  * The steps of the SIT seed ({@code SeedTest}, {@code docs/sit-seed.md}): book the trades and events of
  * {@link SeedData#catalog()} and write each trade, as soon as it is submitted, then each booking, or its failure, to the
- * run's manifest. They check only that a booking
+ * run's manifest; a failure is logged too, its whole error. They check only that a booking
  * happened (a trade ID, an approved task), never the response: the seed makes data, the E2E cases test it.
  */
 public class SeedSteps {
 
+    private static final Logger log = LoggerFactory.getLogger(SeedSteps.class);
+    /** The length of the error the manifest and the scenario report keep; the log keeps all of it. */
     private static final int MAX_ERROR = 500;
 
     private RestServiceResolver.Context ctx;
@@ -177,10 +181,16 @@ public class SeedSteps {
         ctx.write("[seed] " + summary(entry));
     }
 
+    /**
+     * Writes {@code entry} to the manifest as {@code failed} with the start of the error of {@code e}, and logs the
+     * booking with the whole error: the server's answer to the submit ({@code /trades/create}), the approval or the
+     * event, which can be longer than {@link #MAX_ERROR}.
+     */
     private void fail(ObjectNode entry, Throwable e) {
-        String message = String.valueOf(e.getMessage());
-        entry.put("status", "failed")
-                .put("error", message.length() > MAX_ERROR ? message.substring(0, MAX_ERROR) + "..." : message);
+        String message = e.getMessage() != null ? e.getMessage() : e.toString();
+        entry.put("status", "failed");
+        log.error("[seed] booking failed: {}\n{}", summary(entry), message);
+        entry.put("error", message.length() > MAX_ERROR ? message.substring(0, MAX_ERROR) + "..." : message);
         SeedData.record(entry);
         ctx.write("[seed] " + summary(entry));
     }

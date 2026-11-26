@@ -158,8 +158,11 @@ environment.
 The steps check only that a booking happened: a trade ID and an approved task. Each trade goes to the manifest as soon
 as it is submitted, before its approval: a line with `status` `submitted` and its trade and task IDs. The booking's
 result follows as a line of its own, `booked`, or `failed` with its error and, once submitted, its trade ID. A failed
-booking fails its scenario. A booking whose latest line is still `submitted` (the run was killed or timed out after the
-submit) is reported failed, its trade ID kept: look the trade up, it may still be pending. To rerun only the failed ones, use `--name` with their scenario names
+booking fails its scenario. The manifest and the scenario report keep the first 500 characters of the error; the log
+has all of it, an ERROR line `[seed] booking failed:` with the booking and then the error: the server's answer to the
+submit (`/trades/create`), the approval or the event. The seed's features run in forked JVMs, whose log shows only
+with `mvn test -X` (`docs/genie-parallel-execution.md`, "Known issues"). A booking whose latest line is still
+`submitted` (the run was killed or timed out after the submit) is reported failed, its trade ID kept: look the trade up, it may still be pending. To rerun only the failed ones, use `--name` with their scenario names
 (`[SEED-TRADE-001]`, `[SEED-EVENT-004]`, `[SEED-STEPIN-001]`): the rerun is a run of
 its own, and `seed-report` merges it with the first run, so nothing is booked twice:
 
