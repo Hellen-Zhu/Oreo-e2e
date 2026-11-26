@@ -18,6 +18,9 @@ data). When the API changes, one fix serves both.
 | The page's template | `src/test/resources/tools/seed-report.html`: new trades and lifecycle events in two sections, each with its search, status filter and copy |
 | Each seed case's dat file and whether it is still to export | `TestDataTool seed-dats` → `target/seed/seed-dats.csv`, new trades then events and step-ins |
 | Export dat files from Cortex by trade ID (Windows, pywinauto) | `scripts/cortex_dat_export.py` |
+| Fetch each case's Sample Trade from the old system's trade query (Python, nothing to install) | `scripts/legacy_trade_fetch.py` |
+| Rules: a case's request field ← a field or tag of the old system's trade | `src/test/resources/seed/legacy.json` |
+| The cases with the old system's values, and a row per case and rule for MO | `TestDataTool seed-legacy [<dir>]` → `target/seed/seed-legacy-cases.json` and `seed-legacy.csv` |
 
 The seed features are outside `features/`: `OreoTest`, `check` and `sync-examples` do not see them.
 
@@ -222,6 +225,58 @@ double-click its `{Object ITradeable}` ("View"), Export > Save As..., "Cortex ob
    is left is still `placeholder`. A real dat file is company data: it stays on the company copy and is never
    committed (`.dat` files in the repo are placeholders).
 
+## Values from the old system
+
+MO compares each seed booking with its Sample Trade, the trade of the Excel booked in the old system. The dat file is
+the same (exported from Cortex, above); the case's other values (portfolio, premium, flags, ...) come from that trade
+too, from the old system's trade query (the one its blotter calls).
+
+1. On the company machine, fetch each case's Sample Trade, with a list of `<case ID>,<trade ID>` lines kept outside
+   the project (`#` starts a comment):
+
+   ```
+   set LEGACY_ACCESS_TOKEN=<the accesstoken header of a query of the old system's blotter>
+   set LEGACY_CSRF_TOKEN=<its x-csrf-token header>
+   python scripts/legacy_trade_fetch.py --url <trade query URL> --template <tradesQuery.json> --file <cases.csv>
+   python scripts/legacy_trade_fetch.py --url <trade query URL> --template <tradesQuery.json> SEED-TRADE-001=<trade ID>
+   ```
+
+   In PowerShell, `$env:LEGACY_ACCESS_TOKEN = "..."`. The template is the JSON of the `tradesQuery` form field of one
+   query of the blotter (DevTools, Network, Payload), kept outside the project too: its `userContext` names the user.
+   The script sets its `tradeId`, and its `userContext.authToken.jwt` to the access token; the headers `user` and
+   `authtype` are its `authToken`'s `userId` and `authenticationType`. A back-to-back trade, whose `packageId` is not
+   its trade ID, is queried again by its package ID: the case takes the values of the package's own trade.
+   `<out>/<case>.json` (`~/Downloads/seed-legacy` by default) keeps each response as returned, `fetch-log.csv` a line
+   per case; a case already fetched is reused unless `--force`, and one case's failure does not stop the others.
+
+2. Turn the responses into the cases' values, offline:
+
+   ```
+   mvn -Ptest-data process-test-classes -DskipTests "-Dexec.args=seed-legacy <out>"
+   ```
+
+   A case's trade (the package's for a back-to-back trade) must be of the case's Itradeable Type (its `tradeType`),
+   or the case is refused: the Excel's Sample Trade is not the case's, or the catalog's Itradeable Type is not right
+   (one cut off in the Excel, see Open: the row shows the full name). Each rule of `seed/legacy.json` sets a path of
+   the case's `request` from a field of the trade (dots between names) or a tag's value (`tag:<name>`), converted
+   `as` `number` (`"2250000.0"` is `2250000`), `boolean` (true/false, Y/N, yes/no) or `date:<pattern>` (sent as
+   `yyyy-MM-dd`):
+
+   ```json
+   "basic.portfolioId": "portfolioId",
+   "basic.premiumAmount": { "from": "premiumAmount", "as": "number" }
+   ```
+
+   `target/seed/seed-legacy-cases.json` is the catalog's `cases` with those values set and the rest as it was: on
+   the company copy, replace the `cases` of `seed/catalog.json` with it, then book. `target/seed/seed-legacy.csv` has
+   a row per case and rule, the old system's value, the value sent, the catalog's before and a status: `same`,
+   `set` (the catalog had none), `changed` (it had another), `missing` (the trade has none: the catalog's stays),
+   `invalid` (not convertible: the catalog's stays, the note says why), or `refused` for the whole case. It goes to
+   MO with the seed report.
+
+The responses, the list of trade IDs, the template and both generated files hold real trades and the user's
+context: they stay on the company machine, never in a commit.
+
 ## Maintenance
 
 - **Data goes stale.** Trades are dated `T+N` and other people change them in SIT. Rebook on a schedule (each sprint,
@@ -233,6 +288,16 @@ double-click its `{Object ITradeable}` ("View"), Export > Save As..., "Cortex ob
 
 ## Open
 
+- The rules of `seed/legacy.json` are read from the field names of one response of the old system: confirm each
+  with MO. Still without a rule, each to confirm: counterparty (`customerAccount`, `customerName` or
+  `customerCode`), trader (`foId`), entity (`ourAccount` is a place: a table to the entity code), marketers (other
+  IDs, no type), CI, VMC and hard margin (negative in the old system), direction, notional currency (tag
+  `TRADE_NOTIONAL`), structure ID (tag `STRUCT_ID` or `murexStructureId`), comment (the old system's is its latest
+  amendment's), BTB type and destination portfolio (from the package), actor, IA, CVA, FVA, pricing capability and
+  break clause; and the dates (deal date, premium date, effective timestamp, MiFID execution time): the old trade's,
+  in the past, or the booking's.
+- The old system returns a trade's current version, an amended trade's latest, as Cortex exports its dat file: MO
+  compares with that version.
 - The Excel's events and the catalog: Withdrawal is `withdrawal` (Cancellation), Amendment is `amendment` (`via:
   update`), StepInFull / StepInPartial are the variants `stepin-full`, `stepin-partial`. OptionEvent_knockout is left
   out for now: it needs market data that triggers the knock-out.

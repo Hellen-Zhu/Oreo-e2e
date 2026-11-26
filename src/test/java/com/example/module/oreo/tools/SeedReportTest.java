@@ -129,6 +129,144 @@ public class SeedReportTest {
         assertEquals("booked", merged.get(0).path("status").asText());
     }
 
+    private static final String TYPE = "Cortex.Finance.Tradeable.TRF";
+
+    private static List<SeedReport.LegacyRule> rules(String json) {
+        return SeedReport.legacyRules(Json.parse("{\"request\": " + json + "}"));
+    }
+
+    @Test
+    public void aBackToBackCaseTakesTheValuesOfItsPackagesOwnTrade() {
+        JsonNode fetched = Json.parse("""
+                {"case": "SEED-TRADE-001", "tradeId": "T-2", "packageId": "T-1",
+                 "trade": [{"tradeId": "T-2", "packageId": "T-1", "tradeType": "%1$s", "portfolioId": "LEG_PORTFOLIO"}],
+                 "package": [
+                   {"tradeId": "T-1", "packageId": "T-1", "tradeType": "%1$s", "portfolioId": "CUSTOMER_PORTFOLIO",
+                    "premiumAmount": "2250000.0", "csaExcluded": "N",
+                    "tags": [{"name": "HARD_MARGIN", "value": "-5600.0"}, {"name": "OTHER", "value": "x"}]},
+                   {"tradeId": "T-2", "packageId": "T-1", "tradeType": "%1$s", "portfolioId": "LEG_PORTFOLIO"}]}"""
+                .formatted(TYPE));
+        List<SeedReport.LegacyRule> rules = rules("""
+                {"basic.portfolioId": "portfolioId", "basic.riskPortfolio": "portfolioId",
+                 "basic.premiumAmount": {"from": "premiumAmount", "as": "number"},
+                 "basic.excludeFromCsa": {"from": "csaExcluded", "as": "boolean"},
+                 "basic.hardMargin": {"from": "tag:HARD_MARGIN", "as": "number"}}""");
+        SeedReport.LegacyCase c = SeedReport.legacyCase(fetched, rules, TYPE, Json.parse("""
+                {"basic": {"portfolioId": "CUSTOMER_PORTFOLIO", "riskPortfolio": "EXAMPLE_PORTFOLIO_A"}}"""));
+        assertEquals(null, c.refused());
+        assertEquals(Json.parse("""
+                {"basic": {"portfolioId": "CUSTOMER_PORTFOLIO", "riskPortfolio": "CUSTOMER_PORTFOLIO",
+                 "premiumAmount": 2250000, "excludeFromCsa": false, "hardMargin": -5600}}"""), c.request());
+        List<String> statuses = c.rows().stream().map(r -> r.get(8)).toList();
+        assertEquals(List.of("same", "changed", "set", "set", "set"), statuses);
+        List<String> changed = c.rows().get(1);
+        assertEquals(List.of("SEED-TRADE-001", "T-2", "T-1", "basic.riskPortfolio", "portfolioId",
+                "CUSTOMER_PORTFOLIO", "CUSTOMER_PORTFOLIO", "EXAMPLE_PORTFOLIO_A", "changed", ""), changed);
+        assertEquals("tag:HARD_MARGIN as number", c.rows().get(4).get(4));
+    }
+
+    @Test
+    public void aTradeWithoutAPackageGivesItsOwnValues() {
+        JsonNode fetched = Json.parse("""
+                {"case": "SEED-TRADE-002", "tradeId": "T-3",
+                 "trade": {"tradeId": "T-3", "tradeType": "%s", "portfolioId": "OWN_PORTFOLIO", "isEsgLinked": false}}"""
+                .formatted(TYPE));
+        SeedReport.LegacyCase c = SeedReport.legacyCase(fetched, rules("""
+                {"basic.portfolioId": "portfolioId", "basic.esgLinked": {"from": "isEsgLinked", "as": "boolean"}}"""),
+                TYPE, com.fasterxml.jackson.databind.node.MissingNode.getInstance());
+        assertEquals(Json.parse("{\"basic\": {\"portfolioId\": \"OWN_PORTFOLIO\", \"esgLinked\": false}}"), c.request());
+        assertEquals(List.of("set", "set"), c.rows().stream().map(r -> r.get(8)).toList());
+    }
+
+    @Test
+    public void aValueTheTradeLacksOrThatCannotBeConvertedKeepsTheCatalogs() {
+        JsonNode fetched = Json.parse("""
+                {"case": "SEED-TRADE-003", "tradeId": "T-4",
+                 "trade": [{"tradeId": "T-4", "tradeType": "%s", "premiumAmount": "n/a", "premiumCurrency": "",
+                            "tags": [{"name": "TWICE", "value": "1"}, {"name": "TWICE", "value": "2"}]}]}"""
+                .formatted(TYPE));
+        SeedReport.LegacyCase c = SeedReport.legacyCase(fetched, rules("""
+                {"basic.portfolioId": "portfolioId", "basic.premiumCurrency": "premiumCurrency",
+                 "basic.premiumAmount": {"from": "premiumAmount", "as": "number"}, "basic.structureId": "tag:TWICE"}"""),
+                TYPE, Json.parse("{\"basic\": {\"premiumAmount\": 10000}}"));
+        assertEquals("nothing set", Json.MAPPER.createObjectNode(), c.request());
+        assertEquals(List.of("missing", "missing", "invalid", "invalid"), c.rows().stream().map(r -> r.get(8)).toList());
+        assertEquals("not a number: n/a", c.rows().get(2).get(9));
+        assertEquals("10000", c.rows().get(2).get(7));
+        assertTrue(c.rows().get(3).get(9), c.rows().get(3).get(9).contains("2 tags TWICE"));
+    }
+
+    @Test
+    public void aCaseIsRefusedWhenItsTradeIsNotOfItsItradeableTypeOrNotInTheResponse() {
+        List<SeedReport.LegacyRule> rules = rules("{\"basic.portfolioId\": \"portfolioId\"}");
+        SeedReport.LegacyCase other = SeedReport.legacyCase(Json.parse("""
+                {"case": "SEED-TRADE-004", "tradeId": "T-5",
+                 "trade": [{"tradeId": "T-5", "tradeType": "Cortex.FX.Other", "portfolioId": "P"}]}"""),
+                rules, TYPE, com.fasterxml.jackson.databind.node.MissingNode.getInstance());
+        assertTrue(other.refused(), other.refused().contains("Cortex.FX.Other") && other.refused().contains(TYPE));
+        assertEquals(1, other.rows().size());
+        assertEquals("refused", other.rows().getFirst().get(8));
+        assertTrue(other.request().isEmpty());
+        SeedReport.LegacyCase absent = SeedReport.legacyCase(Json.parse("""
+                {"case": "SEED-TRADE-005", "tradeId": "T-6", "packageId": "T-7",
+                 "trade": [{"tradeId": "T-6", "packageId": "T-7", "tradeType": "%s"}], "package": []}"""
+                .formatted(TYPE)), rules, TYPE, com.fasterxml.jackson.databind.node.MissingNode.getInstance());
+        assertEquals("0 trades T-7 in the response of 0 trade(s)", absent.refused());
+    }
+
+    @Test
+    public void aValueIsConvertedAsItsRuleSays() {
+        assertEquals(Json.parse("2250000"), SeedReport.convert(Json.parse("\"2250000.0\""), "number"));
+        assertEquals(Json.parse("-8400"), SeedReport.convert(Json.parse("-8400.0"), "number"));
+        assertEquals(Json.parse("0.5"), SeedReport.convert(Json.parse("\"0.50\""), "number"));
+        assertEquals(Json.parse("false"), SeedReport.convert(Json.parse("\"N\""), "boolean"));
+        assertEquals(Json.parse("true"), SeedReport.convert(Json.parse("\"Yes\""), "boolean"));
+        assertEquals(Json.parse("false"), SeedReport.convert(Json.parse("false"), "boolean"));
+        assertEquals(Json.parse("\"2026-08-05\""), SeedReport.convert(Json.parse("\"05-08-2026\""), "date:dd-MM-yyyy"));
+        assertEquals(Json.parse("\"x\""), SeedReport.convert(Json.parse("\"x\""), null));
+        for (String[] bad : new String[][]{{"\"maybe\"", "boolean"}, {"\"2026-08-05\"", "date:dd-MM-yyyy"}}) {
+            try {
+                SeedReport.convert(Json.parse(bad[0]), bad[1]);
+                org.junit.Assert.fail(bad[0] + " as " + bad[1]);
+            } catch (IllegalArgumentException | java.time.DateTimeException expected) {
+                // refused
+            }
+        }
+    }
+
+    @Test
+    public void theRulesAreCheckedAsTheyAreRead() throws java.io.IOException {
+        List<SeedReport.LegacyRule> committed = SeedReport.legacyRules(Json.parse(java.nio.file.Files.readString(
+                com.example.module.oreo.testdata.ProjectPaths.projectRoot().resolve(SeedReport.LEGACY_RULES))));
+        assertTrue("the committed rules", !committed.isEmpty());
+        assertEquals("a rule's comment is not a rule", 1, rules("""
+                {"_comment": "c", "basic.shellId": "shellTicketId"}""").size());
+        for (String bad : List.of("{\"basic.x\": {\"from\": \"x\", \"as\": \"upper\"}}", "{\"basic..x\": \"x\"}",
+                "{\"basic.x\": {\"as\": \"number\"}}", "{\"basic.x\": {\"from\": \"x\", \"as\": \"date:qq-ii\"}}",
+                "{\"basic.x\": 1}")) {
+            try {
+                rules(bad);
+                org.junit.Assert.fail(bad + " is refused");
+            } catch (IllegalStateException e) {
+                assertTrue(e.getMessage(), e.getMessage().contains(SeedReport.LEGACY_RULES));
+            }
+        }
+    }
+
+    @Test
+    public void theCasesAreWrittenACasePerLineAsTheCatalogHasThem() {
+        com.fasterxml.jackson.databind.node.ObjectNode cases = (com.fasterxml.jackson.databind.node.ObjectNode)
+                Json.parse("""
+                        {"_comment": "c", "SEED-TRADE-001": {"dat": "a.dat", "request": {"basic": {"premiumAmount": 2250000}}},
+                         "SEED-TRADE-002": {"request": {"basic": {"portfolioId": "P"}}}}""");
+        String block = SeedReport.casesBlock(cases);
+        assertEquals(List.of("{", "  \"cases\": {", "    \"_comment\": \"c\",",
+                "    \"SEED-TRADE-001\": {\"dat\":\"a.dat\",\"request\":{\"basic\":{\"premiumAmount\":2250000}}},",
+                "    \"SEED-TRADE-002\": {\"request\":{\"basic\":{\"portfolioId\":\"P\"}}}", "  }", "}"),
+                List.of(block.split("\n")));
+        assertEquals(cases, Json.parse(block).path("cases"));
+    }
+
     @Test
     public void seedDatsListsTheNewTradesThenTheEventsAndStepInsTogether() throws java.io.IOException {
         List<SeedReport.CaseDat> dats = SeedReport.caseDats(

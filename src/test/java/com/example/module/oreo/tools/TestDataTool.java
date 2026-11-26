@@ -33,6 +33,9 @@ import java.util.stream.Stream;
  *                       target/seed/seed-report-<run>.csv and .html (docs/sit-seed.md)
  * seed-dats             each seed case's dat file and whether it is still to be exported from Cortex:
  *                       target/seed/seed-dats.csv, new trades then events and step-ins (docs/sit-seed.md)
+ * seed-legacy [<dir>]   the values each seed case takes from its Sample Trade in the old system, fetched to <dir> by
+ *                       scripts/legacy_trade_fetch.py, by the rules of seed/legacy.json:
+ *                       target/seed/seed-legacy-cases.json and seed-legacy.csv (docs/sit-seed.md)
  * </pre>
  * A problem throws an exception so Maven fails without terminating its JVM.
  */
@@ -41,7 +44,7 @@ public class TestDataTool {
     private static final String USAGE =
             "usage: TestDataTool check | sync-examples | compact <event>|all | suggest <event> | case <case ID>"
                     + " | shared <case ID> | unused-steps | coverage [--by composition|productId|tradeType|tradeTypeProductId] [--html]"
-                    + " | seed-report [<run ID>|<run ID>,<run ID>|<run ID>..|all] | seed-dats";
+                    + " | seed-report [<run ID>|<run ID>,<run ID>|<run ID>..|all] | seed-dats | seed-legacy [<dir>]";
 
     public static void main(String[] args) throws IOException, InterruptedException {
         String command = args.length == 0 ? "" : args[0];
@@ -58,6 +61,8 @@ public class TestDataTool {
                 case "coverage" -> coverage(args);
                 case "seed-report" -> args.length <= 2 ? SeedReport.run(args.length == 2 ? args[1] : null) : usage();
                 case "seed-dats" -> args.length == 1 ? SeedReport.dats() : usage();
+                case "seed-legacy" -> args.length <= 2 ? SeedReport.legacy(args.length == 2 ? args[1].trim() : null)
+                        : usage();
                 default -> usage();
             };
         } catch (IllegalStateException | IllegalArgumentException e) {

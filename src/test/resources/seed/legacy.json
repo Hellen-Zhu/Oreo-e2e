@@ -1,0 +1,13 @@
+{
+  "_comment": "The rules of TestDataTool seed-legacy (docs/sit-seed.md, \"Values from the old system\"): a path of a seed case's request (merged over the setup body), and where its value is in the case's Sample Trade as the old system's trade query returns it. A rule is \"<from>\" or {\"from\": \"<from>\", \"as\": \"<conversion>\"}. from: a field of the trade (dots between names, a number for an element of a list), or tag:<name>, the value of the trade's tag of that name. as: number, boolean (true/false, Y/N, yes/no) or date:<pattern> (read with the pattern, sent as yyyy-MM-dd); none sends the value as it is. A back-to-back trade (its packageId not its trade ID) gives the values of its package's own trade. Read from the field names of one response: confirm each rule with MO. A field with no rule keeps the catalog's value; the fields still without one are in docs/sit-seed.md, Open.",
+  "request": {
+    "basic.portfolioId": "portfolioId",
+    "basic.riskPortfolio": "portfolioId",
+    "basic.premiumAmount": { "from": "premiumAmount", "as": "number" },
+    "basic.premiumCurrency": "premiumCurrency",
+    "basic.structuringInvolved": { "from": "isStructuringInvolved", "as": "boolean" },
+    "basic.esgLinked": { "from": "isEsgLinked", "as": "boolean" },
+    "basic.excludeFromCsa": { "from": "csaExcluded", "as": "boolean" },
+    "basic.shellId": "shellTicketId"
+  }
+}

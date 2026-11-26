@@ -497,6 +497,11 @@ or with `-U`.
 - `seed-dats`: each seed case's dat path and its state (to export, real, the E2E default, shared with an earlier
   case), `target/seed/seed-dats.csv`, read by `scripts/cortex_dat_export.py` ([sit-seed.md](sit-seed.md), "Dat
   files from Cortex").
+- `seed-legacy [<dir>]`: the values each seed case takes from its Sample Trade in the old system, from the responses
+  `scripts/legacy_trade_fetch.py` wrote to `<dir>` (`~/Downloads/seed-legacy` by default), by the rules of
+  `src/test/resources/seed/legacy.json`: `target/seed/seed-legacy-cases.json` (the catalog's `cases` with them set)
+  and `seed-legacy.csv` (a row per case and rule) ([sit-seed.md](sit-seed.md), "Values from the old system"); never
+  fails on a case, the CSV says why one is refused.
 - `suggest <event>`: reads the event's recordings and prints, without writing anything, the `dynamicFields` rules
   they need and the `expectedBase` that suits them ("Suggestions", below).
 - `compact <event>` or `compact all`: the compaction of "Base and patch" and "Shared parts". It lists the files it

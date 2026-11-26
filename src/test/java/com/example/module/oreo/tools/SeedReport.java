@@ -1,22 +1,33 @@
 package com.example.module.oreo.tools;
 
 import com.example.module.oreo.testdata.Json;
+import com.example.module.oreo.testdata.JsonLayers;
 import com.example.module.oreo.testdata.ProjectPaths;
 import com.example.module.oreo.testdata.SeedData;
 import com.example.module.oreo.utils.DateUtil;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.BooleanNode;
+import com.fasterxml.jackson.databind.node.MissingNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.TextNode;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.DateTimeException;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 
 /**
  * {@code seed-report [<run ID>|<run ID>,<run ID>...|<run ID>..|all]}: the summary of the SIT seed for UAT
@@ -339,6 +350,310 @@ final class SeedReport {
         // new trades first, then the events and step-ins together, each by case ID
         out.sort(java.util.Comparator.comparing((CaseDat d) -> !"trade".equals(d.kind())).thenComparing(CaseDat::caseId));
         return out;
+    }
+
+    // ── seed-legacy: each case's values from its Sample Trade in the old system ─────────────────────────────────────
+
+    /** The rules: a path of a case's request, where its value is in the old system's trade and how it is converted. */
+    static final String LEGACY_RULES = RESOURCES + "seed/legacy.json";
+    /** Where {@code scripts/legacy_trade_fetch.py} writes by default. */
+    static final Path LEGACY_DIR = Path.of(System.getProperty("user.home"), "Downloads", "seed-legacy");
+    static final List<String> LEGACY_COLUMNS = List.of("case", "tradeId", "packageId", "path", "from", "legacyValue",
+            "value", "catalogValue", "status", "note");
+    private static final java.util.regex.Pattern REQUEST_PATH =
+            java.util.regex.Pattern.compile("[A-Za-z][A-Za-z0-9_]*(\\.[A-Za-z][A-Za-z0-9_]*)*");
+
+    /**
+     * A rule of {@link #LEGACY_RULES}: the request path it sets, where the value is in the trade ({@code from}: a
+     * field, dots between names and a number for an element of a list, or {@code tag:<name>}, the value of the
+     * trade's tag of that name) and how it is converted ({@code as}: {@code null} as it is, {@code number},
+     * {@code boolean}, {@code date:<pattern>}).
+     */
+    record LegacyRule(String path, String from, String as) {}
+
+    /**
+     * What one case's trade gives: the fields over its request, a row of {@link #LEGACY_COLUMNS} per rule, and why
+     * the case is left out ({@code null} when it is not: then the rows say what each rule set).
+     */
+    record LegacyCase(String caseId, ObjectNode request, List<List<String>> rows, String refused) {}
+
+    /**
+     * {@code seed-legacy [<dir>]}: the values each seed case takes from its Sample Trade, the old system's trade that
+     * {@code scripts/legacy_trade_fetch.py} wrote to {@code dir} ({@link #LEGACY_DIR} by default), by the rules of
+     * {@link #LEGACY_RULES}. Writes {@code target/seed/seed-legacy-cases.json}, the catalog's {@code cases} with
+     * those values set, and {@code target/seed/seed-legacy.csv}, a row per case and rule. Never fails on a case: the
+     * CSV says why one is left out.
+     */
+    static int legacy(String dir) throws IOException {
+        Path root = ProjectPaths.projectRoot();
+        Path in = dir == null ? LEGACY_DIR : Path.of(dir);
+        if (!Files.isDirectory(in)) {
+            throw new IllegalStateException("[Seed] no directory " + in
+                    + ": fetch the Sample Trades with scripts/legacy_trade_fetch.py first (docs/sit-seed.md)");
+        }
+        List<LegacyRule> rules = legacyRules(Json.parse(Files.readString(root.resolve(LEGACY_RULES),
+                StandardCharsets.UTF_8)));
+        SeedData catalog = SeedData.catalog();
+        Map<String, String> types = new TreeMap<>();
+        for (CaseDat d : caseDats(root, catalog)) types.put(d.caseId(), catalog.itradeableTypes().get(d.composition()));
+        JsonNode catalogCases = Json.parse(Files.readString(root.resolve(RESOURCES + SeedData.CATALOG),
+                StandardCharsets.UTF_8)).path("cases");
+        ObjectNode cases = catalogCases.isObject() ? ((ObjectNode) catalogCases).deepCopy()
+                : Json.MAPPER.createObjectNode();
+        List<Path> files;
+        try (var list = Files.list(in)) {
+            files = list.filter(f -> f.getFileName().toString().endsWith(".json")).sorted().toList();
+        }
+        List<List<String>> rows = new ArrayList<>();
+        Map<String, Integer> counts = new TreeMap<>();
+        List<String> refused = new ArrayList<>();
+        Set<String> fetched = new TreeSet<>();
+        for (Path file : files) {
+            JsonNode one = Json.parse(Files.readString(file, StandardCharsets.UTF_8));
+            String caseId = one.path("case").asText(file.getFileName().toString().replaceAll("\\.json$", ""));
+            fetched.add(caseId);
+            LegacyCase c = types.containsKey(caseId)
+                    ? legacyCase(one, rules, types.get(caseId), cases.path(caseId).path("request"))
+                    : refusedCase(caseId, one, "not a seed case of " + SEED_FEATURES);
+            rows.addAll(c.rows());
+            c.rows().forEach(r -> counts.merge(r.get(8), 1, Integer::sum));
+            if (c.refused() != null) {
+                refused.add(caseId + ": " + c.refused());
+                continue;
+            }
+            JsonNode entry = cases.path(caseId);
+            ObjectNode e = entry.isObject() ? (ObjectNode) entry : cases.putObject(caseId);
+            JsonNode request = e.path("request");
+            e.set("request", JsonLayers.merge(request.isObject() ? (ObjectNode) request : Json.MAPPER.createObjectNode(),
+                    c.request()));
+        }
+        Path out = SeedData.manifestDir();
+        Files.createDirectories(out);
+        Path csv = out.resolve("seed-legacy.csv");
+        StringBuilder table = new StringBuilder(String.join(",", LEGACY_COLUMNS)).append('\n');
+        rows.forEach(r -> table.append(String.join(",", r.stream().map(SeedReport::cell).toList())).append('\n'));
+        Files.writeString(csv, table.toString(), StandardCharsets.UTF_8);
+        Path json = out.resolve("seed-legacy-cases.json");
+        Files.writeString(json, casesBlock(cases), StandardCharsets.UTF_8);
+
+        System.out.println(files.size() + " fetched case(s) in " + in + ", " + rules.size() + " rule(s) of "
+                + LEGACY_RULES + ": " + counts);
+        refused.forEach(r -> System.out.println("  refused " + r));
+        List<String> notFetched = types.keySet().stream().filter(c -> !fetched.contains(c)).toList();
+        if (!notFetched.isEmpty()) {
+            System.out.println("  " + notFetched.size() + " seed case(s) not fetched: " + String.join(" ", notFetched));
+        }
+        System.out.println("Wrote " + root.relativize(csv) + " and " + root.relativize(json)
+                + ": on the company copy, replace the cases of " + SeedData.CATALOG + " with the latter");
+        return 0;
+    }
+
+    /** The rules of {@link #LEGACY_RULES} ({@code root}), in their order. */
+    static List<LegacyRule> legacyRules(JsonNode root) {
+        JsonNode request = root.path("request");
+        if (!request.isObject()) {
+            throw new IllegalStateException("[Seed] " + LEGACY_RULES + ": {\"request\": {\"<request path>\":"
+                    + " \"<field of the trade>\" | {\"from\": \"<field or tag:<name>>\", \"as\": \"<conversion>\"}}}");
+        }
+        List<LegacyRule> rules = new ArrayList<>();
+        request.properties().forEach(e -> {
+            if (e.getKey().equals(JsonLayers.COMMENT)) return;
+            String at = "[Seed] " + LEGACY_RULES + " request." + e.getKey();
+            if (!REQUEST_PATH.matcher(e.getKey()).matches()) {
+                throw new IllegalStateException(at + ": a request path is its field names joined by dots"
+                        + " (basic.portfolioId)");
+            }
+            JsonNode rule = e.getValue();
+            String from = rule.isTextual() ? rule.asText() : rule.path("from").asText("");
+            String as = rule.isObject() && rule.hasNonNull("as") ? rule.get("as").asText() : null;
+            if (from.isBlank() || !(rule.isTextual() || rule.isObject())) {
+                throw new IllegalStateException(at + ": \"<field of the trade>\" or {\"from\": ..., \"as\": ...}");
+            }
+            if (as != null && !as.equals("number") && !as.equals("boolean") && !as.startsWith("date:")) {
+                throw new IllegalStateException(at + ": as is number, boolean or date:<pattern>, not " + as);
+            }
+            if (as != null && as.startsWith("date:")) {
+                try {
+                    DateTimeFormatter.ofPattern(as.substring(5), Locale.ROOT);
+                } catch (IllegalArgumentException ex) {
+                    throw new IllegalStateException(at + ": " + as + " is not a date pattern: " + ex.getMessage(), ex);
+                }
+            }
+            rules.add(new LegacyRule(e.getKey(), from, as));
+        });
+        return rules;
+    }
+
+    /**
+     * The values of one fetched case ({@code fetched}, a file of {@code legacy_trade_fetch.py}) by {@code rules},
+     * when its trade is of the case's Itradeable Type {@code itradeableType}; {@code catalogRequest} is the case's
+     * request in the catalog (missing for none), each rule's row compares with it.
+     */
+    static LegacyCase legacyCase(JsonNode fetched, List<LegacyRule> rules, String itradeableType,
+                                 JsonNode catalogRequest) {
+        String caseId = fetched.path("case").asText();
+        JsonNode trade;
+        try {
+            trade = sourceTrade(fetched);
+        } catch (IllegalArgumentException e) {
+            return refusedCase(caseId, fetched, e.getMessage());
+        }
+        String type = trade.path("tradeType").asText("");
+        if (!type.equals(itradeableType)) {
+            return refusedCase(caseId, fetched, "the trade is a " + (type.isEmpty() ? "trade of no tradeType" : type)
+                    + ", the case books a " + itradeableType
+                    + ": the Excel's Sample Trade, or the catalog's Itradeable Type, is not right");
+        }
+        ObjectNode request = Json.MAPPER.createObjectNode();
+        List<List<String>> rows = new ArrayList<>();
+        for (LegacyRule rule : rules) {
+            JsonNode before = at(catalogRequest, rule.path());
+            JsonNode raw = MissingNode.getInstance();
+            JsonNode value = null;
+            String status;
+            String note = "";
+            try {
+                raw = legacyValue(trade, rule.from());
+                if (raw.isMissingNode() || raw.isNull() || (raw.isTextual() && raw.asText().isBlank())) {
+                    status = "missing";
+                } else {
+                    value = convert(raw, rule.as());
+                    status = before.isMissingNode() ? "set" : same(before, value) ? "same" : "changed";
+                    set(request, rule.path(), value);
+                }
+            } catch (IllegalArgumentException | DateTimeException e) {
+                status = "invalid";
+                note = e.getMessage();
+            }
+            rows.add(List.of(caseId, fetched.path("tradeId").asText(""), fetched.path("packageId").asText(""),
+                    rule.path(), rule.from() + (rule.as() == null ? "" : " as " + rule.as()), text(raw), text(value),
+                    text(before), status, note));
+        }
+        return new LegacyCase(caseId, request, rows, null);
+    }
+
+    private static LegacyCase refusedCase(String caseId, JsonNode fetched, String why) {
+        List<String> row = List.of(caseId, fetched.path("tradeId").asText(""), fetched.path("packageId").asText(""),
+                "", "", "", "", "", "refused", why);
+        return new LegacyCase(caseId, Json.MAPPER.createObjectNode(), List.of(row), why);
+    }
+
+    /**
+     * The trade a fetched case takes its values from: the package's own trade when the fetch has one (a
+     * back-to-back trade, its {@code packageId} not its trade ID), else the Sample Trade itself.
+     *
+     * @throws IllegalArgumentException when the response has not exactly one trade of that ID
+     */
+    static JsonNode sourceTrade(JsonNode fetched) {
+        String packageId = fetched.path("packageId").asText("");
+        return packageId.isEmpty() ? tradeOf(fetched.path("trade"), fetched.path("tradeId").asText(""))
+                : tradeOf(fetched.path("package"), packageId);
+    }
+
+    private static JsonNode tradeOf(JsonNode response, String tradeId) {
+        List<JsonNode> trades = new ArrayList<>();
+        if (response.isArray()) response.forEach(trades::add);
+        else if (response.isObject()) trades.add(response);
+        List<JsonNode> found = trades.stream().filter(t -> tradeId.equals(t.path("tradeId").asText())).toList();
+        if (found.size() != 1) {
+            throw new IllegalArgumentException(found.size() + " trades " + tradeId + " in the response of "
+                    + trades.size() + " trade(s)");
+        }
+        return found.getFirst();
+    }
+
+    /**
+     * The value of {@code from} in {@code trade}, missing for none: {@code tag:<name>} the value of the tag of that
+     * name, else a field (dots between names, a number for an element of a list).
+     *
+     * @throws IllegalArgumentException when the trade has two tags of that name with different values
+     */
+    static JsonNode legacyValue(JsonNode trade, String from) {
+        if (from.startsWith("tag:")) {
+            String name = from.substring(4);
+            List<JsonNode> values = new ArrayList<>();
+            trade.path("tags").forEach(tag -> {
+                if (name.equals(tag.path("name").asText())) values.add(tag.path("value"));
+            });
+            if (values.stream().distinct().count() > 1) {
+                throw new IllegalArgumentException(values.size() + " tags " + name + " with different values");
+            }
+            return values.isEmpty() ? MissingNode.getInstance() : values.getFirst();
+        }
+        JsonNode node = trade;
+        for (String part : from.split("\\.")) {
+            node = node.isArray() && part.matches("[0-9]+") ? node.path(Integer.parseInt(part)) : node.path(part);
+        }
+        return node;
+    }
+
+    /**
+     * {@code value} converted {@code as}: {@code null} as it is; {@code number} a number, its trailing zeros dropped
+     * ({@code "2250000.0"} is {@code 2250000}); {@code boolean} from true/false, Y/N or yes/no; {@code date:<pattern>}
+     * the date read with the pattern, as {@code yyyy-MM-dd}.
+     *
+     * @throws IllegalArgumentException or {@link DateTimeException} when it cannot be converted
+     */
+    static JsonNode convert(JsonNode value, String as) {
+        if (as == null) return value;
+        String text = value.asText().trim();
+        if (as.equals("number")) {
+            BigDecimal n;
+            try {
+                n = (value.isNumber() ? value.decimalValue() : new BigDecimal(text)).stripTrailingZeros();
+            } catch (NumberFormatException e) {
+                throw new IllegalArgumentException("not a number: " + text);
+            }
+            // read back as JSON: the node a data file would have for that number (2250000 an int)
+            return Json.parse(n.toPlainString());
+        }
+        if (as.equals("boolean")) {
+            if (value.isBoolean()) return value;
+            return switch (text.toLowerCase(Locale.ROOT)) {
+                case "true", "y", "yes" -> BooleanNode.TRUE;
+                case "false", "n", "no" -> BooleanNode.FALSE;
+                default -> throw new IllegalArgumentException("not a boolean: " + text);
+            };
+        }
+        DateTimeFormatter pattern =
+                DateTimeFormatter.ofPattern(as.substring("date:".length()), Locale.ROOT);
+        return TextNode.valueOf(LocalDate.parse(text, pattern).toString());
+    }
+
+    /** Equal values: numbers by their value ({@code 10000} and {@code 10000.0}), anything else as JSON. */
+    private static boolean same(JsonNode a, JsonNode b) {
+        return a.isNumber() && b.isNumber() ? a.decimalValue().compareTo(b.decimalValue()) == 0 : a.equals(b);
+    }
+
+    /** The node at {@code path} (dots between names) under {@code node}, missing for none. */
+    private static JsonNode at(JsonNode node, String path) {
+        for (String part : path.split("\\.")) node = node.path(part);
+        return node;
+    }
+
+    /** Sets {@code path} (dots between names) under {@code target} to {@code value}, making the objects on the way. */
+    private static void set(ObjectNode target, String path, JsonNode value) {
+        String[] parts = path.split("\\.");
+        ObjectNode node = target;
+        for (int i = 0; i < parts.length - 1; i++) {
+            JsonNode next = node.path(parts[i]);
+            node = next.isObject() ? (ObjectNode) next : node.putObject(parts[i]);
+        }
+        node.set(parts[parts.length - 1], value);
+    }
+
+    /** A value for the CSV: text as it is, anything else as JSON, nothing for none. */
+    private static String text(JsonNode value) {
+        if (value == null || value.isMissingNode()) return "";
+        return value.isTextual() ? value.textValue() : Json.compact(value);
+    }
+
+    /** {@code {"cases": ...}} with a case per line, as the catalog has them. */
+    static String casesBlock(ObjectNode cases) {
+        List<String> entries = new ArrayList<>();
+        cases.properties().forEach(e -> entries.add("    " + Json.compact(
+                TextNode.valueOf(e.getKey())) + ": " + Json.compact(e.getValue())));
+        return "{\n  \"cases\": {\n" + String.join(",\n", entries) + "\n  }\n}\n";
     }
 
     private static String cell(String value) {
