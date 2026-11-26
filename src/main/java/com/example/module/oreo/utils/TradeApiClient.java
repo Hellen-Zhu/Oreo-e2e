@@ -52,9 +52,18 @@ public final class TradeApiClient {
 
     /**
      * A provisioned trade: its ID and the ID of its latest checker task, blank when it has none. After
-     * {@link #submitTrade} or {@link #saveTrade} they are {@code data.trade.id} and {@code data.checkerContext.taskId}.
+     * {@link #submitTrade} or {@link #saveTrade} they are {@code data.trade.id} and {@code data.checkerContext.taskId},
+     * and {@code request} is the trade body sent (dates resolved, {@code basic.productId} set), for the response rule
+     * {@code trade:<path>}; {@code null} after an event or an amendment, which create no trade.
      */
-    public record CreatedTrade(String tradeId, String taskId) {}
+    public record CreatedTrade(String tradeId, String taskId, String request) {
+        public CreatedTrade(String tradeId, String taskId) {
+            this(tradeId, taskId, null);
+        }
+    }
+
+    /** The scenario variable holding the body the scenario's trade was created with (response rule {@code trade:}). */
+    public static final String TRADE_REQUEST_KEY = "_tc.tradeRequest";
 
     /**
      * One result of a lifecycle event, in the response's order: the trade it ran on ({@code tradeId}), the checker
@@ -116,8 +125,7 @@ public final class TradeApiClient {
     public static CreatedTrade submitTrade(RequestResponseHelper helper, String userId, String testDataKey,
                                            String composition, String productId, String datPath)
             throws URISyntaxException {
-        return createdTrade(createTrade(helper, SUBMIT_TRADE_PATH, userId, testDataKey, composition, productId,
-                datPath), testDataKey);
+        return createTrade(helper, SUBMIT_TRADE_PATH, userId, testDataKey, composition, productId, datPath);
     }
 
     /**
@@ -127,12 +135,11 @@ public final class TradeApiClient {
     public static CreatedTrade saveTrade(RequestResponseHelper helper, String userId, String testDataKey,
                                          String composition, String productId, String datPath)
             throws URISyntaxException {
-        return createdTrade(createTrade(helper, SAVE_TRADE_PATH, userId, testDataKey, composition, productId,
-                datPath), testDataKey);
+        return createTrade(helper, SAVE_TRADE_PATH, userId, testDataKey, composition, productId, datPath);
     }
 
     /** @throws AssertionError when the response names no trade */
-    private static CreatedTrade createdTrade(JsonNode response, String testDataKey) {
+    private static CreatedTrade createdTrade(JsonNode response, String testDataKey, String tradeJson) {
         String tradeId = response.at("/data/trade/id").asText("");
         if (tradeId.isBlank()) {
             log.error("[TradeApiClient] createTrade failed: testDataKey='{}' created no trade, response: {}",
@@ -142,19 +149,20 @@ public final class TradeApiClient {
         String taskId = response.at("/data/checkerContext/taskId").asText("");
         // logged before any approval, so a trade whose approval fails can still be found
         log.info("[TradeApiClient] trade created: tradeId='{}', taskId='{}', body='{}'", tradeId, taskId, testDataKey);
-        return new CreatedTrade(tradeId, taskId);
+        return new CreatedTrade(tradeId, taskId, tradeJson);
     }
 
-    private static JsonNode createTrade(RequestResponseHelper helper, String path, String userId, String testDataKey,
-                                        String composition, String productId, String datPath)
+    private static CreatedTrade createTrade(RequestResponseHelper helper, String path, String userId,
+                                            String testDataKey, String composition, String productId, String datPath)
             throws URISyntaxException {
         return createTradeWithBody(helper, path, userId, TestData.setup(testDataKey).forProduct(composition).request(),
                 productId, datPath, testDataKey);
     }
 
-    private static JsonNode createTradeWithBody(RequestResponseHelper helper, String path, String userId,
-                                                String requestJson, String productId, String datPath,
-                                                String testDataKey) throws URISyntaxException {
+    /** The trade created from {@code requestJson}, with the body sent. */
+    private static CreatedTrade createTradeWithBody(RequestResponseHelper helper, String path, String userId,
+                                                    String requestJson, String productId, String datPath,
+                                                    String testDataKey) throws URISyntaxException {
         // The body carries no product: the step resolves the product ID from the registry and the case
         String tradeJson = withProductId(requestJson, productId);
         URL resource = TradeApiClient.class.getClassLoader().getResource(datPath);
@@ -163,8 +171,9 @@ public final class TradeApiClient {
         }
         log.info("[TradeApiClient] createTrade: path='{}', userId='{}', testDataKey='{}', datFile='{}'",
                 path, userId, testDataKey, datPath);
+        JsonNode response;
         try {
-            return RestApiUtil.postMultipart(helper, path, userId, "trade", tradeJson, "datFile",
+            response = RestApiUtil.postMultipart(helper, path, userId, "trade", tradeJson, "datFile",
                     Paths.get(resource.toURI()));
         } catch (AssertionError | RuntimeException e) {
             // a failed answer (non-2xx: its status and the server's response), no answer or one that is not JSON
@@ -172,6 +181,7 @@ public final class TradeApiClient {
                     path, userId, testDataKey, datPath, e.getMessage());
             throw e;
         }
+        return createdTrade(response, testDataKey, tradeJson);
     }
 
     /**
@@ -306,8 +316,8 @@ public final class TradeApiClient {
                                                           String productId, String datPath, String what,
                                                           Consumer<CreatedTrade> submitted)
             throws URISyntaxException {
-        CreatedTrade trade = createdTrade(createTradeWithBody(helper, SUBMIT_TRADE_PATH, TestUser.MAKER.email(),
-                requestJson, productId, datPath, what), what);
+        CreatedTrade trade = createTradeWithBody(helper, SUBMIT_TRADE_PATH, TestUser.MAKER.email(), requestJson,
+                productId, datPath, what);
         submitted.accept(trade);
         approveTask(helper, trade.taskId(), TestUser.CHECKER.email());
         log.info("[TradeApiClient] live trade provisioned: tradeId='{}'", trade.tradeId());

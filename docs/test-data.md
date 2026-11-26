@@ -219,6 +219,7 @@ recorded:
 | `regex:<pattern>` | the value matches the pattern |
 | `var:<name>` | the value equals the scenario variable `<name>` of this run (`createdTradeId`, stored by `a live '<product_type>' trade is created via api`) |
 | `request:<path>` | the value equals what this run's request has at `<path>`: a date the request gives as `${date:T+1}`, an amount given as a share |
+| `trade:<path>` | the value equals what the body the scenario's trade was created with has at `<path>`: a trade field (`basic.effectiveTimestamp`) that every event's response shows |
 | `ignore` | nothing; only when the others cannot work |
 
 A path is keys joined by `.`, `[n]` for one array element, `[*]` for all. `*` as a key is every
@@ -257,6 +258,17 @@ another format (`2026-11-20T00:00:00Z`), or moves it to a business day, does not
 and the business rule is reported as open, not guessed. Example, an early termination whose request gives
 `settleDate`: `"dynamicFields": { "<path of the date in the response>": "request:data.settleDate" }`, the response
 path taken from a recording (`suggest <event>`).
+
+`trade:<path>` is the same with the body the scenario's trade was created with, as it was sent (dates resolved,
+`basic.productId` set): in a trade creation case its own `trade` part, in any other case the body of the API
+provisioning step (`a '<product_type>' trade is submitted to pending approval via api`, `a live ... trade is created
+via api`, ...: setup `trade-create` with the product's `byProduct`). The last trade created in the scenario counts; an
+event or amendment precondition does not change it. A trade field shown by the responses of every event is written
+once against the shared part, in `trade-response-parts`: `"{basic}.effectiveTimestamp": "trade:basic.effectiveTimestamp"`,
+and holds for creation, query and the events alike. `request:` would hold only for creation, the one case whose
+request is the trade's body. The value must be in the body the trade is created with, setup `trade-create` (which the
+trade creation cases `use` too). A field an event changes (an amendment) is the event's: that event's
+`defaults.dynamicFields` gives it `request:<path>`. A scenario that created no trade fails the comparison.
 
 ### Lifecycle events: the retrieved trade
 
@@ -566,7 +578,8 @@ files by hand: the recording is what proves the system returns it.
      the recording.
 
    A fixed value needs no rule: it is compared exactly. A value equal to a scenario variable takes `var:<name>`;
-   one equal to a value of the request (a date the request gives as `${date:...}`) takes `request:<path>`.
+   one equal to a value of the request (a date the request gives as `${date:...}`) takes `request:<path>`, one equal to
+   a value the trade was created with `trade:<path>`.
 3. **Record every case that returns the field, events together** when the field is in a shared part:
    `OREO_EXPECTED=update` as an environment variable, with the narrowest `--name` filter that covers them (the API
    cases book real trades).
