@@ -58,20 +58,23 @@ public class PlaywrightTradeProvisioningSteps {
     }
 
     /** A live trade whose cancellation the maker submitted: pending the checker's approval. */
-    @Given("^a Live '([^']*)' trade with a pending Cancellation exists in the blotter$")
+    @Given("^a '([^']*)' trade in Pending Approval status with a Cancellation task exists in the blotter$")
     public void provisionPendingCancellation(String product) throws Exception {
         provisionPendingCancellation(product, "createdTradeId", "createdTaskId");
     }
 
     /** Two of them, stored as createdTradeId1 / createdTaskId1 and createdTradeId2 / createdTaskId2. */
-    @Given("^multiple Live '([^']*)' trades with a pending Cancellation exist in the blotter$")
+    @Given("^multiple '([^']*)' trades in Pending Approval status with Cancellation tasks exist in the blotter$")
     public void provisionMultiplePendingCancellation(String product) throws Exception {
         provisionPendingCancellation(product, "createdTradeId1", "createdTaskId1");
         provisionPendingCancellation(product, "createdTradeId2", "createdTaskId2");
     }
 
-    /** A live trade whose amendment the maker submitted (setup trade-amendment): pending the checker's approval. */
-    @Given("^a Live '([^']*)' trade with a pending Amendment exists in the blotter$")
+    /**
+     * A live trade whose amendment the maker submitted (setup trade-amendment): pending the checker's approval.
+     * "an Amendment task" or "a Amendment task".
+     */
+    @Given("^a '([^']*)' trade in Pending Approval status with an? Amendment task exists in the blotter$")
     public void provisionPendingAmendment(String product) throws Exception {
         CreatedTrade live = provisionLive(product, "createdTradeId", "createdTaskId");
         store("createdTradeId", "createdTaskId",

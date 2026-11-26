@@ -221,7 +221,9 @@ Feature files are business specifications: a reviewer who does not read Java mus
   steps**; other UI steps are role-agnostic and act as the last logged-in user. A second login switches the actor.
 - Preconditions: `a Live '<product_type>' trade exists in the blotter` (also `Draft Pending Approval`, `Dead`,
   `Draft`, `saved Draft`: a Draft is a live trade whose cancellation was rejected, a saved Draft was saved and never
-  submitted), `a Live '<product_type>' trade with a pending Amendment exists in the blotter` (also `Cancellation`). They provision through the API and neither log in nor navigate; they are Java steps the scenario calls
+  submitted), `a '<product_type>' trade in Pending Approval status with an Amendment task exists in the blotter` (also
+  `a Cancellation task`; `multiple '<product_type>' trades in Pending Approval status with Cancellation tasks exist in
+  the blotter`). They provision through the API and neither log in nor navigate; they are Java steps the scenario calls
   directly, listed in the `ui` step index with the flows.
 - One step = one user intent or one business-visible assertion: `creates a new '<product_type>' trade`,
   `the trade has status 'Live' and event status 'New' in the blotter`.
