@@ -136,6 +136,8 @@ public final class TradeApiClient {
     private static CreatedTrade createdTrade(JsonNode response, String testDataKey) {
         String tradeId = response.at("/data/trade/id").asText("");
         if (tradeId.isBlank()) {
+            log.error("[TradeApiClient] createTrade failed: testDataKey='{}' created no trade, response: {}",
+                    testDataKey, response);
             throw new AssertionError("[TradeApiClient] " + testDataKey + " created no trade: " + response);
         }
         String taskId = response.at("/data/checkerContext/taskId").asText("");
@@ -162,9 +164,15 @@ public final class TradeApiClient {
         }
         log.info("[TradeApiClient] createTrade: path='{}', userId='{}', testDataKey='{}', datFile='{}'",
                 path, userId, testDataKey, datPath);
-        JsonNode response = RestApiUtil.postMultipart(helper, path, userId, "trade", tradeJson, "datFile",
-                Paths.get(resource.toURI()));
-        return response;
+        try {
+            return RestApiUtil.postMultipart(helper, path, userId, "trade", tradeJson, "datFile",
+                    Paths.get(resource.toURI()));
+        } catch (AssertionError | RuntimeException e) {
+            // a failed answer (non-2xx: its status and the server's response), no answer or one that is not JSON
+            log.error("[TradeApiClient] createTrade failed: path='{}', userId='{}', testDataKey='{}', datFile='{}'\n{}",
+                    path, userId, testDataKey, datPath, e.getMessage());
+            throw e;
+        }
     }
 
     /**
