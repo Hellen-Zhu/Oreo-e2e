@@ -194,7 +194,9 @@ portfolio and entity of one of its seed cases (placeholders, as the catalog's).
 A changed `byProduct` value that the response echoes (`_shared/basic/<C>`) is recorded again.
 The setup trade
 and the API case blocks hold the same values but are kept apart on purpose: what an API case sends must not change
-how a UI case prepares its trade. `trade-cancellation` and `trade-amendment` have no file yet (not covered).
+how a UI case prepares its trade. `trade-amendment` is the body the amendment preconditions (API `a live '<product_type>'
+trade with a pending Amendment exists`, UI `... with an Amendment task exists in the blotter`) post to
+`/trades/{id}/update` as it is, its fields under `trade.basic`; `trade-cancellation` has no file yet (not covered).
 Names are lower case with `-`. `{currentSysSeconds}` in `product-create` and in a schema file becomes a second of the
 run (`ProductApiClient`), so that each run creates a product of its own.
 

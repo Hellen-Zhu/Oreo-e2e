@@ -1,0 +1,12 @@
+{
+  "_comment": "Migrated from API-SETUP-TRADE-AMENDMENT (api/trade_amendment.yml) by MigrateLegacyData",
+  "request": {
+    "trade": {
+      "basic": {
+        "counterparty": "EXAMPLE COUNTERPARTY C",
+        "counterpartyName": "EXAMPLE COUNTERPARTY C",
+        "counterpartyFmId": "900000003"
+      }
+    }
+  }
+}
