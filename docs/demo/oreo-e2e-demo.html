@@ -294,14 +294,13 @@ FX_DCD(only(CREATE, EARLY_TERMINATION)),                             // 只支�
             <tr><td><code>regex:&lt;pattern&gt;</code></td><td>值匹配正则</td><td>消息里带一个变化的编号</td></tr>
             <tr><td><code>var:&lt;name&gt;</code></td><td>等于本次运行存下的变量</td><td><code>var:createdTradeId</code>，确认查到的就是刚建的那笔</td></tr>
             <tr><td><code>request:&lt;path&gt;</code></td><td>等于本次请求在这个路径上发出去的值</td><td>请求里写 <code>${date:T+2}</code> 的日期：期望文件不写死日期，每次都和当天发出去的值严格比对</td></tr>
-            <tr><td><code>trade:&lt;path&gt;</code></td><td>等于这笔交易创建时发出去的 body 在这个路径上的值</td><td>交易字段（比如 <code>basic.effectiveTimestamp</code>）：creation、query、各个 event 都看得到，在共享规则里写一次就够</td></tr>
             <tr><td><code>ignore</code></td><td>不检查</td><td>其他规则都不行时才用</td></tr>
           </tbody>
         </table>
       </div>
       <div class="say">
         <p>路径写法：key 用点连接，<code>[n]</code> 表示数组的某一个元素，<code>[*]</code> 表示所有元素，比如 <code>data.results[*].tradeId</code>；<code>*</code> 单独作为一个 key，表示对象的每一个值，比如 <code>"data.fixings.*": "type"</code>。像 <code>FX:EURSGD@[BFIX]-1500-JP TYO</code> 这种本身带点或方括号的 key 写不进路径，就用 <code>*</code> 匹配。</p>
-        <p>规则要在录制之前配好，而且要写对：<strong>规则的路径在响应里不存在，录制会直接失败</strong>，报错结尾是 <code>not recorded</code>。regex 不匹配、var、request 或 trade 的值对不上，也一样。所以新产品不要提前猜规则，先录一次，再让工具给建议：</p>
+        <p>规则要在录制之前配好，而且要写对：<strong>规则的路径在响应里不存在，录制会直接失败</strong>，报错结尾是 <code>not recorded</code>。regex 不匹配、var 或 request 的值对不上，也一样。所以新产品不要提前猜规则，先录一次，再让工具给建议：</p>
       </div>
 <pre class="code"><code>mvn -Ptest-data process-test-classes "-Dexec.args=suggest trade_creation"</code></pre>
       <div class="say">
