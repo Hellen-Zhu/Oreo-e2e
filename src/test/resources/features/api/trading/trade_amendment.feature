@@ -12,11 +12,26 @@ Feature: Trade Amendment API
     Then the '<product_type>' trade should be updated with the amended terms
 
     Examples:
-      | product_type   |
-      | FX_TRF         |
-      | FX_CO          |
-      | FX_FSB         |
-      | FX_PSCRIPT_TRF |
+      | product_type    |
+      | FX_TRF          |
+      | FX_CO           |
+      | FX_FSB          |
+      | FX_PSCRIPT_TRF  |
+      | FX_ARO          |
+      | FX_ASO          |
+      | FXBO            |
+      | FX_FF           |
+      | FX_FVA          |
+      | FX_OOS          |
+      | FX_RAO          |
+      | FX_RVO          |
+      | FX_AO           |
+      | FXStructure     |
+      | FX_ACCUMULATOR  |
+      | FX_PSCRIPT_EASO |
+      | FX_PSCRIPT_BOBO |
+      | FX_PSCRIPT_CCK  |
+      | FX_PSCRIPT_VBD  |
 
   @ADO#negative @ADO#regression @capability#amendment
   Scenario Outline: [TC-TRADE-AMENDMENT-<product_type>-API-002] Amendment event is rejected for a <product_type> trade already pending checker approval
@@ -26,11 +41,26 @@ Feature: Trade Amendment API
     Then the 'Trade Amendment' request is rejected with a conflict
 
     Examples:
-      | product_type   |
-      | FX_TRF         |
-      | FX_CO          |
-      | FX_FSB         |
-      | FX_PSCRIPT_TRF |
+      | product_type    |
+      | FX_TRF          |
+      | FX_CO           |
+      | FX_FSB          |
+      | FX_PSCRIPT_TRF  |
+      | FX_ARO          |
+      | FX_ASO          |
+      | FXBO            |
+      | FX_FF           |
+      | FX_FVA          |
+      | FX_OOS          |
+      | FX_RAO          |
+      | FX_RVO          |
+      | FX_AO           |
+      | FXStructure     |
+      | FX_ACCUMULATOR  |
+      | FX_PSCRIPT_EASO |
+      | FX_PSCRIPT_BOBO |
+      | FX_PSCRIPT_CCK  |
+      | FX_PSCRIPT_VBD  |
 
   @ADO#negative @ADO#regression
   Scenario: [TC-TRADE-AMENDMENT-API-003] Amendment of a Dead FX_TRF trade is rejected with a business rule violation

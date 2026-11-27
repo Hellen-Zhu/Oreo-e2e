@@ -16,8 +16,21 @@ Feature: Trade Fixings API
     And every fixing date up to today has a value
 
     Examples:
-      | product_type   |
-      | FX_TRF         |
-      | FX_CO          |
-      | FX_FSB         |
-      | FX_PSCRIPT_TRF |
+      | product_type    |
+      | FX_TRF          |
+      | FX_CO           |
+      | FX_FSB          |
+      | FX_PSCRIPT_TRF  |
+      | FX_ARO          |
+      | FX_ASO          |
+      | FXBO            |
+      | FX_FVA          |
+      | FX_OOS          |
+      | FX_RAO          |
+      | FX_RVO          |
+      | FXStructure     |
+      | FX_ACCUMULATOR  |
+      | FX_PSCRIPT_EASO |
+      | FX_PSCRIPT_BOBO |
+      | FX_PSCRIPT_CCK  |
+      | FX_PSCRIPT_VBD  |

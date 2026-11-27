@@ -11,11 +11,26 @@ Feature: Trade Creation API
     Then the trade is created with status as 'Pending Approval Draft' and persisted successfully
 
     Examples:
-      | product_type   |
-      | FX_TRF         |
-      | FX_CO          |
-      | FX_FSB         |
-      | FX_PSCRIPT_TRF |
+      | product_type    |
+      | FX_TRF          |
+      | FX_CO           |
+      | FX_FSB          |
+      | FX_PSCRIPT_TRF  |
+      | FX_ARO          |
+      | FX_ASO          |
+      | FXBO            |
+      | FX_FF           |
+      | FX_FVA          |
+      | FX_OOS          |
+      | FX_RAO          |
+      | FX_RVO          |
+      | FX_AO           |
+      | FXStructure     |
+      | FX_ACCUMULATOR  |
+      | FX_PSCRIPT_EASO |
+      | FX_PSCRIPT_BOBO |
+      | FX_PSCRIPT_CCK  |
+      | FX_PSCRIPT_VBD  |
 
   @ADO#positive @ADO#regression @capability#stepInPartial
   Scenario Outline: [TC-TRADE-CREATION-<product_type>-API-002] Valid <product_type> Step In Partial trade submission enters Pending Approval state
@@ -24,11 +39,16 @@ Feature: Trade Creation API
     Then the trade is created with status as 'Pending Approval Draft' and persisted successfully
 
     Examples:
-      | product_type   |
-      | FX_TRF         |
-      | FX_CO          |
-      | FX_FSB         |
-      | FX_PSCRIPT_TRF |
+      | product_type    |
+      | FX_TRF          |
+      | FX_CO           |
+      | FX_FSB          |
+      | FX_PSCRIPT_TRF  |
+      | FX_ACCUMULATOR  |
+      | FX_PSCRIPT_EASO |
+      | FX_PSCRIPT_BOBO |
+      | FX_PSCRIPT_CCK  |
+      | FX_PSCRIPT_VBD  |
 
   @ADO#positive @ADO#regression @capability#stepInFull
   Scenario Outline: [TC-TRADE-CREATION-<product_type>-API-003] Valid <product_type> Step In Full trade submission enters Pending Approval state
@@ -37,11 +57,16 @@ Feature: Trade Creation API
     Then the trade is created with status as 'Pending Approval Draft' and persisted successfully
 
     Examples:
-      | product_type   |
-      | FX_TRF         |
-      | FX_CO          |
-      | FX_FSB         |
-      | FX_PSCRIPT_TRF |
+      | product_type    |
+      | FX_TRF          |
+      | FX_CO           |
+      | FX_FSB          |
+      | FX_PSCRIPT_TRF  |
+      | FX_ACCUMULATOR  |
+      | FX_PSCRIPT_EASO |
+      | FX_PSCRIPT_BOBO |
+      | FX_PSCRIPT_CCK  |
+      | FX_PSCRIPT_VBD  |
 
   @ADO#negative @ADO#regression
   Scenario: [TC-TRADE-CREATION-API-004] Trade creation is rejected when counterparty is absent for FX_TRF trade

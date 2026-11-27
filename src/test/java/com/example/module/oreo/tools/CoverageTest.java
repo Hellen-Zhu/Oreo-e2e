@@ -85,7 +85,8 @@ public class CoverageTest {
         int features = report.indexOf("Product features");
         assertTrue(report, lifecycle >= 0 && features > lifecycle);
         assertTrue(report, report.indexOf("\nallocation ") > lifecycle && report.indexOf("\nallocation ") < features);
-        assertTrue(report, report.indexOf("\nfixings ") > features);
+        assertTrue(report, report.indexOf("\nfixings ") > lifecycle && report.indexOf("\nfixings ") < features);
+        assertTrue(report, report.indexOf("\ncortexFormula ") > features);
     }
 
     /** P1 and P2 send ID-1 and ID-2 by default; the API case of cancellation sends ID-X for P2. P1 and P2 are trade type T. */

@@ -14,11 +14,19 @@ Feature: Trade PartialNovationRemaining API
     And original trade is partially novated successfully
 
     Examples:
-      | product_type   |
-      | FX_TRF         |
-      | FX_CO          |
-      | FX_FSB         |
-      | FX_PSCRIPT_TRF |
+      | product_type    |
+      | FX_TRF          |
+      | FX_CO           |
+      | FX_FSB          |
+      | FX_PSCRIPT_TRF  |
+      | FX_FF           |
+      | FX_RVO          |
+      | FX_AO           |
+      | FX_ACCUMULATOR  |
+      | FX_PSCRIPT_EASO |
+      | FX_PSCRIPT_BOBO |
+      | FX_PSCRIPT_CCK  |
+      | FX_PSCRIPT_VBD  |
 
   @ADO#negative @ADO#regression
   Scenario: [TC-TRADE-PARTIAL-NOVATION-REMAINING-API-002] PartialNovationRemaining event rejected when triggering trade id not found for a trade

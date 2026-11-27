@@ -13,11 +13,26 @@ Feature: Trade Creation Approval E2E
     And the trade is Live and marked as New
 
     Examples:
-      | product_type   |
-      | FX_TRF         |
-      | FX_CO          |
-      | FX_FSB         |
-      | FX_PSCRIPT_TRF |
+      | product_type    |
+      | FX_TRF          |
+      | FX_CO           |
+      | FX_FSB          |
+      | FX_PSCRIPT_TRF  |
+      | FX_ARO          |
+      | FX_ASO          |
+      | FXBO            |
+      | FX_FF           |
+      | FX_FVA          |
+      | FX_OOS          |
+      | FX_RAO          |
+      | FX_RVO          |
+      | FX_AO           |
+      | FXStructure     |
+      | FX_ACCUMULATOR  |
+      | FX_PSCRIPT_EASO |
+      | FX_PSCRIPT_BOBO |
+      | FX_PSCRIPT_CCK  |
+      | FX_PSCRIPT_VBD  |
 
   @ADO#positive @ADO#regression @capability#create
   Scenario Outline: [TC-TRADE-CREATION-APPROVAL-<product_type>-UI-002] <product_type> Trade reverts to Draft when Checker rejects the submission
@@ -28,11 +43,26 @@ Feature: Trade Creation Approval E2E
     And the trade is Draft and marked as New
 
     Examples:
-      | product_type   |
-      | FX_TRF         |
-      | FX_CO          |
-      | FX_FSB         |
-      | FX_PSCRIPT_TRF |
+      | product_type    |
+      | FX_TRF          |
+      | FX_CO           |
+      | FX_FSB          |
+      | FX_PSCRIPT_TRF  |
+      | FX_ARO          |
+      | FX_ASO          |
+      | FXBO            |
+      | FX_FF           |
+      | FX_FVA          |
+      | FX_OOS          |
+      | FX_RAO          |
+      | FX_RVO          |
+      | FX_AO           |
+      | FXStructure     |
+      | FX_ACCUMULATOR  |
+      | FX_PSCRIPT_EASO |
+      | FX_PSCRIPT_BOBO |
+      | FX_PSCRIPT_CCK  |
+      | FX_PSCRIPT_VBD  |
 
   @ADO#positive @ADO#regression
   Scenario: [TC-TRADE-CREATION-APPROVAL-UI-003] StepIn Full trade is Live after Maker submits and Checker approves

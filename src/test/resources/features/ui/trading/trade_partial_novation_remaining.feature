@@ -13,11 +13,19 @@ Feature: Trade Partial Novation Remaining Party E2E
     Then trade is partially novated with remaining notional retained and counterparty transferred for '<product_type>'
 
     Examples:
-      | product_type   |
-      | FX_TRF         |
-      | FX_CO          |
-      | FX_FSB         |
-      | FX_PSCRIPT_TRF |
+      | product_type    |
+      | FX_TRF          |
+      | FX_CO           |
+      | FX_FSB          |
+      | FX_PSCRIPT_TRF  |
+      | FX_FF           |
+      | FX_RVO          |
+      | FX_AO           |
+      | FX_ACCUMULATOR  |
+      | FX_PSCRIPT_EASO |
+      | FX_PSCRIPT_BOBO |
+      | FX_PSCRIPT_CCK  |
+      | FX_PSCRIPT_VBD  |
 
   @ADO#positive @ADO#smoke
   Scenario: [TC-TRADE-PARTIAL-NOVATION-REMAINING-UI-002] should able to perform Partial Novation event from the trade detail page for FX_FSB trade successfully

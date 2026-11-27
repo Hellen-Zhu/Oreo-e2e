@@ -32,13 +32,13 @@ checks that the trade created is of that composition. The capabilities
 `allocation`, `amendment`, `partialTermination`, `partialNovationRemaining`, `stepOutFull`, `stepOutPartial`,
 `portfolioReassignment`, named as in the replay project's `framework/products.ts`; then `fixings`, `cortexFormula` and
 `productUpload`). They form two groups (`Capability.GROUPS`), each capability in exactly one (`CapabilityTest`):
-- `SUPPORT_CAPABILITY`, the trade lifecycle: create, step in full / partial and the lifecycle events, what nearly every
-  product supports (the replay project's `SUPPORT_CAPABILITY` has the events only);
-- `PRODUCT_FEATURES`: `fixings`, `cortexFormula`, `productUpload`, what the product itself has rather than an event on
-  its trades, where products differ most.
+- `SUPPORT_CAPABILITY`, the trade lifecycle: create, step in full / partial, the lifecycle events and `fixings`, what
+  nearly every product supports (the replay project's `SUPPORT_CAPABILITY` has the events only);
+- `PRODUCT_FEATURES`: `cortexFormula`, `productUpload`, what the product itself has rather than something of its
+  trades, where products differ most.
 
 A product names each group it has, whole, `except(<group>, ...)` when it lacks some, or `only(...)` when it has a few:
-`FX_TRF(SUPPORT_CAPABILITY, PRODUCT_FEATURES)`, `<P>(except(SUPPORT_CAPABILITY, CANCELLATION), only(FIXINGS))`; a group
+`FX_TRF(SUPPORT_CAPABILITY, PRODUCT_FEATURES)`, `<P>(except(SUPPORT_CAPABILITY, CANCELLATION), only(PRODUCT_UPLOAD))`; a group
 it has none of is left out. A new constant joins the group it belongs to, and only if every product that names that
 group supports it. `coverage` shows the matrix in the same two sections.
 Approval, rejection and query are not capabilities: an Outline that approves, rejects or queries what an event made

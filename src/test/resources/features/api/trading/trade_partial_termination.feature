@@ -14,11 +14,22 @@ Feature: Trade Partial Termination API
     And the trade notional is reduced by the terminated amount
 
     Examples:
-      | product_type   |
-      | FX_TRF         |
-      | FX_CO          |
-      | FX_FSB         |
-      | FX_PSCRIPT_TRF |
+      | product_type    |
+      | FX_TRF          |
+      | FX_CO           |
+      | FX_FSB          |
+      | FX_PSCRIPT_TRF  |
+      | FX_ARO          |
+      | FX_ASO          |
+      | FX_FF           |
+      | FX_RAO          |
+      | FX_RVO          |
+      | FX_AO           |
+      | FX_ACCUMULATOR  |
+      | FX_PSCRIPT_EASO |
+      | FX_PSCRIPT_BOBO |
+      | FX_PSCRIPT_CCK  |
+      | FX_PSCRIPT_VBD  |
 
   @ADO#negative @ADO#regression
   Scenario: [TC-TRADE-PARTIAL-TERMINATION-API-002] Malformed PartialTermination event with unrecognised amount field for a trade is rejected

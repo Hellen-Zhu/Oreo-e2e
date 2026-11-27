@@ -13,11 +13,26 @@ Feature: Trade Allocation E2E
     And the trade is allocated to Dead in the trade details
 
     Examples:
-      | product_type   |
-      | FX_TRF         |
-      | FX_CO          |
-      | FX_FSB         |
-      | FX_PSCRIPT_TRF |
+      | product_type    |
+      | FX_TRF          |
+      | FX_CO           |
+      | FX_FSB          |
+      | FX_PSCRIPT_TRF  |
+      | FX_ARO          |
+      | FX_ASO          |
+      | FXBO            |
+      | FX_FF           |
+      | FX_FVA          |
+      | FX_OOS          |
+      | FX_RAO          |
+      | FX_RVO          |
+      | FX_AO           |
+      | FXStructure     |
+      | FX_ACCUMULATOR  |
+      | FX_PSCRIPT_EASO |
+      | FX_PSCRIPT_BOBO |
+      | FX_PSCRIPT_CCK  |
+      | FX_PSCRIPT_VBD  |
 
   @ADO#positive @ADO#regression
   Scenario: [TC-TRADE-ALLOCATION-UI-002] Live trade splits into four sub-trades after 30/30/30/10 allocation successfully

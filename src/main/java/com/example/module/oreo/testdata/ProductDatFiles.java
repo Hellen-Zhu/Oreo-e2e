@@ -46,7 +46,33 @@ public enum ProductDatFiles {
     FX_FSB("FX_PSCRIPT_FSKO", SUPPORT_CAPABILITY, PRODUCT_FEATURES),
 
     /** FX TRF on the payoff script. */
-    FX_PSCRIPT_TRF("FX_PSCRIPT_TRF", SUPPORT_CAPABILITY, PRODUCT_FEATURES);
+    FX_PSCRIPT_TRF("FX_PSCRIPT_TRF", SUPPORT_CAPABILITY, PRODUCT_FEATURES),
+
+    FX_ARO("FX_ARF", except(SUPPORT_CAPABILITY, STEP_IN_FULL, STEP_IN_PARTIAL, PARTIAL_NOVATION_REMAINING,
+            STEP_OUT_FULL, STEP_OUT_PARTIAL)),
+    FX_ASO("FX_ASO", except(SUPPORT_CAPABILITY, STEP_IN_FULL, STEP_IN_PARTIAL, PARTIAL_NOVATION_REMAINING,
+            STEP_OUT_FULL, STEP_OUT_PARTIAL)),
+    FXBO("FX_BO_MULTIDIGI", except(SUPPORT_CAPABILITY, STEP_IN_FULL, STEP_IN_PARTIAL, PARTIAL_TERMINATION,
+            PARTIAL_NOVATION_REMAINING, STEP_OUT_FULL, STEP_OUT_PARTIAL)),
+    FX_FF("FX_FLEXIFWD_AM", except(SUPPORT_CAPABILITY, STEP_IN_FULL, STEP_IN_PARTIAL,
+            STEP_OUT_FULL, STEP_OUT_PARTIAL, FIXINGS)),
+    FX_FVA("FX_FVA", except(SUPPORT_CAPABILITY, STEP_IN_FULL, STEP_IN_PARTIAL, PARTIAL_TERMINATION,
+            PARTIAL_NOVATION_REMAINING, STEP_OUT_FULL, STEP_OUT_PARTIAL)),
+    FX_OOS("FX_OPT_CANFWD", except(SUPPORT_CAPABILITY, STEP_IN_FULL, STEP_IN_PARTIAL, PARTIAL_TERMINATION,
+            PARTIAL_NOVATION_REMAINING, STEP_OUT_FULL, STEP_OUT_PARTIAL)),
+    FX_RAO("FX_RA_DI", except(SUPPORT_CAPABILITY, STEP_IN_FULL, STEP_IN_PARTIAL, PARTIAL_NOVATION_REMAINING,
+            STEP_OUT_FULL, STEP_OUT_PARTIAL)),
+    FX_RVO("FX_VAROPTION", except(SUPPORT_CAPABILITY, STEP_IN_FULL, STEP_IN_PARTIAL,
+            STEP_OUT_FULL, STEP_OUT_PARTIAL)),
+    FX_AO("FX_AMER_OPT", except(SUPPORT_CAPABILITY, STEP_IN_FULL, STEP_IN_PARTIAL,
+            STEP_OUT_FULL, STEP_OUT_PARTIAL, FIXINGS)),
+    FXStructure("FX_STRUCT_ACC", except(SUPPORT_CAPABILITY, STEP_IN_FULL, STEP_IN_PARTIAL, PARTIAL_TERMINATION,
+            PARTIAL_NOVATION_REMAINING, STEP_OUT_FULL, STEP_OUT_PARTIAL)),
+    FX_ACCUMULATOR("FX_ACCUMULATOR", SUPPORT_CAPABILITY),
+    FX_PSCRIPT_EASO("FX_PSCRIPT_EASO", SUPPORT_CAPABILITY),
+    FX_PSCRIPT_BOBO("FX_PSCRIPT", SUPPORT_CAPABILITY),
+    FX_PSCRIPT_CCK("FX_PSCRIPT", SUPPORT_CAPABILITY),
+    FX_PSCRIPT_VBD("FX_PSCRIPT", SUPPORT_CAPABILITY);
 
     /** Placeholder for FX Option: add data/dat/FX_OPT/FX_OPT.dat when its template is available. Supports nothing. */
 //    FX_OPT("FX_OPT", except(SUPPORT_CAPABILITY, ALLOCATION, PORTFOLIO_REASSIGNMENT), only(PRODUCT_UPLOAD));
@@ -77,13 +103,10 @@ public enum ProductDatFiles {
      * @throws AssertionError naming the registry when it has no such composition
      */
     public static ProductDatFiles of(String composition) {
-        String name = composition == null ? "" : composition.trim().toUpperCase().replace(' ', '_');
-        try {
-            return valueOf(name);
-        } catch (IllegalArgumentException e) {
-            throw new AssertionError("Unknown composition '" + composition + "': register '" + name
-                    + "' in ProductDatFiles first (skill onboarding-e2e-product).", e);
-        }
+        String name = composition == null ? "" : composition.trim().replace(' ', '_');
+        return Arrays.stream(values()).filter(p -> p.name().equalsIgnoreCase(name)).findFirst()
+                .orElseThrow(() -> new AssertionError("Unknown composition '" + composition + "': register '" + name
+                        + "' in ProductDatFiles first (skill onboarding-e2e-product)."));
     }
 
     /** The product ID the cases send for this composition by default ({@code basic.productId}). */

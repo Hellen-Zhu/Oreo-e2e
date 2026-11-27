@@ -38,23 +38,23 @@ public enum Capability {
     PRODUCT_UPLOAD("productUpload");
 
     /**
-     * The trade lifecycle: booking (create, step in full / partial) and the events on a live trade, what nearly every
-     * product supports. A product that supports all of them names the group, one that lacks some names
+     * The trade lifecycle: booking (create, step in full / partial), the events on a live trade and its fixings, what
+     * nearly every product supports. A product that supports all of them names the group, one that lacks some names
      * {@code except(SUPPORT_CAPABILITY, ...)}. The Playwright registry's {@code SUPPORT_CAPABILITY} has the events only
      * (its products list create and step in beside it).
      */
     public static final Set<Capability> SUPPORT_CAPABILITY = Collections.unmodifiableSet(EnumSet.of(
             CREATE, STEP_IN_FULL, STEP_IN_PARTIAL,
             CANCELLATION, ALLOCATION, AMENDMENT, EARLY_TERMINATION, PARTIAL_TERMINATION, NOVATION_REMAINING,
-            PARTIAL_NOVATION_REMAINING, STEP_OUT_FULL, STEP_OUT_PARTIAL, PORTFOLIO_REASSIGNMENT));
+            PARTIAL_NOVATION_REMAINING, STEP_OUT_FULL, STEP_OUT_PARTIAL, PORTFOLIO_REASSIGNMENT, FIXINGS));
 
     /**
-     * What the product itself has, not an event on its trades: a fixing schedule, a Cortex formula, a schema upload.
-     * Products differ here more than in the lifecycle: a product names the group, {@code except(PRODUCT_FEATURES, ...)}
-     * or {@code only(...)}.
+     * What the product itself has, not something of its trades: a Cortex formula, a schema upload. Products differ
+     * here more than in the lifecycle: a product names the group, {@code except(PRODUCT_FEATURES, ...)} or
+     * {@code only(...)}.
      */
     public static final Set<Capability> PRODUCT_FEATURES = Collections.unmodifiableSet(EnumSet.of(
-            FIXINGS, CORTEX_FORMULA, PRODUCT_UPLOAD));
+            CORTEX_FORMULA, PRODUCT_UPLOAD));
 
     /**
      * The groups by their title, in the order the coverage matrix shows them. Every capability is in exactly one: a

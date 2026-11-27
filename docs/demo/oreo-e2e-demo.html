@@ -241,7 +241,7 @@ flowchart LR
       <div class="sec-head"><span class="sec-no">04</span><h2 class="sec">产品与 sync-examples</h2><span class="dur">5 分钟</span></div>
       <div class="say">
         <p>接下来讲产品是怎么进到用例里的。这里有三样东西配合。</p>
-        <p>第一，<strong>能力</strong>，<code>Capability</code>。每个生命周期事件、fixings、cortex formula、product upload 都是一个能力，分成两组：交易生命周期 <code>SUPPORT_CAPABILITY</code>（建单、step in 和各个事件），和产品特性 <code>PRODUCT_FEATURES</code>（fixings、cortex formula、product upload）。第二，Feature 里每个带 <code>&lt;product_type&gt;</code> 的 Outline 打一个 <code>@capability#&lt;名字&gt;</code> 标签，说明它测的是哪个能力。第三，<strong>产品注册表</strong> <code>ProductDatFiles</code>，每个产品一个常量，写明它支持哪些能力。</p>
+        <p>第一，<strong>能力</strong>，<code>Capability</code>。每个生命周期事件、fixings、cortex formula、product upload 都是一个能力，分成两组：交易生命周期 <code>SUPPORT_CAPABILITY</code>（建单、step in、各个事件和 fixings），和产品特性 <code>PRODUCT_FEATURES</code>（cortex formula、product upload）。第二，Feature 里每个带 <code>&lt;product_type&gt;</code> 的 Outline 打一个 <code>@capability#&lt;名字&gt;</code> 标签，说明它测的是哪个能力。第三，<strong>产品注册表</strong> <code>ProductDatFiles</code>，每个产品一个常量，写明它支持哪些能力。</p>
       </div>
 <pre class="code"><code>FX_TRF(SUPPORT_CAPABILITY, PRODUCT_FEATURES),                       // 全部能力
 FX_NEW(except(SUPPORT_CAPABILITY, ALLOCATION), only(PRODUCT_UPLOAD)), // 缺几个事件，只有一个产品特性

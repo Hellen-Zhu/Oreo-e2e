@@ -21,16 +21,16 @@ public class CapabilityTest {
 
     @Test
     public void theProductFeaturesAreNotLifecycleEvents() {
-        assertEquals(EnumSet.of(Capability.FIXINGS, Capability.CORTEX_FORMULA, Capability.PRODUCT_UPLOAD),
-                Capability.PRODUCT_FEATURES);
+        assertEquals(EnumSet.of(Capability.CORTEX_FORMULA, Capability.PRODUCT_UPLOAD), Capability.PRODUCT_FEATURES);
         assertTrue(Capability.SUPPORT_CAPABILITY.stream().noneMatch(Capability.PRODUCT_FEATURES::contains));
+        assertTrue("fixings is of the trade lifecycle", Capability.SUPPORT_CAPABILITY.contains(Capability.FIXINGS));
     }
 
     @Test
     public void onlyAndExceptTakePartOfAGroup() {
         assertEquals(Set.of(Capability.FIXINGS), Capability.only(Capability.FIXINGS));
-        assertEquals(EnumSet.of(Capability.CORTEX_FORMULA, Capability.PRODUCT_UPLOAD),
-                Capability.except(Capability.PRODUCT_FEATURES, Capability.FIXINGS));
+        assertEquals(EnumSet.of(Capability.PRODUCT_UPLOAD),
+                Capability.except(Capability.PRODUCT_FEATURES, Capability.CORTEX_FORMULA));
         try {
             Capability.except(Capability.PRODUCT_FEATURES, Capability.ALLOCATION);
             fail("allocation is not a product feature");
