@@ -426,9 +426,9 @@ mvn -Ptest-data process-test-classes "-Dexec.args=seed-report 20261120-153000.."
       <div class="say">
         <p>dat 文件以前要在 Cortex 里一笔一笔点出来。现在给脚本一个 trade ID 列表，它会<strong>自己完成整套点击流程</strong>，逐笔保存成 dat 文件。</p>
         <p>脚本会先关掉上一次留下的窗口，等窗口稳定了再操作；已经导出过的会跳过，一笔失败不影响后面的，每笔结果写进一份日志。导出的文件放在项目外面，因为里面是真实数据。</p>
-        <p>dat 一致之后，MO 还要拿新系统造的单和老系统的 Sample Trade 逐笔对比，所以 portfolio、premium 这些字段也要和老单一致。做法是两步：先用 <code>scripts/legacy_trade_fetch.py</code> 按同一批 trade ID 调老系统的 trade query，把响应原样存下来（BTB 的单再按 packageId 查一次，取 package 本身那笔的值）；再离线跑 <code>seed-legacy</code>，按 <code>seed/legacy.json</code> 里的字段对应规则生成每个用例的 request，并出一张对照表：老值、要发的值、catalog 原来的值。老单的 tradeType 和用例的 Itradeable Type 对不上的会直接拒掉，说明 Excel 里填错了单。</p>
+        <p>dat 一致之后，MO 还要拿新系统造的单和老系统的 Sample Trade 逐笔对比，所以 portfolio、premium 这些字段也要和老单一致。做法是两步：先用 <code>scripts/legacy_trade_fetch.py</code> 按同一批 trade ID（导 dat 用的那份 trades.txt）调老系统的 trade query，每笔存成一个 <code>&lt;tradeId&gt;.json</code>，响应原样保存（BTB 的单 packageId 和 tradeId 不一样，再用 packageId 查一次，一起存进去，取 package 本身那笔的值；单子在哪个 case，可以先不填，后面再补）；再离线跑 <code>seed-legacy</code>，按 <code>seed/legacy.json</code> 里的字段对应规则生成每个用例的 request，并出一张对照表：老值、要发的值、catalog 原来的值。老单的 tradeType 和用例的 Itradeable Type 对不上的会直接拒掉，说明 Excel 里填错了单。</p>
       </div>
-      <pre class="code"><code>python scripts/legacy_trade_fetch.py --url &lt;trade query URL&gt; --template tradesQuery.json --file cases.csv
+      <pre class="code"><code>python scripts/legacy_trade_fetch.py --url &lt;trade query URL&gt; --template tradesQuery.json --file trades.txt
 mvn -Ptest-data process-test-classes -DskipTests "-Dexec.args=seed-legacy &lt;out&gt;"</code></pre>
     </section>
 

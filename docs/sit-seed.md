@@ -18,7 +18,7 @@ data). When the API changes, one fix serves both.
 | The page's template | `src/test/resources/tools/seed-report.html`: new trades and lifecycle events in two sections, each with its search, status filter and copy |
 | Each seed case's dat file and whether it is still to export | `TestDataTool seed-dats` → `target/seed/seed-dats.csv`, new trades then events and step-ins |
 | Export dat files from Cortex by trade ID (Windows, pywinauto) | `scripts/cortex_dat_export.py` |
-| Fetch each case's Sample Trade from the old system's trade query (Python, nothing to install) | `scripts/legacy_trade_fetch.py` |
+| Fetch the Sample Trades by trade ID from the old system's trade query, a back-to-back trade's package too (Python, nothing to install) | `scripts/legacy_trade_fetch.py` |
 | Rules: a case's request field ← a field or tag of the old system's trade | `src/test/resources/seed/legacy.json` |
 | The cases with the old system's values, and a row per case and rule for MO | `TestDataTool seed-legacy [<dir>]` → `target/seed/seed-legacy-cases.json` and `seed-legacy.csv` |
 
@@ -231,23 +231,27 @@ MO compares each seed booking with its Sample Trade, the trade of the Excel book
 the same (exported from Cortex, above); the case's other values (portfolio, premium, flags, ...) come from that trade
 too, from the old system's trade query (the one its blotter calls).
 
-1. On the company machine, fetch each case's Sample Trade, with a list of `<case ID>,<trade ID>` lines kept outside
-   the project (`#` starts a comment):
+1. On the company machine, fetch the Sample Trades, with a list of trade IDs kept outside the project: the
+   `trades.txt` of the dat export (one per line or several separated by commas, `#` starts a comment). A line
+   `<case ID>,<trade ID>` also names the trade's seed case, which step 2 needs:
 
    ```
    set LEGACY_ACCESS_TOKEN=<the accesstoken header of a query of the old system's blotter>
    set LEGACY_CSRF_TOKEN=<its x-csrf-token header>
-   python scripts/legacy_trade_fetch.py --url <trade query URL> --template <tradesQuery.json> --file <cases.csv>
-   python scripts/legacy_trade_fetch.py --url <trade query URL> --template <tradesQuery.json> SEED-TRADE-001=<trade ID>
+   python scripts/legacy_trade_fetch.py --url <trade query URL> --template <tradesQuery.json> --file <trades.txt>
+   python scripts/legacy_trade_fetch.py --url <trade query URL> --template <tradesQuery.json> <trade ID> SEED-TRADE-001=<trade ID>
    ```
 
    In PowerShell, `$env:LEGACY_ACCESS_TOKEN = "..."`. The template is the JSON of the `tradesQuery` form field of one
    query of the blotter (DevTools, Network, Payload), kept outside the project too: its `userContext` names the user.
    The script sets its `tradeId`, and its `userContext.authToken.jwt` to the access token; the headers `user` and
    `authtype` are its `authToken`'s `userId` and `authenticationType`. A back-to-back trade, whose `packageId` is not
-   its trade ID, is queried again by its package ID: the case takes the values of the package's own trade.
-   `<out>/<case>.json` (`~/Downloads/seed-legacy` by default) keeps each response as returned, `fetch-log.csv` a line
-   per case; a case already fetched is reused unless `--force`, and one case's failure does not stop the others.
+   its trade ID, is queried again by `packageId` (set in the template in the place of `tradeId`): the case takes the
+   values of the package's own trade. `<out>/<trade ID>.json` (`~/Downloads/seed-legacy` by default) keeps the
+   trade's response and its package's as returned, with the case when one is given and an `error` when a response
+   has not the trade asked for (a dead trade's is empty); `fetch-log.csv` has a line per trade. A trade is fetched
+   once; one already fetched is reused unless `--force` or its file has an error, a case given later is written into
+   its file without fetching it again, and one trade's failure does not stop the others.
 
 2. Turn the responses into the cases' values, offline:
 
@@ -255,7 +259,8 @@ too, from the old system's trade query (the one its blotter calls).
    mvn -Ptest-data process-test-classes -DskipTests "-Dexec.args=seed-legacy <out>"
    ```
 
-   A case's trade (the package's for a back-to-back trade) must be of the case's Itradeable Type (its `tradeType`),
+   A trade fetched with no case is left out (the run lists them). A case's trade (the package's for a back-to-back
+   trade) must be of the case's Itradeable Type (its `tradeType`),
    or the case is refused: the Excel's Sample Trade is not the case's, or the catalog's Itradeable Type is not right
    (one cut off in the Excel, see Open: the row shows the full name). Each rule of `seed/legacy.json` sets a path of
    the case's `request` from a field of the trade (dots between names) or a tag's value (`tag:<name>`), converted

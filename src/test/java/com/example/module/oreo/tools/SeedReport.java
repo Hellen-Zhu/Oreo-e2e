@@ -381,8 +381,9 @@ final class SeedReport {
      * {@code seed-legacy [<dir>]}: the values each seed case takes from its Sample Trade, the old system's trade that
      * {@code scripts/legacy_trade_fetch.py} wrote to {@code dir} ({@link #LEGACY_DIR} by default), by the rules of
      * {@link #LEGACY_RULES}. Writes {@code target/seed/seed-legacy-cases.json}, the catalog's {@code cases} with
-     * those values set, and {@code target/seed/seed-legacy.csv}, a row per case and rule. Never fails on a case: the
-     * CSV says why one is left out.
+     * those values set, and {@code target/seed/seed-legacy.csv}, a row per case and rule. A file is a trade's
+     * ({@code <trade ID>.json}); one with no {@code case} is left out. Never fails on a case: the CSV says why one is
+     * left out.
      */
     static int legacy(String dir) throws IOException {
         Path root = ProjectPaths.projectRoot();
@@ -408,10 +409,18 @@ final class SeedReport {
         Map<String, Integer> counts = new TreeMap<>();
         List<String> refused = new ArrayList<>();
         Set<String> fetched = new TreeSet<>();
+        List<String> noCase = new ArrayList<>();
         for (Path file : files) {
             JsonNode one = Json.parse(Files.readString(file, StandardCharsets.UTF_8));
-            String caseId = one.path("case").asText(file.getFileName().toString().replaceAll("\\.json$", ""));
-            fetched.add(caseId);
+            String caseId = one.path("case").asText("");
+            if (caseId.isEmpty()) {                             // a trade fetched with no case: no case takes it
+                noCase.add(file.getFileName().toString().replaceAll("\\.json$", ""));
+                continue;
+            }
+            if (!fetched.add(caseId)) {
+                refused.add(caseId + ": the case of another file too, " + file.getFileName() + " left out");
+                continue;
+            }
             LegacyCase c = types.containsKey(caseId)
                     ? legacyCase(one, rules, types.get(caseId), cases.path(caseId).path("request"))
                     : refusedCase(caseId, one, "not a seed case of " + SEED_FEATURES);
@@ -436,8 +445,11 @@ final class SeedReport {
         Path json = out.resolve("seed-legacy-cases.json");
         Files.writeString(json, casesBlock(cases), StandardCharsets.UTF_8);
 
-        System.out.println(files.size() + " fetched case(s) in " + in + ", " + rules.size() + " rule(s) of "
+        System.out.println(files.size() + " fetched trade(s) in " + in + ", " + rules.size() + " rule(s) of "
                 + LEGACY_RULES + ": " + counts);
+        if (!noCase.isEmpty()) {
+            System.out.println("  " + noCase.size() + " with no case, left out: " + String.join(" ", noCase));
+        }
         refused.forEach(r -> System.out.println("  refused " + r));
         List<String> notFetched = types.keySet().stream().filter(c -> !fetched.contains(c)).toList();
         if (!notFetched.isEmpty()) {
