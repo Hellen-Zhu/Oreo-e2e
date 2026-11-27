@@ -458,7 +458,7 @@ mvn -Ptest-data process-test-classes -DskipTests "-Dexec.args=seed-legacy &lt;ou
         <tbody>
           <tr><td>真实 portfolio / entity</td><td>仓库里是占位符，公司副本里按 Excel 填真实 SIT 值</td></tr>
           <tr><td>dat 文件</td><td>用导出脚本从 Cortex 导出后放回对应路径；<code>seed-dats</code> 列出还缺哪些</td></tr>
-          <tr><td>老系统字段对应</td><td><code>seed/legacy.json</code> 先只放了按字段名对得上的几条；交易对手、trader、entity、marketer、日期等要和 MO 逐条确认后再加</td></tr>
+          <tr><td>老系统字段对应</td><td><code>docs/sit-seed.md</code> 有一张逐字段对应表（按 book 页面顺序）：8 条已写进 <code>seed/legacy.json</code>；已定的几条（交易对手 ← customerCode、trader ← foId、BTB Type ← packageType、方向看 quantity 正负、premium 收付看金额正负、金额取绝对值）等页面 book 一笔看清请求字段后再加规则；entity、marketer、AR/NR、日期等还要和 MO 确认</td></tr>
           <tr><td>Excel 第 39–41 行</td><td>FX_VOLOPTION、FX_AMER_OPT 等待确认 composition 和 taxonomy</td></tr>
           <tr><td>OptionEvent_knockout</td><td>需要能触发敲出的市场数据，暂不纳入</td></tr>
           <tr><td>RemainingParty 等事件的映射</td><td>待和业务确认对应的事件类型</td></tr>

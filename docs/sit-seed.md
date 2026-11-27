@@ -277,6 +277,52 @@ too, from the old system's trade query (the one its blotter calls).
 The responses, the list of trade IDs, the template and both generated files hold real trades and the user's
 context: they stay on the company machine, never in a commit.
 
+The mapping of the booking's fields (`basic.`, in the order of the booking page, Trade Basic then Advanced UDF) to the
+old system's trade. Status: **rule**, in `seed/legacy.json`; **decided**, the mapping is decided and its rule waits
+for a conversion `seed-legacy` does not have (absolute value, a sign to a value, a table of values) or for the
+request field the page sends it in; **to confirm**, read from the field names, to confirm with MO; **booking**, the
+booking's own value, not the old trade's; **none**, the trade query has no source. For a back-to-back trade every
+value is the package's own trade's (the client's leg) but `destPortfolio`; the two legs mirror each other, their
+direction and premium side opposite.
+
+| `basic.` | Page | Old system (field, `tag:` name) | Conversion | Status |
+|---|---|---|---|---|
+| `counterparty`, `counterpartyName`, `counterpartyFmId` | Counterparty | `customerCode` (`<name>*<location>`) | | decided; which field carries it, and whether the name and FM ID follow from it, to confirm |
+| `scbEntity` | SCB Entity (set from the portfolio) | `ourAccount` (a place) | place → entity code, a table | to confirm |
+| `portfolioId` | Portfolio | `portfolioId` | | rule |
+| `btbType` | BTB Type | `packageType` (`ta_packageType`) | `BTB3` → `BTB-3` | decided |
+| `riskPortfolio` | Risk Portfolio | `portfolioId` | | rule |
+| `destPortfolio` | BTB Portfolio | the other leg's `portfolioId` (the Sample Trade's own) | | to confirm |
+| `trader` | Trader PSID | `foId` (`FO`) | | decided |
+| `effectiveTimestamp` | Effective Timestamp | (`effectiveTimeStamp` is the latest amendment's) | the booking's time | booking |
+| `productId` | Product ID | `productId` | | the case's own; `seed-legacy` checks the trade's `tradeType` |
+| `direction` | Direction | the sign of `quantity` | below 0 `Sell`, above 0 `Buy` | decided |
+| `dealDate` | Deal Date | `dealDate` (an instant) | its day | to confirm: the old trade's (in the past) or the booking's |
+| (field to confirm) | Premium: Pay / Receive | the sign of `premiumAmount` | below 0 `Pay`, above 0 `Receive` | decided |
+| `premiumAmount` | Premium: Amount | `premiumAmount` | number, absolute value | rule, keeps the sign: to change to the absolute value (decided) |
+| `premiumCurrency` | Premium: CCY | `premiumCurrency` | | rule |
+| `premiumDate` | Premium Date | `premiumDate` | `date:dd-MM-yyyy` | to confirm, as the deal date |
+| `marketer`, `marketers[]` | Coverage / Execution Marketer, % | `marketerId`, `marketers[]` (`marketer`, `percent`), `MARKETERS` | `percent` → `revenueShare`; other IDs; no type | to confirm |
+| `hardMargin`, `vmc` | AR, NR (which is which, to confirm) | `HARD_MARGIN`, `vmc` (`VMC`) | number; negative in the old system | to confirm |
+| `ci` | CI (Total, the page's sum) | `ci` (`CI`) | hard margin + VMC, in both systems | to confirm: sent or computed |
+| `ia`, `iaCcy` | IA, IA CCY | | | none |
+| (field to confirm) | Logical Package ID | `packageId`? | | to confirm |
+| `shellId` | Shell ID | `shellTicketId` | | rule |
+| `structureId` | Structure ID | `STRUCT_ID` or `murexStructureId` | `"0"` is none | to confirm |
+| `cva`, `fva` | CVA, FVA | | | none |
+| `breakClause`, `bcExerciseParty`, `bcFirstDate`, `bcFrequency` | Break Clause (BC), BC Exercise Party, BC First Date, BC Frequency | (perhaps the blotter's credit clauses query) | | none |
+| `structuringInvolved` | Structuring Involved | `isStructuringInvolved` | boolean | rule |
+| `pricingCapability` | Pricing Capability | | | none |
+| `esgLinked` | ESG Linked | `isEsgLinked` | boolean | rule |
+| `comment` | Comment | `comments` (the latest amendment's) | | to confirm |
+| `mifidExeTime` | Execution Date Time | `MIFID_EXE_TIME` (= `dealDateExecutionTime`) | the same format | to confirm, as the deal date |
+| `excludeFromCsa` | Exclude from CSA | `csaExcluded` | boolean | rule |
+| `notionalCurrency` | | `TRADE_NOTIONAL` (`<currency>=<amount>`) | its currency | to confirm |
+| `actorId` | | | the booking's user | booking |
+
+A booking from the page with DevTools open shows, in its request, the field of each page control: the rows whose
+field is still to confirm.
+
 ## Maintenance
 
 - **Data goes stale.** Trades are dated `T+N` and other people change them in SIT. Rebook on a schedule (each sprint,
@@ -288,14 +334,9 @@ context: they stay on the company machine, never in a commit.
 
 ## Open
 
-- The rules of `seed/legacy.json` are read from the field names of one response of the old system: confirm each
-  with MO. Still without a rule, each to confirm: counterparty (`customerAccount`, `customerName` or
-  `customerCode`), trader (`foId`), entity (`ourAccount` is a place: a table to the entity code), marketers (other
-  IDs, no type), CI, VMC and hard margin (negative in the old system), direction, notional currency (tag
-  `TRADE_NOTIONAL`), structure ID (tag `STRUCT_ID` or `murexStructureId`), comment (the old system's is its latest
-  amendment's), BTB type and destination portfolio (from the package), actor, IA, CVA, FVA, pricing capability and
-  break clause; and the dates (deal date, premium date, effective timestamp, MiFID execution time): the old trade's,
-  in the past, or the booking's.
+- The mapping to the old system ("Values from the old system", its table) is read from the field names of one
+  response of the old system and the booking page: its rows to confirm are to confirm with MO, its decided rows
+  wait for their conversions and request fields.
 - The old system returns a trade's current version, an amended trade's latest, as Cortex exports its dat file: MO
   compares with that version.
 - The Excel's events and the catalog: Withdrawal is `withdrawal` (Cancellation), Amendment is `amendment` (`via:
