@@ -286,4 +286,40 @@ public class ResponseMaskerTest {
             }
         }
     }
+
+    private static Function<String, String> trade(String tradeJson) {
+        return name -> name.startsWith(ResponseMasker.TRADE_PREFIX)
+                ? ResponseMasker.requestValue(tradeJson, name.substring(ResponseMasker.TRADE_PREFIX.length()), "x")
+                : null;
+    }
+
+    @Test
+    public void tradeRecordsThePathOfTheTradesCreationBody() {
+        String tradeBody = "{\"basic\":{\"effectiveTimestamp\":\"2026-11-14\",\"productId\":\"P1\"}}";
+        String actual = "{\"data\":{\"trade\":{\"basic\":{\"effectiveTimestamp\":\"2026-11-14\"}}}}";
+        String masked = ResponseMasker.mask(actual,
+                rules("data.trade.basic.effectiveTimestamp", "trade:basic.effectiveTimestamp"), trade(tradeBody), "x");
+        assertJson("{\"data\":{\"trade\":{\"basic\":{\"effectiveTimestamp\":\"${trade:basic.effectiveTimestamp}\"}}}}",
+                masked);
+        String nextRun = tradeBody.replace("2026-11-14", "2026-11-15");
+        assertJson(actual.replace("2026-11-14", "2026-11-15"),
+                ResponseMasker.fillVariables(masked, actual, trade(nextRun), "x"));
+    }
+
+    @Test
+    public void tradeAndRequestAreSeparateSources() {
+        try {
+            ResponseMasker.mask("{\"d\":\"2026-11-14\"}", rules("d", "trade:basic.effectiveTimestamp"),
+                    request("{\"basic\":{\"effectiveTimestamp\":\"2026-11-14\"}}"), "x");
+            fail("a trade: rule read the case's request");
+        } catch (IllegalStateException e) {
+            assertTrue(e.getMessage(), e.getMessage().contains("created no trade"));
+        }
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void tradeWithoutACreatedTradeFailsTheComparison() {
+        ResponseMasker.fillVariables("{\"d\":\"${trade:basic.effectiveTimestamp}\"}", "{\"d\":\"2026-11-14\"}",
+                name -> null, "x");
+    }
 }
