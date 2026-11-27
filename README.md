@@ -139,8 +139,7 @@ scenario names, and its only link to this repository is a step of the test pipel
 - Placeholders (a comment only): `.gitattributes`, `.mcp.json`, `azure-pipelines-maven.yml`,
   `META-INF/services/com.example.genie.module.GenieModule`, and the dat files
   `data/dat/<C>/<C>.dat` of every composition of `ProductDatFiles` and `seed/dat/<C>/<productId>.dat`.
-- Missing: `qa.properties` and the other environments' properties; the setup file `trade-cancellation`
-  (`check.knownMissingSetups` in `test-data.properties`).
+- Missing: `qa.properties` and the other environments' properties.
 - Event data files exist for API `trade_creation`, `trade_early_termination`, `trade_allocation`,
   `refdata_sync_management`, `risk_metric_retrieval` and UI `trade_creation`, `trade_early_termination`,
   `trade_novation_remaining`; the other features' cases run without case data until theirs are written.

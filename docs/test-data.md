@@ -196,7 +196,9 @@ The setup trade
 and the API case blocks hold the same values but are kept apart on purpose: what an API case sends must not change
 how a UI case prepares its trade. `trade-amendment` is the body the amendment preconditions (API `a live '<product_type>'
 trade with a pending Amendment exists`, UI `... with an Amendment task exists in the blotter`) post to
-`/trades/{id}/update` as it is, its fields under `trade.basic`; `trade-cancellation` has no file yet (not covered).
+`/trades/{id}/update` as it is, its fields under `trade.basic`; `trade-cancellation` is the event the preconditions
+that cancel a trade (a pending Cancellation, a dead or a draft trade; API and UI) trigger, its `tradeIds` replaced
+with the trade.
 Names are lower case with `-`. `{currentSysSeconds}` in `product-create` and in a schema file becomes a second of the
 run (`ProductApiClient`), so that each run creates a product of its own.
 

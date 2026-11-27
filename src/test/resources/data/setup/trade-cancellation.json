@@ -1,0 +1,11 @@
+{
+  "_comment": "Migrated from API-SETUP-TRADE-CANCELLATION (api/trade_cancellation.yml) by MigrateLegacyData",
+  "request": {
+    "eventType": "Cancellation",
+    "data": [],
+    "reason": "Client Request",
+    "tradeIds": [
+      "PLACEHOLDER"
+    ]
+  }
+}
